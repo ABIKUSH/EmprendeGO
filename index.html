@@ -265,51 +265,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 /* TOAST */
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* FAVORITO BTN */
-.fav-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px;transition:transform .2s}
-.fav-btn:active{transform:scale(1.3)}
-
-/* CALCULADORA */
-.calc-card{background:linear-gradient(135deg,#f0fdf8,#e8f5ff);border:1.5px solid #a7f3d0;border-radius:16px;padding:18px;margin-bottom:12px}
-.calc-title{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.calc-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
-.calc-row label{font-size:.8rem;font-weight:600;color:var(--gray);width:110px;flex-shrink:0}
-.calc-input{flex:1;border:1.5px solid #e0e7ff;border-radius:10px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--navy);outline:none;background:white}
-.calc-result{background:white;border-radius:12px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.calc-result-item{text-align:center}
-.calc-result-val{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:var(--blue)}
-.calc-result-val.ganancia{color:var(--green)}
-.calc-result-label{font-size:.72rem;color:var(--gray);margin-top:2px}
-
-/* CHAT */
-.chat-screen-header{background:white;padding:14px 20px;display:flex;align-items:center;gap:12px;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:10}
-.chat-back{background:var(--blue-light);border:none;border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--blue);font-weight:700}
-.chat-prov-info h3{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800}
-.chat-prov-info p{font-size:.75rem;color:var(--gray)}
-.chat-messages{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:50vh}
-.msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:.88rem;line-height:1.5}
-.msg.sent{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;align-self:flex-end;border-bottom-right-radius:4px}
-.msg.recv{background:white;color:var(--navy);align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.msg-time{font-size:.65rem;opacity:.7;margin-top:4px;text-align:right}
-.chat-input-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:white;padding:12px 16px;border-top:1px solid #eef0f8;display:flex;gap:10px;align-items:center}
-.chat-input{flex:1;border:1.5px solid #e0e7ff;border-radius:24px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;outline:none}
-.chat-send{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-
-/* FILTROS */
-.filtros-bar{display:flex;gap:8px;padding:10px 20px 0;overflow-x:auto;scrollbar-width:none;align-items:center}
-.filtros-bar::-webkit-scrollbar{display:none}
-.filtro-select{border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--navy);outline:none;background:white;cursor:pointer;flex-shrink:0}
-.filtro-select.active{border-color:var(--blue);color:var(--blue)}
-
-/* NOTIF BADGE */
-.notif-badge{position:absolute;top:-4px;right:-4px;background:var(--pink);color:white;font-size:.6rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.nav-icon-wrap{position:relative;display:inline-flex}
-
-/* FAV SCREEN */
-.favs-empty{text-align:center;padding:60px 20px;color:var(--gray)}
-.favs-empty .ei{font-size:3rem;margin-bottom:12px}
-
 </style>
 </head>
 <body>
@@ -318,7 +273,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 <nav class="navbar">
   <div class="nav-item active" id="nav-inicio" onclick="goTo('inicio')"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
   <div class="nav-item" id="nav-buscar" onclick="goTo('buscar')"><span class="nav-icon">🔍</span><span class="nav-label">Buscar</span></div>
-  <div class="nav-item" id="nav-favoritos" onclick="goTo('favoritos')"><span class="nav-icon-wrap"><span class="nav-icon">❤️</span><span class="notif-badge" id="fav-badge" style="display:none">0</span></span><span class="nav-label">Favoritos</span></div>
+  <div class="nav-item" id="nav-registro" onclick="goTo('registro')"><span class="nav-icon">🏭</span><span class="nav-label">Proveed.</span></div>
   <div class="nav-item" id="nav-planes" onclick="goTo('planes')"><span class="nav-icon">⭐</span><span class="nav-label">Plan Pro</span></div>
   <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon">👤</span><span class="nav-label">Perfil</span></div>
 </nav>
@@ -390,58 +345,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="chip" onclick="setChip(this,'Bazar')">Bazar</div>
     <div class="chip" onclick="setChip(this,'Alimentos')">Alimentos</div>
   </div>
-  <div class="filtros-bar">
-    <select class="filtro-select" id="filtro-provincia" onchange="filterProvs()">
-      <option value="">📍 Todas las provincias</option>
-      <option>Buenos Aires</option>
-      <option>CABA</option>
-      <option>Córdoba</option>
-      <option>Santa Fe</option>
-      <option>Mendoza</option>
-      <option>Tucumán</option>
-      <option>Otra</option>
-    </select>
-    <select class="filtro-select" id="filtro-plan" onchange="filterProvs()">
-      <option value="">⭐ Todos los planes</option>
-      <option value="pro">Solo PRO</option>
-      <option value="gratis">Solo Gratis</option>
-    </select>
-  </div>
   <div class="prov-list" id="provList"><div style="text-align:center;padding:30px;color:var(--gray)">Cargando...</div></div>
-</div>
-
-<!-- FAVORITOS -->
-<div class="screen" id="screen-favoritos">
-  <div class="topbar"><span class="topbar-logo">Mis Favoritos</span></div>
-  <div id="favs-content" style="padding:16px 20px 0">
-    <div class="favs-empty"><div class="ei">❤️</div><p>Todavía no guardaste favoritos.<br>Tocá el ❤️ en cualquier proveedor.</p></div>
-  </div>
-</div>
-
-<!-- CHAT -->
-<div class="screen" id="screen-chat">
-  <div class="chat-screen-header">
-    <button class="chat-back" onclick="goBack()">←</button>
-    <div class="chat-prov-info">
-      <h3 id="chat-prov-nombre">Proveedor</h3>
-      <p id="chat-prov-rubro">Rubro</p>
-    </div>
-  </div>
-  <div class="chat-messages" id="chat-messages"></div>
-  <div style="height:70px"></div>
-  <div class="chat-input-bar">
-    <input class="chat-input" id="chat-input" placeholder="Escribí tu mensaje..." onkeydown="if(event.key==='Enter')enviarMensaje()">
-    <button class="chat-send" onclick="enviarMensaje()">➤</button>
-  </div>
 </div>
 
 <!-- DETALLE PROVEEDOR -->
 <div class="screen" id="screen-detalle">
   <div class="detalle-hero">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <button class="detalle-back" onclick="goBack()">← Volver</button>
-      <button class="fav-btn" id="d-fav-btn" onclick="toggleFavorito()" style="font-size:1.6rem">🤍</button>
-    </div>
+    <button class="detalle-back" onclick="goBack()">← Volver</button>
     <div class="detalle-logo-big" id="d-logo">EG</div>
     <div class="detalle-nombre" id="d-nombre">Proveedor</div>
     <div class="detalle-rubro-txt" id="d-rubro">Rubro</div>
@@ -459,33 +369,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <div class="info-row"><span class="info-icon">📍</span><span class="info-key">Provincia</span><span class="info-val" id="d-provincia">—</span></div>
       <div class="info-row"><span class="info-icon">📱</span><span class="info-key">Instagram</span><span class="info-val" id="d-instagram">—</span></div>
     </div>
-
-    <!-- CALCULADORA -->
-    <div class="calc-card">
-      <div class="calc-title">🧮 Calculadora de ganancia</div>
-      <div class="calc-row">
-        <label>Precio mayorista</label>
-        <input class="calc-input" type="number" id="calc-costo" placeholder="$2.500" oninput="calcular()">
-      </div>
-      <div class="calc-row">
-        <label>Precio de venta</label>
-        <input class="calc-input" type="number" id="calc-venta" placeholder="$5.000" oninput="calcular()">
-      </div>
-      <div class="calc-row">
-        <label>Cantidad de unidades</label>
-        <input class="calc-input" type="number" id="calc-cantidad" placeholder="50" oninput="calcular()">
-      </div>
-      <div class="calc-result" id="calc-result" style="display:none">
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-inversion">—</div><div class="calc-result-label">Inversión total</div></div>
-        <div class="calc-result-item"><div class="calc-result-val ganancia" id="calc-ganancia">—</div><div class="calc-result-label">Ganancia estimada</div></div>
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-margen">—</div><div class="calc-result-label">Margen %</div></div>
-        <div class="calc-result-item"><div class="calc-result-val ganancia" id="calc-total">—</div><div class="calc-result-label">Ingreso total</div></div>
-      </div>
-    </div>
-
     <div class="detalle-cta">
       <button class="btn-wa-big" id="d-wa" style="display:none">💬 Contactar por WhatsApp</button>
-      <button class="btn-chat-big" id="d-chat-btn" onclick="abrirChat()">💬 Enviar mensaje</button>
+      <button class="btn-chat-big" onclick="showToast('Chat próximamente')">💬 Enviar mensaje</button>
     </div>
   </div>
   <div class="detalle-prods-section">
@@ -592,7 +478,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="perfil-header">
       <div class="perfil-avatar-ph" id="u-avatar">U</div>
       <div class="perfil-name" id="u-nombre">Usuario</div>
-      <div class="perfil-email" id="u-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e2878f838b8ea2858f838b8ecc818d8f">[email&#160;protected]</a></div>
+      <div class="perfil-email" id="u-email">email@gmail.com</div>
     </div>
     <div class="hist-section">
       <h3>👁 Proveedores que exploraste</h3>
@@ -717,7 +603,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // ===== SUPABASE =====
 const SURL = 'https://seubtijmyoahnyspvidq.supabase.co';
 const SKEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
@@ -726,25 +612,22 @@ const sb = supabase.createClient(SURL, SKEY);
 // ===== STATE =====
 let currentUser = null;
 let historial = [];
-let favoritos = [];
 let proveedoresDB = [];
 let productos = [];
 let currentCat = 'Todas';
 let prevScreen = 'buscar';
 let fotosSeleccionadas = [];
 let rubroResult = '';
-let proveedorActual = null;
-let chatMensajes = [];
 
 const DEMO = [
-  {id:'d1',nombre:"TechMayor BA",rubro:"Tecnología",descripcion:"Mayorista de accesorios y electrónica. Precios desde $500. Envío a todo el país.",plan:'pro',provincia:'Buenos Aires',whatsapp:'5491112345678',pedido_minimo:'Desde $10.000',envios:'Sí, a todo el país',instagram:'@techmayor_ba'},
-  {id:'d2',nombre:"HomeDeco Sur",rubro:"Hogar",descripcion:"Artículos de decoración y hogar al por mayor. Mínimo 10 unidades.",plan:'gratis',provincia:'Buenos Aires',pedido_minimo:'10 unidades',envios:'Solo zona local'},
-  {id:'d3',nombre:"Modas del Litoral",rubro:"Moda",descripcion:"Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.",plan:'pro',provincia:'Santa Fe',whatsapp:'5493412345678',pedido_minimo:'Desde $5.000',envios:'Sí, a todo el país',instagram:'@modaslitoral'},
-  {id:'d4',nombre:"Bazar Mayorista GBA",rubro:"Bazar",descripcion:"Todo para el bazar: utensilios, limpieza, papelería. Bajo precio.",plan:'gratis',provincia:'Buenos Aires',pedido_minimo:'Sin mínimo',envios:'GBA y CABA'},
-  {id:'d5',nombre:"AlimVerde SRL",rubro:"Alimentos",descripcion:"Productos naturales y orgánicos al por mayor. Certificados.",plan:'pro',provincia:'Córdoba',pedido_minimo:'Desde $20.000',envios:'Sí, a todo el país'},
-  {id:'d6',nombre:"CelularPro Dist.",rubro:"Tecnología",descripcion:"Distribución de celulares y repuestos. Garantía de fábrica.",plan:'pro',provincia:'CABA',whatsapp:'5491187654321',pedido_minimo:'Desde $50.000',envios:'Sí, a todo el país'},
-  {id:'d7',nombre:"RopaKids Mayoreo",rubro:"Moda",descripcion:"Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.",plan:'gratis',provincia:'Buenos Aires',pedido_minimo:'Desde $8.000',envios:'GBA'},
-  {id:'d8',nombre:"CasaFácil Dist.",rubro:"Hogar",descripcion:"Muebles flat-pack y artículos de cocina. Entrega en 48hs.",plan:'gratis',provincia:'Córdoba',pedido_minimo:'Desde $15.000',envios:'Córdoba y alrededores'},
+  {id:'d1',nombre:"TechMayor BA",rubro:"Tecnología",descripcion:"Mayorista de accesorios y electrónica. Precios desde $500. Envío a todo el país.",plan:'pro',provincia:'Buenos Aires',whatsapp:'5491112345678'},
+  {id:'d2',nombre:"HomeDeco Sur",rubro:"Hogar",descripcion:"Artículos de decoración y hogar al por mayor. Mínimo 10 unidades.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d3',nombre:"Modas del Litoral",rubro:"Moda",descripcion:"Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.",plan:'pro',provincia:'Santa Fe',whatsapp:'5493412345678'},
+  {id:'d4',nombre:"Bazar Mayorista GBA",rubro:"Bazar",descripcion:"Todo para el bazar: utensilios, limpieza, papelería. Bajo precio.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d5',nombre:"AlimVerde SRL",rubro:"Alimentos",descripcion:"Productos naturales y orgánicos al por mayor. Certificados.",plan:'pro',provincia:'Córdoba'},
+  {id:'d6',nombre:"CelularPro Dist.",rubro:"Tecnología",descripcion:"Distribución de celulares y repuestos. Garantía de fábrica.",plan:'pro',provincia:'CABA'},
+  {id:'d7',nombre:"RopaKids Mayoreo",rubro:"Moda",descripcion:"Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d8',nombre:"CasaFácil Dist.",rubro:"Hogar",descripcion:"Muebles flat-pack y artículos de cocina. Entrega en 48hs.",plan:'gratis',provincia:'Córdoba'},
 ];
 
 const ICONOS = {Tecnología:'💻',Hogar:'🏠',Moda:'👗',Bazar:'🛒',Alimentos:'🥗'};
@@ -752,7 +635,6 @@ const ICONOS = {Tecnología:'💻',Hogar:'🏠',Moda:'👗',Bazar:'🛒',Aliment
 // ===== INIT =====
 async function init() {
   await cargarProveedores();
-  cargarFavoritosLocal();
 }
 
 // ===== PROVEEDORES =====
@@ -760,11 +642,15 @@ async function cargarProveedores() {
   try {
     const {data} = await sb.from('proveedores').select('*').eq('estado','aprobado').order('created_at',{ascending:false});
     proveedoresDB = (data && data.length > 0) ? data : DEMO;
-  } catch(e) { proveedoresDB = DEMO; }
+  } catch(e) {
+    proveedoresDB = DEMO;
+  }
   renderProvs(proveedoresDB);
 }
 
-function getInicial(nombre) { return nombre.substring(0,2).toUpperCase(); }
+function getInicial(nombre) {
+  return nombre.substring(0,2).toUpperCase();
+}
 
 function renderProvs(list) {
   const el = document.getElementById('provList');
@@ -774,7 +660,6 @@ function renderProvs(list) {
   }
   el.innerHTML = list.map(p => {
     const esPro = p.plan === 'pro';
-    const esFav = favoritos.some(f => f.id === p.id);
     return `<div class="prov-card" onclick="abrirDetalle('${p.id}')">
       <div class="prov-logo">${getInicial(p.nombre)}</div>
       <div class="prov-info">
@@ -784,14 +669,12 @@ function renderProvs(list) {
           <span class="badge blue">${p.rubro || 'General'}</span>
           ${esPro ? '<span class="badge pro">⭐ PRO</span>' : ''}
           <span class="badge green">✓ Verificado</span>
-          ${p.provincia ? `<span class="badge" style="background:#f0f4ff;color:var(--blue)">📍 ${p.provincia}</span>` : ''}
         </div>
       </div>
-      <div class="prov-contact" style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
-        <button class="fav-btn" onclick="event.stopPropagation();toggleFavoritoCard('${p.id}')" style="font-size:1.2rem">${esFav?'❤️':'🤍'}</button>
+      <div class="prov-contact">
         ${esPro
           ? `<button class="btn-wa" onclick="event.stopPropagation();abrirWA('${p.whatsapp||''}')">💬 WA</button>`
-          : `<button class="btn-chat" onclick="event.stopPropagation();abrirChatDirecto('${p.id}')">Chat</button>`}
+          : `<button class="btn-chat" onclick="event.stopPropagation();showToast('Chat disponible')">Chat</button>`}
       </div>
     </div>`;
   }).join('');
@@ -799,15 +682,11 @@ function renderProvs(list) {
 
 function filterProvs() {
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const prov = document.getElementById('filtro-provincia')?.value || '';
-  const plan = document.getElementById('filtro-plan')?.value || '';
   const list = proveedoresDB.length ? proveedoresDB : DEMO;
   renderProvs(list.filter(p => {
     const mc = currentCat === 'Todas' || p.rubro === currentCat;
     const mq = !q || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
-    const mp = !prov || p.provincia === prov;
-    const mpl = !plan || p.plan === plan;
-    return mc && mq && mp && mpl;
+    return mc && mq;
   }));
 }
 
@@ -830,108 +709,33 @@ function abrirWA(num) {
   else showToast('WhatsApp no disponible');
 }
 
-// ===== FAVORITOS =====
-function cargarFavoritosLocal() {
-  try { favoritos = JSON.parse(localStorage.getItem('eg_favs') || '[]'); } catch(e) { favoritos = []; }
-  actualizarBadgeFavs();
-}
-
-function guardarFavoritos() {
-  try { localStorage.setItem('eg_favs', JSON.stringify(favoritos)); } catch(e) {}
-  actualizarBadgeFavs();
-}
-
-function actualizarBadgeFavs() {
-  const badge = document.getElementById('fav-badge');
-  if (favoritos.length > 0) {
-    badge.style.display = 'flex';
-    badge.textContent = favoritos.length;
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-function toggleFavorito() {
-  if (!proveedorActual) return;
-  toggleFavoritoCard(proveedorActual.id);
-  const esFav = favoritos.some(f => f.id === proveedorActual.id);
-  document.getElementById('d-fav-btn').textContent = esFav ? '❤️' : '🤍';
-}
-
-function toggleFavoritoCard(id) {
-  const list = proveedoresDB.length ? proveedoresDB : DEMO;
-  const p = list.find(x => String(x.id) === String(id));
-  if (!p) return;
-  const idx = favoritos.findIndex(f => f.id === p.id);
-  if (idx >= 0) {
-    favoritos.splice(idx, 1);
-    showToast('Eliminado de favoritos');
-  } else {
-    favoritos.push(p);
-    showToast('❤️ Guardado en favoritos');
-  }
-  guardarFavoritos();
-  filterProvs();
-  renderFavoritos();
-}
-
-function renderFavoritos() {
-  const el = document.getElementById('favs-content');
-  if (!favoritos.length) {
-    el.innerHTML = '<div class="favs-empty"><div class="ei">❤️</div><p>Todavía no guardaste favoritos.<br>Tocá el ❤️ en cualquier proveedor.</p></div>';
-    return;
-  }
-  el.innerHTML = favoritos.map(p => {
-    const esPro = p.plan === 'pro';
-    return `<div class="prov-card" onclick="abrirDetalle('${p.id}')" style="margin-bottom:12px">
-      <div class="prov-logo">${getInicial(p.nombre)}</div>
-      <div class="prov-info">
-        <h3>${p.nombre}</h3>
-        <p>${p.descripcion||''}</p>
-        <div class="prov-badges">
-          <span class="badge blue">${p.rubro||'General'}</span>
-          ${esPro?'<span class="badge pro">⭐ PRO</span>':''}
-        </div>
-      </div>
-      <button class="fav-btn" onclick="event.stopPropagation();toggleFavoritoCard('${p.id}')" style="font-size:1.2rem">❤️</button>
-    </div>`;
-  }).join('');
-}
-
 // ===== DETALLE =====
 async function abrirDetalle(id) {
   const list = proveedoresDB.length ? proveedoresDB : DEMO;
   const p = list.find(x => String(x.id) === String(id));
   if (!p) return;
-  proveedorActual = p;
+
   prevScreen = document.querySelector('.screen.active')?.id?.replace('screen-','') || 'buscar';
   await addToHistorial(p);
 
   document.getElementById('d-logo').textContent = getInicial(p.nombre);
   document.getElementById('d-nombre').textContent = p.nombre;
-  document.getElementById('d-rubro').textContent = (p.rubro||'General') + ' · ' + (p.provincia||'Argentina');
+  document.getElementById('d-rubro').textContent = (p.rubro || 'General') + ' · ' + (p.provincia || 'Argentina');
   document.getElementById('d-desc').textContent = p.descripcion || 'Sin descripción disponible.';
   document.getElementById('d-minimo').textContent = p.pedido_minimo || 'Sin mínimo';
   document.getElementById('d-envios').textContent = p.envios || 'Consultar';
   document.getElementById('d-provincia').textContent = p.provincia || 'Argentina';
   document.getElementById('d-instagram').textContent = p.instagram || '—';
 
-  const esFav = favoritos.some(f => f.id === p.id);
-  document.getElementById('d-fav-btn').textContent = esFav ? '❤️' : '🤍';
-
   const esPro = p.plan === 'pro';
   document.getElementById('d-pro').style.display = esPro ? 'inline-flex' : 'none';
   const waBtn = document.getElementById('d-wa');
-  if (esPro && p.whatsapp) {
+  if (esPro) {
     waBtn.style.display = 'flex';
-    waBtn.onclick = () => abrirWA(p.whatsapp);
+    waBtn.onclick = () => abrirWA(p.whatsapp || '');
   } else {
     waBtn.style.display = 'none';
   }
-
-  // Reset calculadora
-  ['calc-costo','calc-venta','calc-cantidad'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('calc-result').style.display = 'none';
 
   await cargarProductosDetalle(p.id);
   goTo('detalle');
@@ -949,80 +753,18 @@ async function cargarProductosDetalle(provId) {
     grid.innerHTML = data.map(p => `
       <div class="mini-prod-card">
         <div class="mini-prod-img">${p.foto_url ? `<img src="${p.foto_url}" alt="${p.nombre}">` : (ICONOS[p.categoria]||'📦')}</div>
-        <div class="mini-prod-body"><h4>${p.nombre}</h4><div class="price">$${(p.precio||0).toLocaleString('es-AR')}</div></div>
+        <div class="mini-prod-body">
+          <h4>${p.nombre}</h4>
+          <div class="price">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        </div>
       </div>`).join('');
   } catch(e) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Sin productos</div>';
   }
 }
 
-function goBack() { goTo(prevScreen); }
-
-// ===== CALCULADORA =====
-function calcular() {
-  const costo = parseFloat(document.getElementById('calc-costo').value);
-  const venta = parseFloat(document.getElementById('calc-venta').value);
-  const cantidad = parseFloat(document.getElementById('calc-cantidad').value);
-  if (!costo || !venta || !cantidad) { document.getElementById('calc-result').style.display = 'none'; return; }
-  const inversion = costo * cantidad;
-  const ingresoTotal = venta * cantidad;
-  const ganancia = ingresoTotal - inversion;
-  const margen = ((ganancia / inversion) * 100).toFixed(0);
-  document.getElementById('calc-inversion').textContent = '$' + inversion.toLocaleString('es-AR');
-  document.getElementById('calc-ganancia').textContent = '$' + ganancia.toLocaleString('es-AR');
-  document.getElementById('calc-margen').textContent = margen + '%';
-  document.getElementById('calc-total').textContent = '$' + ingresoTotal.toLocaleString('es-AR');
-  document.getElementById('calc-result').style.display = 'grid';
-}
-
-// ===== CHAT =====
-function abrirChat() {
-  if (!proveedorActual) return;
-  abrirChatDirecto(proveedorActual.id);
-}
-
-function abrirChatDirecto(id) {
-  const list = proveedoresDB.length ? proveedoresDB : DEMO;
-  const p = list.find(x => String(x.id) === String(id));
-  if (!p) return;
-  prevScreen = document.querySelector('.screen.active')?.id?.replace('screen-','') || 'buscar';
-  document.getElementById('chat-prov-nombre').textContent = p.nombre;
-  document.getElementById('chat-prov-rubro').textContent = p.rubro || 'Proveedor';
-  chatMensajes = [{tipo:'recv',texto:`¡Hola! Soy ${p.nombre}. ¿En qué te puedo ayudar?`,hora:horaActual()}];
-  renderChat();
-  goTo('chat');
-}
-
-function renderChat() {
-  const el = document.getElementById('chat-messages');
-  el.innerHTML = chatMensajes.map(m => `
-    <div class="msg ${m.tipo}">
-      ${m.texto}
-      <div class="msg-time">${m.hora}</div>
-    </div>`).join('');
-  el.scrollTop = el.scrollHeight;
-}
-
-async function enviarMensaje() {
-  const input = document.getElementById('chat-input');
-  const texto = input.value.trim();
-  if (!texto) return;
-  input.value = '';
-  chatMensajes.push({tipo:'sent',texto,hora:horaActual()});
-  renderChat();
-  // Guardar en Supabase
-  try {
-    await sb.from('busquedas').insert({termino:'chat:'+texto});
-  } catch(e) {}
-  // Auto respuesta simulada
-  setTimeout(() => {
-    chatMensajes.push({tipo:'recv',texto:'Gracias por tu mensaje. Te responderemos a la brevedad. 👍',hora:horaActual()});
-    renderChat();
-  }, 1200);
-}
-
-function horaActual() {
-  return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+function goBack() {
+  goTo(prevScreen);
 }
 
 // ===== AUTH =====
@@ -1031,7 +773,6 @@ async function loginSimulado() {
   currentUser = user;
   try { await sb.from('usuarios').upsert({nombre:user.nombre,email:user.email},{onConflict:'email'}); } catch(e){}
   mostrarPerfil();
-  goTo('perfil');
   showToast('✓ Sesión iniciada');
 }
 
@@ -1096,7 +837,7 @@ function renderHistorial() {
     return;
   }
   el.innerHTML = historial.map(p => `
-    <div class="hist-item" onclick="abrirDetalle('${p.id}')">
+    <div class="hist-item" onclick="filterCat('${p.rubro}')">
       <div class="hist-logo">${getInicial(p.nombre)}</div>
       <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro} ${p.plan==='pro'?'· ⭐ PRO':''}</span></div>
       <span class="hist-time">${timeAgo(p.visitedAt)}</span>
@@ -1136,7 +877,8 @@ async function enviarRegistro() {
     instagram: document.getElementById('r-instagram').value,
     envios: document.getElementById('r-envios').value,
     pedido_minimo: document.getElementById('r-minimo').value,
-    plan: 'gratis', estado: 'pendiente'
+    plan: 'gratis',
+    estado: 'pendiente'
   };
   try { await sb.from('proveedores').insert(datos); } catch(e) {}
   ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id => document.getElementById(id).style.display = 'none');
@@ -1144,7 +886,7 @@ async function enviarRegistro() {
   window.scrollTo(0,0);
 }
 
-// ===== CATÁLOGO PROVEEDOR =====
+// ===== CATALOGO PROVEEDOR =====
 async function cargarProductosProveedor() {
   if (!currentUser?.proveedorId) { productos = []; renderProdGrid(); return; }
   try {
@@ -1222,7 +964,8 @@ async function guardarProducto() {
   if (!nombre || !precio) { showToast('Completá nombre y precio'); return; }
   showToast('Guardando...');
   const prod = {
-    nombre, precio: parseFloat(precio),
+    nombre,
+    precio: parseFloat(precio),
     stock: parseInt(document.getElementById('p-stock').value) || null,
     categoria: document.getElementById('p-cat').value,
     descripcion: document.getElementById('p-desc').value,
@@ -1233,11 +976,18 @@ async function guardarProducto() {
     if (data) {
       if (fotosSeleccionadas.length > 0) {
         const fotoUrl = await subirFoto(fotosSeleccionadas[0], data.id);
-        if (fotoUrl) { await sb.from('productos').update({foto_url:fotoUrl}).eq('id',data.id); data.foto_url = fotoUrl; }
+        if (fotoUrl) {
+          await sb.from('productos').update({foto_url: fotoUrl}).eq('id', data.id);
+          data.foto_url = fotoUrl;
+        }
       }
       productos.unshift(data);
-    } else { productos.unshift({...prod, id: Date.now()}); }
-  } catch(e) { productos.unshift({...prod, id: Date.now()}); }
+    } else {
+      productos.unshift({...prod, id: Date.now()});
+    }
+  } catch(e) {
+    productos.unshift({...prod, id: Date.now()});
+  }
   renderProdGrid();
   cerrarModalProducto();
   showToast('✓ Producto agregado');
@@ -1255,7 +1005,9 @@ async function subirFoto(file, prodId) {
   } catch(e) { return null; }
 }
 
-function guardarPerfil() { showToast('✓ Perfil guardado'); }
+function guardarPerfil() {
+  showToast('✓ Perfil guardado');
+}
 
 // ===== NAV =====
 function goTo(s) {
@@ -1265,7 +1017,6 @@ function goTo(s) {
   const navEl = document.getElementById('nav-'+s);
   if (navEl) navEl.classList.add('active');
   if (s === 'perfil' && currentUser) mostrarPerfil();
-  if (s === 'favoritos') renderFavoritos();
   window.scrollTo(0,0);
 }
 
@@ -1286,9 +1037,20 @@ const PREGUNTAS = [
 
 let testStep = 0, testAnswers = [], testSelected = null;
 
-function openTest() { resetTest(); document.getElementById('testModal').classList.add('open'); document.body.style.overflow = 'hidden'; }
-function cerrarTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow = ''; }
-function cerrarTestOnBg(e) { if (e.target === document.getElementById('testModal')) cerrarTest(); }
+function openTest() {
+  resetTest();
+  document.getElementById('testModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarTest() {
+  document.getElementById('testModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function cerrarTestOnBg(e) {
+  if (e.target === document.getElementById('testModal')) cerrarTest();
+}
 
 function resetTest() {
   testStep = 0; testAnswers = []; testSelected = null;
@@ -1314,15 +1076,20 @@ function renderPregunta() {
 
 function selectOpt(el, i) {
   document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
-  el.classList.add('selected'); testSelected = i;
+  el.classList.add('selected');
+  testSelected = i;
   document.getElementById('test-next').classList.add('ready');
 }
 
 function nextTestStep() {
   if (testSelected === null) return;
   testAnswers.push(testSelected);
-  if (testStep < PREGUNTAS.length-1) { testStep++; renderPregunta(); }
-  else mostrarResultado();
+  if (testStep < PREGUNTAS.length-1) {
+    testStep++;
+    renderPregunta();
+  } else {
+    mostrarResultado();
+  }
 }
 
 async function mostrarResultado() {
@@ -1341,7 +1108,8 @@ async function mostrarResultado() {
 
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})
     });
     const data = await res.json();
@@ -1351,7 +1119,7 @@ async function mostrarResultado() {
     document.getElementById('res-porque').textContent = parsed.porque;
     document.getElementById('res-tips').innerHTML = parsed.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
   } catch(e) {
-    const fb = [{rubro:'Moda',titulo:'Moda y Accesorios',porque:'La moda es muy accesible para empezar. Podés arrancar con poco capital y escalar rápido por redes.',tips:['Accesorios de bajo costo','Mostrá en Instagram','Proveedores en La Salada']},{rubro:'Bazar',titulo:'Bazar del Hogar',porque:'Alta rotación y demanda en ferias.',tips:['Combos de regalo','Ferias locales','Cocina vuela']},{rubro:'Tecnología',titulo:'Accesorios Tech',porque:'Márgenes muy buenos en MercadoLibre.',tips:['Fundas y cargadores','Comprá en cantidad','Usá MercadoLibre']}];
+    const fb = [{rubro:'Moda',titulo:'Moda y Accesorios',porque:'La moda es muy accesible para empezar. Podés arrancar con poco capital y escalar rápido por redes.',tips:['Accesorios de bajo costo','Mostrá en Instagram','Proveedores en La Salada']},{rubro:'Bazar',titulo:'Bazar del Hogar',porque:'Alta rotación y demanda en ferias. Con poco capital armás un catálogo variado.',tips:['Combos de regalo','Ferias locales','Cocina vuela']},{rubro:'Tecnología',titulo:'Accesorios Tech',porque:'Márgenes muy buenos en MercadoLibre. Ideal para ciudades grandes.',tips:['Fundas y cargadores','Comprá en cantidad','Usá MercadoLibre']}];
     const r = fb[Math.floor(Math.random()*fb.length)];
     rubroResult = r.rubro;
     document.getElementById('res-titulo').textContent = r.titulo;
@@ -1365,14 +1133,13 @@ async function mostrarResultado() {
 // ===== TOAST =====
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
+  t.textContent = msg;
+  t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ===== START =====
 init();
-const SKEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
-
 </script>
 </body>
 </html>
