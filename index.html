@@ -5,14 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>EmprendeGo</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-// ===== SUPABASE CONFIG =====
-const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-</script>
 <style>
 :root{
   --blue:#1a6bff;--blue-light:#e8f0ff;--navy:#0d1b3e;--gray:#6b7a99;
@@ -24,6 +17,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .screen{display:none;min-height:100vh;padding-bottom:80px;animation:fadeIn .25s ease}
 .screen.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* TOPBAR */
 .topbar{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:100}
@@ -35,52 +31,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
 .hero-blob1{position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,#ffd6e8 0%,#e0e7ff 50%,transparent 70%);opacity:.8}
 .hero-blob2{position:absolute;bottom:-40px;left:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,#d4f4e8 0%,#dce9ff 60%,transparent 75%);opacity:.7}
-.hero-blob3{position:absolute;top:60px;left:30%;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,#fff3cd 0%,transparent 70%);opacity:.6}
 .hero-content{position:relative;z-index:1;padding:28px 24px 0}
 .hero-pill{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;font-size:.75rem;font-weight:700;padding:6px 14px;border-radius:20px;margin-bottom:20px;box-shadow:0 4px 14px rgba(26,107,255,.3)}
 .hero-pill .dot{width:6px;height:6px;background:white;border-radius:50%;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
 .hero h1{font-family:'Sora',sans-serif;font-size:2.1rem;font-weight:900;line-height:1.15;margin-bottom:14px;color:var(--navy)}
 .hero h1 .grad{background:linear-gradient(135deg,var(--blue),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero h1 .grad2{background:linear-gradient(135deg,var(--orange),#ffb347);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .hero-sub{color:var(--gray);font-size:.95rem;line-height:1.65;margin-bottom:24px}
-.hero-cta-row{display:flex;flex-direction:column;gap:10px}
-.btn-primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px 20px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(26,107,255,.35);transition:all .2s;width:100%}
-.btn-primary:active{transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px 20px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 24px rgba(26,107,255,.35);transition:all .2s;width:100%;margin-bottom:10px}
 .btn-secondary{background:linear-gradient(135deg,#fff3e0,#ffe0cc);color:var(--orange);border:1.5px solid #ffcba4;border-radius:14px;padding:15px 20px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;width:100%}
 .hero-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:24px;padding:0 24px}
 .stat-card{background:white;border-radius:14px;padding:14px 10px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)}
 .stat-num{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .stat-label{font-size:.7rem;color:var(--gray);font-weight:600;margin-top:2px}
-.hero-scroll{padding:20px 24px 0}
-.scroll-label{font-size:.78rem;font-weight:700;color:var(--gray);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
-.rubros-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}
+.rubros-scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:16px 24px 0}
 .rubros-scroll::-webkit-scrollbar{display:none}
-.rubro-pill{display:flex;align-items:center;gap:6px;white-space:nowrap;background:white;border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:600;cursor:pointer;transition:all .2s;flex-shrink:0}
-.rubro-pill:nth-child(1){border-color:#ffd6e8;background:#fff5f8;color:var(--pink)}
-.rubro-pill:nth-child(2){border-color:#dce9ff;background:#f0f5ff;color:var(--blue)}
-.rubro-pill:nth-child(3){border-color:#d4f4e8;background:#f0fdf8;color:var(--green)}
-.rubro-pill:nth-child(4){border-color:#ffe0cc;background:#fff8f5;color:var(--orange)}
-.rubro-pill:nth-child(5){border-color:#e9d8fd;background:#f5f0ff;color:var(--purple)}
+.rubro-pill{white-space:nowrap;background:white;border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:600;cursor:pointer;flex-shrink:0;color:var(--navy)}
+.ai-banner{margin:20px 20px 0;background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:22px 20px;cursor:pointer}
+.ai-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:10px}
+.ai-banner h3{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:white;margin-bottom:6px}
+.ai-banner p{color:rgba(255,255,255,.65);font-size:.83rem;line-height:1.5;margin-bottom:16px}
+.ai-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:11px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer}
 .section{padding:24px 20px 0}
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .section-header h2{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800}
 .section-header span{color:var(--blue);font-size:.85rem;font-weight:600;cursor:pointer}
 .section-sub{color:var(--gray);font-size:.85rem;margin-bottom:16px}
 .cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px 0}
-.cat-card{border-radius:var(--radius);overflow:hidden;aspect-ratio:1;position:relative;cursor:pointer;transition:transform .2s}
-.cat-card:active{transform:scale(.97)}
+.cat-card{border-radius:var(--radius);overflow:hidden;aspect-ratio:1;position:relative;cursor:pointer}
 .cat-card img{width:100%;height:100%;object-fit:cover}
-.cat-card .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 60%)}
+.cat-card .overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65),transparent 60%)}
 .cat-card .label{position:absolute;bottom:12px;left:14px;color:white}
 .cat-card .label strong{font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;display:block}
 .cat-card .label span{font-size:.75rem;opacity:.85}
-.ai-banner{margin:20px 20px 0;background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:22px 20px;position:relative;overflow:hidden;cursor:pointer}
-.ai-banner::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.4),transparent 70%)}
-.ai-banner .ai-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;font-size:.72rem;font-weight:700;padding:4px 12px;border-radius:20px;margin-bottom:10px}
-.ai-banner h3{font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:800;color:white;margin-bottom:6px}
-.ai-banner p{color:rgba(255,255,255,.65);font-size:.83rem;line-height:1.5;margin-bottom:16px}
-.ai-banner .ai-btn{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:11px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer}
 .how{padding:24px 20px}
 .how h2{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;margin-bottom:4px}
 .how p{color:var(--gray);font-size:.85rem;margin-bottom:20px}
@@ -95,11 +78,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .search-box input{border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);flex:1;background:transparent}
 .chips{display:flex;gap:8px;padding:14px 20px 0;overflow-x:auto;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{white-space:nowrap;border:1.5px solid #e0e7ff;background:white;color:var(--gray);padding:7px 16px;border-radius:20px;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s;flex-shrink:0}
+.chip{white-space:nowrap;border:1.5px solid #e0e7ff;background:white;color:var(--gray);padding:7px 16px;border-radius:20px;font-size:.85rem;font-weight:600;cursor:pointer;flex-shrink:0}
 .chip.active{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border-color:transparent}
 .prov-list{padding:12px 20px 0;display:flex;flex-direction:column;gap:12px}
-.prov-card{background:white;border-radius:var(--radius);padding:16px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.04);transition:box-shadow .2s}
-.prov-card:active{box-shadow:0 4px 20px rgba(26,107,255,.15)}
+.prov-card{background:white;border-radius:var(--radius);padding:16px;display:flex;gap:14px;align-items:flex-start;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.04)}
 .prov-logo{width:52px;height:52px;border-radius:12px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.1rem;color:var(--blue);flex-shrink:0}
 .prov-info{flex:1}
 .prov-info h3{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:3px}
@@ -113,10 +95,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .btn-wa{background:#25d366;color:white;border:none;border-radius:10px;padding:7px 12px;font-size:.75rem;font-weight:700;cursor:pointer}
 .btn-chat{background:var(--blue-light);color:var(--blue);border:none;border-radius:10px;padding:7px 12px;font-size:.75rem;font-weight:700;cursor:pointer}
 
+/* DETALLE PROVEEDOR */
+.detalle-hero{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:20px 20px 24px}
+.detalle-back{background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 14px;color:white;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
+.detalle-logo-big{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:1.4rem;color:white;margin-bottom:12px}
+.detalle-nombre{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:white;margin-bottom:4px}
+.detalle-rubro-txt{color:rgba(255,255,255,.7);font-size:.85rem;margin-bottom:12px}
+.detalle-badges{display:flex;gap:8px;flex-wrap:wrap}
+.detalle-body{padding:20px}
+.info-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px}
+.info-card-title{font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
+.info-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f4f7ff;font-size:.88rem}
+.info-row:last-child{border-bottom:none}
+.info-icon{font-size:1rem;width:24px;text-align:center;flex-shrink:0}
+.info-key{color:var(--gray);font-size:.78rem;flex:1}
+.info-val{color:var(--navy);font-weight:600}
+.detalle-desc-box{background:white;border-radius:14px;padding:16px;margin-bottom:12px;font-size:.88rem;color:var(--gray);line-height:1.7}
+.detalle-cta{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.btn-wa-big{background:#25d366;color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.btn-chat-big{background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
+.detalle-prods-section{padding:0 20px 20px}
+.detalle-prods-section h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:14px}
+.mini-prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini-prod-card{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.mini-prod-img{width:100%;aspect-ratio:1;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+.mini-prod-img img{width:100%;height:100%;object-fit:cover}
+.mini-prod-body{padding:8px 10px}
+.mini-prod-body h4{font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;margin-bottom:2px}
+.mini-prod-body .price{font-size:.78rem;font-weight:700;color:var(--blue)}
+
 /* PLANES */
 .planes-hero{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:32px 24px;text-align:center}
 .planes-hero h2{font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;color:white;margin-bottom:8px}
-.planes-hero p{color:#8899bb;font-size:.9rem;line-height:1.6}
+.planes-hero p{color:#8899bb;font-size:.9rem}
 .plan-cards{padding:20px;display:flex;flex-direction:column;gap:16px}
 .plan-card{background:white;border-radius:20px;padding:24px;border:2px solid transparent}
 .plan-card.pro{border-color:var(--blue);position:relative;overflow:hidden}
@@ -124,243 +135,163 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .plan-tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px}
 .plan-tag.pro{color:var(--blue)}
 .plan-name{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px}
-.plan-desc{color:var(--gray);font-size:.85rem;margin-bottom:16px}
-.plan-price{display:flex;align-items:flex-end;gap:4px;margin-bottom:20px}
-.plan-price .amount{font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800;color:var(--navy)}
+.plan-price{display:flex;align-items:flex-end;gap:4px;margin:12px 0 20px}
+.plan-price .amount{font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800}
 .plan-price .period{color:var(--gray);font-size:.85rem;padding-bottom:8px}
 .plan-features{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-.plan-features li{display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)}
+.plan-features li{display:flex;align-items:center;gap:10px;font-size:.88rem}
 .plan-features li::before{content:'✓';width:20px;height:20px;background:var(--blue-light);color:var(--blue);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0}
 .plan-card.pro .plan-features li::before{background:linear-gradient(135deg,var(--blue),var(--purple));color:white}
-.plan-btn{width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;transition:all .2s}
+.plan-btn{width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none}
 .plan-btn.free{background:var(--light);color:var(--navy)}
 .plan-btn.paid{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;box-shadow:0 6px 20px rgba(26,107,255,.3)}
 
 /* REGISTRO */
-.reg-form{padding:24px 20px;display:flex;flex-direction:column;gap:16px}
-.form-group{display:flex;flex-direction:column;gap:6px}
+.reg-body{padding:24px 20px}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
 .form-group label{font-size:.82rem;font-weight:600;color:var(--navy)}
-.form-group input,.form-group select,.form-group textarea{background:white;border:1.5px solid #e0e7ff;border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;transition:border-color .15s}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue)}
+.form-group input,.form-group select,.form-group textarea{background:white;border:1.5px solid #e0e7ff;border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none}
 .form-group textarea{resize:none;min-height:80px}
-.submit-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(26,107,255,.3);transition:all .2s;width:100%}
-.submit-btn:active{transform:scale(.97)}
-.google-btn{display:flex;align-items:center;gap:10px;background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;color:var(--navy);box-shadow:0 2px 10px rgba(0,0,0,.05);justify-content:center;transition:all .2s;width:100%}
-.google-btn:hover{border-color:var(--blue);box-shadow:0 4px 16px rgba(26,107,255,.15)}
-.g-logo{font-family:'Sora',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.submit-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.reg-step-bar{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.reg-back-btn{background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700}
+.reg-step-info{flex:1}
+.reg-step-label{font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.reg-step-progress{height:4px;background:#e0e7ff;border-radius:2px}
+.reg-step-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px}
 
-/* ===== PERFIL USUARIO ===== */
+/* PERFIL */
 .perfil-header{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:28px 24px 24px}
-.perfil-avatar{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.3);margin-bottom:12px;object-fit:cover}
-.perfil-avatar-placeholder{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.4rem;color:white;margin-bottom:12px}
+.perfil-avatar-ph{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.4rem;color:white;margin-bottom:12px}
 .perfil-name{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;color:white;margin-bottom:4px}
 .perfil-email{color:rgba(255,255,255,.6);font-size:.85rem}
-.perfil-badge-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.perfil-type-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700}
-.perfil-type-badge.explorer{background:rgba(255,255,255,.12);color:white}
-.perfil-type-badge.prov{background:linear-gradient(135deg,var(--blue),var(--purple));color:white}
-
-/* HISTORIAL */
-.historial-section{padding:20px 20px 0}
-.historial-section h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.hist-list{display:flex;flex-direction:column;gap:10px}
-.hist-item{background:white;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer}
-.hist-item:active{opacity:.8}
+.hist-section{padding:20px}
+.hist-section h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:14px}
+.hist-item{background:white;border-radius:14px;padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;margin-bottom:10px}
 .hist-logo{width:40px;height:40px;border-radius:10px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:.9rem;color:var(--blue);flex-shrink:0}
 .hist-info{flex:1}
 .hist-info strong{font-size:.88rem;font-weight:700;display:block}
 .hist-info span{font-size:.75rem;color:var(--gray)}
 .hist-time{font-size:.72rem;color:var(--gray)}
-.perfil-actions{padding:20px}
-.action-row{display:flex;flex-direction:column;gap:10px}
-.action-btn{background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--navy)}
-.action-btn.danger{border-color:#fee2e2;color:#ef4444}
-.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:14px;padding:14px;color:#ef4444;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+.perfil-actions{padding:0 20px 20px;display:flex;flex-direction:column;gap:10px}
+.action-btn{background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--navy);width:100%;text-align:left}
+.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:14px;padding:14px;color:#ef4444;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%}
+.google-btn{display:flex;align-items:center;gap:10px;background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;color:var(--navy);justify-content:center;width:100%;margin-bottom:10px}
+.g-logo{font-family:'Sora',sans-serif;font-weight:800;font-size:1.1rem;background:linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 
-/* ===== DASHBOARD PROVEEDOR ===== */
-.dash-header{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:24px 20px;position:relative;overflow:hidden}
-.dash-header::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.3),transparent 70%)}
+/* DASHBOARD PROVEEDOR */
+.dash-header{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:24px 20px}
 .dash-top{display:flex;align-items:center;gap:14px;margin-bottom:16px}
-.dash-avatar{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.2rem;color:white;flex-shrink:0;overflow:hidden}
-.dash-avatar img{width:100%;height:100%;object-fit:cover}
+.dash-avatar{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:1.2rem;color:white;flex-shrink:0}
 .dash-info{flex:1}
 .dash-info h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:white;margin-bottom:4px}
 .dash-info p{color:rgba(255,255,255,.6);font-size:.78rem}
-.dash-pro-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f59e0b,#f97316);color:white;font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:20px}
-.dash-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.dash-stat{background:rgba(255,255,255,.1);border-radius:14px;padding:14px;backdrop-filter:blur(10px)}
+.dash-pro{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f59e0b,#f97316);color:white;font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:20px}
+.dash-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dash-stat{background:rgba(255,255,255,.1);border-radius:14px;padding:14px}
 .dash-stat-val{font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white}
-.dash-stat-val span{font-size:.75rem;font-weight:600;color:var(--green);margin-left:4px}
-.dash-stat-label{font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-
-/* RANKING */
+.dash-stat-val small{font-size:.72rem;font-weight:600;color:var(--green);margin-left:4px}
+.dash-stat-label{font-size:.7rem;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;text-transform:uppercase}
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
-.rank-num{font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;min-width:50px}
+.rank-num{font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;min-width:50px}
 .rank-info strong{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;display:block;margin-bottom:2px}
 .rank-info span{font-size:.78rem;color:var(--gray)}
-.rank-trend{margin-left:auto;display:flex;flex-direction:column;align-items:center;gap:2px}
-.rank-trend .arrow{font-size:1.2rem}
+.rank-trend{margin-left:auto;text-align:center}
 .rank-trend span{font-size:.7rem;color:var(--green);font-weight:700}
-
-/* TABS */
-.dash-tabs{display:flex;gap:0;padding:16px 20px 0;border-bottom:1px solid #eef0f8;margin-bottom:0;overflow-x:auto;scrollbar-width:none}
+.dash-tabs{display:flex;padding:16px 20px 0;border-bottom:1px solid #eef0f8;overflow-x:auto;scrollbar-width:none}
 .dash-tabs::-webkit-scrollbar{display:none}
 .dash-tab{white-space:nowrap;padding:10px 16px;font-size:.85rem;font-weight:700;color:var(--gray);cursor:pointer;border-bottom:2px solid transparent;flex-shrink:0}
 .dash-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab-content{display:none;padding:16px 20px 0}
-.tab-content.active{display:block}
-
-/* CATALOGO */
-.cat-actions{display:flex;justify-content:flex-end;margin-bottom:14px}
-.add-prod-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:10px 16px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tab-pane{display:none;padding:16px 20px 0}
+.tab-pane.active{display:block}
 .prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .prod-card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.prod-img{width:100%;aspect-ratio:1;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:2rem}
+.prod-img-box{width:100%;aspect-ratio:1;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+.prod-img-box img{width:100%;height:100%;object-fit:cover}
 .prod-body{padding:10px}
 .prod-body h4{font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:2px}
-.prod-body .price{font-size:.8rem;font-weight:700;color:var(--blue)}
-.prod-body .stock{font-size:.72rem;color:var(--gray)}
-.prod-actions{display:flex;gap:6px;margin-top:8px}
-.prod-edit-btn{flex:1;background:var(--blue-light);color:var(--blue);border:none;border-radius:8px;padding:6px;font-size:.72rem;font-weight:700;cursor:pointer}
-.prod-del-btn{background:#fee2e2;color:#ef4444;border:none;border-radius:8px;padding:6px 8px;font-size:.72rem;font-weight:700;cursor:pointer}
+.prod-body .prod-price{font-size:.8rem;font-weight:700;color:var(--blue)}
+.prod-body .prod-stock{font-size:.72rem;color:var(--gray)}
+.prod-btns{display:flex;gap:6px;margin-top:8px}
+.prod-edit{flex:1;background:var(--blue-light);color:var(--blue);border:none;border-radius:8px;padding:6px;font-size:.72rem;font-weight:700;cursor:pointer}
+.prod-del{background:#fee2e2;color:#ef4444;border:none;border-radius:8px;padding:6px 8px;font-size:.72rem;font-weight:700;cursor:pointer}
+.add-prod-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:10px 16px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-bottom:14px;display:flex;align-items:center;gap:6px}
 
-/* ANUNCIOS */
-.anuncio-card{background:white;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.anuncio-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.anuncio-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800}
-.anuncio-status{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px}
-.anuncio-status.active{background:#e6faf4;color:var(--green)}
-.anuncio-status.paused{background:#fff3e0;color:var(--orange)}
-.anuncio-preview{background:var(--navy);border-radius:12px;padding:14px;margin-bottom:12px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:white;text-align:center;min-height:60px;display:flex;align-items:center;justify-content:center}
-.anuncio-bar-label{display:flex;justify-content:space-between;font-size:.75rem;color:var(--gray);margin-bottom:6px}
-.anuncio-bar{height:6px;background:#e0e7ff;border-radius:3px;overflow:hidden;margin-bottom:12px}
-.anuncio-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--blue),var(--purple))}
-.anuncio-btns{display:flex;gap:8px}
-.anuncio-btn{flex:1;padding:9px;border-radius:10px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;border:none}
-.anuncio-btn.edit{background:var(--blue-light);color:var(--blue)}
-.anuncio-btn.pause{background:#fff3e0;color:var(--orange)}
-.nueva-campaña-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:4px}
+/* FOTO UPLOAD */
+.foto-upload-area{border:2px dashed #e0e7ff;border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:#fafbff;margin-bottom:8px}
+.foto-preview{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.foto-prev-item{aspect-ratio:1;border-radius:10px;overflow:hidden;position:relative;background:var(--blue-light)}
+.foto-prev-item img{width:100%;height:100%;object-fit:cover}
+.foto-prev-item button{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;cursor:pointer}
 
-/* AI TEST MODAL */
+/* MODAL */
 .modal-overlay{position:fixed;inset:0;background:rgba(13,27,62,.6);z-index:500;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px)}
-.modal-overlay.open{display:flex;animation:fadeIn .2s ease}
-.modal{background:white;width:100%;max-width:430px;border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-overlay.open{display:flex}
+.modal-sheet{background:white;width:100%;max-width:430px;border-radius:24px 24px 0 0;max-height:92vh;overflow-y:auto;animation:slideUp .3s ease}
 .modal-handle{width:40px;height:4px;background:#e0e7ff;border-radius:2px;margin:14px auto 0}
-.modal-header{padding:16px 24px 0;display:flex;align-items:center;justify-content:space-between}
-.modal-header h3{font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:800}
+.modal-head{padding:16px 24px 0;display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:800}
 .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray)}
 .modal-body{padding:20px 24px 32px}
 .progress-bar{height:4px;background:#e0e7ff;border-radius:2px;margin-bottom:24px;overflow:hidden}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;transition:width .4s ease}
-.step-indicator{font-size:.78rem;color:var(--gray);font-weight:600;margin-bottom:8px}
-.q-text{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:var(--navy);margin-bottom:6px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px;transition:width .4s}
+.step-ind{font-size:.78rem;color:var(--gray);font-weight:600;margin-bottom:8px}
+.q-text{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:6px}
 .q-sub{font-size:.85rem;color:var(--gray);margin-bottom:20px;line-height:1.5}
-.options-grid{display:flex;flex-direction:column;gap:10px}
-.opt-btn{background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .2s;text-align:left}
+.opts-grid{display:flex;flex-direction:column;gap:10px}
+.opt-btn{background:white;border:1.5px solid #e0e7ff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left}
 .opt-btn.selected{border-color:var(--blue);background:var(--blue-light)}
 .opt-icon{font-size:1.4rem;width:36px;text-align:center;flex-shrink:0}
-.opt-label{font-size:.9rem;font-weight:600;color:var(--navy)}
-.opt-sub{font-size:.78rem;color:var(--gray)}
-.next-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-top:20px;opacity:.5;pointer-events:none;transition:all .2s}
+.opt-label{font-size:.9rem;font-weight:600}
+.opt-sub-txt{font-size:.78rem;color:var(--gray)}
+.next-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-top:20px;opacity:.5;pointer-events:none}
 .next-btn.ready{opacity:1;pointer-events:all}
-.result-section{display:none}
-.result-section.show{display:block}
-.result-loading{text-align:center;padding:30px 0}
-.result-loading .ai-spinner{width:60px;height:60px;border-radius:50%;border:4px solid #e0e7ff;border-top-color:var(--blue);animation:spin 1s linear infinite;margin:0 auto 16px}
-@keyframes spin{to{transform:rotate(360deg)}}
+.result-box{display:none}
+.result-box.show{display:block}
 .result-card{background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:24px;color:white;margin-bottom:16px}
-.result-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;font-size:.75rem;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:14px}
 .result-rubro{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:8px}
 .result-why{font-size:.88rem;color:rgba(255,255,255,.75);line-height:1.6;margin-bottom:16px}
 .result-chips{display:flex;flex-wrap:wrap;gap:8px}
 .result-chip{background:rgba(255,255,255,.15);color:white;font-size:.78rem;font-weight:600;padding:5px 12px;border-radius:20px}
-
-/* ADD PRODUCT MODAL */
-.prod-modal{background:white;width:100%;max-width:430px;border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
+.spinner{width:50px;height:50px;border-radius:50%;border:4px solid #e0e7ff;border-top-color:var(--blue);animation:spin 1s linear infinite;margin:30px auto}
 
 /* NAVBAR */
 .navbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:white;border-top:1px solid #eef0f8;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
-.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;cursor:pointer;transition:all .15s}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;cursor:pointer}
 .nav-icon{font-size:1.3rem}
-.nav-label{font-size:.62rem;font-weight:600;color:#aab2cc;letter-spacing:.03em;text-transform:uppercase}
+.nav-label{font-size:.62rem;font-weight:600;color:#aab2cc;text-transform:uppercase}
 .nav-item.active .nav-label{color:var(--blue)}
 
 /* TOAST */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* EMPTY STATE */
-.empty-state{text-align:center;padding:40px 20px;color:var(--gray)}
-.empty-state .ei{font-size:2.5rem;margin-bottom:12px}
-.empty-state p{font-size:.88rem;line-height:1.6}
-
-/* DETALLE PROVEEDOR */
-.detalle-hero{background:linear-gradient(135deg,var(--navy),#1a2d6b);padding:20px 20px 24px;position:relative;overflow:hidden}
-.detalle-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,.3),transparent 70%)}
-.detalle-back{background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 14px;color:white;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:16px;display:inline-flex;align-items:center;gap:6px}
-.detalle-logo{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:1.4rem;color:white;margin-bottom:12px;overflow:hidden}
-.detalle-logo img{width:100%;height:100%;object-fit:cover}
-.detalle-nombre{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:white;margin-bottom:4px}
-.detalle-rubro{color:rgba(255,255,255,.7);font-size:.85rem;margin-bottom:12px}
-.detalle-badges{display:flex;gap:8px;flex-wrap:wrap}
-.detalle-info{padding:20px}
-.info-card{background:white;border-radius:14px;padding:16px;margin-bottom:12px}
-.info-card-title{font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px}
-.info-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f4f7ff;font-size:.88rem}
-.info-row:last-child{border-bottom:none}
-.info-row .icon{font-size:1rem;width:24px;text-align:center;flex-shrink:0}
-.info-row .val{color:var(--navy);font-weight:500}
-.info-row .key{color:var(--gray);font-size:.78rem;margin-right:auto}
-.detalle-desc{background:white;border-radius:14px;padding:16px;margin-bottom:12px;font-size:.88rem;color:var(--gray);line-height:1.7}
-.detalle-cta{display:flex;flex-direction:column;gap:10px;padding:0 0 16px}
-.btn-wa-big{background:#25d366;color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
-.btn-chat-big{background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;width:100%}
-.detalle-prods{padding:0 20px 20px}
-.detalle-prods h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:14px}
-.detalle-prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.detalle-prod-card{background:white;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-.detalle-prod-img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:2rem}
-.detalle-prod-img img{width:100%;height:100%;object-fit:cover}
-.detalle-prod-body{padding:8px 10px}
-.detalle-prod-body h4{font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;margin-bottom:2px}
-.detalle-prod-body .price{font-size:.78rem;font-weight:700;color:var(--blue)}
-
-/* FOTO UPLOAD */
-.foto-upload-area{border:2px dashed #e0e7ff;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafbff}
-.foto-upload-area:hover{border-color:var(--blue);background:var(--blue-light)}
-.foto-upload-area input{display:none}
-.foto-preview{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px}
-.foto-preview-item{aspect-ratio:1;border-radius:10px;overflow:hidden;position:relative;background:var(--blue-light)}
-.foto-preview-item img{width:100%;height:100%;object-fit:cover}
-.foto-preview-item .remove-foto{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;cursor:pointer;display:flex;align-items:center;justify-content:center}
+</style>
 </head>
 <body>
 
+<!-- NAVBAR -->
 <nav class="navbar">
   <div class="nav-item active" id="nav-inicio" onclick="goTo('inicio')"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></div>
   <div class="nav-item" id="nav-buscar" onclick="goTo('buscar')"><span class="nav-icon">🔍</span><span class="nav-label">Buscar</span></div>
-  <div class="nav-item" id="nav-registro" onclick="goTo('registro')"><span class="nav-icon">🏭</span><span class="nav-label">Proveedores</span></div>
+  <div class="nav-item" id="nav-registro" onclick="goTo('registro')"><span class="nav-icon">🏭</span><span class="nav-label">Proveed.</span></div>
   <div class="nav-item" id="nav-planes" onclick="goTo('planes')"><span class="nav-icon">⭐</span><span class="nav-label">Plan Pro</span></div>
   <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon">👤</span><span class="nav-label">Perfil</span></div>
 </nav>
 
-<!-- ===== INICIO ===== -->
+<!-- INICIO -->
 <div class="screen active" id="screen-inicio">
   <div class="topbar">
     <span class="topbar-logo">EmprendeGo</span>
-    <button class="topbar-btn" id="topbar-login-btn" onclick="goTo('perfil')">→ Ingresar</button>
+    <button class="topbar-btn" id="topbar-btn" onclick="goTo('perfil')">→ Ingresar</button>
   </div>
   <div class="hero">
-    <div class="hero-bg"><div class="hero-blob1"></div><div class="hero-blob2"></div><div class="hero-blob3"></div></div>
+    <div class="hero-bg"><div class="hero-blob1"></div><div class="hero-blob2"></div></div>
     <div class="hero-content">
       <div class="hero-pill"><span class="dot"></span> Marketplace Mayorista Argentina</div>
       <h1>Tu negocio <span class="grad">mayorista</span> arranca <span class="grad2">hoy.</span></h1>
       <p class="hero-sub">Conectate con proveedores reales, encontrá tu rubro ideal y empezá a vender desde casa — sin experiencia previa.</p>
-      <div class="hero-cta-row">
-        <button class="btn-primary" onclick="goTo('buscar')">🔍 Explorar Proveedores</button>
-        <button class="btn-secondary" onclick="openTest()">🤖 Test IA — ¿Qué vender?</button>
-      </div>
+      <button class="btn-primary" onclick="goTo('buscar')">🔍 Explorar Proveedores</button>
+      <button class="btn-secondary" onclick="openTest()">🤖 Test IA — ¿Qué vender?</button>
     </div>
   </div>
   <div class="hero-stats">
@@ -368,20 +299,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Rubros</div></div>
     <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Para empezar</div></div>
   </div>
-  <div class="hero-scroll">
-    <div class="scroll-label">Explorá por rubro</div>
-    <div class="rubros-scroll">
-      <div class="rubro-pill" onclick="filterCat('Moda')">👗 Moda</div>
-      <div class="rubro-pill" onclick="filterCat('Tecnología')">💻 Tecnología</div>
-      <div class="rubro-pill" onclick="filterCat('Hogar')">🏠 Hogar</div>
-      <div class="rubro-pill" onclick="filterCat('Bazar')">🛒 Bazar</div>
-      <div class="rubro-pill" onclick="filterCat('Alimentos')">🥗 Alimentos</div>
-    </div>
+  <div class="rubros-scroll">
+    <div class="rubro-pill" onclick="filterCat('Moda')">👗 Moda</div>
+    <div class="rubro-pill" onclick="filterCat('Tecnología')">💻 Tecnología</div>
+    <div class="rubro-pill" onclick="filterCat('Hogar')">🏠 Hogar</div>
+    <div class="rubro-pill" onclick="filterCat('Bazar')">🛒 Bazar</div>
+    <div class="rubro-pill" onclick="filterCat('Alimentos')">🥗 Alimentos</div>
   </div>
   <div class="ai-banner" onclick="openTest()">
     <div class="ai-tag">✨ Powered by IA</div>
     <h3>¿No sabés qué vender?</h3>
-    <p>Nuestro test inteligente analiza tu localidad, capital y experiencia para recomendarte el rubro ideal.</p>
+    <p>Nuestro test analiza tu localidad, capital y experiencia para recomendarte el rubro ideal.</p>
     <button class="ai-btn">Hacer el test gratis →</button>
   </div>
   <div class="section">
@@ -397,18 +325,18 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   <div class="how">
     <h2>¿Cómo funciona?</h2><p>Tres pasos para empezar a vender</p>
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Explorá proveedores</strong><span>Filtrá por rubro, presupuesto y zona.</span></div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Contactá directo</strong><span>Chat interno o WhatsApp según el plan.</span></div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Empezá a vender</strong><span>Comprá al por mayor y revendé desde casa.</span></div></div>
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Explorá proveedores</strong><span>Filtrá por rubro y zona.</span></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Contactá directo</strong><span>Chat interno o WhatsApp.</span></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Empezá a vender</strong><span>Comprá al por mayor desde casa.</span></div></div>
     </div>
   </div>
 </div>
 
-<!-- ===== BUSCAR ===== -->
+<!-- BUSCAR -->
 <div class="screen" id="screen-buscar">
   <div class="topbar"><span class="topbar-logo">Explorar</span></div>
   <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Explorar Proveedores</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Encontrá el socio ideal para tu negocio</p></div>
-  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar por nombre o categoría..." id="searchInput" oninput="filterProvs()"></div>
+  <div class="search-box"><span>🔍</span><input type="text" id="searchInput" placeholder="Buscar por nombre o categoría..." oninput="filterProvs()"></div>
   <div class="chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
     <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
@@ -417,48 +345,47 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="chip" onclick="setChip(this,'Bazar')">Bazar</div>
     <div class="chip" onclick="setChip(this,'Alimentos')">Alimentos</div>
   </div>
-  <div class="prov-list" id="provList"></div>
+  <div class="prov-list" id="provList"><div style="text-align:center;padding:30px;color:var(--gray)">Cargando...</div></div>
 </div>
 
-<!-- ===== DETALLE PROVEEDOR ===== -->
+<!-- DETALLE PROVEEDOR -->
 <div class="screen" id="screen-detalle">
   <div class="detalle-hero">
     <button class="detalle-back" onclick="goBack()">← Volver</button>
-    <div class="detalle-logo" id="detalle-logo"><span id="detalle-inicial">EG</span></div>
-    <div class="detalle-nombre" id="detalle-nombre">Proveedor</div>
-    <div class="detalle-rubro" id="detalle-rubro">Rubro · Provincia</div>
+    <div class="detalle-logo-big" id="d-logo">EG</div>
+    <div class="detalle-nombre" id="d-nombre">Proveedor</div>
+    <div class="detalle-rubro-txt" id="d-rubro">Rubro</div>
     <div class="detalle-badges">
-      <span class="badge pro" id="detalle-pro-badge" style="display:none">⭐ PRO</span>
+      <span class="badge pro" id="d-pro" style="display:none">⭐ PRO</span>
       <span class="badge green">✓ Verificado</span>
     </div>
   </div>
-  <div class="detalle-info">
-    <div class="detalle-desc" id="detalle-desc">Cargando descripción...</div>
+  <div class="detalle-body">
+    <div class="detalle-desc-box" id="d-desc">—</div>
     <div class="info-card">
-      <div class="info-card-title">Información del negocio</div>
-      <div class="info-row"><span class="icon">📦</span><span class="key">Pedido mínimo</span><span class="val" id="detalle-minimo">—</span></div>
-      <div class="info-row"><span class="icon">🚚</span><span class="key">Envíos</span><span class="val" id="detalle-envios">—</span></div>
-      <div class="info-row"><span class="icon">📍</span><span class="key">Provincia</span><span class="val" id="detalle-provincia">—</span></div>
-      <div class="info-row"><span class="icon">📱</span><span class="key">Instagram</span><span class="val" id="detalle-instagram">—</span></div>
+      <div class="info-card-title">Información</div>
+      <div class="info-row"><span class="info-icon">📦</span><span class="info-key">Pedido mínimo</span><span class="info-val" id="d-minimo">—</span></div>
+      <div class="info-row"><span class="info-icon">🚚</span><span class="info-key">Envíos</span><span class="info-val" id="d-envios">—</span></div>
+      <div class="info-row"><span class="info-icon">📍</span><span class="info-key">Provincia</span><span class="info-val" id="d-provincia">—</span></div>
+      <div class="info-row"><span class="info-icon">📱</span><span class="info-key">Instagram</span><span class="info-val" id="d-instagram">—</span></div>
     </div>
     <div class="detalle-cta">
-      <button class="btn-wa-big" id="detalle-wa-btn" style="display:none" onclick="contactarWA()">💬 Contactar por WhatsApp</button>
-      <button class="btn-chat-big" id="detalle-chat-btn" onclick="showToast('Chat próximamente disponible')">💬 Enviar mensaje</button>
+      <button class="btn-wa-big" id="d-wa" style="display:none">💬 Contactar por WhatsApp</button>
+      <button class="btn-chat-big" onclick="showToast('Chat próximamente')">💬 Enviar mensaje</button>
     </div>
   </div>
-  <div class="detalle-prods">
+  <div class="detalle-prods-section">
     <h3>📦 Catálogo de productos</h3>
-    <div class="detalle-prod-grid" id="detalle-prod-grid">
-      <div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:20px;font-size:.85rem">Cargando productos...</div>
-    </div>
+    <div class="mini-prod-grid" id="d-prods"><div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:20px;font-size:.85rem">Cargando...</div></div>
   </div>
 </div>
 
-<!-- ===== REGISTRO PROVEEDOR ===== -->
+<!-- REGISTRO PROVEEDOR -->
 <div class="screen" id="screen-registro">
   <div class="topbar"><span class="topbar-logo">Ser Proveedor</span></div>
-  <div style="padding:0 20px 32px">
-    <div id="reg-intro" style="padding-top:24px">
+  <div class="reg-body">
+    <!-- INTRO -->
+    <div id="reg-intro">
       <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:24px;margin-bottom:20px;text-align:center">
         <div style="font-size:2.5rem;margin-bottom:10px">🏭</div>
         <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:white;margin-bottom:8px">Publicá tu negocio</h2>
@@ -471,551 +398,368 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <button class="submit-btn" onclick="showRegStep(1)">Quiero ser proveedor →</button>
       <p style="text-align:center;margin-top:14px;font-size:.82rem;color:var(--gray)">¿Solo explorás? <span style="color:var(--blue);font-weight:700;cursor:pointer" onclick="goTo('buscar')">Buscá proveedores</span></p>
     </div>
-    <div id="reg-step1" style="display:none;padding-top:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(0)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 1 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:33%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+    <!-- STEP 1 -->
+    <div id="reg-step1" style="display:none">
+      <div class="reg-step-bar"><button class="reg-back-btn" onclick="showRegStep(0)">←</button><div class="reg-step-info"><div class="reg-step-label">Paso 1 de 3</div><div class="reg-step-progress"><div class="reg-step-fill" style="width:33%"></div></div></div></div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Datos personales</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Información del responsable</p>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="form-group"><label>Nombre y apellido *</label><input type="text" placeholder="Ej: Carlos Rodríguez"></div>
-        <div class="form-group"><label>Email *</label><input type="email" placeholder="carlos@minegocio.com"></div>
-        <div class="form-group"><label>WhatsApp *</label><input type="tel" placeholder="+54 9 11 1234-5678"></div>
-        <div class="form-group"><label>Provincia *</label><select><option value="">Seleccioná</option><option>Buenos Aires</option><option>CABA</option><option>Córdoba</option><option>Santa Fe</option><option>Mendoza</option><option>Otra</option></select></div>
-      </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(2)">Continuar →</button>
+      <div class="form-group"><label>Nombre y apellido *</label><input type="text" id="r-nombre" placeholder="Ej: Carlos Rodríguez"></div>
+      <div class="form-group"><label>Email *</label><input type="email" id="r-email" placeholder="carlos@minegocio.com"></div>
+      <div class="form-group"><label>WhatsApp *</label><input type="tel" id="r-whatsapp" placeholder="+54 9 11 1234-5678"></div>
+      <div class="form-group"><label>Provincia *</label><select id="r-provincia"><option value="">Seleccioná</option><option>Buenos Aires</option><option>CABA</option><option>Córdoba</option><option>Santa Fe</option><option>Mendoza</option><option>Otra</option></select></div>
+      <button class="submit-btn" onclick="showRegStep(2)">Continuar →</button>
     </div>
-    <div id="reg-step2" style="display:none;padding-top:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(1)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 2 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:66%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+    <!-- STEP 2 -->
+    <div id="reg-step2" style="display:none">
+      <div class="reg-step-bar"><button class="reg-back-btn" onclick="showRegStep(1)">←</button><div class="reg-step-info"><div class="reg-step-label">Paso 2 de 3</div><div class="reg-step-progress"><div class="reg-step-fill" style="width:66%"></div></div></div></div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Tu negocio</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Datos oficiales de verificación</p>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
-        <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"><span style="font-size:.75rem;color:var(--gray);margin-top:4px">Verificable en AFIP. Garantiza tu identidad real.</span></div>
-        <div class="form-group"><label>Rubro *</label><select><option value="">Seleccioná</option><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option><option>Otro</option></select></div>
-        <div class="form-group"><label>Instagram o red social</label><input type="text" placeholder="@minegocio"></div>
-        <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
-      </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(3)">Continuar →</button>
+      <div class="form-group"><label>Razón social *</label><input type="text" id="r-razon" placeholder="Ej: Distribuidora del Sur SRL"></div>
+      <div class="form-group"><label>CUIT *</label><input type="text" id="r-cuit" placeholder="20-12345678-9"><small style="color:var(--gray);font-size:.75rem">Verificable en AFIP.</small></div>
+      <div class="form-group"><label>Rubro *</label><select id="r-rubro"><option value="">Seleccioná</option><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option><option>Otro</option></select></div>
+      <div class="form-group"><label>Instagram</label><input type="text" id="r-instagram" placeholder="@minegocio"></div>
+      <div class="form-group"><label>Descripción *</label><textarea id="r-desc" placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
+      <button class="submit-btn" onclick="showRegStep(3)">Continuar →</button>
     </div>
-    <div id="reg-step3" style="display:none;padding-top:20px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(2)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 3 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+    <!-- STEP 3 -->
+    <div id="reg-step3" style="display:none">
+      <div class="reg-step-bar"><button class="reg-back-btn" onclick="showRegStep(2)">←</button><div class="reg-step-info"><div class="reg-step-label">Paso 3 de 3</div><div class="reg-step-progress"><div class="reg-step-fill" style="width:100%"></div></div></div></div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Verificación</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Confirmamos que tu negocio es real</p>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:14px 16px;display:flex;gap:10px"><span style="font-size:1.2rem">📸</span><div><div style="font-size:.88rem;font-weight:700;margin-bottom:4px">Foto del negocio o productos</div><div style="font-size:.78rem;color:var(--gray);margin-bottom:10px">Local, depósito o productos reales.</div><button onclick="showToast('📸 Próximamente')" style="background:#fde68a;border:none;border-radius:10px;padding:8px 14px;font-size:.82rem;font-weight:700;cursor:pointer;color:#92400e">+ Subir foto</button></div></div>
-        <div class="form-group"><label>¿Hacés envíos? *</label><select><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local / GBA</option><option>El comprador retira</option></select></div>
-        <div class="form-group"><label>Pedido mínimo *</label><select><option value="">Seleccioná</option><option>Sin mínimo</option><option>Desde $5.000</option><option>Desde $10.000</option><option>Desde $50.000</option><option>Desde $100.000+</option></select></div>
-        <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>📋 Términos:</strong> Al enviar, aceptás que verificaremos tu CUIT en AFIP. Aprobación en 24-48hs hábiles.</div>
-      </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button>
+      <div class="form-group"><label>¿Hacés envíos?</label><select id="r-envios"><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local</option><option>El comprador retira</option></select></div>
+      <div class="form-group"><label>Pedido mínimo</label><select id="r-minimo"><option value="">Seleccioná</option><option>Sin mínimo</option><option>Desde $5.000</option><option>Desde $10.000</option><option>Desde $50.000</option><option>Desde $100.000+</option></select></div>
+      <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6;margin-bottom:16px"><strong>📋 Términos:</strong> Al enviar, aceptás que verificaremos tu CUIT en AFIP. Aprobación en 24-48hs hábiles.</div>
+      <button class="submit-btn" onclick="enviarRegistro()">Enviar solicitud ✓</button>
     </div>
+    <!-- SUCCESS -->
     <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
       <div style="font-size:4rem;margin-bottom:16px">🎉</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
       <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:24px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
-      <button class="submit-btn" onclick="loginAsProveedor()">Ver mi dashboard de proveedor →</button>
+      <button class="submit-btn" onclick="entrarDashboard()">Ver mi dashboard de proveedor →</button>
     </div>
   </div>
 </div>
 
-<!-- ===== PLANES ===== -->
+<!-- PLANES -->
 <div class="screen" id="screen-planes">
   <div class="planes-hero"><h2>Potenciá tu Negocio</h2><p>Elegí el plan que impulse tu emprendimiento.</p></div>
   <div class="plan-cards">
     <div class="plan-card">
-      <div class="plan-tag">NIVEL ESTÁNDAR</div><div class="plan-name">Plan Gratis</div><div class="plan-desc">Herramientas esenciales para empezar.</div>
+      <div class="plan-tag">NIVEL ESTÁNDAR</div><div class="plan-name">Plan Gratis</div>
       <div class="plan-price"><span class="amount">$0</span><span class="period">/mes</span></div>
-      <ul class="plan-features"><li>Listado de productos estándar</li><li>Chat interno únicamente</li><li>Hasta 5 productos publicados</li><li>Perfil básico visible</li></ul>
+      <ul class="plan-features"><li>Listado de productos estándar</li><li>Chat interno únicamente</li><li>Hasta 5 productos</li><li>Perfil básico visible</li></ul>
       <button class="plan-btn free" onclick="showToast('Plan Gratis activado ✓')">Empezar gratis</button>
     </div>
     <div class="plan-card pro">
-      <div class="plan-tag pro">NIVEL PREMIUM</div><div class="plan-name">Plan Pro ●</div><div class="plan-desc">Maximizá tu visibilidad y confianza.</div>
+      <div class="plan-tag pro">NIVEL PREMIUM</div><div class="plan-name">Plan Pro ●</div>
       <div class="plan-price"><span class="amount">$29</span><span class="period">/mes</span></div>
-      <ul class="plan-features"><li>Botón de WhatsApp directo</li><li>Insignia de "Verificado" ✓</li><li>Anuncios para Exposición</li><li>Banner Premium</li><li>Soporte Técnico (WhatsApp)</li><li>Productos ilimitados</li><li>Dashboard con estadísticas</li></ul>
+      <ul class="plan-features"><li>Botón de WhatsApp directo</li><li>Insignia "Verificado" ✓</li><li>Anuncios de exposición</li><li>Banner Premium</li><li>Soporte por WhatsApp</li><li>Productos ilimitados</li><li>Dashboard con estadísticas</li></ul>
       <button class="plan-btn paid" onclick="showToast('Redirigiendo al pago... 💳')">Mejorar a Pro</button>
     </div>
   </div>
 </div>
 
-<!-- ===== PERFIL ===== -->
+<!-- PERFIL -->
 <div class="screen" id="screen-perfil">
-  <!-- LOGIN STATE -->
+  <!-- Login -->
   <div id="perfil-login">
     <div class="topbar"><span class="topbar-logo">Mi Perfil</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center;gap:16px">
       <div style="width:80px;height:80px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem">👤</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800">Ingresá a tu cuenta</h2>
-      <p style="color:var(--gray);font-size:.9rem;line-height:1.6">Guardá tus proveedores favoritos, accedé a tu historial y gestioná tu negocio.</p>
-      <!-- Google Sign In Button -->
-      <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
-      <button class="google-btn" onclick="simulateGoogleLogin()"><span class="g-logo">G</span> Continuar con Google</button>
-      <button class="submit-btn" onclick="loginAsProveedor()" style="background:linear-gradient(135deg,var(--navy),#1a2d6b)">🏭 Entrar como Proveedor (demo)</button>
-      <p style="font-size:.78rem;color:var(--gray)">Al ingresar aceptás los <span style="color:var(--blue);cursor:pointer">términos y condiciones</span></p>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.6">Guardá tus proveedores favoritos y accedé a tu historial.</p>
+      <button class="google-btn" onclick="loginSimulado()"><span class="g-logo">G</span> Continuar con Google</button>
+      <button class="submit-btn" style="background:linear-gradient(135deg,var(--navy),#1a2d6b)" onclick="entrarDashboard()">🏭 Entrar como Proveedor (demo)</button>
     </div>
   </div>
-
-  <!-- USUARIO LOGUEADO -->
+  <!-- Usuario -->
   <div id="perfil-user" style="display:none">
     <div class="perfil-header">
-      <img id="user-avatar-img" class="perfil-avatar" src="" alt="" style="display:none">
-      <div id="user-avatar-placeholder" class="perfil-avatar-placeholder">?</div>
-      <div class="perfil-name" id="user-display-name">Usuario</div>
-      <div class="perfil-email" id="user-display-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e48189858d88a48389858d88ca878b89">[email&#160;protected]</a></div>
-      <div class="perfil-badge-row">
-        <span class="perfil-type-badge explorer">🛒 Explorador</span>
-        <span class="perfil-type-badge explorer" style="background:rgba(0,196,140,.2);color:#00c48c">✓ Verificado por Google</span>
-      </div>
+      <div class="perfil-avatar-ph" id="u-avatar">U</div>
+      <div class="perfil-name" id="u-nombre">Usuario</div>
+      <div class="perfil-email" id="u-email">email@gmail.com</div>
     </div>
-    <div class="historial-section">
+    <div class="hist-section">
       <h3>👁 Proveedores que exploraste</h3>
-      <div class="hist-list" id="historialList">
-        <div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>
-      </div>
+      <div id="historial-list"><div style="text-align:center;color:var(--gray);padding:20px;font-size:.85rem">Todavía no exploraste proveedores.</div></div>
     </div>
     <div class="perfil-actions">
-      <div class="action-row">
-        <button class="action-btn" onclick="goTo('buscar')">🔍 Explorar proveedores</button>
-        <button class="action-btn" onclick="openTest()">🤖 Hacer test de rubro IA</button>
-        <button class="action-btn" onclick="goTo('registro')">🏭 Registrarme como proveedor</button>
-        <button class="action-btn" onclick="goTo('planes')">⭐ Ver Plan Pro</button>
-        <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
-      </div>
+      <button class="action-btn" onclick="goTo('buscar')">🔍 Explorar proveedores</button>
+      <button class="action-btn" onclick="openTest()">🤖 Test de rubro IA</button>
+      <button class="action-btn" onclick="goTo('registro')">🏭 Registrarme como proveedor</button>
+      <button class="action-btn" onclick="goTo('planes')">⭐ Ver Plan Pro</button>
+      <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
-
-  <!-- PROVEEDOR LOGUEADO -->
-  <div id="perfil-proveedor" style="display:none">
+  <!-- Dashboard Proveedor -->
+  <div id="perfil-prov" style="display:none">
     <div class="dash-header">
       <div class="dash-top">
-        <div class="dash-avatar" id="dash-avatar-el"><span id="dash-avatar-initials">EG</span></div>
+        <div class="dash-avatar" id="dash-av">EG</div>
         <div class="dash-info">
           <h3 id="dash-nombre">Mi Negocio</h3>
-          <p id="dash-rubro-label">Rubro · Buenos Aires</p>
+          <p id="dash-rubro">Rubro · Buenos Aires</p>
         </div>
-        <span class="dash-pro-badge">⭐ PRO</span>
+        <span class="dash-pro">⭐ PRO</span>
       </div>
-      <div class="dash-stats-grid">
-        <div class="dash-stat"><div class="dash-stat-val">5.8k <span>↑24%</span></div><div class="dash-stat-label">Visitas al perfil</div></div>
-        <div class="dash-stat"><div class="dash-stat-val">1.284 <span>↑35%</span></div><div class="dash-stat-label">Leads generados</div></div>
+      <div class="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-val">5.8k <small>↑24%</small></div><div class="dash-stat-label">Visitas al perfil</div></div>
+        <div class="dash-stat"><div class="dash-stat-val">1.284 <small>↑35%</small></div><div class="dash-stat-label">Leads</div></div>
         <div class="dash-stat"><div class="dash-stat-val">+35%</div><div class="dash-stat-label">Interacción</div></div>
-        <div class="dash-stat"><div class="dash-stat-val">3 <span style="color:#fbbf24">nuevos</span></div><div class="dash-stat-label">Consultas hoy</div></div>
+        <div class="dash-stat"><div class="dash-stat-val">3 <small style="color:#fbbf24">nuevos</small></div><div class="dash-stat-label">Consultas hoy</div></div>
       </div>
     </div>
     <div class="ranking-card">
       <div class="rank-num">#3</div>
       <div class="rank-info"><strong>Ranking Regional</strong><span>en Buenos Aires · Tecnología</span></div>
-      <div class="rank-trend"><span class="arrow">📈</span><span>+2 pos.</span></div>
+      <div class="rank-trend"><span>📈 +2 pos.</span></div>
     </div>
     <div class="dash-tabs">
       <div class="dash-tab active" onclick="switchTab('catalogo',this)">📦 Catálogo</div>
       <div class="dash-tab" onclick="switchTab('anuncios',this)">📢 Anuncios</div>
-      <div class="dash-tab" onclick="switchTab('perfil-info',this)">⚙️ Mi Perfil</div>
+      <div class="dash-tab" onclick="switchTab('config',this)">⚙️ Mi Perfil</div>
     </div>
-
-    <!-- TAB: CATALOGO -->
-    <div class="tab-content active" id="tab-catalogo">
-      <div class="cat-actions"><button class="add-prod-btn" onclick="openAddProduct()">+ Agregar producto</button></div>
-      <div class="prod-grid" id="prodGrid"></div>
+    <div class="tab-pane active" id="tab-catalogo">
+      <button class="add-prod-btn" onclick="abrirModalProducto()">+ Agregar producto</button>
+      <div class="prod-grid" id="prod-grid"><div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:20px;font-size:.85rem">Cargando productos...</div></div>
     </div>
-
-    <!-- TAB: ANUNCIOS -->
-    <div class="tab-content" id="tab-anuncios">
-      <div class="anuncio-card">
-        <div class="anuncio-header"><div class="anuncio-title">Banner Principal</div><span class="anuncio-status active">● Activo</span></div>
-        <div class="anuncio-preview" style="background:linear-gradient(135deg,var(--navy),#1a2d6b);font-style:italic;color:#a78bfa">AI D <em>latuwner</em> •</div>
-        <div class="anuncio-bar-label"><span>Alcance actual</span><span style="color:var(--blue);font-weight:700">60%</span></div>
-        <div class="anuncio-bar"><div class="anuncio-bar-fill" style="width:60%"></div></div>
-        <div style="font-size:.75rem;color:var(--gray);margin-bottom:12px">Tu anuncio se ve en 6 de cada 10 clientes potenciales en CABA.</div>
-        <div class="anuncio-btns"><button class="anuncio-btn edit" onclick="showToast('Editor de banner próximamente')">✏️ Editar</button><button class="anuncio-btn pause" onclick="showToast('Anuncio pausado')">⏸ Pausar</button></div>
+    <div class="tab-pane" id="tab-anuncios">
+      <div style="background:white;border-radius:16px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong style="font-family:'Sora',sans-serif">Banner Principal</strong><span style="background:#e6faf4;color:var(--green);font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">● Activo</span></div>
+        <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:12px;padding:14px;text-align:center;color:white;font-family:'Sora',sans-serif;font-weight:800;margin-bottom:12px">Tu negocio acá</div>
+        <div style="font-size:.75rem;color:var(--gray);margin-bottom:6px;display:flex;justify-content:space-between"><span>Alcance</span><span style="color:var(--blue);font-weight:700">60%</span></div>
+        <div style="height:6px;background:#e0e7ff;border-radius:3px;overflow:hidden"><div style="height:100%;width:60%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:3px"></div></div>
       </div>
-      <div class="anuncio-card">
-        <div class="anuncio-header"><div class="anuncio-title">Campaña Temporada</div><span class="anuncio-status paused">● Pausada</span></div>
-        <div class="anuncio-preview" style="background:linear-gradient(135deg,#f97316,#f59e0b)">🔥 Liquidación de Invierno</div>
-        <div class="anuncio-bar-label"><span>Alcance</span><span style="color:var(--orange);font-weight:700">0% (pausada)</span></div>
-        <div class="anuncio-bar"><div class="anuncio-bar-fill" style="width:0%"></div></div>
-        <div class="anuncio-btns"><button class="anuncio-btn edit" onclick="showToast('Editando campaña...')">✏️ Editar</button><button class="anuncio-btn" style="background:#e6faf4;color:var(--green)" onclick="showToast('Campaña activada ✓')">▶ Activar</button></div>
-      </div>
-      <button class="nueva-campaña-btn" onclick="showToast('Creando nueva campaña... 🚀')">+ Nueva Campaña</button>
+      <button style="width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer" onclick="showToast('Nueva campaña próximamente 🚀')">+ Nueva Campaña</button>
     </div>
-
-    <!-- TAB: MI PERFIL -->
-    <div class="tab-content" id="tab-perfil-info">
-      <div style="display:flex;flex-direction:column;gap:12px;padding-top:4px">
-        <div class="form-group"><label>Nombre del negocio</label><input type="text" id="edit-nombre" value="TechMayor BA"></div>
-        <div class="form-group"><label>Descripción</label><textarea id="edit-desc">Mayorista de accesorios y electrónica. Precios desde $500. Envío a todo el país.</textarea></div>
-        <div class="form-group"><label>WhatsApp</label><input type="tel" value="+54 9 11 5555-1234"></div>
-        <div class="form-group"><label>Instagram</label><input type="text" value="@techmayor_ba"></div>
-        <div class="form-group"><label>Pedido mínimo</label><select><option>Desde $10.000</option><option>Desde $5.000</option><option>Sin mínimo</option></select></div>
-        <button class="submit-btn" onclick="showToast('Perfil guardado ✓')">Guardar cambios</button>
-        <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
-      </div>
+    <div class="tab-pane" id="tab-config">
+      <div class="form-group"><label>Nombre del negocio</label><input type="text" id="edit-nombre" value=""></div>
+      <div class="form-group"><label>Descripción</label><textarea id="edit-desc"></textarea></div>
+      <div class="form-group"><label>WhatsApp</label><input type="tel" id="edit-wa"></div>
+      <div class="form-group"><label>Instagram</label><input type="text" id="edit-ig"></div>
+      <button class="submit-btn" onclick="guardarPerfil()">Guardar cambios</button>
+      <button class="logout-btn" style="margin-top:10px" onclick="logout()">Cerrar sesión</button>
     </div>
   </div>
 </div>
 
-<!-- AI TEST MODAL -->
-<div class="modal-overlay" id="testModal" onclick="closeTestOnBg(event)">
-  <div class="modal">
+<!-- MODAL TEST IA -->
+<div class="modal-overlay" id="testModal" onclick="cerrarTestOnBg(event)">
+  <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-header"><h3>Test IA — ¿Qué vender?</h3><button class="modal-close" onclick="closeTest()">✕</button></div>
+    <div class="modal-head"><h3>Test IA — ¿Qué vender?</h3><button class="modal-close" onclick="cerrarTest()">✕</button></div>
     <div class="modal-body">
-      <div id="questionsSection">
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:25%"></div></div>
-        <div class="step-indicator" id="stepIndicator">Pregunta 1 de 4</div>
-        <div class="q-text" id="qText"></div>
-        <div class="q-sub" id="qSub"></div>
-        <div class="options-grid" id="optionsGrid"></div>
-        <button class="next-btn" id="nextBtn" onclick="nextStep()">Continuar →</button>
+      <div id="test-preguntas">
+        <div class="progress-bar"><div class="progress-fill" id="test-progress" style="width:0%"></div></div>
+        <div class="step-ind" id="test-step">Pregunta 1 de 4</div>
+        <div class="q-text" id="test-q"></div>
+        <div class="q-sub" id="test-sub"></div>
+        <div class="opts-grid" id="test-opts"></div>
+        <button class="next-btn" id="test-next" onclick="nextTestStep()">Continuar →</button>
       </div>
-      <div class="result-section" id="resultSection">
-        <div class="result-loading" id="resultLoading"><div class="ai-spinner"></div><p>Analizando tu perfil con IA...</p></div>
-        <div id="resultContent" style="display:none">
+      <div class="result-box" id="test-result">
+        <div id="test-loading"><div class="spinner"></div><p style="text-align:center;color:var(--gray)">Analizando con IA...</p></div>
+        <div id="test-resultado" style="display:none">
           <div class="result-card">
-            <div class="result-badge">✨ Tu rubro ideal</div>
-            <div class="result-rubro" id="resultRubro"></div>
-            <div class="result-why" id="resultWhy"></div>
-            <div class="result-chips" id="resultChips"></div>
+            <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);color:white;font-size:.75rem;font-weight:700;padding:5px 12px;border-radius:20px;margin-bottom:14px">✨ Tu rubro ideal</div>
+            <div class="result-rubro" id="res-titulo"></div>
+            <div class="result-why" id="res-porque"></div>
+            <div class="result-chips" id="res-tips"></div>
           </div>
-          <div style="display:flex;flex-direction:column;gap:10px">
-            <button class="btn-primary" onclick="closeTest();filterCat(currentResult)">🔍 Ver proveedores de este rubro</button>
-            <button onclick="resetTest()" style="background:white;color:var(--navy);border:1.5px solid #e0e7ff;border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer">↺ Repetir test</button>
-          </div>
+          <button class="btn-primary" onclick="cerrarTest();filterCat(rubroResult)">🔍 Ver proveedores de este rubro</button>
+          <button style="width:100%;background:white;color:var(--navy);border:1.5px solid #e0e7ff;border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:10px" onclick="resetTest()">↺ Repetir test</button>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ADD PRODUCT MODAL -->
-<div class="modal-overlay" id="addProdModal" onclick="closeAddProductOnBg(event)">
-  <div class="prod-modal">
+<!-- MODAL PRODUCTO -->
+<div class="modal-overlay" id="prodModal" onclick="cerrarModalProductoOnBg(event)">
+  <div class="modal-sheet">
     <div class="modal-handle"></div>
-    <div class="modal-header"><h3>Agregar producto</h3><button class="modal-close" onclick="closeAddProduct()">✕</button></div>
+    <div class="modal-head"><h3>Agregar producto</h3><button class="modal-close" onclick="cerrarModalProducto()">✕</button></div>
     <div class="modal-body">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda para iPhone 15"></div>
-        <div class="form-group"><label>Precio mayorista *</label><input type="number" id="new-prod-price" placeholder="Ej: 2500"></div>
-        <div class="form-group"><label>Stock disponible</label><input type="number" id="new-prod-stock" placeholder="Ej: 100"></div>
-        <div class="form-group"><label>Categoría</label><select id="new-prod-cat"><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
-        <div class="form-group"><label>Descripción</label><textarea id="new-prod-desc" placeholder="Descripción breve del producto"></textarea></div>
-        <div class="form-group">
-          <label>📷 Fotos del producto</label>
-          <div class="foto-upload-area" onclick="document.getElementById('foto-input').click()">
-            <input type="file" id="foto-input" accept="image/*" multiple onchange="previsualizarFotos(event)">
-            <div style="font-size:1.5rem;margin-bottom:6px">📸</div>
-            <div style="font-size:.85rem;font-weight:700;color:var(--navy)">Tocá para subir fotos</div>
-            <div style="font-size:.75rem;color:var(--gray);margin-top:4px">JPG, PNG — máx 3 fotos</div>
-          </div>
-          <div class="foto-preview" id="foto-preview"></div>
+      <div class="form-group"><label>Nombre *</label><input type="text" id="p-nombre" placeholder="Ej: Funda iPhone 15"></div>
+      <div class="form-group"><label>Precio mayorista *</label><input type="number" id="p-precio" placeholder="Ej: 2500"></div>
+      <div class="form-group"><label>Stock</label><input type="number" id="p-stock" placeholder="Ej: 100"></div>
+      <div class="form-group"><label>Categoría</label><select id="p-cat"><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
+      <div class="form-group"><label>Descripción</label><textarea id="p-desc" placeholder="Breve descripción"></textarea></div>
+      <div class="form-group">
+        <label>📷 Fotos del producto</label>
+        <div class="foto-upload-area" onclick="document.getElementById('foto-input').click()">
+          <input type="file" id="foto-input" accept="image/*" multiple style="display:none" onchange="prevFotos(event)">
+          <div style="font-size:1.5rem;margin-bottom:6px">📸</div>
+          <div style="font-size:.85rem;font-weight:700">Tocá para subir fotos</div>
+          <div style="font-size:.75rem;color:var(--gray);margin-top:4px">JPG, PNG — máx 3 fotos</div>
         </div>
-        <button class="submit-btn" onclick="addProduct()">Agregar al catálogo ✓</button>
+        <div class="foto-preview" id="foto-preview"></div>
       </div>
+      <button class="submit-btn" onclick="guardarProducto()">Agregar al catálogo ✓</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
+// ===== SUPABASE =====
+const SURL = 'https://seubtijmyoahnyspvidq.supabase.co';
+const SKEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
+const sb = supabase.createClient(SURL, SKEY);
+
 // ===== STATE =====
 let currentUser = null;
 let historial = [];
-let productos = [];
 let proveedoresDB = [];
+let productos = [];
 let currentCat = 'Todas';
-let currentResult = '';
+let prevScreen = 'buscar';
+let fotosSeleccionadas = [];
+let rubroResult = '';
 
-// ===== SUPABASE: CARGAR PROVEEDORES =====
-async function cargarProveedores() {
-  try {
-    const { data, error } = await sb
-      .from('proveedores')
-      .select('*')
-      .eq('estado', 'aprobado')
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    // Si hay datos reales los usamos, si no usamos demo
-    if (data && data.length > 0) {
-      proveedoresDB = data.map(p => ({
-        id: p.id,
-        nombre: p.nombre,
-        rubro: p.rubro || 'General',
-        desc: p.descripcion || '',
-        pro: p.plan === 'pro',
-        inicial: p.nombre.substring(0,2).toUpperCase(),
-        whatsapp: p.whatsapp
-      }));
-    } else {
-      proveedoresDB = proveedoresDEMO;
-    }
-    renderProvs(proveedoresDB);
-  } catch(e) {
-    proveedoresDB = proveedoresDEMO;
-    renderProvs(proveedoresDB);
-  }
-}
-
-// DEMO fallback
-const proveedoresDEMO = [
-  {id:'1',nombre:"TechMayor BA",rubro:"Tecnología",desc:"Mayorista de accesorios y electrónica. Precios desde $500. Envío a todo el país.",pro:true,inicial:"TM"},
-  {id:'2',nombre:"HomeDeco Sur",rubro:"Hogar",desc:"Artículos de decoración y hogar al por mayor. Mínimo 10 unidades.",pro:false,inicial:"HD"},
-  {id:'3',nombre:"Modas del Litoral",rubro:"Moda",desc:"Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.",pro:true,inicial:"ML"},
-  {id:'4',nombre:"Bazar Mayorista GBA",rubro:"Bazar",desc:"Todo para el bazar: utensilios, limpieza, papelería. Bajo precio.",pro:false,inicial:"BM"},
-  {id:'5',nombre:"AlimVerde SRL",rubro:"Alimentos",desc:"Productos naturales y orgánicos al por mayor. Certificados.",pro:true,inicial:"AV"},
-  {id:'6',nombre:"CelularPro Dist.",rubro:"Tecnología",desc:"Distribución de celulares y repuestos. Garantía de fábrica.",pro:true,inicial:"CP"},
-  {id:'7',nombre:"RopaKids Mayoreo",rubro:"Moda",desc:"Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.",pro:false,inicial:"RK"},
-  {id:'8',nombre:"CasaFácil Dist.",rubro:"Hogar",desc:"Muebles flat-pack y artículos de cocina. Entrega en 48hs.",pro:false,inicial:"CF"},
+const DEMO = [
+  {id:'d1',nombre:"TechMayor BA",rubro:"Tecnología",descripcion:"Mayorista de accesorios y electrónica. Precios desde $500. Envío a todo el país.",plan:'pro',provincia:'Buenos Aires',whatsapp:'5491112345678'},
+  {id:'d2',nombre:"HomeDeco Sur",rubro:"Hogar",descripcion:"Artículos de decoración y hogar al por mayor. Mínimo 10 unidades.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d3',nombre:"Modas del Litoral",rubro:"Moda",descripcion:"Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.",plan:'pro',provincia:'Santa Fe',whatsapp:'5493412345678'},
+  {id:'d4',nombre:"Bazar Mayorista GBA",rubro:"Bazar",descripcion:"Todo para el bazar: utensilios, limpieza, papelería. Bajo precio.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d5',nombre:"AlimVerde SRL",rubro:"Alimentos",descripcion:"Productos naturales y orgánicos al por mayor. Certificados.",plan:'pro',provincia:'Córdoba'},
+  {id:'d6',nombre:"CelularPro Dist.",rubro:"Tecnología",descripcion:"Distribución de celulares y repuestos. Garantía de fábrica.",plan:'pro',provincia:'CABA'},
+  {id:'d7',nombre:"RopaKids Mayoreo",rubro:"Moda",descripcion:"Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.",plan:'gratis',provincia:'Buenos Aires'},
+  {id:'d8',nombre:"CasaFácil Dist.",rubro:"Hogar",descripcion:"Muebles flat-pack y artículos de cocina. Entrega en 48hs.",plan:'gratis',provincia:'Córdoba'},
 ];
 
-// ===== AUTH =====
-async function simulateGoogleLogin() {
-  const name = 'Usuario de Prueba';
-  const email = 'usuario@gmail.com';
-  await upsertUsuario({name, email, picture:''});
-  handleLogin({name, email, picture:'', type:'user'});
-  showToast('✓ Sesión iniciada');
-}
+const ICONOS = {Tecnología:'💻',Hogar:'🏠',Moda:'👗',Bazar:'🛒',Alimentos:'🥗'};
 
-async function loginAsProveedor() {
-  handleLogin({name:'TechMayor BA', email:'techmayorba@gmail.com', picture:'', type:'proveedor', proveedorId:'1'});
-  showToast('✓ Entraste como Proveedor PRO');
-  goTo('perfil');
-}
-
-async function handleGoogleLogin(response) {
-  try {
-    const base64 = response.credential.split('.')[1];
-    const data = JSON.parse(atob(base64));
-    await upsertUsuario({name: data.name, email: data.email, picture: data.picture});
-    // Verificar si es proveedor
-    const {data: prov} = await sb.from('proveedores').select('id,nombre,plan').eq('email', data.email).single();
-    if(prov) {
-      handleLogin({name: prov.nombre, email: data.email, picture: data.picture, type:'proveedor', proveedorId: prov.id});
-      showToast('✓ Bienvenido/a, ' + prov.nombre + '!');
-    } else {
-      handleLogin({name: data.name, email: data.email, picture: data.picture, type:'user'});
-      showToast('✓ Bienvenido/a, ' + data.name.split(' ')[0] + '!');
-    }
-    goTo('perfil');
-  } catch(e) { simulateGoogleLogin(); }
-}
-
-async function upsertUsuario({name, email, picture}) {
-  try {
-    await sb.from('usuarios').upsert({
-      nombre: name,
-      email: email,
-      foto_url: picture
-    }, { onConflict: 'email' });
-  } catch(e) { console.log('upsert error', e); }
-}
-
-function handleLogin(user) {
-  currentUser = user;
-  updatePerfilUI();
-  updateTopbar();
-}
-
-function logout() {
-  currentUser = null;
-  historial = [];
-  document.getElementById('perfil-login').style.display = 'block';
-  document.getElementById('perfil-user').style.display = 'none';
-  document.getElementById('perfil-proveedor').style.display = 'none';
-  updateTopbar();
-  showToast('Sesión cerrada');
-}
-
-function updateTopbar() {
-  const btn = document.getElementById('topbar-login-btn');
-  btn.textContent = currentUser ? currentUser.name.split(' ')[0] : '→ Ingresar';
-}
-
-function updatePerfilUI() {
-  if(!currentUser) return;
-  document.getElementById('perfil-login').style.display = 'none';
-  if(currentUser.type === 'proveedor') {
-    document.getElementById('perfil-user').style.display = 'none';
-    document.getElementById('perfil-proveedor').style.display = 'block';
-    document.getElementById('dash-nombre').textContent = currentUser.name;
-    document.getElementById('dash-avatar-initials').textContent = currentUser.name.substring(0,2).toUpperCase();
-    cargarProductosProveedor();
-  } else {
-    document.getElementById('perfil-user').style.display = 'block';
-    document.getElementById('perfil-proveedor').style.display = 'none';
-    document.getElementById('user-display-name').textContent = currentUser.name;
-    document.getElementById('user-display-email').textContent = currentUser.email;
-    const placeholder = document.getElementById('user-avatar-placeholder');
-    placeholder.textContent = currentUser.name.substring(0,1).toUpperCase();
-    if(currentUser.picture) {
-      const img = document.getElementById('user-avatar-img');
-      img.src = currentUser.picture;
-      img.style.display = 'block';
-      placeholder.style.display = 'none';
-    }
-    cargarHistorial();
-  }
-}
-
-// ===== HISTORIAL con Supabase =====
-async function addToHistorial(proveedor) {
-  if(!currentUser || currentUser.type !== 'user') return;
-  // Guardar en memoria
-  historial = historial.filter(h => h.id !== proveedor.id);
-  historial.unshift({...proveedor, visitedAt: new Date()});
-  if(historial.length > 10) historial = historial.slice(0,10);
-  // Guardar en Supabase
-  try {
-    const {data: u} = await sb.from('usuarios').select('id').eq('email', currentUser.email).single();
-    if(u) {
-      await sb.from('historial').upsert({
-        usuario_id: u.id,
-        proveedor_id: proveedor.id,
-        visited_at: new Date().toISOString()
-      }, { onConflict: 'usuario_id,proveedor_id' });
-    }
-  } catch(e) { console.log('historial error', e); }
-}
-
-async function cargarHistorial() {
-  const el = document.getElementById('historialList');
-  if(!currentUser) return;
-  try {
-    const {data: u} = await sb.from('usuarios').select('id').eq('email', currentUser.email).single();
-    if(!u) { renderHistorialLocal(); return; }
-    const {data, error} = await sb
-      .from('historial')
-      .select('visited_at, proveedores(id, nombre, rubro, plan)')
-      .eq('usuario_id', u.id)
-      .order('visited_at', {ascending: false})
-      .limit(10);
-    if(error || !data?.length) { renderHistorialLocal(); return; }
-    el.innerHTML = data.map(h => {
-      const p = h.proveedores;
-      if(!p) return '';
-      return `<div class="hist-item" onclick="filterCat('${p.rubro}')">
-        <div class="hist-logo">${p.nombre.substring(0,2).toUpperCase()}</div>
-        <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro} ${p.plan==='pro'?'· ⭐ PRO':''}</span></div>
-        <span class="hist-time">${timeAgo(new Date(h.visited_at))}</span>
-      </div>`;
-    }).join('');
-  } catch(e) { renderHistorialLocal(); }
-}
-
-function renderHistorialLocal() {
-  const el = document.getElementById('historialList');
-  if(!historial.length) {
-    el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>';
-    return;
-  }
-  el.innerHTML = historial.map(p => `
-    <div class="hist-item" onclick="filterCat('${p.rubro}')">
-      <div class="hist-logo">${p.inicial}</div>
-      <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro} ${p.pro?'· ⭐ PRO':''}</span></div>
-      <span class="hist-time">${timeAgo(p.visitedAt)}</span>
-    </div>`).join('');
-}
-
-function timeAgo(date) {
-  const mins = Math.floor((new Date()-date)/60000);
-  if(mins < 1) return 'Ahora';
-  if(mins < 60) return `${mins}m`;
-  if(mins < 1440) return `${Math.floor(mins/60)}h`;
-  return `${Math.floor(mins/1440)}d`;
+// ===== INIT =====
+async function init() {
+  await cargarProveedores();
 }
 
 // ===== PROVEEDORES =====
+async function cargarProveedores() {
+  try {
+    const {data} = await sb.from('proveedores').select('*').eq('estado','aprobado').order('created_at',{ascending:false});
+    proveedoresDB = (data && data.length > 0) ? data : DEMO;
+  } catch(e) {
+    proveedoresDB = DEMO;
+  }
+  renderProvs(proveedoresDB);
+}
+
+function getInicial(nombre) {
+  return nombre.substring(0,2).toUpperCase();
+}
+
 function renderProvs(list) {
   const el = document.getElementById('provList');
-  if(!list||!list.length){el.innerHTML='<p style="color:var(--gray);text-align:center;padding:30px 0">No se encontraron proveedores</p>';return;}
-  el.innerHTML = list.map(p=>`
-    <div class="prov-card" onclick="visitProv('${p.id}')">
-      <div class="prov-logo">${(p.inicial||p.nombre.substring(0,2)).toUpperCase()}</div>
+  if (!list || !list.length) {
+    el.innerHTML = '<p style="color:var(--gray);text-align:center;padding:30px">No se encontraron proveedores</p>';
+    return;
+  }
+  el.innerHTML = list.map(p => {
+    const esPro = p.plan === 'pro';
+    return `<div class="prov-card" onclick="abrirDetalle('${p.id}')">
+      <div class="prov-logo">${getInicial(p.nombre)}</div>
       <div class="prov-info">
         <h3>${p.nombre}</h3>
-        <p>${p.desc||p.descripcion||''}</p>
+        <p>${p.descripcion || ''}</p>
         <div class="prov-badges">
-          <span class="badge blue">${p.rubro}</span>
-          ${p.pro?'<span class="badge pro">⭐ PRO</span>':''}
+          <span class="badge blue">${p.rubro || 'General'}</span>
+          ${esPro ? '<span class="badge pro">⭐ PRO</span>' : ''}
           <span class="badge green">✓ Verificado</span>
         </div>
       </div>
       <div class="prov-contact">
-        ${p.pro?`<button class="btn-wa" onclick="event.stopPropagation();showToast('Abriendo WhatsApp...')">💬 WA</button>`:`<button class="btn-chat" onclick="event.stopPropagation();showToast('Chat disponible')">Chat</button>`}
+        ${esPro
+          ? `<button class="btn-wa" onclick="event.stopPropagation();abrirWA('${p.whatsapp||''}')">💬 WA</button>`
+          : `<button class="btn-chat" onclick="event.stopPropagation();showToast('Chat disponible')">Chat</button>`}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-let proveedorActual = null;
-let prevScreen = 'buscar';
-let fotosSeleccionadas = [];
-
-async function visitProv(id) {
-  const list = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  const p = list.find(x=>String(x.id)===String(id));
-  if(p) {
-    await addToHistorial(p);
-    try { await sb.from('busquedas').insert({termino:p.nombre}); } catch(e){}
-    abrirDetalle(p);
-  }
+function filterProvs() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const list = proveedoresDB.length ? proveedoresDB : DEMO;
+  renderProvs(list.filter(p => {
+    const mc = currentCat === 'Todas' || p.rubro === currentCat;
+    const mq = !q || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
+    return mc && mq;
+  }));
 }
 
-async function abrirDetalle(p) {
-  proveedorActual = p;
+function setChip(el, cat) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentCat = cat;
+  filterProvs();
+}
+
+function filterCat(cat) {
+  goTo('buscar');
+  currentCat = cat;
+  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.textContent === cat));
+  filterProvs();
+}
+
+function abrirWA(num) {
+  if (num) window.open('https://wa.me/' + num.replace(/\D/g,''), '_blank');
+  else showToast('WhatsApp no disponible');
+}
+
+// ===== DETALLE =====
+async function abrirDetalle(id) {
+  const list = proveedoresDB.length ? proveedoresDB : DEMO;
+  const p = list.find(x => String(x.id) === String(id));
+  if (!p) return;
+
   prevScreen = document.querySelector('.screen.active')?.id?.replace('screen-','') || 'buscar';
+  await addToHistorial(p);
 
-  // Populate header
-  document.getElementById('detalle-inicial').textContent = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
-  document.getElementById('detalle-nombre').textContent = p.nombre;
-  document.getElementById('detalle-rubro').textContent = `${p.rubro||'General'} · ${p.provincia||'Argentina'}`;
-  document.getElementById('detalle-desc').textContent = p.desc||p.descripcion||'Sin descripción disponible.';
-  document.getElementById('detalle-minimo').textContent = p.pedido_minimo||'Sin mínimo';
-  document.getElementById('detalle-envios').textContent = p.envios||'Consultar';
-  document.getElementById('detalle-provincia').textContent = p.provincia||'Argentina';
-  document.getElementById('detalle-instagram').textContent = p.instagram||'—';
+  document.getElementById('d-logo').textContent = getInicial(p.nombre);
+  document.getElementById('d-nombre').textContent = p.nombre;
+  document.getElementById('d-rubro').textContent = (p.rubro || 'General') + ' · ' + (p.provincia || 'Argentina');
+  document.getElementById('d-desc').textContent = p.descripcion || 'Sin descripción disponible.';
+  document.getElementById('d-minimo').textContent = p.pedido_minimo || 'Sin mínimo';
+  document.getElementById('d-envios').textContent = p.envios || 'Consultar';
+  document.getElementById('d-provincia').textContent = p.provincia || 'Argentina';
+  document.getElementById('d-instagram').textContent = p.instagram || '—';
 
-  // PRO badge + WA button
-  const proBadge = document.getElementById('detalle-pro-badge');
-  const waBtn = document.getElementById('detalle-wa-btn');
-  if(p.pro || p.plan==='pro') {
-    proBadge.style.display='inline-flex';
-    waBtn.style.display='flex';
-    waBtn.onclick = () => {
-      const num = p.whatsapp?.replace(/\D/g,'') || '';
-      if(num) window.open(`https://wa.me/${num}`,'_blank');
-      else showToast('WhatsApp no disponible');
-    };
+  const esPro = p.plan === 'pro';
+  document.getElementById('d-pro').style.display = esPro ? 'inline-flex' : 'none';
+  const waBtn = document.getElementById('d-wa');
+  if (esPro) {
+    waBtn.style.display = 'flex';
+    waBtn.onclick = () => abrirWA(p.whatsapp || '');
   } else {
-    proBadge.style.display='none';
-    waBtn.style.display='none';
+    waBtn.style.display = 'none';
   }
 
-  // Load products
   await cargarProductosDetalle(p.id);
-
   goTo('detalle');
 }
 
 async function cargarProductosDetalle(provId) {
-  const grid = document.getElementById('detalle-prod-grid');
-  grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Cargando productos...</div>';
+  const grid = document.getElementById('d-prods');
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Cargando...</div>';
   try {
     const {data} = await sb.from('productos').select('*').eq('proveedor_id', provId).limit(6);
-    if(!data?.length) {
-      grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Este proveedor aún no subió productos</div>';
+    if (!data || !data.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Sin productos cargados aún</div>';
       return;
     }
-    grid.innerHTML = data.map(p=>`
-      <div class="detalle-prod-card">
-        <div class="detalle-prod-img">
-          ${p.foto_url ? `<img src="${p.foto_url}" alt="${p.nombre}">` : (iconMap[p.categoria]||'📦')}
-        </div>
-        <div class="detalle-prod-body">
+    grid.innerHTML = data.map(p => `
+      <div class="mini-prod-card">
+        <div class="mini-prod-img">${p.foto_url ? `<img src="${p.foto_url}" alt="${p.nombre}">` : (ICONOS[p.categoria]||'📦')}</div>
+        <div class="mini-prod-body">
           <h4>${p.nombre}</h4>
           <div class="price">$${(p.precio||0).toLocaleString('es-AR')}</div>
         </div>
       </div>`).join('');
   } catch(e) {
-    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Sin productos cargados</div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:16px;font-size:.85rem">Sin productos</div>';
   }
 }
 
@@ -1023,276 +767,379 @@ function goBack() {
   goTo(prevScreen);
 }
 
-function filterProvs(){
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const list = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  renderProvs(list.filter(p=>{
-    const mc = currentCat==='Todas'||p.rubro===currentCat;
-    const mq = !q||p.nombre.toLowerCase().includes(q)||(p.rubro||'').toLowerCase().includes(q);
-    return mc&&mq;
-  }));
-}
-function setChip(el,cat){
-  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');currentCat=cat;filterProvs();
-}
-function filterCat(cat){
-  goTo('buscar');currentCat=cat;
-  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('active',c.textContent===cat));
-  filterProvs();
+// ===== AUTH =====
+async function loginSimulado() {
+  const user = {nombre:'Usuario de Prueba', email:'usuario@gmail.com', tipo:'user'};
+  currentUser = user;
+  try { await sb.from('usuarios').upsert({nombre:user.nombre,email:user.email},{onConflict:'email'}); } catch(e){}
+  mostrarPerfil();
+  showToast('✓ Sesión iniciada');
 }
 
-// ===== CATÁLOGO con Supabase =====
-const iconMap={'Tecnología':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🥗'};
+function entrarDashboard() {
+  currentUser = {nombre:'TechMayor BA', email:'techmayorba@gmail.com', tipo:'proveedor', proveedorId:'d1'};
+  mostrarPerfil();
+  goTo('perfil');
+  showToast('✓ Entraste como Proveedor PRO');
+}
 
-function renderProdGrid() {
-  const el = document.getElementById('prodGrid');
-  if(!productos.length){
-    el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:8px">📦</div><p style="font-size:.88rem">No tenés productos aún.<br>Agregá tu primer producto.</p></div>';
+function logout() {
+  currentUser = null;
+  historial = [];
+  document.getElementById('perfil-login').style.display = 'block';
+  document.getElementById('perfil-user').style.display = 'none';
+  document.getElementById('perfil-prov').style.display = 'none';
+  updateTopbar();
+  showToast('Sesión cerrada');
+}
+
+function mostrarPerfil() {
+  if (!currentUser) return;
+  document.getElementById('perfil-login').style.display = 'none';
+  updateTopbar();
+  if (currentUser.tipo === 'proveedor') {
+    document.getElementById('perfil-user').style.display = 'none';
+    document.getElementById('perfil-prov').style.display = 'block';
+    document.getElementById('dash-av').textContent = currentUser.nombre.substring(0,2).toUpperCase();
+    document.getElementById('dash-nombre').textContent = currentUser.nombre;
+    cargarProductosProveedor();
+  } else {
+    document.getElementById('perfil-user').style.display = 'block';
+    document.getElementById('perfil-prov').style.display = 'none';
+    document.getElementById('u-avatar').textContent = currentUser.nombre.substring(0,1).toUpperCase();
+    document.getElementById('u-nombre').textContent = currentUser.nombre;
+    document.getElementById('u-email').textContent = currentUser.email;
+    renderHistorial();
+  }
+}
+
+function updateTopbar() {
+  const btn = document.getElementById('topbar-btn');
+  btn.textContent = currentUser ? currentUser.nombre.split(' ')[0] : '→ Ingresar';
+}
+
+// ===== HISTORIAL =====
+async function addToHistorial(p) {
+  if (!currentUser || currentUser.tipo !== 'user') return;
+  historial = historial.filter(h => h.id !== p.id);
+  historial.unshift({...p, visitedAt: new Date()});
+  if (historial.length > 10) historial = historial.slice(0,10);
+  try {
+    const {data:u} = await sb.from('usuarios').select('id').eq('email',currentUser.email).single();
+    if (u) await sb.from('historial').upsert({usuario_id:u.id,proveedor_id:p.id,visited_at:new Date().toISOString()},{onConflict:'usuario_id,proveedor_id'});
+  } catch(e) {}
+}
+
+function renderHistorial() {
+  const el = document.getElementById('historial-list');
+  if (!historial.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);padding:20px;font-size:.85rem">Todavía no exploraste proveedores.</div>';
     return;
   }
-  el.innerHTML = productos.map(p=>`
+  el.innerHTML = historial.map(p => `
+    <div class="hist-item" onclick="filterCat('${p.rubro}')">
+      <div class="hist-logo">${getInicial(p.nombre)}</div>
+      <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro} ${p.plan==='pro'?'· ⭐ PRO':''}</span></div>
+      <span class="hist-time">${timeAgo(p.visitedAt)}</span>
+    </div>`).join('');
+}
+
+function timeAgo(date) {
+  const m = Math.floor((new Date()-date)/60000);
+  if (m < 1) return 'Ahora';
+  if (m < 60) return m+'m';
+  if (m < 1440) return Math.floor(m/60)+'h';
+  return Math.floor(m/1440)+'d';
+}
+
+// ===== REGISTRO =====
+function showRegStep(step) {
+  ['reg-intro','reg-step1','reg-step2','reg-step3','reg-success'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const map = {0:'reg-intro',1:'reg-step1',2:'reg-step2',3:'reg-step3'};
+  const el = document.getElementById(map[step]||'reg-intro');
+  if (el) el.style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+async function enviarRegistro() {
+  const datos = {
+    nombre: document.getElementById('r-razon').value || document.getElementById('r-nombre').value,
+    razon_social: document.getElementById('r-razon').value,
+    cuit: document.getElementById('r-cuit').value,
+    email: document.getElementById('r-email').value,
+    whatsapp: document.getElementById('r-whatsapp').value,
+    rubro: document.getElementById('r-rubro').value,
+    provincia: document.getElementById('r-provincia').value,
+    descripcion: document.getElementById('r-desc').value,
+    instagram: document.getElementById('r-instagram').value,
+    envios: document.getElementById('r-envios').value,
+    pedido_minimo: document.getElementById('r-minimo').value,
+    plan: 'gratis',
+    estado: 'pendiente'
+  };
+  try { await sb.from('proveedores').insert(datos); } catch(e) {}
+  ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('reg-success').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+// ===== CATALOGO PROVEEDOR =====
+async function cargarProductosProveedor() {
+  if (!currentUser?.proveedorId) { productos = []; renderProdGrid(); return; }
+  try {
+    const {data} = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at',{ascending:false});
+    productos = data || [];
+  } catch(e) {
+    productos = [{id:'x1',nombre:'Funda iPhone 15',precio:2500,stock:200,categoria:'Tecnología'},{id:'x2',nombre:'Cable USB-C',precio:800,stock:150,categoria:'Tecnología'}];
+  }
+  renderProdGrid();
+}
+
+function renderProdGrid() {
+  const el = document.getElementById('prod-grid');
+  if (!productos.length) {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--gray);padding:30px;font-size:.85rem">No tenés productos. ¡Agregá tu primero!</div>';
+    return;
+  }
+  el.innerHTML = productos.map(p => `
     <div class="prod-card">
-      <div class="prod-img">${iconMap[p.categoria||p.cat]||'📦'}</div>
+      <div class="prod-img-box">${p.foto_url ? `<img src="${p.foto_url}" alt="${p.nombre}">` : (ICONOS[p.categoria]||'📦')}</div>
       <div class="prod-body">
         <h4>${p.nombre}</h4>
-        <div class="price">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div class="stock">Stock: ${p.stock||'S/D'}</div>
-        <div class="prod-actions">
-          <button class="prod-edit-btn" onclick="showToast('Editando...')">✏️ Editar</button>
-          <button class="prod-del-btn" onclick="deleteProduct('${p.id}')">🗑</button>
+        <div class="prod-price">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        <div class="prod-stock">Stock: ${p.stock||'—'}</div>
+        <div class="prod-btns">
+          <button class="prod-edit" onclick="showToast('Editando...')">✏️ Editar</button>
+          <button class="prod-del" onclick="eliminarProducto('${p.id}')">🗑</button>
         </div>
       </div>
     </div>`).join('');
 }
 
-async function deleteProduct(id){
-  try { await sb.from('productos').delete().eq('id', id); } catch(e){}
-  productos = productos.filter(p=>String(p.id)!==String(id));
+async function eliminarProducto(id) {
+  try { await sb.from('productos').delete().eq('id', id); } catch(e) {}
+  productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid();
   showToast('Producto eliminado');
 }
 
-// ===== FOTO UPLOAD =====
-function previsualizarFotos(event) {
-  const files = Array.from(event.target.files).slice(0,3);
-  fotosSeleccionadas = files;
+// ===== MODAL PRODUCTO =====
+function abrirModalProducto() {
+  fotosSeleccionadas = [];
+  document.getElementById('foto-preview').innerHTML = '';
+  ['p-nombre','p-precio','p-stock','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('prodModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalProducto() {
+  document.getElementById('prodModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function cerrarModalProductoOnBg(e) {
+  if (e.target === document.getElementById('prodModal')) cerrarModalProducto();
+}
+
+function prevFotos(event) {
+  fotosSeleccionadas = Array.from(event.target.files).slice(0,3);
   const preview = document.getElementById('foto-preview');
-  preview.innerHTML = files.map((f,i) => {
+  preview.innerHTML = fotosSeleccionadas.map((f,i) => {
     const url = URL.createObjectURL(f);
-    return `<div class="foto-preview-item">
-      <img src="${url}" alt="foto ${i+1}">
-      <button class="remove-foto" onclick="removeFoto(${i})">✕</button>
-    </div>`;
+    return `<div class="foto-prev-item"><img src="${url}" alt="foto"><button onclick="quitarFoto(${i})">✕</button></div>`;
   }).join('');
 }
 
-function removeFoto(i) {
+function quitarFoto(i) {
   fotosSeleccionadas.splice(i,1);
-  const preview = document.getElementById('foto-preview');
-  const items = preview.querySelectorAll('.foto-preview-item');
-  items[i]?.remove();
+  document.getElementById('foto-preview').children[i]?.remove();
 }
 
-async function uploadFotoToSupabase(file, prodId) {
-  try {
-    const ext = file.name.split('.').pop();
-    const path = `productos/${prodId}_${Date.now()}.${ext}`;
-    const {data, error} = await sb.storage.from('fotos').upload(path, file, {upsert:true});
-    if(error) return null;
-    const {data: urlData} = sb.storage.from('fotos').getPublicUrl(path);
-    return urlData?.publicUrl || null;
-  } catch(e) { return null; }
-}
-  document.getElementById('addProdModal').classList.add('open');
-  document.body.style.overflow='hidden';
-  fotosSeleccionadas = [];
-  document.getElementById('foto-preview').innerHTML='';
-}
-function closeAddProduct(){
-  document.getElementById('addProdModal').classList.remove('open');
-  document.body.style.overflow='';
-}
-function closeAddProductOnBg(e){
-  if(e.target===document.getElementById('addProdModal')) closeAddProduct();
-}
-async function addProduct(){
-  const name = document.getElementById('new-prod-name').value;
-  const price = document.getElementById('new-prod-price').value;
-  const stock = document.getElementById('new-prod-stock').value;
-  const cat = document.getElementById('new-prod-cat').value;
-  const desc = document.getElementById('new-prod-desc').value;
-  if(!name||!price){showToast('Completá nombre y precio');return;}
-  showToast('Guardando producto...');
-  const newProd = {
-    nombre: name, precio: parseFloat(price),
-    stock: stock ? parseInt(stock) : null,
-    categoria: cat, descripcion: desc,
+async function guardarProducto() {
+  const nombre = document.getElementById('p-nombre').value;
+  const precio = document.getElementById('p-precio').value;
+  if (!nombre || !precio) { showToast('Completá nombre y precio'); return; }
+  showToast('Guardando...');
+  const prod = {
+    nombre,
+    precio: parseFloat(precio),
+    stock: parseInt(document.getElementById('p-stock').value) || null,
+    categoria: document.getElementById('p-cat').value,
+    descripcion: document.getElementById('p-desc').value,
     proveedor_id: currentUser?.proveedorId || null
   };
   try {
-    const {data, error} = await sb.from('productos').insert(newProd).select().single();
-    if(data && fotosSeleccionadas.length > 0) {
-      const fotoUrl = await uploadFotoToSupabase(fotosSeleccionadas[0], data.id);
-      if(fotoUrl) {
-        await sb.from('productos').update({foto_url: fotoUrl}).eq('id', data.id);
-        data.foto_url = fotoUrl;
+    const {data} = await sb.from('productos').insert(prod).select().single();
+    if (data) {
+      if (fotosSeleccionadas.length > 0) {
+        const fotoUrl = await subirFoto(fotosSeleccionadas[0], data.id);
+        if (fotoUrl) {
+          await sb.from('productos').update({foto_url: fotoUrl}).eq('id', data.id);
+          data.foto_url = fotoUrl;
+        }
       }
       productos.unshift(data);
-    } else if(data) {
-      productos.unshift(data);
     } else {
-      productos.unshift({...newProd, id: Date.now()});
+      productos.unshift({...prod, id: Date.now()});
     }
   } catch(e) {
-    productos.unshift({...newProd, id: Date.now()});
+    productos.unshift({...prod, id: Date.now()});
   }
   renderProdGrid();
-  closeAddProduct();
-  showToast('✓ Producto agregado con foto');
-  ['new-prod-name','new-prod-price','new-prod-stock','new-prod-desc'].forEach(id=>document.getElementById(id).value='');
+  cerrarModalProducto();
+  showToast('✓ Producto agregado');
   fotosSeleccionadas = [];
 }
 
+async function subirFoto(file, prodId) {
+  try {
+    const ext = file.name.split('.').pop();
+    const path = `productos/${prodId}_${Date.now()}.${ext}`;
+    const {error} = await sb.storage.from('fotos').upload(path, file, {upsert:true});
+    if (error) return null;
+    const {data} = sb.storage.from('fotos').getPublicUrl(path);
+    return data?.publicUrl || null;
+  } catch(e) { return null; }
+}
+
+function guardarPerfil() {
+  showToast('✓ Perfil guardado');
+}
+
 // ===== NAV =====
-function goTo(s){
-  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+function goTo(s) {
+  document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  // Don't highlight nav for detalle screen
-  if(s !== 'detalle') {
-    const navEl = document.getElementById('nav-'+s);
-    if(navEl) navEl.classList.add('active');
-  }
-  if(s==='perfil' && currentUser) updatePerfilUI();
-  if(s==='perfil' && currentUser?.type==='user') cargarHistorial();
+  const navEl = document.getElementById('nav-'+s);
+  if (navEl) navEl.classList.add('active');
+  if (s === 'perfil' && currentUser) mostrarPerfil();
   window.scrollTo(0,0);
 }
 
-function switchTab(tab,el){
-  document.querySelectorAll('.dash-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+function switchTab(tab, el) {
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('tab-'+tab).classList.add('active');
 }
 
-function showRegStep(step){
-  ['reg-intro','reg-step1','reg-step2','reg-step3','reg-success'].forEach(id=>{
-    const el=document.getElementById(id);if(el)el.style.display='none';
-  });
-  const map={0:'reg-intro',1:'reg-step1',2:'reg-step2',3:'reg-step3'};
-  document.getElementById(map[step]||'reg-intro').style.display='block';
-  window.scrollTo(0,0);
-}
-
-async function showRegSuccess(){
-  const nombre = document.querySelector('#reg-step1 input[type="text"]')?.value||'';
-  const email = document.querySelector('#reg-step1 input[type="email"]')?.value||'';
-  const whatsapp = document.querySelector('#reg-step1 input[type="tel"]')?.value||'';
-  const provincia = document.querySelector('#reg-step1 select')?.value||'';
-  const razon = document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value||'';
-  const cuit = document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'';
-  const rubro = document.querySelector('#reg-step2 select')?.value||'';
-  const descripcion = document.querySelector('#reg-step2 textarea')?.value||'';
-  try {
-    await sb.from('proveedores').insert({
-      nombre: razon||nombre, razon_social:razon, cuit, email, whatsapp,
-      rubro, provincia, descripcion, plan:'gratis', estado:'pendiente'
-    });
-    showToast('✓ Solicitud enviada');
-  } catch(e){ showToast('✓ Solicitud recibida'); }
-  ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>document.getElementById(id).style.display='none');
-  document.getElementById('reg-success').style.display='block';
-  window.scrollTo(0,0);
-}
-
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-
-// ===== AI TEST =====
-const questions=[
-  {text:"¿En qué parte de Argentina estás?",sub:"Tu localidad nos ayuda a sugerirte rubros con demanda real.",options:[{icon:"🏙️",label:"Buenos Aires / GBA",sub:"Gran Buenos Aires o CABA"},{icon:"🌆",label:"Córdoba o Rosario",sub:"Grandes ciudades del interior"},{icon:"🏘️",label:"Ciudad mediana",sub:"Entre 50.000 y 500.000 hab."},{icon:"🏡",label:"Localidad pequeña",sub:"Menos de 50.000 hab."}]},
-  {text:"¿Con cuánto capital inicial contás?",sub:"Recomendamos rubros alcanzables con lo que tenés hoy.",options:[{icon:"💵",label:"Menos de $50.000",sub:"Empezar muy chico"},{icon:"💰",label:"$50.000 – $200.000",sub:"Capital moderado"},{icon:"💼",label:"$200.000 – $500.000",sub:"Buena base"},{icon:"🏦",label:"Más de $500.000",sub:"Puedo invertir fuerte"}]},
-  {text:"¿Por qué canal vas a vender?",sub:"El canal define qué tipo de producto funciona mejor.",options:[{icon:"📱",label:"Instagram / TikTok",sub:"Redes sociales"},{icon:"🛍️",label:"MercadoLibre / Tiendanube",sub:"Marketplaces online"},{icon:"🏪",label:"Local o feria física",sub:"Venta presencial"},{icon:"👥",label:"WhatsApp / conocidos",sub:"Círculo cercano"}]},
-  {text:"¿Cuánta experiencia tenés vendiendo?",sub:"Ajustamos la recomendación a tu nivel.",options:[{icon:"🌱",label:"Ninguna — primera vez",sub:"Empezando desde cero"},{icon:"📦",label:"Vendí algo alguna vez",sub:"Experiencia puntual"},{icon:"📈",label:"Ya vendo regularmente",sub:"Tengo proceso armado"},{icon:"🚀",label:"Vendedor/a experimentado/a",sub:"Busco escalar"}]}
+// ===== TEST IA =====
+const PREGUNTAS = [
+  {q:"¿En qué parte de Argentina estás?",sub:"Tu localidad nos ayuda a sugerirte rubros con demanda real.",opts:[{i:"🏙️",l:"Buenos Aires / GBA"},{i:"🌆",l:"Córdoba o Rosario"},{i:"🏘️",l:"Ciudad mediana"},{i:"🏡",l:"Localidad pequeña"}]},
+  {q:"¿Con cuánto capital inicial contás?",sub:"Recomendamos rubros alcanzables con lo que tenés hoy.",opts:[{i:"💵",l:"Menos de $50.000"},{i:"💰",l:"$50.000 – $200.000"},{i:"💼",l:"$200.000 – $500.000"},{i:"🏦",l:"Más de $500.000"}]},
+  {q:"¿Por qué canal vas a vender?",sub:"El canal define qué tipo de producto funciona mejor.",opts:[{i:"📱",l:"Instagram / TikTok"},{i:"🛍️",l:"MercadoLibre / Tiendanube"},{i:"🏪",l:"Local o feria física"},{i:"👥",l:"WhatsApp / conocidos"}]},
+  {q:"¿Cuánta experiencia tenés vendiendo?",sub:"Ajustamos la recomendación a tu nivel.",opts:[{i:"🌱",l:"Ninguna — primera vez"},{i:"📦",l:"Vendí algo alguna vez"},{i:"📈",l:"Ya vendo regularmente"},{i:"🚀",l:"Vendedor/a experimentado/a"}]}
 ];
-let currentStep=0,answers=[],selectedOption=null;
 
-function openTest(){resetTest();document.getElementById('testModal').classList.add('open');document.body.style.overflow='hidden';}
-function closeTest(){document.getElementById('testModal').classList.remove('open');document.body.style.overflow='';}
-function closeTestOnBg(e){if(e.target===document.getElementById('testModal'))closeTest();}
-function resetTest(){
-  currentStep=0;answers=[];selectedOption=null;
-  document.getElementById('questionsSection').style.display='block';
-  document.getElementById('resultSection').classList.remove('show');
-  document.getElementById('resultLoading').style.display='block';
-  document.getElementById('resultContent').style.display='none';
-  renderQuestion();
+let testStep = 0, testAnswers = [], testSelected = null;
+
+function openTest() {
+  resetTest();
+  document.getElementById('testModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
-function renderQuestion(){
-  const q=questions[currentStep];
-  document.getElementById('stepIndicator').textContent=`Pregunta ${currentStep+1} de ${questions.length}`;
-  document.getElementById('progressFill').style.width=`${(currentStep/questions.length)*100}%`;
-  document.getElementById('qText').textContent=q.text;
-  document.getElementById('qSub').textContent=q.sub;
-  selectedOption=null;
-  document.getElementById('nextBtn').classList.remove('ready');
-  document.getElementById('optionsGrid').innerHTML=q.options.map((o,i)=>`
+
+function cerrarTest() {
+  document.getElementById('testModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function cerrarTestOnBg(e) {
+  if (e.target === document.getElementById('testModal')) cerrarTest();
+}
+
+function resetTest() {
+  testStep = 0; testAnswers = []; testSelected = null;
+  document.getElementById('test-preguntas').style.display = 'block';
+  document.getElementById('test-result').classList.remove('show');
+  renderPregunta();
+}
+
+function renderPregunta() {
+  const p = PREGUNTAS[testStep];
+  document.getElementById('test-step').textContent = `Pregunta ${testStep+1} de ${PREGUNTAS.length}`;
+  document.getElementById('test-progress').style.width = `${(testStep/PREGUNTAS.length)*100}%`;
+  document.getElementById('test-q').textContent = p.q;
+  document.getElementById('test-sub').textContent = p.sub;
+  testSelected = null;
+  document.getElementById('test-next').classList.remove('ready');
+  document.getElementById('test-opts').innerHTML = p.opts.map((o,i) => `
     <div class="opt-btn" onclick="selectOpt(this,${i})">
-      <span class="opt-icon">${o.icon}</span>
-      <div><div class="opt-label">${o.label}</div><div class="opt-sub">${o.sub}</div></div>
+      <span class="opt-icon">${o.i}</span>
+      <div><div class="opt-label">${o.l}</div></div>
     </div>`).join('');
 }
-function selectOpt(el,i){document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));el.classList.add('selected');selectedOption=i;document.getElementById('nextBtn').classList.add('ready');}
-function nextStep(){
-  if(selectedOption===null)return;
-  answers.push({q:currentStep,a:selectedOption});
-  if(currentStep<questions.length-1){currentStep++;renderQuestion();}
-  else showResult();
-}
-async function showResult(){
-  document.getElementById('progressFill').style.width='100%';
-  document.getElementById('questionsSection').style.display='none';
-  document.getElementById('resultSection').classList.add('show');
-  document.getElementById('resultLoading').style.display='block';
-  document.getElementById('resultContent').style.display='none';
-  const locs=['Buenos Aires / GBA','Córdoba o Rosario','Ciudad mediana','Localidad pequeña'];
-  const caps=['menos de $50.000','entre $50.000 y $200.000','entre $200.000 y $500.000','más de $500.000'];
-  const cans=['Instagram/TikTok','MercadoLibre/Tiendanube','local o feria física','círculo cercano/WhatsApp'];
-  const exps=['ninguna experiencia','algo de experiencia','vende regularmente','vendedor experimentado'];
-  const prompt=`Sos un asesor de negocios mayoristas en Argentina. Perfil del usuario:
-- Localidad: ${locs[answers[0].a]}
-- Capital: ${caps[answers[1].a]}
-- Canal: ${cans[answers[2].a]}
-- Experiencia: ${exps[answers[3].a]}
-Recomendá el MEJOR rubro mayorista. Respondé SOLO JSON sin backticks:
-{"rubro":"Moda|Tecnología|Bazar|Hogar|Alimentos","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
-  try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,messages:[{role:"user",content:prompt}]})});
-    const data=await res.json();
-    const parsed=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
-    currentResult=parsed.rubro;
-    document.getElementById('resultRubro').textContent=parsed.titulo;
-    document.getElementById('resultWhy').textContent=parsed.porque;
-    document.getElementById('resultChips').innerHTML=parsed.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
-  }catch(e){
-    const fallbacks=[{rubro:'Moda',titulo:'Moda y Accesorios',porque:'La moda es uno de los rubros más accesibles para empezar al por mayor. Podés comenzar con poco capital y escalar rápido.',tips:['Empezá con accesorios baratos','Usá Instagram para mostrar looks','Proveedores en La Salada o Palermo']},{rubro:'Bazar',titulo:'Bazar del Hogar',porque:'El bazar tiene alta rotación. Con poco capital armás un catálogo variado y empezás a vender rápido en ferias y WhatsApp.',tips:['Armá combos de regalo','Vendé en ferias locales','Artículos de cocina se venden solos']},{rubro:'Tecnología',titulo:'Accesorios Tech',porque:'Los accesorios tech tienen márgenes muy buenos en MercadoLibre. Ideal para ciudades grandes.',tips:['Fundas y cargadores son lo más vendido','Comprá en cantidad para bajar costos','MercadoLibre es el mejor canal']}];
-    const r=fallbacks[Math.floor(Math.random()*fallbacks.length)];
-    currentResult=r.rubro;
-    document.getElementById('resultRubro').textContent=r.titulo;
-    document.getElementById('resultWhy').textContent=r.porque;
-    document.getElementById('resultChips').innerHTML=r.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).
-  join('');
-  }
-  document.getElementById('resultLoading').style.display='none';
-  document.getElementById('resultContent').style.display='block';
+
+function selectOpt(el, i) {
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  testSelected = i;
+  document.getElementById('test-next').classList.add('ready');
 }
 
-// init
-cargarProveedores();
-renderQuestion();
+function nextTestStep() {
+  if (testSelected === null) return;
+  testAnswers.push(testSelected);
+  if (testStep < PREGUNTAS.length-1) {
+    testStep++;
+    renderPregunta();
+  } else {
+    mostrarResultado();
+  }
+}
+
+async function mostrarResultado() {
+  document.getElementById('test-progress').style.width = '100%';
+  document.getElementById('test-preguntas').style.display = 'none';
+  document.getElementById('test-result').classList.add('show');
+  document.getElementById('test-loading').style.display = 'block';
+  document.getElementById('test-resultado').style.display = 'none';
+
+  const loc = ['Buenos Aires/GBA','Córdoba o Rosario','Ciudad mediana','Localidad pequeña'][testAnswers[0]];
+  const cap = ['menos de $50.000','$50.000-$200.000','$200.000-$500.000','más de $500.000'][testAnswers[1]];
+  const can = ['Instagram/TikTok','MercadoLibre/Tiendanube','local/feria','WhatsApp/conocidos'][testAnswers[2]];
+  const exp = ['ninguna experiencia','algo de experiencia','vende regularmente','vendedor experimentado'][testAnswers[3]];
+
+  const prompt = `Sos asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${loc}, Capital: ${cap}, Canal: ${can}, Experiencia: ${exp}. Recomendá el MEJOR rubro mayorista. Respondé SOLO JSON sin backticks: {"rubro":"Moda|Tecnología|Bazar|Hogar|Alimentos","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones coloquiales argentinas","tips":["tip1","tip2","tip3"]}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,messages:[{role:'user',content:prompt}]})
+    });
+    const data = await res.json();
+    const parsed = JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    rubroResult = parsed.rubro;
+    document.getElementById('res-titulo').textContent = parsed.titulo;
+    document.getElementById('res-porque').textContent = parsed.porque;
+    document.getElementById('res-tips').innerHTML = parsed.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
+  } catch(e) {
+    const fb = [{rubro:'Moda',titulo:'Moda y Accesorios',porque:'La moda es muy accesible para empezar. Podés arrancar con poco capital y escalar rápido por redes.',tips:['Accesorios de bajo costo','Mostrá en Instagram','Proveedores en La Salada']},{rubro:'Bazar',titulo:'Bazar del Hogar',porque:'Alta rotación y demanda en ferias. Con poco capital armás un catálogo variado.',tips:['Combos de regalo','Ferias locales','Cocina vuela']},{rubro:'Tecnología',titulo:'Accesorios Tech',porque:'Márgenes muy buenos en MercadoLibre. Ideal para ciudades grandes.',tips:['Fundas y cargadores','Comprá en cantidad','Usá MercadoLibre']}];
+    const r = fb[Math.floor(Math.random()*fb.length)];
+    rubroResult = r.rubro;
+    document.getElementById('res-titulo').textContent = r.titulo;
+    document.getElementById('res-porque').textContent = r.porque;
+    document.getElementById('res-tips').innerHTML = r.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
+  }
+  document.getElementById('test-loading').style.display = 'none';
+  document.getElementById('test-resultado').style.display = 'block';
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ===== START =====
+init();
 </script>
 </body>
 </html>
