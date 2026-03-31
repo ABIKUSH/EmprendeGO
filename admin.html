@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EmprendeGo — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+</script>
+<style>
+:root{
+  --blue:#1a6bff;--blue-light:#e8f0ff;--navy:#0d1b3e;--gray:#6b7a99;
+  --light:#f4f7ff;--white:#fff;--green:#00c48c;--orange:#ff6b2b;
+  --purple:#7c3aed;--pink:#f43f8e;--red:#ef4444;--yellow:#f59e0b;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);min-height:100vh}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(135deg,var(--navy) 0%,#1a2d6b 100%)}
+.login-card{background:white;border-radius:24px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
+.login-logo{font-family:'Sora',sans-serif;font-weight:900;font-size:1.6rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.login-sub{color:var(--gray);font-size:.85rem;margin-bottom:28px}
+.login-card input{width:100%;border:1.5px solid #e0e7ff;border-radius:12px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;margin-bottom:12px;transition:border-color .15s}
+.login-card input:focus{border-color:var(--blue)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s}
+.login-btn:active{transform:scale(.97)}
+.login-error{color:var(--red);font-size:.82rem;margin-top:8px;display:none}
+
+/* LAYOUT */
+#admin-app{display:none;min-height:100vh;background:var(--light)}
+.topbar{background:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-logo{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.admin-badge{background:linear-gradient(135deg,var(--orange),#f97316);color:white;font-size:.68rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-time{font-size:.8rem;color:var(--gray)}
+.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:10px;padding:6px 14px;color:var(--red);font-size:.82rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+
+/* SIDEBAR + CONTENT */
+.app-body{display:flex;min-height:calc(100vh - 57px)}
+.sidebar{width:220px;background:white;border-right:1px solid #eef0f8;padding:16px 0;flex-shrink:0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
+@media(max-width:768px){.sidebar{display:none}}
+.nav-group{margin-bottom:20px}
+.nav-group-label{font-size:.68rem;font-weight:800;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;padding:0 20px;margin-bottom:8px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.88rem;font-weight:600;color:var(--gray);cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.nav-link:hover{background:var(--blue-light);color:var(--blue)}
+.nav-link.active{background:var(--blue-light);color:var(--blue);border-left-color:var(--blue)}
+.nav-link .ni{font-size:1rem;width:20px;text-align:center}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:20px}
+
+.main-content{flex:1;padding:24px;overflow-x:hidden}
+
+/* PAGE */
+.page{display:none}
+.page.active{display:block}
+.page-title{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:4px}
+.page-sub{color:var(--gray);font-size:.88rem;margin-bottom:24px}
+
+/* METRICS GRID */
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.metric-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.metric-icon{font-size:1.4rem;margin-bottom:8px}
+.metric-val{font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:900;color:var(--navy)}
+.metric-label{font-size:.75rem;color:var(--gray);font-weight:600;margin-top:2px}
+.metric-trend{font-size:.75rem;font-weight:700;margin-top:6px}
+.metric-trend.up{color:var(--green)}
+.metric-trend.down{color:var(--red)}
+
+/* CHARTS */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+@media(max-width:600px){.chart-row{grid-template-columns:1fr}}
+.chart-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.chart-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:16px}
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-label{font-size:.75rem;color:var(--gray);width:70px;flex-shrink:0;font-weight:600}
+.bar-track{flex:1;height:8px;background:#f0f4ff;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .6s ease}
+.bar-val{font-size:.75rem;font-weight:700;color:var(--navy);width:30px;text-align:right}
+.donut-wrapper{display:flex;align-items:center;gap:16px}
+.donut-legends{display:flex;flex-direction:column;gap:8px;flex:1}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.78rem}
+.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.legend-label{color:var(--gray);flex:1}
+.legend-val{font-weight:700;color:var(--navy)}
+
+/* ACTIVITY */
+.activity-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:24px}
+.activity-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:14px}
+.activity-list{display:flex;flex-direction:column;gap:0}
+.activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f4f7ff}
+.activity-item:last-child{border-bottom:none}
+.a-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.a-icon.blue{background:var(--blue-light)}
+.a-icon.green{background:#e6faf4}
+.a-icon.orange{background:#fff3e0}
+.a-icon.red{background:#fee2e2}
+.a-text{flex:1}
+.a-text strong{font-size:.85rem;font-weight:700;display:block}
+.a-text span{font-size:.75rem;color:var(--gray)}
+.a-time{font-size:.72rem;color:var(--gray)}
+
+/* TABLE */
+.table-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px;overflow-x:auto}
+.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.table-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800}
+.table-actions{display:flex;gap:8px;align-items:center}
+.search-mini{border:1.5px solid #e0e7ff;border-radius:10px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--navy);outline:none;width:160px}
+.search-mini:focus{border-color:var(--blue)}
+.filter-select{border:1.5px solid #e0e7ff;border-radius:10px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--navy);outline:none;background:white;cursor:pointer}
+table{width:100%;border-collapse:collapse;min-width:500px}
+th{text-align:left;font-size:.72rem;font-weight:800;color:var(--gray);letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-bottom:2px solid #f0f4ff}
+td{padding:12px;font-size:.85rem;border-bottom:1px solid #f4f7ff;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbff}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
+.status-badge.pending{background:#fff3e0;color:var(--orange)}
+.status-badge.approved{background:#e6faf4;color:var(--green)}
+.status-badge.rejected{background:#fee2e2;color:var(--red)}
+.status-badge.pro{background:linear-gradient(90deg,var(--blue),var(--purple));color:white}
+.status-badge.free{background:var(--blue-light);color:var(--blue)}
+.action-group{display:flex;gap:6px}
+.tbl-btn{border:none;border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.tbl-btn.approve{background:#e6faf4;color:var(--green)}
+.tbl-btn.reject{background:#fee2e2;color:var(--red)}
+.tbl-btn.view{background:var(--blue-light);color:var(--blue)}
+.tbl-btn.warn{background:#fff3e0;color:var(--orange)}
+.tbl-btn.ban{background:#fee2e2;color:var(--red)}
+.avatar-cell{display:flex;align-items:center;gap:8px}
+.cell-avatar{width:30px;height:30px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:.75rem;color:var(--blue);flex-shrink:0}
+
+/* REPORTS */
+.report-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:12px}
+.report-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.report-type{font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px}
+.report-type.estafa{background:#fee2e2;color:var(--red)}
+.report-type.spam{background:#fff3e0;color:var(--orange)}
+.report-type.falso{background:#fef3c7;color:var(--yellow)}
+.report-body{font-size:.85rem;color:var(--gray);line-height:1.6;margin-bottom:12px}
+.report-meta{font-size:.75rem;color:var(--gray);margin-bottom:12px}
+.report-actions{display:flex;gap:8px}
+
+/* SETTINGS */
+.settings-section{background:white;border-radius:var(--radius);padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px}
+.settings-section h3{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f0f4ff}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f4f7ff}
+.setting-row:last-child{border-bottom:none}
+.setting-info strong{font-size:.88rem;font-weight:700;display:block}
+.setting-info span{font-size:.75rem;color:var(--gray)}
+.toggle{width:44px;height:24px;background:#e0e7ff;border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--green)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(20px)}
+.settings-input{border:1.5px solid #e0e7ff;border-radius:10px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;width:180px}
+.save-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:10px;padding:10px 20px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:12px}
+
+/* MOBILE NAV */
+.mobile-nav{display:none;background:white;border-bottom:1px solid #eef0f8;padding:8px 16px;overflow-x:auto;gap:8px}
+@media(max-width:768px){.mobile-nav{display:flex}}
+.mobile-nav-btn{white-space:nowrap;background:var(--light);border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-size:.78rem;font-weight:700;color:var(--gray);cursor:pointer;flex-shrink:0}
+.mobile-nav-btn.active{background:var(--blue);color:white;border-color:var(--blue)}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(13,27,62,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:white;border-radius:20px;padding:28px;width:100%;max-width:420px;animation:popIn .2s ease}
+@keyframes popIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-box h3{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:8px}
+.modal-box p{color:var(--gray);font-size:.88rem;line-height:1.6;margin-bottom:20px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-btn{border:none;border-radius:10px;padding:10px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer}
+.modal-btn.cancel{background:var(--light);color:var(--navy)}
+.modal-btn.confirm-approve{background:var(--green);color:white}
+.modal-btn.confirm-reject{background:var(--red);color:white}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div style="font-size:2.5rem;margin-bottom:12px">🛡️</div>
+    <div class="login-logo">EmprendeGo</div>
+    <div class="login-sub">Panel de Administración — Solo acceso autorizado</div>
+    <input type="password" id="pw-input" placeholder="Contraseña de administrador" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button class="login-btn" onclick="tryLogin()">Ingresar al panel</button>
+    <div class="login-error" id="login-error">❌ Contraseña incorrecta</div>
+    <p style="margin-top:16px;font-size:.75rem;color:var(--gray)">Contraseña demo: <strong>admin123</strong></p>
+  </div>
+</div>
+
+<!-- ADMIN APP -->
+<div id="admin-app">
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">EmprendeGo</span>
+      <span class="admin-badge">ADMIN</span>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-time" id="clock"></span>
+      <button class="logout-btn" onclick="adminLogout()">Salir</button>
+    </div>
+  </div>
+
+  <!-- MOBILE NAV -->
+  <div class="mobile-nav">
+    <button class="mobile-nav-btn active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
+    <button class="mobile-nav-btn" onclick="showPage('proveedores',this)">🏭 Proveedores</button>
+    <button class="mobile-nav-btn" onclick="showPage('usuarios',this)">👥 Usuarios</button>
+    <button class="mobile-nav-btn" onclick="showPage('reportes',this)">🚨 Reportes</button>
+    <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
+    <button class="mobile-nav-btn" onclick="showPage('config',this)">⚙️ Config</button>
+  </div>
+
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-group">
+        <div class="nav-group-label">General</div>
+        <div class="nav-link active" onclick="showPage('dashboard',this)"><span class="ni">📊</span>Dashboard</div>
+        <div class="nav-link" onclick="showPage('actividad',this)"><span class="ni">⚡</span>Actividad reciente</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Usuarios</div>
+        <div class="nav-link" onclick="showPage('proveedores',this)"><span class="ni">🏭</span>Proveedores<span class="nav-badge">3</span></div>
+        <div class="nav-link" onclick="showPage('usuarios',this)"><span class="ni">👥</span>Usuarios</div>
+        <div class="nav-link" onclick="showPage('planes',this)"><span class="ni">⭐</span>Planes & Pagos</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Contenido</div>
+        <div class="nav-link" onclick="showPage('busquedas',this)"><span class="ni">🔍</span>Búsquedas</div>
+        <div class="nav-link" onclick="showPage('rubros',this)"><span class="ni">📦</span>Rubros</div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Moderación</div>
+        <div class="nav-link" onclick="showPage('reportes',this)"><span class="ni">🚨</span>Reportes<span class="nav-badge">2</span></div>
+      </div>
+      <div class="nav-group">
+        <div class="nav-group-label">Sistema</div>
+        <div class="nav-link" onclick="showPage('config',this)"><span class="ni">⚙️</span>Configuración</div>
+      </div>
+    </div>
+
+    <div class="main-content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-title">Dashboard General</div>
+        <div class="page-sub" id="dash-date">Cargando...</div>
+        <div class="metrics-grid">
+          <div class="metric-card"><div class="metric-icon">🏭</div><div class="metric-val">47</div><div class="metric-label">Proveedores activos</div><div class="metric-trend up">↑ +3 esta semana</div></div>
+          <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val">1.284</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up">↑ +89 este mes</div></div>
+          <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" style="color:var(--orange)">3</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" style="color:var(--orange)">Requiere atención</div></div>
+          <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-val">$841</div><div class="metric-label">Ingresos este mes</div><div class="metric-trend up">↑ +$290 vs mes ant.</div></div>
+          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val">5.8k</div><div class="metric-label">Búsquedas hoy</div><div class="metric-trend up">↑ +24% vs ayer</div></div>
+          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" style="color:var(--red)">2</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down">Requiere revisión</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-title">Búsquedas por rubro</div>
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-label">Moda</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">1.2k</span></div>
+              <div class="bar-row"><span class="bar-label">Tecnología</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-val">980</span></div>
+              <div class="bar-row"><span class="bar-label">Bazar</span><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><span class="bar-val">820</span></div>
+              <div class="bar-row"><span class="bar-label">Hogar</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">610</span></div>
+              <div class="bar-row"><span class="bar-label">Alimentos</span><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><span class="bar-val">410</span></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Distribución de planes</div>
+            <div class="donut-wrapper">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="30" fill="none" stroke="#e0e7ff" stroke-width="12"/>
+                <circle cx="40" cy="40" r="30" fill="none" stroke="url(#grad1)" stroke-width="12" stroke-dasharray="113 75" stroke-dashoffset="-19" stroke-linecap="round"/>
+                <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#1a6bff"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient></defs>
+              </svg>
+              <div class="donut-legends">
+                <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div><span class="legend-label">Plan Gratis</span><span class="legend-val">38</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div><span class="legend-label">Plan Pro</span><span class="legend-val">9</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff"></div><span class="legend-label">Pendientes</span><span class="legend-val">3</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-card">
+            <div class="chart-title">Registros últimos 7 días</div>
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-label">Lun</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">14</span></div>
+              <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">23</span></div>
+              <div class="bar-row"><span class="bar-label">Mié</span><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="bar-val">18</span></div>
+              <div class="bar-row"><span class="bar-label">Jue</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">29</span></div>
+              <div class="bar-row"><span class="bar-label">Vie</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="bar-val">34</span></div>
+              <div class="bar-row"><span class="bar-label">Sáb</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">25</span></div>
+              <div class="bar-row"><span class="bar-label">Dom</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="bar-val">12</span></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Usuarios por provincia</div>
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-label">Bs. Aires</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="bar-val">580</span></div>
+              <div class="bar-row"><span class="bar-label">CABA</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">310</span></div>
+              <div class="bar-row"><span class="bar-label">Córdoba</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">195</span></div>
+              <div class="bar-row"><span class="bar-label">Santa Fe</span><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><span class="bar-val">134</span></div>
+              <div class="bar-row"><span class="bar-label">Otras</span><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><span class="bar-val">65</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTIVIDAD -->
+      <div class="page" id="page-actividad">
+        <div class="page-title">Actividad Reciente</div>
+        <div class="page-sub">Últimas acciones en la plataforma</div>
+        <div class="activity-card">
+          <div class="activity-list">
+            <div class="activity-item"><div class="a-icon blue">🏭</div><div class="a-text"><strong>Nuevo proveedor registrado</strong><span>Distribuidora Norte SRL — Rubro: Alimentos — CUIT: 30-71234567-8</span></div><span class="a-time">Hace 5 min</span></div>
+            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>TechMayor BA fue aprobado y publicado</span></div><span class="a-time">Hace 22 min</span></div>
+            <div class="activity-item"><div class="a-icon blue">👤</div><div class="a-text"><strong>Nuevo usuario registrado</strong><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="076a66756e6629606675646e6647606a666e6b2964686a">[email&#160;protected]</a> — Buenos Aires</span></div><span class="a-time">Hace 34 min</span></div>
+            <div class="activity-item"><div class="a-icon orange">🚨</div><div class="a-text"><strong>Reporte recibido</strong><span>"Bazar Express" reportado por posible estafa</span></div><span class="a-time">Hace 1h</span></div>
+            <div class="activity-item"><div class="a-icon green">💰</div><div class="a-text"><strong>Nuevo Plan Pro activado</strong><span>Modas del Litoral — $29/mes</span></div><span class="a-time">Hace 2h</span></div>
+            <div class="activity-item"><div class="a-icon blue">🤖</div><div class="a-text"><strong>Test IA completado</strong><span>Usuario anónimo — Resultado: Moda y Accesorios</span></div><span class="a-time">Hace 2h</span></div>
+            <div class="activity-item"><div class="a-icon orange">⚠️</div><div class="a-text"><strong>Intento de login fallido</strong><span>3 intentos fallidos desde IP 190.12.45.88</span></div><span class="a-time">Hace 3h</span></div>
+            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>AlimVerde SRL fue verificado y publicado</span></div><span class="a-time">Hace 4h</span></div>
+            <div class="activity-item"><div class="a-icon blue">🔍</div><div class="a-text"><strong>Pico de búsquedas</strong><span>+340% búsquedas de "ropa mayorista" — Posible tendencia</span></div><span class="a-time">Hace 5h</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROVEEDORES -->
+      <div class="page" id="page-proveedores">
+        <div class="page-title">Gestión de Proveedores</div>
+        <div class="page-sub">Aprobación, seguimiento y moderación</div>
+
+        <!-- PENDIENTES -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">⏳ Pendientes de aprobación <span style="background:#fff3e0;color:var(--orange);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">3</span></div>
+          </div>
+          <table>
+            <thead><tr><th>Negocio</th><th>CUIT</th><th>Rubro</th><th>Provincia</th><th>Fecha</th><th>Acciones</th></tr></thead>
+            <tbody id="pending-table">
+              <tr>
+                <td><div class="avatar-cell"><div class="cell-avatar">DN</div><div><strong>Distribuidora Norte</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7f1c1e0d13100c3f11100d0b1a511c1012">[email&#160;protected]</a></span></div></div></td>
+                <td>30-71234567-8</td><td>Alimentos</td><td>Córdoba</td><td>Hace 5 min</td>
+                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil completo...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'Distribuidora Norte')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'Distribuidora Norte')">✗ Rechazar</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="avatar-cell"><div class="cell-avatar">RM</div><div><strong>RopaMax SRL</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa93949c95ba88958a9b979b82d4999597">[email&#160;protected]</a></span></div></div></td>
+                <td>20-34567890-1</td><td>Moda</td><td>Buenos Aires</td><td>Hace 1h</td>
+                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil completo...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'RopaMax SRL')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'RopaMax SRL')">✗ Rechazar</button></div></td>
+              </tr>
+              <tr>
+                <td><div class="avatar-cell"><div class="cell-avatar">BE</div><div><strong>Bazar Express</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5634372c3724332e262433252516313b373f3a7835393b">[email&#160;protected]</a></span></div></div></td>
+                <td>27-98765432-1</td><td>Bazar</td><td>CABA</td><td>Hace 3h</td>
+                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'Bazar Express')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'Bazar Express')">✗ Rechazar</button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- TODOS LOS PROVEEDORES -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Todos los proveedores</div>
+            <div class="table-actions">
+              <input class="search-mini" placeholder="Buscar..." oninput="filterTable(this,'prov-table')">
+              <select class="filter-select" onchange="filterByStatus(this,'prov-table')">
+                <option value="">Todos</option>
+                <option value="approved">Aprobados</option>
+                <option value="pro">Plan Pro</option>
+                <option value="free">Plan Gratis</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Negocio</th><th>CUIT</th><th>Rubro</th><th>Plan</th><th>Leads</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="prov-table">
+              <tr data-status="approved pro"><td><div class="avatar-cell"><div class="cell-avatar">TM</div>TechMayor BA</div></td><td>20-12345678-9</td><td>Tecnología</td><td><span class="status-badge pro">⭐ PRO</span></td><td>1.284</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
+              <tr data-status="approved free"><td><div class="avatar-cell"><div class="cell-avatar">HD</div>HomeDeco Sur</div></td><td>27-87654321-0</td><td>Hogar</td><td><span class="status-badge free">Gratis</span></td><td>243</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
+              <tr data-status="approved pro"><td><div class="avatar-cell"><div class="cell-avatar">ML</div>Modas del Litoral</div></td><td>23-45678901-2</td><td>Moda</td><td><span class="status-badge pro">⭐ PRO</span></td><td>876</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
+              <tr data-status="approved free"><td><div class="avatar-cell"><div class="cell-avatar">AV</div>AlimVerde SRL</div></td><td>30-56789012-3</td><td>Alimentos</td><td><span class="status-badge free">Gratis</span></td><td>412</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div class="page" id="page-usuarios">
+        <div class="page-title">Usuarios Registrados</div>
+        <div class="page-sub">Base completa de usuarios exploradores</div>
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Todos los usuarios <span style="color:var(--gray);font-weight:400;font-size:.85rem">(1.284 total)</span></div>
+            <div class="table-actions">
+              <input class="search-mini" placeholder="Buscar usuario..." oninput="filterTable(this,'user-table')">
+              <select class="filter-select">
+                <option>Todos</option>
+                <option>Con historial</option>
+                <option>Sin actividad</option>
+              </select>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Usuario</th><th>Provincia</th><th>Registrado</th><th>Última visita</th><th>Proveedores vistos</th><th>Test IA</th><th>Acciones</th></tr></thead>
+            <tbody id="user-table">
+              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#ffd6e8;color:var(--pink)">MG</div><div><strong>María García</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c3aea2b1aaa2eda4a2b1a0aaa283a4aea2aaafeda0acae">[email&#160;protected]</a></span></div></div></td><td>Buenos Aires</td><td>Hace 2 días</td><td>Hace 1h</td><td>12</td><td><span style="color:var(--green);font-weight:700">✓ Hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
+              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">JL</div><div><strong>Juan López</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a7cdcbc8d7c2dde7cfc8d3cac6cecb89c4c8ca">[email&#160;protected]</a></span></div></div></td><td>CABA</td><td>Hace 5 días</td><td>Hace 3h</td><td>7</td><td><span style="color:var(--gray)">— No hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
+              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#d4f4e8;color:var(--green)">AP</div><div><strong>Ana Pérez</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8aebe4e3feeba4faeff8eff0caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></span></div></div></td><td>Córdoba</td><td>Hace 1 semana</td><td>Hace 1 día</td><td>23</td><td><span style="color:var(--green);font-weight:700">✓ Hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
+              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#ffe0cc;color:var(--orange)">CR</div><div><strong>Carlos Rodríguez</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3b585a4957544815497b544e4f5754545015585456">[email&#160;protected]</a></span></div></div></td><td>Santa Fe</td><td>Hace 2 semanas</td><td>Hace 4 días</td><td>3</td><td><span style="color:var(--gray)">— No hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PLANES & PAGOS -->
+      <div class="page" id="page-planes">
+        <div class="page-title">Planes & Pagos</div>
+        <div class="page-sub">Control de suscripciones y facturación</div>
+        <div class="metrics-grid">
+          <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-val">$261</div><div class="metric-label">MRR (ingreso mensual)</div><div class="metric-trend up">↑ 9 suscriptores PRO</div></div>
+          <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-val">$841</div><div class="metric-label">Ingresos totales</div><div class="metric-trend up">↑ +$290 vs mes ant.</div></div>
+          <div class="metric-card"><div class="metric-icon">🔄</div><div class="metric-val">89%</div><div class="metric-label">Tasa de renovación</div><div class="metric-trend up">↑ Muy buena</div></div>
+        </div>
+        <div class="table-card">
+          <div class="table-title" style="margin-bottom:16px">Suscriptores Plan Pro</div>
+          <table>
+            <thead><tr><th>Proveedor</th><th>Desde</th><th>Próximo cobro</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>TechMayor BA</td><td>01/01/2026</td><td>01/04/2026</td><td>$29</td><td><span class="status-badge approved">● Al día</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
+              <tr><td>Modas del Litoral</td><td>15/02/2026</td><td>15/04/2026</td><td>$29</td><td><span class="status-badge approved">● Al día</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
+              <tr><td>CelularPro Dist.</td><td>01/03/2026</td><td>01/04/2026</td><td>$29</td><td><span class="status-badge pending">⚠ Pendiente</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BÚSQUEDAS -->
+      <div class="page" id="page-busquedas">
+        <div class="page-title">Análisis de Búsquedas</div>
+        <div class="page-sub">Qué está buscando tu audiencia</div>
+        <div class="chart-row">
+          <div class="chart-card" style="grid-column:1/-1">
+            <div class="chart-title">🔥 Términos más buscados hoy</div>
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-label">ropa mujer</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="bar-val">342</span></div>
+              <div class="bar-row"><span class="bar-label">celulares</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">287</span></div>
+              <div class="bar-row"><span class="bar-label">bazar hogar</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">234</span></div>
+              <div class="bar-row"><span class="bar-label">mayorista</span><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div><span class="bar-val">209</span></div>
+              <div class="bar-row"><span class="bar-label">accesorios</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">162</span></div>
+              <div class="bar-row"><span class="bar-label">alimentos</span><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div><span class="bar-val">115</span></div>
+              <div class="bar-row"><span class="bar-label">indumentaria</span><div class="bar-track"><div class="bar-fill" style="width:24%"></div></div><span class="bar-val">86</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-title" style="margin-bottom:16px">Búsquedas sin resultados — Oportunidades de mercado</div>
+          <table>
+            <thead><tr><th>Término buscado</th><th>Veces</th><th>Provincia más frecuente</th><th>Sugerencia</th></tr></thead>
+            <tbody>
+              <tr><td><strong>juguetes mayorista</strong></td><td>89</td><td>Buenos Aires</td><td><span style="color:var(--blue);font-size:.78rem">→ Agregar rubro Juguetes</span></td></tr>
+              <tr><td><strong>librería por mayor</strong></td><td>67</td><td>Córdoba</td><td><span style="color:var(--blue);font-size:.78rem">→ Subrubro en Bazar</span></td></tr>
+              <tr><td><strong>cosméticos</strong></td><td>54</td><td>CABA</td><td><span style="color:var(--blue);font-size:.78rem">→ Nuevo rubro Belleza</span></td></tr>
+              <tr><td><strong>mascotas</strong></td><td>41</td><td>Buenos Aires</td><td><span style="color:var(--blue);font-size:.78rem">→ Rubro Mascotas</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RUBROS -->
+      <div class="page" id="page-rubros">
+        <div class="page-title">Gestión de Rubros</div>
+        <div class="page-sub">Categorías activas en la plataforma</div>
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Rubros activos</div>
+            <button class="save-btn" onclick="showToast('Nuevo rubro agregado ✓')">+ Agregar rubro</button>
+          </div>
+          <table>
+            <thead><tr><th>Rubro</th><th>Proveedores</th><th>Búsquedas/día</th><th>Crecimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              <tr><td>👗 Moda</td><td>156</td><td>1.200</td><td><span style="color:var(--green);font-weight:700">↑ +12%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
+              <tr><td>💻 Tecnología</td><td>124</td><td>980</td><td><span style="color:var(--green);font-weight:700">↑ +8%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
+              <tr><td>🛒 Bazar</td><td>215</td><td>820</td><td><span style="color:var(--green);font-weight:700">↑ +5%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
+              <tr><td>🏠 Hogar</td><td>89</td><td>610</td><td><span style="color:var(--orange);font-weight:700">→ Estable</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
+              <tr><td>🥗 Alimentos</td><td>73</td><td>410</td><td><span style="color:var(--green);font-weight:700">↑ +15%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REPORTES -->
+      <div class="page" id="page-reportes">
+        <div class="page-title">Reportes & Denuncias</div>
+        <div class="page-sub">Moderación y seguridad de la plataforma</div>
+        <div class="report-card">
+          <div class="report-header">
+            <div><strong style="font-size:.95rem">Bazar Express</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b0dac5d1de9edcdfc0d5caf0d7ddd1d9dc9ed3dfdd">[email&#160;protected]</a></span></div>
+            <span class="report-type estafa">🚨 Posible estafa</span>
+          </div>
+          <div class="report-body">"Me pidieron transferencia anticipada de $85.000 y nunca enviaron la mercadería. El número de WhatsApp ahora no responde. El CUIT que pusieron no existe en AFIP."</div>
+          <div class="report-meta">📅 Recibido: Hace 1h · 👁 2 reportes sobre este proveedor</div>
+          <div class="report-actions">
+            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
+            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada al proveedor')">⚠️ Advertir</button>
+            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido y usuario notificado')">🚫 Suspender</button>
+            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
+          </div>
+        </div>
+        <div class="report-card">
+          <div class="report-header">
+            <div><strong style="font-size:.95rem">TechOfertas BA</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="51303f307f213423342b11363c30383d7f323e3c">[email&#160;protected]</a></span></div>
+            <span class="report-type spam">📢 Spam</span>
+          </div>
+          <div class="report-body">"Este proveedor me mandó mensajes no solicitados al WhatsApp con publicidad. Obtuvo mi número sin mi consentimiento."</div>
+          <div class="report-meta">📅 Recibido: Hace 3h · 👁 1 reporte</div>
+          <div class="report-actions">
+            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
+            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️ Advertir</button>
+            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫 Suspender</button>
+            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONFIGURACIÓN -->
+      <div class="page" id="page-config">
+        <div class="page-title">Configuración</div>
+        <div class="page-sub">Ajustes generales de la plataforma</div>
+        <div class="settings-section">
+          <h3>🔔 Notificaciones de Admin</h3>
+          <div class="setting-row"><div class="setting-info"><strong>Nuevo proveedor registrado</strong><span>Recibir alerta cuando llegue una solicitud</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Nuevo reporte o denuncia</strong><span>Alerta inmediata ante reportes</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Nuevo pago recibido</strong><span>Confirmación de suscripciones Pro</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Resumen diario</strong><span>Email con métricas del día</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="settings-section">
+          <h3>🏭 Aprobación de proveedores</h3>
+          <div class="setting-row"><div class="setting-info"><strong>Aprobación manual</strong><span>Todos los proveedores requieren tu OK</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Verificar CUIT automáticamente</strong><span>Consulta AFIP al recibir solicitud</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Foto obligatoria</strong><span>Requerir foto del negocio para aprobar</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <div class="settings-section">
+          <h3>💰 Planes</h3>
+          <div class="setting-row"><div class="setting-info"><strong>Precio Plan Pro</strong><span>Precio mensual actual</span></div><input class="settings-input" value="$29 / mes"></div>
+          <div class="setting-row"><div class="setting-info"><strong>Email de facturación</strong><span>Para recibir confirmaciones de pago</span></div><input class="settings-input" value="admin@emprendego.com"></div>
+        </div>
+        <div class="settings-section">
+          <h3>🔐 Seguridad</h3>
+          <div class="setting-row"><div class="setting-info"><strong>Cambiar contraseña de admin</strong><span>Se recomienda cambiarla periódicamente</span></div><input class="settings-input" type="password" placeholder="Nueva contraseña"></div>
+          <div class="setting-row"><div class="setting-info"><strong>Bloqueo por intentos fallidos</strong><span>Bloquear IP tras 5 intentos</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+        <button class="save-btn" onclick="showToast('✓ Configuración guardada')">Guardar todos los cambios</button>
+      </div>
+
+    </div><!-- end main-content -->
+  </div><!-- end app-body -->
+</div><!-- end admin-app -->
+
+<!-- MODAL CONFIRMACIÓN -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box">
+    <h3 id="modal-title">Confirmar acción</h3>
+    <p id="modal-body">¿Estás seguro?</p>
+    <div class="modal-actions">
+      <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
+      <button class="modal-btn" id="modal-confirm-btn" onclick="confirmAction()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+const ADMIN_PASSWORD = 'admin123';
+let pendingAction = null;
+
+function tryLogin(){
+  const pw = document.getElementById('pw-input').value;
+  if(pw === ADMIN_PASSWORD){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-app').style.display='block';
+    startClock();
+    setDashDate();
+    cargarDashboard();
+    cargarProveedoresPendientes();
+    cargarTodosProveedores();
+    cargarUsuarios();
+  } else {
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('pw-input').value='';
+    setTimeout(()=>document.getElementById('login-error').style.display='none',2000);
+  }
+}
+
+function adminLogout(){
+  document.getElementById('admin-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('pw-input').value='';
+}
+
+function startClock(){
+  function tick(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+  }
+  tick(); setInterval(tick,60000);
+}
+
+function setDashDate(){
+  const now = new Date();
+  document.getElementById('dash-date').textContent = now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ===== SUPABASE: DASHBOARD METRICS =====
+async function cargarDashboard(){
+  try {
+    const [{data:provs},{data:users},{data:pendientes},{data:busqs}] = await Promise.all([
+      sb.from('proveedores').select('id,plan,estado'),
+      sb.from('usuarios').select('id'),
+      sb.from('proveedores').select('id').eq('estado','pendiente'),
+      sb.from('busquedas').select('id')
+    ]);
+    const activos = provs?.filter(p=>p.estado==='aprobado').length || 0;
+    const totalUsers = users?.length || 0;
+    const totalPend = pendientes?.length || 0;
+    const proPlan = provs?.filter(p=>p.plan==='pro').length || 0;
+    // Update metric cards
+    const cards = document.querySelectorAll('.metric-val');
+    if(cards[0]) cards[0].textContent = activos;
+    if(cards[1]) cards[1].textContent = totalUsers.toLocaleString('es-AR');
+    if(cards[2]) cards[2].textContent = totalPend;
+    // Update pending badges
+    document.querySelectorAll('.nav-badge').forEach(b=>{
+      if(b.closest('.nav-link')?.textContent.includes('Proveedor')) b.textContent=totalPend;
+    });
+  } catch(e){ console.log('dashboard error',e); }
+}
+
+// ===== SUPABASE: PROVEEDORES PENDIENTES =====
+async function cargarProveedoresPendientes(){
+  const tbody = document.getElementById('pending-table');
+  try {
+    const {data, error} = await sb
+      .from('proveedores')
+      .select('*')
+      .eq('estado','pendiente')
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data?.length){
+      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">No hay solicitudes pendientes ✓</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(p=>`
+      <tr>
+        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>
+          <div><strong>${p.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${p.email}</span></div></div></td>
+        <td>${p.cuit||'—'}</td>
+        <td>${p.rubro||'—'}</td>
+        <td>${p.provincia||'—'}</td>
+        <td>${timeAgoAdmin(p.created_at)}</td>
+        <td><div class="action-group">
+          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁 Ver</button>
+          <button class="tbl-btn approve" onclick="aprobarProveedor('${p.id}','${p.nombre}',this)">✓ Aprobar</button>
+          <button class="tbl-btn reject" onclick="rechazarProveedor('${p.id}','${p.nombre}',this)">✗ Rechazar</button>
+        </div></td>
+      </tr>`).join('');
+  } catch(e){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>';
+  }
+}
+
+// ===== SUPABASE: TODOS LOS PROVEEDORES =====
+async function cargarTodosProveedores(){
+  const tbody = document.getElementById('prov-table');
+  try {
+    const {data, error} = await sb
+      .from('proveedores')
+      .select('*')
+      .eq('estado','aprobado')
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data?.length){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados aún</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(p=>`
+      <tr data-status="approved ${p.plan}">
+        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
+        <td>${p.cuit||'—'}</td>
+        <td>${p.rubro||'—'}</td>
+        <td><span class="status-badge ${p.plan==='pro'?'pro':'free'}">${p.plan==='pro'?'⭐ PRO':'Gratis'}</span></td>
+        <td>—</td>
+        <td><span class="status-badge approved">● Activo</span></td>
+        <td><div class="action-group">
+          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
+          <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
+          <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
+        </div></td>
+      </tr>`).join('');
+  } catch(e){ console.log('proveedores error',e); }
+}
+
+// ===== SUPABASE: USUARIOS =====
+async function cargarUsuarios(){
+  const tbody = document.getElementById('user-table');
+  try {
+    const {data, error} = await sb
+      .from('usuarios')
+      .select('*')
+      .order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data?.length){
+      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay usuarios registrados aún</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(u=>`
+      <tr>
+        <td><div class="avatar-cell">
+          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${u.nombre.substring(0,2).toUpperCase()}</div>
+          <div><strong>${u.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${u.email}</span></div>
+        </div></td>
+        <td>${u.provincia||'—'}</td>
+        <td>${timeAgoAdmin(u.created_at)}</td>
+        <td>—</td>
+        <td>—</td>
+        <td>—</td>
+        <td><div class="action-group">
+          <button class="tbl-btn view" onclick="showToast('Ver perfil')">👁</button>
+          <button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button>
+        </div></td>
+      </tr>`).join('');
+  } catch(e){ console.log('usuarios error',e); }
+}
+
+// ===== ACCIONES =====
+function verProveedor(id){ showToast('ID: ' + id.substring(0,8) + '...'); }
+
+function aprobarProveedor(id, nombre, btn){
+  pendingAction = {type:'approve', id, nombre, btn};
+  document.getElementById('modal-title').textContent = 'Aprobar proveedor';
+  document.getElementById('modal-body').textContent = `¿Aprobás a "${nombre}"? Su perfil será publicado inmediatamente.`;
+  document.getElementById('modal-confirm-btn').className='modal-btn confirm-approve';
+  document.getElementById('modal-confirm-btn').textContent='✓ Aprobar';
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+function rechazarProveedor(id, nombre, btn){
+  pendingAction = {type:'reject', id, nombre, btn};
+  document.getElementById('modal-title').textContent = 'Rechazar proveedor';
+  document.getElementById('modal-body').textContent = `¿Rechazás a "${nombre}"? Se le notificará por email.`;
+  document.getElementById('modal-confirm-btn').className='modal-btn confirm-reject';
+  document.getElementById('modal-confirm-btn').textContent='✗ Rechazar';
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+async function suspenderProveedor(id){
+  try {
+    await sb.from('proveedores').update({estado:'suspendido'}).eq('id',id);
+    showToast('Proveedor suspendido');
+    cargarTodosProveedores();
+  } catch(e){ showToast('Error al suspender'); }
+}
+
+async function confirmAction(){
+  closeModal();
+  if(!pendingAction) return;
+  const nuevoEstado = pendingAction.type==='approve' ? 'aprobado' : 'rechazado';
+  try {
+    await sb.from('proveedores').update({estado: nuevoEstado}).eq('id', pendingAction.id);
+    showToast(pendingAction.type==='approve'
+      ? `✓ ${pendingAction.nombre} aprobado y publicado`
+      : `✗ ${pendingAction.nombre} rechazado`);
+    // Reload both tables
+    cargarProveedoresPendientes();
+    cargarTodosProveedores();
+    cargarDashboard();
+  } catch(e){ showToast('Error al procesar'); }
+  pendingAction = null;
+}
+
+function closeModal(){
+  document.getElementById('confirmModal').classList.remove('open');
+}
+
+function timeAgoAdmin(dateStr){
+  if(!dateStr) return '—';
+  const mins = Math.floor((new Date()-new Date(dateStr))/60000);
+  if(mins < 1) return 'Ahora';
+  if(mins < 60) return `Hace ${mins}m`;
+  if(mins < 1440) return `Hace ${Math.floor(mins/60)}h`;
+  return `Hace ${Math.floor(mins/1440)}d`;
+}
+
+function showPage(name, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-btn').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  if(el) el.classList.add('active');
+  // Reload data on tab switch
+  if(name==='proveedores'){ cargarProveedoresPendientes(); cargarTodosProveedores(); }
+  if(name==='usuarios') cargarUsuarios();
+  if(name==='dashboard') cargarDashboard();
+}
+
+function filterTable(input, tableId){
+  const q = input.value.toLowerCase();
+  document.querySelectorAll('#'+tableId+' tr').forEach(row=>{
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+
+function filterByStatus(sel, tableId){
+  const val = sel.value;
+  document.querySelectorAll('#'+tableId+' tr').forEach(row=>{
+    if(!val){ row.style.display=''; return; }
+    row.style.display = row.dataset.status?.includes(val) ? '' : 'none';
+  });
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>
