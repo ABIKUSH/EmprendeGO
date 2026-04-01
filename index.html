@@ -298,6 +298,41 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .rchip{background:rgba(255,255,255,.15);color:#fff;font-size:.76rem;font-weight:600;padding:5px 12px;border-radius:20px}
 .spinner{width:48px;height:48px;border-radius:50%;border:4px solid #e0e7ff;border-top-color:var(--blue);animation:spin 1s linear infinite;margin:28px auto}
 
+/* MEJORAS V7 */
+.chtop-av{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:.82rem;color:#fff;flex-shrink:0}
+.online-dot{width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;margin-left:5px}
+.chmsg-wrap{display:flex;flex-direction:column}
+.chmsg-wrap.s{align-items:flex-end}
+.chmsg-wrap.r{align-items:flex-start}
+.chmsg-visto{font-size:.62rem;color:#aab2cc;margin-top:2px;padding:0 4px}
+.chmsg-visto.v{color:var(--blue)}
+.chtyping{font-size:.73rem;color:var(--gray);font-style:italic;padding:4px 16px;min-height:20px}
+.msgbadge{position:absolute;top:-4px;right:-6px;background:var(--red);color:#fff;font-size:.58rem;font-weight:800;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center}
+.star{font-size:1.2rem;cursor:pointer;color:#e0e7ff;transition:color .1s}
+.star.on{color:#f59e0b}
+.resena-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:10px}
+.resena-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.resena-av{width:34px;height:34px;border-radius:50%;background:var(--bl);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;font-size:.82rem;color:var(--blue);flex-shrink:0}
+.resena-meta strong{font-size:.85rem;font-weight:700;display:block}
+.resena-meta span{font-size:.72rem;color:var(--gray)}
+.resena-txt{font-size:.84rem;color:var(--gray);line-height:1.6}
+.rating-box{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:14px;margin-bottom:12px}
+.rating-num{font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:900;color:var(--navy);line-height:1}
+.btn-resena{width:100%;background:var(--bl);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;margin-bottom:12px}
+.empty-srch{text-align:center;padding:40px 20px;color:var(--gray)}
+.empty-srch .eico{font-size:2.5rem;margin-bottom:10px}
+.empty-srch h3{font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;margin-bottom:7px;color:var(--navy)}
+.empty-srch p{font-size:.84rem;line-height:1.6;margin-bottom:14px}
+.sugs{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.sug{background:#fff;border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-size:.82rem;font-weight:600;cursor:pointer;color:var(--navy)}
+.stag{background:var(--bl);color:var(--blue);font-size:.75rem;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer}
+.stags{display:flex;gap:6px;flex-wrap:wrap;padding:8px 20px 0;min-height:10px}
+.pro-banner{margin:20px 20px 0;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:20px;padding:20px;cursor:pointer;position:relative;overflow:hidden}
+.pro-banner::after{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.1)}
+.pro-banner h3{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#fff;margin-bottom:6px}
+.pro-banner p{color:rgba(255,255,255,.85);font-size:.83rem;line-height:1.5;margin-bottom:14px}
+.pro-banner-btn{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#f97316;border:none;border-radius:12px;padding:10px 18px;font-family:'Sora',sans-serif;font-size:.87rem;font-weight:800;cursor:pointer}
+
 /* NAVBAR */
 .nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #eef0f8;display:flex;z-index:200;padding-bottom:env(safe-area-inset-bottom)}
 .ni{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;cursor:pointer}
@@ -326,6 +361,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
   <div class="ni" id="nav-registro" onclick="ir('registro')">
     <span class="nic">&#127981;</span><span class="nil">Proveed.</span>
+  </div>
+  <div class="ni" id="nav-mensajes" onclick="ir('mensajes')">
+    <span class="nic naviw">&#128172;<span class="msgbadge" id="msgbadge">0</span></span>
+    <span class="nil">Mensajes</span>
   </div>
   <div class="ni" id="nav-perfil" onclick="ir('perfil')">
     <span class="nic">&#128100;</span><span class="nil">Perfil</span>
@@ -373,6 +412,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="catc" onclick="filtCat('Bazar')"><img src="https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&q=80" alt=""><div class="catov"></div><div class="catlb"><strong>Bazar</strong><span>215 Proveedores</span></div></div>
     <div class="catc" onclick="filtCat('Moda')"><img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&q=80" alt=""><div class="catov"></div><div class="catlb"><strong>Moda</strong><span>156 Proveedores</span></div></div>
   </div>
+  <div class="pro-banner" onclick="ir('planes')">
+    <h3>&#11088; Conviertete en Proveedor PRO</h3>
+    <p>WhatsApp directo, anuncios, dashboard con estadisticas y mas por solo $29/mes.</p>
+    <button class="pro-banner-btn">Ver Plan Pro &#8594;</button>
+  </div>
   <div class="howb">
     <h2>Como funciona?</h2><p>Tres pasos para empezar a vender</p>
     <div class="step"><div class="stepn">1</div><div><strong>Explora proveedores</strong><span>Filtra por rubro, provincia y plan.</span></div></div>
@@ -406,7 +450,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <option value="gratis">Solo Gratis</option>
     </select>
   </div>
+  <div class="stags" id="stags"></div>
   <div class="plist" id="plist"><div style="text-align:center;padding:30px;color:var(--gray)">Cargando...</div></div>
+  <div style="padding:0 20px 20px">
+    <h3 style="font-family:'Sora',sans-serif;font-size:.97rem;font-weight:800;margin-bottom:12px">&#11088; Resenas</h3>
+    <div class="rating-box">
+      <div><div class="rating-num" id="dratnum">-</div><div style="display:flex;gap:2px;margin:4px 0" id="dratstars"></div><div style="font-size:.73rem;color:var(--gray)" id="dratcount">Sin resenas</div></div>
+    </div>
+    <button class="btn-resena" onclick="abrirModalResena()">&#9997; Dejar una resena</button>
+    <div id="dresenaslist"><div style="text-align:center;color:var(--gray);padding:12px;font-size:.82rem">Cargando...</div></div>
+  </div>
 </div>
 
 <!-- FAVORITOS -->
@@ -462,14 +515,25 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
 </div>
 
+<!-- MENSAJES -->
+<div class="screen" id="screen-mensajes">
+  <div class="tb"><span class="logo">Mensajes</span></div>
+  <div id="convlist" style="padding:8px 0 0"></div>
+</div>
+
 <!-- CHAT -->
 <div class="screen" id="screen-chat">
   <div class="chtop">
-    <button class="chbk" onclick="volverChat()">&#8592; Volver</button>
-    <div><div class="chnom" id="chnom">Proveedor</div><div class="chrub" id="chrub">Rubro</div></div>
+    <button class="chbk" onclick="volverChat()">&#8592;</button>
+    <div class="chtop-av" id="chtopav">EG</div>
+    <div style="flex:1">
+      <div class="chnom" id="chnom">Proveedor</div>
+      <div class="chrub" id="chrub">Rubro <span class="online-dot"></span></div>
+    </div>
   </div>
+  <div class="chtyping" id="chtyping"></div>
   <div class="chmsgs" id="chmsgs"></div>
-  <div style="height:68px"></div>
+  <div style="height:72px"></div>
   <div class="chbar">
     <input class="chinp" id="chinp" placeholder="Escribi tu mensaje..." onkeydown="if(event.key==='Enter')enviarMsg()">
     <button class="chsnd" onclick="enviarMsg()">&#10148;</button>
@@ -565,7 +629,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     </div>
   </div>
   <div id="pusu" style="display:none">
-    <div class="phdr"><div class="pav" id="uav">U</div><div class="pnm" id="unom">Usuario</div><div class="pem" id="uema"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="187d75797174587f75797174367b7775">[email&#160;protected]</a></div></div>
+    <div class="phdr"><div class="pav" id="uav">U</div><div class="pnm" id="unom">Usuario</div><div class="pem" id="uema">email@gmail.com</div></div>
     <div class="hsec"><h3>&#128065; Proveedores que exploraste</h3><div id="hlist"><div style="text-align:center;color:var(--gray);padding:18px;font-size:.83rem">Todavia no exploraste proveedores.</div></div></div>
     <div class="pacts">
       <button class="abtn" onclick="ir('buscar')">&#128269; Explorar proveedores</button>
@@ -679,9 +743,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
 </div>
 
+
+<!-- MODAL RESENA -->
+<div class="moverlay" id="mresena" onclick="if(event.target===this)cerrarResena()">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mhd"><h3>Dejar una resena</h3><button class="mcls" onclick="cerrarResena()">x</button></div>
+    <div class="mbdy">
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:16px" id="mresenaprov">Tu experiencia con el proveedor</p>
+      <div style="margin-bottom:16px">
+        <div style="font-size:.8rem;font-weight:600;color:var(--navy);margin-bottom:8px">Calificacion *</div>
+        <div id="starsrow" style="display:flex;gap:6px">
+          <span class="star" onclick="setStar(1)">&#9733;</span>
+          <span class="star" onclick="setStar(2)">&#9733;</span>
+          <span class="star" onclick="setStar(3)">&#9733;</span>
+          <span class="star" onclick="setStar(4)">&#9733;</span>
+          <span class="star" onclick="setStar(5)">&#9733;</span>
+        </div>
+      </div>
+      <div class="fg"><label>Tu nombre</label><input type="text" id="rnombre" placeholder="Juan P."></div>
+      <div class="fg"><label>Comentario *</label><textarea id="rtexto" placeholder="Excelente proveedor, productos de calidad..."></textarea></div>
+      <button class="sbtn" onclick="publicarResena()">Publicar resena</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="tst"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 var SB = supabase.createClient('https://seubtijmyoahnyspvidq.supabase.co','sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA');
 
 // ── DATOS DEMO ──
@@ -799,6 +888,7 @@ function ir(s) {
   if (nav) nav.classList.add('on');
   if (s === 'favoritos') renderFavs();
   if (s === 'perfil' && usr) mostrarPerfil();
+  if (s === 'mensajes') cargarConversaciones();
   window.scrollTo(0, 0);
 }
 
@@ -918,6 +1008,7 @@ async function abrirDetalle(id) {
   document.getElementById('cres').style.display = 'none';
 
   await cargarProdsDet(p.id);
+  await cargarResenas(p.id);
   ir('detalle');
 }
 
@@ -967,24 +1058,64 @@ function calcular() {
   el.style.display = 'grid';
 }
 
-// ── CHAT ──
+// ── CHAT REAL ──
+var chatProvId = null;
+var chatPollTimer = null;
+var starSel = 0;
+
 function abrirChatActual() {
   if (provAct) abrirChatId(provAct.id);
   else toast('No disponible');
 }
 
-function abrirChatId(id) {
+async function abrirChatId(id) {
   var lista = provDB.length ? provDB : DEMO;
   var p = null;
-  for (var i = 0; i < lista.length; i++) { if (String(lista[i].id) === String(id)) { p = lista[i]; break; } }
+  for (var i = 0; i < lista.length; i++) {
+    if (String(lista[i].id) === String(id)) { p = lista[i]; break; }
+  }
   if (!p) return;
+  provAct = p;
+  chatProvId = String(p.id);
   var active = document.querySelector('.screen.active');
-  chatPan = active ? active.id.replace('screen-', '') : 'buscar';
+  chatPan = active ? active.id.replace('screen-','') : 'buscar';
+  document.getElementById('chtopav').textContent = ini2(p.nombre);
   document.getElementById('chnom').textContent = p.nombre;
   document.getElementById('chrub').textContent = p.rubro || 'Proveedor';
-  chatMsgs = [{ t: 'r', m: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', h: getHora() }];
-  renderChat();
+  chatMsgs = [];
+  document.getElementById('chmsgs').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:.82rem">Cargando...</div>';
   ir('chat');
+  await cargarMsgsDB();
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  chatPollTimer = setInterval(async function() {
+    if (document.getElementById('screen-chat').classList.contains('active')) {
+      await cargarMsgsDB();
+    }
+  }, 5000);
+}
+
+async function cargarMsgsDB() {
+  try {
+    var res = await SB.from('mensajes').select('*').eq('proveedor_id', chatProvId).order('created_at', {ascending: true}).limit(50);
+    if (res.data && res.data.length) {
+      chatMsgs = res.data.map(function(m) {
+        return { t: m.de_tipo === 'usuario' ? 's' : 'r', m: m.texto, h: fmtHora(m.created_at), leido: m.leido };
+      });
+    } else {
+      chatMsgs = [{ t: 'r', m: 'Hola! Soy ' + document.getElementById('chnom').textContent + '. En que te puedo ayudar?', h: getHora(), leido: true }];
+    }
+    renderChat();
+  } catch(e) {
+    if (!chatMsgs.length) {
+      chatMsgs = [{ t: 'r', m: 'Hola! En que te puedo ayudar?', h: getHora(), leido: true }];
+      renderChat();
+    }
+  }
+}
+
+function fmtHora(ts) {
+  try { return new Date(ts).toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'}); }
+  catch(e) { return getHora(); }
 }
 
 function renderChat() {
@@ -993,27 +1124,236 @@ function renderChat() {
   var html = '';
   for (var i = 0; i < chatMsgs.length; i++) {
     var m = chatMsgs[i];
+    html += '<div class="chmsg-wrap ' + m.t + '">';
     html += '<div class="chmsg ' + m.t + '">' + m.m + '<div class="chmt">' + m.h + '</div></div>';
+    if (m.t === 's') html += '<div class="chmsg-visto' + (m.leido ? ' v' : '') + '">' + (m.leido ? 'visto' : 'enviado') + '</div>';
+    html += '</div>';
   }
   el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
 }
 
-function enviarMsg() {
+async function enviarMsg() {
   var inp = document.getElementById('chinp');
   var txt = inp.value.trim();
   if (!txt) return;
   inp.value = '';
-  chatMsgs.push({ t: 's', m: txt, h: getHora() });
+  chatMsgs.push({ t: 's', m: txt, h: getHora(), leido: false });
   renderChat();
-  setTimeout(function() {
-    chatMsgs.push({ t: 'r', m: 'Gracias! Te responderemos a la brevedad.', h: getHora() });
-    renderChat();
-  }, 1200);
+  try {
+    await SB.from('mensajes').insert({
+      proveedor_id: chatProvId,
+      de_tipo: 'usuario',
+      de_nombre: usr ? usr.nombre : 'Emprendedor',
+      texto: txt,
+      leido: false
+    });
+  } catch(e) {}
+  // Respuesta automatica inteligente
+  var resp = getRespAuto(txt);
+  setTimeout(async function() {
+    document.getElementById('chtyping').textContent = document.getElementById('chnom').textContent + ' esta escribiendo...';
+    setTimeout(async function() {
+      document.getElementById('chtyping').textContent = '';
+      chatMsgs.push({ t: 'r', m: resp, h: getHora(), leido: true });
+      renderChat();
+      try {
+        await SB.from('mensajes').insert({
+          proveedor_id: chatProvId,
+          de_tipo: 'proveedor',
+          de_nombre: document.getElementById('chnom').textContent,
+          texto: resp,
+          leido: true
+        });
+      } catch(e2) {}
+    }, 1200);
+  }, 800);
 }
 
-function getHora() {
-  return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+function getRespAuto(txt) {
+  var t = txt.toLowerCase();
+  if (t.indexOf('precio') >= 0 || t.indexOf('cuanto') >= 0 || t.indexOf('costo') >= 0)
+    return 'Los precios dependen del volumen. Te mando la lista de precios. Cual es tu WhatsApp?';
+  if (t.indexOf('envio') >= 0 || t.indexOf('manda') >= 0 || t.indexOf('despacho') >= 0)
+    return 'Si, enviamos a todo el pais por Andreani y OCA. El costo corre por tu cuenta.';
+  if (t.indexOf('minimo') >= 0 || t.indexOf('cantidad') >= 0)
+    return 'El pedido minimo es de $10.000. Podes combinar productos para llegar al minimo.';
+  if (t.indexOf('hola') >= 0 || t.indexOf('buenas') >= 0 || t.indexOf('buen') >= 0)
+    return 'Hola! Que bueno que nos contactas. Que producto te interesa?';
+  if (t.indexOf('gracias') >= 0 || t.indexOf('ok') >= 0 || t.indexOf('dale') >= 0)
+    return 'De nada! Cualquier consulta no dudes en escribirme.';
+  return 'Gracias por tu consulta! Te respondemos a la brevedad. Tambien podes escribirnos al WhatsApp.';
+}
+
+function volverChat() {
+  if (chatPollTimer) clearInterval(chatPollTimer);
+  ir(chatPan);
+}
+
+// ── MENSAJES LISTA ──
+async function cargarConversaciones() {
+  var el = document.getElementById('convlist');
+  if (!el) return;
+  try {
+    var res = await SB.from('mensajes').select('*').order('created_at', {ascending: false}).limit(200);
+    if (!res.data || !res.data.length) {
+      el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray)"><div style="font-size:3rem;margin-bottom:12px">&#128172;</div><p style="font-size:.87rem;line-height:1.6">No tenes conversaciones aun.<br>Contacta un proveedor para empezar.</p></div>';
+      return;
+    }
+    var convMap = {};
+    for (var i = 0; i < res.data.length; i++) {
+      var m = res.data[i];
+      var pid = m.proveedor_id;
+      if (!convMap[pid]) convMap[pid] = { ultimo: m, noLeidos: 0 };
+      if (!m.leido && m.de_tipo === 'proveedor') convMap[pid].noLeidos++;
+    }
+    var lista = provDB.length ? provDB : DEMO;
+    var html = '';
+    var totalNoLeidos = 0;
+    for (var pid2 in convMap) {
+      var conv = convMap[pid2];
+      var prov = null;
+      for (var j = 0; j < lista.length; j++) {
+        if (String(lista[j].id) === String(pid2)) { prov = lista[j]; break; }
+      }
+      var nom = prov ? prov.nombre : 'Proveedor';
+      totalNoLeidos += conv.noLeidos;
+      html += '<div class="pcard" onclick="abrirChatId('' + pid2 + '')" style="margin:0 20px 12px">';
+      html += '<div class="plog">' + (prov ? ini2(prov.nombre) : 'PR') + '</div>';
+      html += '<div class="pinf"><h3>' + nom + '</h3>';
+      var ultTxt = conv.ultimo.texto;
+      html += '<p style="font-size:.82rem;color:var(--gray)">' + (ultTxt.length > 45 ? ultTxt.substring(0,45)+'...' : ultTxt) + '</p></div>';
+      if (conv.noLeidos > 0) {
+        html += '<span style="background:var(--red);color:#fff;font-size:.7rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + conv.noLeidos + '</span>';
+      }
+      html += '</div>';
+    }
+    el.innerHTML = html;
+    actualizarMsgBadge(totalNoLeidos);
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray)"><div style="font-size:3rem;margin-bottom:12px">&#128172;</div><p>No tenes conversaciones aun.</p></div>';
+  }
+}
+
+function actualizarMsgBadge(n) {
+  var b = document.getElementById('msgbadge');
+  if (!b) return;
+  if (n > 0) { b.style.display = 'flex'; b.textContent = n; }
+  else b.style.display = 'none';
+}
+
+// ── RESEÑAS ──
+function abrirModalResena() {
+  if (!usr) { toast('Inicia sesion para dejar una resena'); return; }
+  if (!provAct) return;
+  starSel = 0;
+  document.getElementById('rnombre').value = usr.nombre || '';
+  document.getElementById('rtexto').value = '';
+  document.getElementById('mresenaprov').textContent = 'Tu experiencia con ' + provAct.nombre;
+  var stars = document.getElementById('starsrow').children;
+  for (var i = 0; i < stars.length; i++) stars[i].className = 'star';
+  document.getElementById('mresena').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarResena() {
+  document.getElementById('mresena').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function setStar(n) {
+  starSel = n;
+  var stars = document.getElementById('starsrow').children;
+  for (var i = 0; i < stars.length; i++) {
+    stars[i].className = 'star' + (i < n ? ' on' : '');
+  }
+}
+
+async function publicarResena() {
+  if (!starSel) { toast('Selecciona una calificacion'); return; }
+  var txt = document.getElementById('rtexto').value.trim();
+  if (!txt) { toast('Escribe tu comentario'); return; }
+  var nombre = document.getElementById('rnombre').value.trim() || 'Usuario anonimo';
+  try {
+    await SB.from('resenas').insert({ proveedor_id: provAct.id, usuario_nombre: nombre, estrellas: starSel, texto: txt });
+  } catch(e) {}
+  toast('Resena publicada! Gracias');
+  cerrarResena();
+  await cargarResenas(provAct.id);
+}
+
+async function cargarResenas(pid) {
+  var el = document.getElementById('dresenaslist');
+  var numEl = document.getElementById('dratnum');
+  var stEl = document.getElementById('dratstars');
+  var cntEl = document.getElementById('dratcount');
+  if (!el) return;
+  try {
+    var res = await SB.from('resenas').select('*').eq('proveedor_id', pid).order('created_at', {ascending: false}).limit(10);
+    if (!res.data || !res.data.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--gray);padding:12px;font-size:.82rem">Se el primero en dejar una resena!</div>';
+      if (numEl) numEl.textContent = '-';
+      if (cntEl) cntEl.textContent = 'Sin resenas';
+      if (stEl) stEl.innerHTML = '';
+      return;
+    }
+    var sum = 0;
+    for (var i = 0; i < res.data.length; i++) sum += res.data[i].estrellas;
+    var prom = (sum / res.data.length).toFixed(1);
+    if (numEl) numEl.textContent = prom;
+    if (cntEl) cntEl.textContent = res.data.length + ' resenas';
+    if (stEl) {
+      var sh = '';
+      for (var s = 1; s <= 5; s++) sh += '<span style="font-size:.9rem;color:' + (s <= Math.round(parseFloat(prom)) ? '#f59e0b' : '#e0e7ff') + '">&#9733;</span>';
+      stEl.innerHTML = sh;
+    }
+    var html = '';
+    for (var j = 0; j < res.data.length; j++) {
+      var r = res.data[j];
+      html += '<div class="resena-card"><div class="resena-top">';
+      html += '<div class="resena-av">' + (r.usuario_nombre || 'U').substring(0,1).toUpperCase() + '</div>';
+      html += '<div class="resena-meta"><strong>' + (r.usuario_nombre || 'Usuario') + '</strong><span>';
+      for (var k = 1; k <= 5; k++) html += '<span style="color:' + (k <= r.estrellas ? '#f59e0b' : '#e0e7ff') + '">&#9733;</span>';
+      html += '</span></div></div><div class="resena-txt">' + r.texto + '</div></div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;color:var(--gray);padding:12px;font-size:.82rem">Se el primero en dejar una resena!</div>';
+  }
+}
+
+// ── BUSQUEDA MEJORADA ──
+function filtrar() {
+  var q = document.getElementById('sinput').value.toLowerCase();
+  var prov = document.getElementById('fprov').value;
+  var plan = document.getElementById('fplan').value;
+  var lista = provDB.length ? provDB : DEMO;
+  var stags = document.getElementById('stags');
+  if (stags) {
+    var tagHtml = '';
+    if (catAct !== 'Todas') tagHtml += '<span class="stag" onclick="filtCat('Todas')">' + catAct + ' x</span>';
+    if (prov) tagHtml += '<span class="stag" onclick="document.getElementById('fprov').value='';filtrar()">' + prov + ' x</span>';
+    if (q) tagHtml += '<span class="stag" onclick="document.getElementById('sinput').value='';filtrar()">"' + q + '" x</span>';
+    stags.innerHTML = tagHtml;
+  }
+  var res = [];
+  for (var i = 0; i < lista.length; i++) {
+    var p = lista[i];
+    var mc = catAct === 'Todas' || p.rubro === catAct;
+    var mq = !q || p.nombre.toLowerCase().indexOf(q) >= 0 || (p.rubro || '').toLowerCase().indexOf(q) >= 0 || (p.descripcion || '').toLowerCase().indexOf(q) >= 0;
+    var mp = !prov || p.provincia === prov;
+    var mpl = !plan || p.plan === plan;
+    if (mc && mq && mp && mpl) res.push(p);
+  }
+  if (!res.length && q) {
+    var eHtml = '<div class="empty-srch"><div class="eico">&#128270;</div><h3>No encontramos "' + q + '"</h3><p>Intenta con otra busqueda o explora estas categorias:</p><div class="sugs">';
+    var sugs = ['Tecnologia','Hogar','Moda','Bazar','Alimentos'];
+    for (var s = 0; s < sugs.length; s++) eHtml += '<div class="sug" onclick="filtCat('' + sugs[s] + '')">' + sugs[s] + '</div>';
+    eHtml += '</div></div>';
+    document.getElementById('plist').innerHTML = eHtml;
+  } else {
+    renderProvs(res);
+  }
 }
 
 // ── HISTORIAL ──
@@ -1338,4 +1678,15 @@ async function mostrarRes() {
 }
 
 // ── TOAST ──
-function toa
+function toast(msg) {
+  var t = document.getElementById('tst');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
