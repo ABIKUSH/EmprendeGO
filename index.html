@@ -610,9 +610,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <h2 style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800">Ingresá a tu cuenta</h2>
       <p style="color:var(--gray);font-size:.9rem;line-height:1.6">Guardá tus proveedores favoritos, accedé a tu historial y gestioná tu negocio.</p>
       <!-- Google Sign In Button -->
-      <div id="g_id_onload" data-client_id="YOUR_GOOGLE_CLIENT_ID" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
+      <div id="g_id_onload" data-client_id="21567384607-91e5mg16ipcs2drpegsce411m2qeb84o.apps.googleusercontent.com" data-callback="handleGoogleLogin" data-auto_prompt="false"></div>
       <button class="google-btn" onclick="simulateGoogleLogin()"><span class="g-logo">G</span> Continuar con Google</button>
-      <button class="submit-btn" onclick="loginAsProveedor()" style="background:linear-gradient(135deg,var(--navy),#1a2d6b)">🏭 Entrar como Proveedor (demo)</button>
+
       <p style="font-size:.78rem;color:var(--gray)">Al ingresar aceptás los <span style="color:var(--blue);cursor:pointer">términos y condiciones</span></p>
     </div>
   </div>
@@ -1134,11 +1134,36 @@ function scrollChat() {
 
 // ===== AUTH =====
 async function simulateGoogleLogin() {
-  const name  = 'Usuario de Prueba';
-  const email = 'usuario@gmail.com';
-  await upsertUsuario({ name, email, picture: '' });
-  handleLogin({ name, email, picture: '', type: 'user' });
-  showToast('Sesion iniciada');
+  try {
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (error) throw error;
+  } catch(e) {
+    showToast('Error al iniciar sesion. Intenta de nuevo.');
+  }
+}
+
+async function checkSession() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      const user = session.user;
+      const name = user.user_metadata?.full_name || user.email.split('@')[0];
+      const email = user.email;
+      const picture = user.user_metadata?.avatar_url || '';
+      await upsertUsuario({ name, email, picture });
+      const { data: prov } = await sb.from('proveedores').select('id,nombre,plan').eq('email', email).single();
+      if (prov) {
+        handleLogin({ name: prov.nombre, email, picture, type: 'proveedor', proveedorId: prov.id });
+      } else {
+        handleLogin({ name, email, picture, type: 'user' });
+      }
+    }
+  } catch(e) {}
 }
 
 async function loginAsProveedor() {
@@ -1534,6 +1559,7 @@ async function showResult() {
 refreshFavBadge();
 cargarProveedores();
 renderQuestion();
+checkSession();
 
 </script>
 </body>
