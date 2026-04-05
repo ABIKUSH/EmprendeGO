@@ -346,12 +346,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .chat-back{background:var(--blue-light);border:none;border-radius:10px;padding:7px 12px;cursor:pointer;color:var(--blue);font-weight:700;font-size:.88rem}
 .chat-prov-name{font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;color:var(--navy)}
 .chat-prov-sub{font-size:.73rem;color:var(--gray)}
-.chat-messages{padding:15px;display:flex;flex-direction:column;gap:11px;min-height:55vh}
+.chat-messages{padding:15px;display:flex;flex-direction:column;gap:11px;min-height:200px;flex:1}
 .chat-msg{max-width:80%;padding:10px 14px;border-radius:16px;font-size:.86rem;line-height:1.5}
 .chat-msg.sent{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;align-self:flex-end;border-bottom-right-radius:4px}
 .chat-msg.recv{background:white;color:var(--navy);align-self:flex-start;border-bottom-left-radius:4px;box-shadow:0 2px 7px rgba(0,0,0,.07)}
 .chat-msg-time{font-size:.63rem;opacity:.7;margin-top:3px;text-align:right}
-.chat-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:white;padding:11px 15px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:center}
+.chat-bar{width:100%;background:white;padding:11px 15px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:center}
 .chat-input{flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none}
 .chat-send{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
 
@@ -503,7 +503,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 </div>
 
 <!-- ===== CHAT ===== -->
-<div class="screen" id="screen-chat">
+<div class="screen" id="screen-chat" style="padding-bottom:20px">
   <div class="chat-header">
     <button class="chat-back" onclick="volverChat()">&#8592;</button>
     <div>
@@ -511,8 +511,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <div class="chat-prov-sub" id="chat-rubro">Rubro</div>
     </div>
   </div>
-  <div class="chat-messages" id="chat-msgs"></div>
-  <div style="height:70px"></div>
+  <div class="chat-messages" id="chat-msgs" style="flex:1;overflow-y:auto"></div>
   <div class="chat-bar">
     <input class="chat-input" id="chat-inp" placeholder="Escribi tu mensaje..." onkeydown="if(event.key==='Enter')sendMsg()">
     <button class="chat-send" onclick="sendMsg()">&#10148;</button>
@@ -1113,16 +1112,24 @@ function sendMsg() {
   inp.value = '';
   chatMsgs.push({ tipo: 'sent', texto: txt, hora: getHora() });
   renderChat();
+  scrollChat();
+  const t = txt.toLowerCase();
+  let resp = 'Gracias por tu mensaje! Te respondemos a la brevedad.';
+  if (t.includes('precio') || t.includes('cuanto') || t.includes('costo')) resp = 'Los precios dependen del volumen. Te paso la lista por aca. Cual es tu WhatsApp?';
+  else if (t.includes('envio') || t.includes('manda') || t.includes('despacho')) resp = 'Si, enviamos a todo el pais por Andreani y OCA. El costo corre por tu cuenta.';
+  else if (t.includes('minimo') || t.includes('cantidad')) resp = 'El pedido minimo es de $10.000. Podes combinar productos para llegar al minimo.';
+  else if (t.includes('hola') || t.includes('buenas') || t.includes('buen dia')) resp = 'Hola! En que te puedo ayudar? Tenes alguna consulta sobre nuestros productos?';
+  else if (t.includes('gracias') || t.includes('ok') || t.includes('dale')) resp = 'De nada! Cualquier consulta no dudes en escribirme.';
   setTimeout(() => {
-    const respuestas = [
-      'Gracias por tu mensaje! Te respondemos a la brevedad.',
-      'Perfecto! Te paso los precios por aca.',
-      'Claro! Cuantas unidades necesitas?',
-      'Hola! Si, tenemos stock disponible. Cual es tu provincia?'
-    ];
-    chatMsgs.push({ tipo: 'recv', texto: respuestas[Math.floor(Math.random() * respuestas.length)], hora: getHora() });
+    chatMsgs.push({ tipo: 'recv', texto: resp, hora: getHora() });
     renderChat();
+    scrollChat();
   }, 1200);
+}
+
+function scrollChat() {
+  const el = document.getElementById('chat-msgs');
+  if (el) el.scrollTop = el.scrollHeight;
 }
 
 // ===== AUTH =====
