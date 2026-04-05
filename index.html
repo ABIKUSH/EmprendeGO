@@ -669,7 +669,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <div class="dash-avatar" id="dash-avatar-el"><span id="dash-avatar-initials">EG</span></div>
         <div class="dash-info">
           <h3 id="dash-nombre">Mi Negocio</h3>
-          <p id="dash-rubro-label">Rubro · Buenos Aires</p>
+          <p id="dash-rubro-label">Rubro · Argentina</p>
         </div>
         <span class="dash-pro-badge">⭐ PRO</span>
       </div>
@@ -1165,9 +1165,16 @@ async function checkSession() {
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
       await upsertUsuario({ name, email, picture });
-      const { data: prov } = await sb.from('proveedores').select('id,nombre,plan').eq('email', email).single();
-      if (prov) {
-        handleLogin({ name: prov.nombre, email, picture, type: 'proveedor', proveedorId: prov.id });
+      // Verificar si es proveedor aprobado
+      const { data: prov } = await sb.from('proveedores')
+        .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado')
+        .eq('email', email)
+        .single();
+      if (prov && prov.estado === 'aprobado') {
+        handleLogin({ name: prov.nombre, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
+      } else if (prov && prov.estado === 'pendiente') {
+        handleLogin({ name, email, picture, type: 'user' });
+        showToast('Tu solicitud esta siendo revisada. Te avisamos en 24-48hs.');
       } else {
         handleLogin({ name, email, picture, type: 'user' });
       }
@@ -1186,13 +1193,18 @@ async function handleGoogleLogin(response) {
     const base64 = response.credential.split('.')[1];
     const data   = JSON.parse(atob(base64));
     await upsertUsuario({ name: data.name, email: data.email, picture: data.picture });
-    const { data: prov } = await sb.from('proveedores').select('id,nombre,plan').eq('email', data.email).single();
-    if (prov) {
-      handleLogin({ name: prov.nombre, email: data.email, picture: data.picture, type: 'proveedor', proveedorId: prov.id });
-      showToast('Bienvenido ' + prov.nombre);
+    const { data: prov } = await sb.from('proveedores')
+      .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado')
+      .eq('email', data.email).single();
+    if (prov && prov.estado === 'aprobado') {
+      handleLogin({ name: prov.nombre, email: data.email, picture: data.picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
+      showToast('Bienvenido ' + prov.nombre + '!');
+    } else if (prov && prov.estado === 'pendiente') {
+      handleLogin({ name: data.name, email: data.email, picture: data.picture, type: 'user' });
+      showToast('Tu solicitud esta siendo revisada. Te avisamos pronto.');
     } else {
       handleLogin({ name: data.name, email: data.email, picture: data.picture, type: 'user' });
-      showToast('Bienvenido ' + data.name.split(' ')[0]);
+      showToast('Bienvenido ' + data.name.split(' ')[0] + '!');
     }
     goTo('perfil');
   } catch(e) { simulateGoogleLogin(); }
@@ -1233,6 +1245,21 @@ function updatePerfilUI() {
     document.getElementById('perfil-proveedor').style.display = 'block';
     document.getElementById('dash-nombre').textContent         = currentUser.name;
     document.getElementById('dash-avatar-initials').textContent = currentUser.name.substring(0,2).toUpperCase();
+    // Mostrar datos reales del proveedor en el label
+    const rubroLabel = document.getElementById('dash-rubro-label');
+    if (rubroLabel && currentUser.provData) {
+      rubroLabel.textContent = (currentUser.provData.rubro || 'Rubro') + ' · ' + (currentUser.provData.provincia || 'Argentina');
+    }
+    // Pre-llenar tab Mi Perfil con datos reales
+    if (currentUser.provData) {
+      const pd = currentUser.provData;
+      const cfgn = document.getElementById('edit-nombre');
+      const cfgd = document.getElementById('edit-desc');
+      const cfgw = document.getElementById('cfgw') || document.querySelector('#tab-perfil-info input[type="tel"]');
+      const cfgi = document.querySelector('#tab-perfil-info input[type="text"]:last-of-type');
+      if (cfgn) cfgn.value = pd.nombre || '';
+      if (cfgd) cfgd.value = pd.descripcion || '';
+    }
     cargarProductosProveedor();
   } else {
     document.getElementById('perfil-user').style.display      = 'block';
@@ -1339,10 +1366,7 @@ async function cargarProductosProveedor() {
     const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at', {ascending: false});
     productos = data || [];
   } catch(e) {
-    productos = [
-      { id: 'x1', nombre: 'Funda iPhone 15', precio: 2500, stock: 200, categoria: 'Tecnologia' },
-      { id: 'x2', nombre: 'Cable USB-C',      precio: 800,  stock: 150, categoria: 'Tecnologia' }
-    ];
+    productos = [];
   }
   renderProdGrid();
 }
