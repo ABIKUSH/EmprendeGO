@@ -1401,6 +1401,27 @@ function switchTab(tab, el) {
 }
 
 function showRegStep(step) {
+  // Validar paso actual antes de avanzar
+  if (step === 2) {
+    const nombre = document.querySelector('#reg-step1 input[type="text"]')?.value?.trim();
+    const email  = document.querySelector('#reg-step1 input[type="email"]')?.value?.trim();
+    const wa     = document.querySelector('#reg-step1 input[type="tel"]')?.value?.trim();
+    const prov   = document.querySelector('#reg-step1 select')?.value;
+    if (!nombre) { showToast('Ingresa tu nombre y apellido'); return; }
+    if (!email)  { showToast('Ingresa tu email'); return; }
+    if (!wa)     { showToast('Ingresa tu WhatsApp'); return; }
+    if (!prov)   { showToast('Selecciona tu provincia'); return; }
+  }
+  if (step === 3) {
+    const razon = document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
+    const cuit  = document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
+    const rubro = document.querySelector('#reg-step2 select')?.value;
+    const desc  = document.querySelector('#reg-step2 textarea')?.value?.trim();
+    if (!razon) { showToast('Ingresa la razon social'); return; }
+    if (!cuit)  { showToast('Ingresa el CUIT'); return; }
+    if (!rubro) { showToast('Selecciona el rubro'); return; }
+    if (!desc)  { showToast('Ingresa una descripcion'); return; }
+  }
   ['reg-intro','reg-step1','reg-step2','reg-step3','reg-success'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
@@ -1412,6 +1433,12 @@ function showRegStep(step) {
 }
 
 async function showRegSuccess() {
+  // Validar paso 3
+  const envios = document.querySelectorAll('#reg-step3 select')[0]?.value;
+  const minimo = document.querySelectorAll('#reg-step3 select')[1]?.value;
+  if (!envios) { showToast('Selecciona si haces envios'); return; }
+  if (!minimo) { showToast('Selecciona el pedido minimo'); return; }
+
   try {
     await sb.from('proveedores').insert({
       nombre:      document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '',
@@ -1421,9 +1448,11 @@ async function showRegSuccess() {
       rubro:       document.querySelector('#reg-step2 select')?.value || '',
       provincia:   document.querySelector('#reg-step1 select')?.value || '',
       descripcion: document.querySelector('#reg-step2 textarea')?.value || '',
+      envios:      envios,
+      pedido_minimo: minimo,
       plan: 'gratis', estado: 'pendiente'
     });
-    showToast('Solicitud enviada');
+    showToast('Solicitud enviada con exito!');
   } catch(e) { showToast('Solicitud recibida'); }
   ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id => {
     const el = document.getElementById(id);
