@@ -576,7 +576,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <div style="font-size:4rem;margin-bottom:16px">🎉</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
       <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:24px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
-      <button class="submit-btn" onclick="loginAsProveedor()">Ver mi dashboard de proveedor →</button>
+      <div style="background:#e6f7ee;border-radius:14px;padding:16px;margin-bottom:14px;text-align:left">
+        <div style="font-size:.88rem;font-weight:700;color:#00A651;margin-bottom:6px">&#10003; Que pasa ahora?</div>
+        <div style="font-size:.83rem;color:#6B7A99;line-height:1.7">
+          1. Verificamos tu CUIT en AFIP<br>
+          2. Revisamos tu red social<br>
+          3. Te contactamos por WhatsApp en 24-48hs<br>
+          4. Tu perfil aparece con badge Verificado
+        </div>
+      </div>
+      <button class="submit-btn" onclick="goTo('buscar')">Explorar proveedores mientras tanto &#8594;</button>
     </div>
   </div>
 </div>
