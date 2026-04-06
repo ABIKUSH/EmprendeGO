@@ -755,16 +755,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <span class="dash-pro-badge">⭐ PRO</span>
       </div>
       <div class="dash-stats-grid">
-        <div class="dash-stat"><div class="dash-stat-val">5.8k <span>↑24%</span></div><div class="dash-stat-label">Visitas al perfil</div></div>
-        <div class="dash-stat"><div class="dash-stat-val">1.284 <span>↑35%</span></div><div class="dash-stat-label">Leads generados</div></div>
-        <div class="dash-stat"><div class="dash-stat-val">+35%</div><div class="dash-stat-label">Interacción</div></div>
-        <div class="dash-stat"><div class="dash-stat-val">3 <span style="color:#fbbf24">nuevos</span></div><div class="dash-stat-label">Consultas hoy</div></div>
+        <div class="dash-stat"><div class="dash-stat-val" id="stat-visitas">0</div><div class="dash-stat-label">Visitas al perfil</div></div>
+        <div class="dash-stat"><div class="dash-stat-val" id="stat-leads">0</div><div class="dash-stat-label">Contactos recibidos</div></div>
+        <div class="dash-stat"><div class="dash-stat-val" id="stat-productos">0</div><div class="dash-stat-label">Productos publicados</div></div>
+        <div class="dash-stat"><div class="dash-stat-val" id="stat-favoritos">0</div><div class="dash-stat-label">En favoritos</div></div>
       </div>
     </div>
     <div class="ranking-card">
-      <div class="rank-num">#3</div>
-      <div class="rank-info"><strong>Ranking Regional</strong><span>en Buenos Aires · Tecnología</span></div>
-      <div class="rank-trend"><span class="arrow">📈</span><span>+2 pos.</span></div>
+      <div class="rank-num" style="font-size:1rem;color:var(--gray)">&#127942;</div>
+      <div class="rank-info"><strong>Tu ranking</strong><span>Aparecera cuando tengas visitas</span></div>
+      <div class="rank-trend"><span class="arrow">&#128200;</span><span style="color:var(--gray)">Pronto</span></div>
     </div>
     <div class="dash-tabs">
       <div class="dash-tab active" onclick="switchTab('catalogo',this)">📦 Catálogo</div>
@@ -1454,6 +1454,9 @@ async function cargarProductosProveedor() {
     productos = [];
   }
   renderProdGrid();
+  // Actualizar stat de productos
+  const statProd = document.getElementById('stat-productos');
+  if (statProd) statProd.textContent = productos.length;
 }
 
 async function deleteProduct(id) {
@@ -1561,7 +1564,7 @@ async function showRegSuccess() {
     await sb.from('proveedores').insert({
       nombre:      document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '',
       cuit:        document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value || '',
-      email:       document.querySelector('#reg-step1 input[type="email"]')?.value || '',
+      email:       (document.querySelector('#reg-step1 input[type="email"]')?.value || '').toLowerCase().trim(),
       whatsapp:    document.querySelector('#reg-step1 input[type="tel"]')?.value || '',
       rubro:       document.querySelector('#reg-step2 select')?.value || '',
       provincia:   document.querySelector('#reg-step1 select')?.value || '',
@@ -1725,12 +1728,52 @@ const catColors = {
   'Bazar':'#7C3AED','Alimentos':'#F59E0B'
 };
 
+let productosReales = [];
+
+async function cargarProductosReales() {
+  try {
+    const { data, error } = await sb.from('productos')
+      .select('*, proveedores(id, nombre, rubro, provincia, plan, whatsapp)')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (!error && data && data.length > 0) {
+      const bgsColores = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+      productosReales = data.map((p, i) => ({
+        id: 'real_' + p.id,
+        idReal: p.id,
+        nombre: p.nombre,
+        precio: p.precio || 0,
+        pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
+        cat: p.categoria || 'General',
+        emoji: getEmojiCat(p.categoria),
+        provId: String(p.proveedor_id),
+        provNombre: p.proveedores?.nombre || 'Proveedor',
+        provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
+        provColor: bgsColores[i % bgsColores.length],
+        whatsapp: p.proveedores?.whatsapp || '',
+        esPro: p.proveedores?.plan === 'pro'
+      }));
+    }
+  } catch(e) {}
+  renderProdInicio();
+  renderProdBuscar();
+}
+
+function getEmojiCat(cat) {
+  const map = {'Tecnologia':'📱','Tecnología':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};
+  return map[cat] || '📦';
+}
+
+function getProdLista() {
+  return productosReales.length > 0 ? productosReales : productosDemo;
+}
+
 function renderProdInicio() {
   const el = document.getElementById('prodInicioGrid');
   if (!el) return;
-  // Usar productos reales si existen, sino demo
-  const lista = productosDemo;
-  el.innerHTML = lista.slice(0,6).map(p => `
+  const lista = getProdLista().slice(0, 6);
+  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Cargando productos...</div>'; return; }
+  el.innerHTML = lista.map(p => `
     <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
       <div class="prod-inicio-img" style="background:${p.provColor}18">
         ${p.emoji}
@@ -1738,7 +1781,7 @@ function renderProdInicio() {
       </div>
       <div class="prod-inicio-body">
         <div class="prod-inicio-name">${p.nombre}</div>
-        <div class="prod-inicio-price">$${p.precio.toLocaleString('es-AR')}</div>
+        <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
         <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
       </div>
     </div>`).join('');
@@ -1747,8 +1790,9 @@ function renderProdInicio() {
 function renderProdBuscar(filtro) {
   const el = document.getElementById('prodBuscarGrid');
   if (!el) return;
-  let lista = productosDemo;
-  if (filtro) lista = lista.filter(p => p.cat === filtro || p.cat === filtro + 'a');
+  let lista = getProdLista();
+  if (filtro) lista = lista.filter(p => p.cat === filtro || p.cat === filtro + 'a' || p.cat === filtro.replace('Tecnología','Tecnologia'));
+  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">No hay productos en este rubro todavia.</div>'; return; }
   el.innerHTML = lista.map(p => `
     <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
       <div class="prod-inicio-img" style="background:${p.provColor}18;height:90px">
@@ -1757,7 +1801,7 @@ function renderProdBuscar(filtro) {
       </div>
       <div class="prod-inicio-body">
         <div class="prod-inicio-name">${p.nombre}</div>
-        <div class="prod-inicio-price">$${p.precio.toLocaleString('es-AR')}</div>
+        <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
         <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
       </div>
     </div>`).join('');
@@ -1853,8 +1897,7 @@ refreshFavBadge();
 cargarProveedores();
 renderQuestion();
 checkSession();
-renderProdInicio();
-renderProdBuscar();
+cargarProductosReales();
 
 </script>
 </body>
