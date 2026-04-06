@@ -355,6 +355,40 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .chat-input{flex:1;border:1.5px solid var(--border);border-radius:24px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:.88rem;outline:none}
 .chat-send{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:50%;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:1rem}
 
+
+/* ===== GRILLA PRODUCTOS INICIO ===== */
+.prod-inicio-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 20px 0}
+.prod-inicio-card{background:white;border-radius:14px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .18s}
+.prod-inicio-card:active{transform:scale(.97)}
+.prod-inicio-img{width:100%;height:90px;display:flex;align-items:center;justify-content:center;font-size:2.2rem;position:relative}
+.prod-inicio-badge{position:absolute;top:6px;left:6px;font-size:.62rem;font-weight:800;padding:2px 7px;border-radius:6px;color:white;background:var(--blue)}
+.prod-inicio-body{padding:8px 10px 10px}
+.prod-inicio-name{font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:3px;line-height:1.3}
+.prod-inicio-price{font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:2px}
+.prod-inicio-prov{font-size:.68rem;color:var(--gray);display:flex;align-items:center;gap:4px}
+.prod-inicio-prov-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ===== TABS BUSCAR ===== */
+.search-tabs{display:flex;background:var(--border);border-radius:12px;padding:3px;margin:10px 20px 0}
+.search-tab{flex:1;text-align:center;padding:7px;font-size:.8rem;font-weight:700;color:var(--gray);border-radius:10px;cursor:pointer;transition:all .2s}
+.search-tab.active{background:white;color:var(--blue)}
+
+/* ===== DETALLE PRODUCTO ===== */
+.prod-det-img{width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:linear-gradient(135deg,#f0f4ff,#ffe8f5);position:relative}
+.prod-det-back{position:absolute;top:14px;left:14px;background:rgba(255,255,255,.9);border:none;border-radius:10px;padding:7px 12px;font-size:.82rem;font-weight:700;cursor:pointer;color:var(--navy)}
+.prod-det-fav{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.9);border:none;border-radius:10px;padding:7px 10px;font-size:1.1rem;cursor:pointer}
+.prod-det-body{padding:16px 20px;background:var(--light)}
+.prod-det-name{font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:var(--navy);margin-bottom:4px}
+.prod-det-price{font-size:1.6rem;font-weight:900;color:var(--blue);margin-bottom:3px}
+.prod-det-min{font-size:.8rem;color:var(--gray);margin-bottom:12px}
+.prod-det-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.prod-det-tag{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--blue-light);color:var(--blue)}
+.prod-det-tag.g{background:var(--green-light);color:var(--green)}
+.prod-det-prov{display:flex;align-items:center;gap:10px;background:white;border-radius:14px;padding:12px 14px;margin-bottom:14px;border:1px solid var(--border);cursor:pointer}
+.prod-det-pav{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:.9rem;color:white;flex-shrink:0}
+.prod-det-pname{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:var(--navy)}
+.prod-det-psub{font-size:.73rem;color:var(--gray)}
+
 </style>
 </head>
 <body>
@@ -376,51 +410,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   <div class="hero">
     <div class="hero-content">
       <div class="hero-pill"><span class="dot"></span> Marketplace Mayorista Argentina</div>
-      <h1>Tu negocio <span class="grad">mayorista</span> arranca <span class="grad2">hoy.</span></h1>
-      <p class="hero-sub">Conectate con proveedores reales, encontra tu rubro ideal y empieza a vender desde casa.</p>
+      <h1>Encontra el producto <span class="grad">ideal</span> para <span class="grad2">vender.</span></h1>
+      <p class="hero-sub">Miles de productos mayoristas verificados. Calculadora de ganancia incluida.</p>
       <div class="hero-cta-row">
-        <button class="btn-primary" onclick="goTo('buscar')">&#128269; Explorar Proveedores</button>
+        <button class="btn-primary" onclick="goTo('buscar')">&#128269; Explorar Productos</button>
         <button class="btn-secondary" onclick="openTest()">&#129302; Test IA &mdash; Que vender?</button>
       </div>
     </div>
     <div class="hero-stats">
+      <div class="stat-card"><div class="stat-num">+2k</div><div class="stat-label">Productos</div></div>
       <div class="stat-card"><div class="stat-num">+500</div><div class="stat-label">Proveedores</div></div>
-      <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Rubros</div></div>
       <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Para empezar</div></div>
     </div>
   </div>
-  <div class="hero-scroll">
-    <div class="scroll-label">Explorá por rubro</div>
-    <div class="rubros-scroll">
-      <div class="rubro-pill" onclick="filterCat('Moda')">👗 Moda</div>
-      <div class="rubro-pill" onclick="filterCat('Tecnología')">💻 Tecnología</div>
-      <div class="rubro-pill" onclick="filterCat('Hogar')">🏠 Hogar</div>
-      <div class="rubro-pill" onclick="filterCat('Bazar')">🛒 Bazar</div>
-      <div class="rubro-pill" onclick="filterCat('Alimentos')">🥗 Alimentos</div>
-    </div>
+  <div style="padding:14px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128293; Productos destacados</div>
+    <span style="color:var(--blue);font-size:.82rem;font-weight:700;cursor:pointer" onclick="goTo('buscar')">Ver todos →</span>
   </div>
-  <div class="ai-banner" onclick="openTest()">
-    <div class="ai-tag">✨ Powered by IA</div>
-    <h3>¿No sabés qué vender?</h3>
+  <div class="prod-inicio-grid" id="prodInicioGrid">
+    <!-- Se llena con JS -->
+  </div>
+  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128269; Explorar por rubro</div>
+  </div>
+  <div style="display:flex;gap:8px;padding:10px 20px 0;overflow-x:auto;scrollbar-width:none">
+    <div style="white-space:nowrap;background:#fff5f8;border:1.5px solid #ffd6e8;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--pink);cursor:pointer;flex-shrink:0" onclick="filterCat('Moda')">&#128247; Moda</div>
+    <div style="white-space:nowrap;background:#f0f5ff;border:1.5px solid #dce9ff;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--blue);cursor:pointer;flex-shrink:0" onclick="filterCat('Tecnología')">&#128187; Tech</div>
+    <div style="white-space:nowrap;background:#f0fdf8;border:1.5px solid #d4f4e8;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--green);cursor:pointer;flex-shrink:0" onclick="filterCat('Hogar')">&#127968; Hogar</div>
+    <div style="white-space:nowrap;background:#fff8f5;border:1.5px solid #ffe0cc;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--orange);cursor:pointer;flex-shrink:0" onclick="filterCat('Bazar')">&#128722; Bazar</div>
+    <div style="white-space:nowrap;background:#f5f0ff;border:1.5px solid #e9d8fd;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--purple);cursor:pointer;flex-shrink:0" onclick="filterCat('Alimentos')">&#129367; Alimentos</div>
+  </div>
+  <div class="ai-banner" style="margin-top:16px" onclick="openTest()">
+    <div class="ai-tag">&#10024; Powered by IA</div>
+    <h3>No sabes que vender?</h3>
     <p>Nuestro test inteligente analiza tu localidad, capital y experiencia para recomendarte el rubro ideal.</p>
     <button class="ai-btn">Hacer el test gratis →</button>
   </div>
-  <div class="section">
-    <div class="section-header"><h2>Categorías</h2><span onclick="goTo('buscar')">Ver todo →</span></div>
-    <p class="section-sub">Mercados mayoristas por industria</p>
-  </div>
-  <div class="cat-grid">
-    <div class="cat-card" onclick="filterCat('Tecnología')"><img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&q=80" alt=""><div class="overlay"></div><div class="label"><strong>Tecnología</strong><span>124 Proveedores</span></div></div>
-    <div class="cat-card" onclick="filterCat('Hogar')"><img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&q=80" alt=""><div class="overlay"></div><div class="label"><strong>Hogar</strong><span>89 Proveedores</span></div></div>
-    <div class="cat-card" onclick="filterCat('Bazar')"><img src="https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=400&q=80" alt=""><div class="overlay"></div><div class="label"><strong>Bazar</strong><span>215 Proveedores</span></div></div>
-    <div class="cat-card" onclick="filterCat('Moda')"><img src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=400&q=80" alt=""><div class="overlay"></div><div class="label"><strong>Moda</strong><span>156 Proveedores</span></div></div>
-  </div>
   <div class="how">
-    <h2>¿Cómo funciona?</h2><p>Tres pasos para empezar a vender</p>
+    <h2>Como funciona?</h2><p>Tres pasos para empezar a vender</p>
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Explorá proveedores</strong><span>Filtrá por rubro, presupuesto y zona.</span></div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Contactá directo</strong><span>Chat interno o WhatsApp según el plan.</span></div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Empezá a vender</strong><span>Comprá al por mayor y revendé desde casa.</span></div></div>
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Encontra el producto ideal</strong><span>Explora por rubro o busca directamente.</span></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Contacta al proveedor</strong><span>Chat interno o WhatsApp directo.</span></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Empieza a vender</strong><span>Compra al por mayor y revendé desde casa.</span></div></div>
     </div>
   </div>
 </div>
@@ -438,6 +469,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="chip" onclick="setChip(this,'Bazar')">Bazar</div>
     <div class="chip" onclick="setChip(this,'Alimentos')">Alimentos</div>
   </div>
+  <div class="search-tabs">
+    <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
+    <div class="search-tab" id="tab-proveedores" onclick="switchBuscarTab('proveedores',this)">&#127981; Proveedores</div>
+  </div>
+  <div id="buscar-productos-view">
+    <div class="prod-inicio-grid" id="prodBuscarGrid" style="padding:12px 20px 0"></div>
+  </div>
+  <div id="buscar-proveedores-view" style="display:none">
   <div class="filtros-row">
     <select class="filtro-sel" id="fil-prov" onchange="filterProvs()">
       <option value="">&#128205; Todas las provincias</option>
@@ -451,6 +490,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     </select>
   </div>
   <div class="prov-list" id="provList"></div>
+  </div>
 </div>
 
 <!-- ===== FAVORITOS ===== -->
@@ -515,6 +555,47 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   <div class="chat-bar">
     <input class="chat-input" id="chat-inp" placeholder="Escribi tu mensaje..." onkeydown="if(event.key==='Enter')sendMsg()">
     <button class="chat-send" onclick="sendMsg()">&#10148;</button>
+  </div>
+</div>
+
+<!-- ===== DETALLE PRODUCTO ===== -->
+<div class="screen" id="screen-detalle-producto">
+  <div class="prod-det-img" id="prod-det-emoji">
+    &#128230;
+    <button class="prod-det-back" onclick="volverDetProd()">&#8592; Volver</button>
+    <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>
+  </div>
+  <div class="prod-det-body">
+    <div class="prod-det-name" id="prod-det-name">Producto</div>
+    <div class="prod-det-price" id="prod-det-price">$0</div>
+    <div class="prod-det-min" id="prod-det-min">Pedido minimo: consultar</div>
+    <div class="prod-det-tags">
+      <span class="prod-det-tag" id="prod-det-cat">Categoria</span>
+      <span class="prod-det-tag g">&#10003; Verificado</span>
+    </div>
+    <div class="prod-det-prov" id="prod-det-prov-card" onclick="irAProveedorDesdeProd()">
+      <div class="prod-det-pav" id="prod-det-pav" style="background:#1847C8">EG</div>
+      <div style="flex:1">
+        <div class="prod-det-pname" id="prod-det-pname">Proveedor</div>
+        <div class="prod-det-psub" id="prod-det-psub">Rubro</div>
+      </div>
+      <span style="color:var(--gray);font-size:1.1rem">&#8250;</span>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">&#129518; Calculadora de ganancia</div>
+      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="pdcalc-venta" placeholder="5000" oninput="calcProdDet()"></div>
+      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="pdcalc-cant" placeholder="10" oninput="calcProdDet()"></div>
+      <div class="calc-result" id="pdcalc-result" style="display:none">
+        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-inv">-</div><div class="calc-result-label">Inversion</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
+        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-tot">-</div><div class="calc-result-label">Total</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
+      <button class="det-btn-chat" onclick="detChatProd()">&#128172; Enviar mensaje</button>
+    </div>
   </div>
 </div>
 
@@ -1617,11 +1698,159 @@ async function showResult() {
   document.getElementById('resultContent').style.display = 'block';
 }
 
+
+// ===== PRODUCTOS =====
+let productoActual = null;
+let pantallaAnteriorProd = 'inicio';
+let buscarTab = 'productos';
+
+const productosDemo = [
+  {id:'p1',nombre:'Funda iPhone 15 Pro',precio:2500,pedido_minimo:'Minimo 10 unidades',cat:'Tecnologia',emoji:'📱',provId:'1',provNombre:'TechMayor BA',provRubro:'Tecnologia · Buenos Aires',provColor:'#1847C8'},
+  {id:'p2',nombre:'Vestido verano x12',precio:8400,pedido_minimo:'Minimo 12 unidades',cat:'Moda',emoji:'👗',provId:'3',provNombre:'Modas del Litoral',provRubro:'Moda · Santa Fe',provColor:'#FF6B00'},
+  {id:'p3',nombre:'Set cocina 6 piezas',precio:12000,pedido_minimo:'Minimo 5 unidades',cat:'Hogar',emoji:'🏠',provId:'2',provNombre:'HomeDeco Sur',provRubro:'Hogar · Buenos Aires',provColor:'#00A651'},
+  {id:'p4',nombre:'Kit maquillaje x10',precio:6800,pedido_minimo:'Minimo 10 unidades',cat:'Bazar',emoji:'💄',provId:'4',provNombre:'Bazar Mayorista GBA',provRubro:'Bazar · Buenos Aires',provColor:'#7C3AED'},
+  {id:'p5',nombre:'Cable USB-C x20',precio:1200,pedido_minimo:'Minimo 20 unidades',cat:'Tecnologia',emoji:'🔌',provId:'6',provNombre:'CelularPro Dist.',provRubro:'Tecnologia · CABA',provColor:'#0D1B3E'},
+  {id:'p6',nombre:'Zapatillas deportivas x6',precio:18000,pedido_minimo:'Minimo 6 pares',cat:'Moda',emoji:'👟',provId:'7',provNombre:'RopaKids Mayoreo',provRubro:'Moda · Buenos Aires',provColor:'#FF6B00'},
+  {id:'p7',nombre:'Chocolates artesanales x24',precio:3200,pedido_minimo:'Minimo 24 unidades',cat:'Alimentos',emoji:'🍫',provId:'5',provNombre:'AlimVerde SRL',provRubro:'Alimentos · Cordoba',provColor:'#00A651'},
+  {id:'p8',nombre:'Silla de escritorio',precio:45000,pedido_minimo:'Minimo 2 unidades',cat:'Hogar',emoji:'🪑',provId:'8',provNombre:'CasaFacil Dist.',provRubro:'Hogar · Cordoba',provColor:'#1847C8'}
+];
+
+const catColors = {
+  'Tecnologia':'#1847C8','Tecnología':'#1847C8',
+  'Moda':'#FF6B00','Hogar':'#00A651',
+  'Bazar':'#7C3AED','Alimentos':'#F59E0B'
+};
+
+function renderProdInicio() {
+  const el = document.getElementById('prodInicioGrid');
+  if (!el) return;
+  // Usar productos reales si existen, sino demo
+  const lista = productosDemo;
+  el.innerHTML = lista.slice(0,6).map(p => `
+    <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
+      <div class="prod-inicio-img" style="background:${p.provColor}18">
+        ${p.emoji}
+        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+      </div>
+      <div class="prod-inicio-body">
+        <div class="prod-inicio-name">${p.nombre}</div>
+        <div class="prod-inicio-price">$${p.precio.toLocaleString('es-AR')}</div>
+        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+      </div>
+    </div>`).join('');
+}
+
+function renderProdBuscar(filtro) {
+  const el = document.getElementById('prodBuscarGrid');
+  if (!el) return;
+  let lista = productosDemo;
+  if (filtro) lista = lista.filter(p => p.cat === filtro || p.cat === filtro + 'a');
+  el.innerHTML = lista.map(p => `
+    <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
+      <div class="prod-inicio-img" style="background:${p.provColor}18;height:90px">
+        ${p.emoji}
+        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+      </div>
+      <div class="prod-inicio-body">
+        <div class="prod-inicio-name">${p.nombre}</div>
+        <div class="prod-inicio-price">$${p.precio.toLocaleString('es-AR')}</div>
+        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+      </div>
+    </div>`).join('');
+}
+
+function switchBuscarTab(tab, el) {
+  buscarTab = tab;
+  document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const prodView = document.getElementById('buscar-productos-view');
+  const provView = document.getElementById('buscar-proveedores-view');
+  if (tab === 'productos') {
+    if (prodView) prodView.style.display = 'block';
+    if (provView) provView.style.display = 'none';
+  } else {
+    if (prodView) prodView.style.display = 'none';
+    if (provView) provView.style.display = 'block';
+  }
+}
+
+function abrirDetalleProd(id) {
+  const p = productosDemo.find(x => x.id === id);
+  if (!p) return;
+  productoActual = p;
+  const active = document.querySelector('.screen.active');
+  pantallaAnteriorProd = active ? active.id.replace('screen-', '') : 'inicio';
+
+  document.getElementById('prod-det-emoji').innerHTML = `${p.emoji}
+    <button class="prod-det-back" onclick="volverDetProd()">&#8592; Volver</button>
+    <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>`;
+  document.getElementById('prod-det-name').textContent = p.nombre;
+  document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
+  document.getElementById('prod-det-min').textContent = p.pedido_minimo;
+  document.getElementById('prod-det-cat').textContent = p.cat;
+
+  const pav = document.getElementById('prod-det-pav');
+  if (pav) { pav.style.background = p.provColor; pav.textContent = p.provNombre.substring(0,2).toUpperCase(); }
+  document.getElementById('prod-det-pname').textContent = p.provNombre;
+  document.getElementById('prod-det-psub').textContent = p.provRubro;
+
+  // Pre-cargar calculadora con precio del producto
+  const vcalc = document.getElementById('pdcalc-venta');
+  const ccalc = document.getElementById('pdcalc-cant');
+  if (vcalc) vcalc.value = '';
+  if (ccalc) ccalc.value = '';
+  const rc = document.getElementById('pdcalc-result');
+  if (rc) rc.style.display = 'none';
+
+  // Buscar proveedor real para WA
+  const prov = (proveedoresDB.length ? proveedoresDB : proveedoresDEMO).find(x => String(x.id) === String(p.provId));
+  const waBtn = document.getElementById('prod-det-wa-btn');
+  if (waBtn) waBtn.style.display = (prov && prov.pro && prov.whatsapp) ? 'flex' : 'none';
+
+  goTo('detalle-producto');
+}
+
+function volverDetProd() { goTo(pantallaAnteriorProd); }
+
+function irAProveedorDesdeProd() {
+  if (productoActual) abrirDetalle(productoActual.provId);
+}
+
+function detWAProd() {
+  if (!productoActual) return;
+  const prov = (proveedoresDB.length ? proveedoresDB : proveedoresDEMO).find(x => String(x.id) === String(productoActual.provId));
+  if (prov && prov.whatsapp) abrirWA(prov.whatsapp);
+  else showToast('WhatsApp no disponible');
+}
+
+function detChatProd() {
+  if (productoActual) abrirChatDirecto(productoActual.provId);
+}
+
+function calcProdDet() {
+  const costo = productoActual ? productoActual.precio : 0;
+  const venta = parseFloat(document.getElementById('pdcalc-venta').value);
+  const cant  = parseFloat(document.getElementById('pdcalc-cant').value);
+  const resEl = document.getElementById('pdcalc-result');
+  if (!venta || !cant || cant <= 0 || venta <= 0) { if (resEl) resEl.style.display = 'none'; return; }
+  const inv = costo * cant;
+  const tot = venta * cant;
+  const gan = tot - inv;
+  const mrg = inv > 0 ? ((gan / inv) * 100).toFixed(0) : 0;
+  document.getElementById('pdcalc-inv').textContent = '$' + inv.toLocaleString('es-AR');
+  document.getElementById('pdcalc-gan').textContent = '$' + gan.toLocaleString('es-AR');
+  document.getElementById('pdcalc-mrg').textContent = mrg + '%';
+  document.getElementById('pdcalc-tot').textContent = '$' + tot.toLocaleString('es-AR');
+  if (resEl) resEl.style.display = 'grid';
+}
+
 // ===== INIT =====
 refreshFavBadge();
 cargarProveedores();
 renderQuestion();
 checkSession();
+renderProdInicio();
+renderProdBuscar();
 
 </script>
 </body>
