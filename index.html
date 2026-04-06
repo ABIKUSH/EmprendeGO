@@ -1246,21 +1246,24 @@ async function checkSession() {
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
       await upsertUsuario({ name, email, picture });
-      // Verificar si es proveedor aprobado
-      const { data: prov } = await sb.from('proveedores')
-        .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado')
-        .eq('email', email)
-        .single();
+      // Verificar si es proveedor - usar maybeSingle para no lanzar error
+      const { data: provList } = await sb.from('proveedores')
+        .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email')
+        .eq('email', email.toLowerCase().trim());
+      const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
-        handleLogin({ name: prov.nombre, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
+        handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
+        showToast('Bienvenido ' + (prov.nombre || name) + '!');
       } else if (prov && prov.estado === 'pendiente') {
         handleLogin({ name, email, picture, type: 'user' });
-        showToast('Tu solicitud esta siendo revisada. Te avisamos en 24-48hs.');
+        showToast('Tu solicitud esta siendo revisada. Te avisamos pronto.');
       } else {
         handleLogin({ name, email, picture, type: 'user' });
       }
     }
-  } catch(e) {}
+  } catch(e) {
+    console.error('checkSession error:', e);
+  }
 }
 
 async function loginAsProveedor() {
@@ -1274,13 +1277,14 @@ async function handleGoogleLogin(response) {
     const base64 = response.credential.split('.')[1];
     const data   = JSON.parse(atob(base64));
     await upsertUsuario({ name: data.name, email: data.email, picture: data.picture });
-    const { data: prov } = await sb.from('proveedores')
-      .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado')
-      .eq('email', data.email).single();
-    if (prov && prov.estado === 'aprobado') {
-      handleLogin({ name: prov.nombre, email: data.email, picture: data.picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
-      showToast('Bienvenido ' + prov.nombre + '!');
-    } else if (prov && prov.estado === 'pendiente') {
+    const { data: provList2 } = await sb.from('proveedores')
+      .select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email')
+      .eq('email', data.email.toLowerCase().trim());
+    const prov2 = provList2 && provList2.length > 0 ? provList2[0] : null;
+    if (prov2 && prov2.estado === 'aprobado') {
+      handleLogin({ name: prov2.nombre || data.name, email: data.email, picture: data.picture, type: 'proveedor', proveedorId: prov2.id, provData: prov2 });
+      showToast('Bienvenido ' + (prov2.nombre || data.name) + '!');
+    } else if (prov2 && prov2.estado === 'pendiente') {
       handleLogin({ name: data.name, email: data.email, picture: data.picture, type: 'user' });
       showToast('Tu solicitud esta siendo revisada. Te avisamos pronto.');
     } else {
