@@ -862,12 +862,33 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <div class="form-group"><label>Precio mayorista *</label><input type="number" id="new-prod-price" placeholder="Ej: 2500"></div>
         <div class="form-group"><label>Stock disponible</label><input type="number" id="new-prod-stock" placeholder="Ej: 100"></div>
         <div class="form-group"><label>Categoría</label><select id="new-prod-cat"><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
+        <div class="form-group"><label>URL de imagen (opcional)</label><input type="url" id="new-prod-img" placeholder="https://i.imgur.com/... o link directo"><span style="font-size:.73rem;color:var(--gray);margin-top:4px;display:block">Link directo de foto del producto (Instagram, Imgur, etc)</span></div>
         <div class="form-group"><label>Descripción</label><textarea id="new-prod-desc" placeholder="Descripción breve del producto"></textarea></div>
         <div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center">
           <span>📷</span><div style="flex:1"><div style="font-size:.82rem;font-weight:700">Foto del producto</div><div style="font-size:.75rem;color:var(--gray)">Próximamente podés subir imágenes</div></div>
           <button onclick="showToast('📸 Próximamente')" style="background:#fde68a;border:none;border-radius:8px;padding:6px 12px;font-size:.78rem;font-weight:700;cursor:pointer">+ Foto</button>
         </div>
         <button class="submit-btn" onclick="addProduct()">Agregar al catálogo ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="editProdModal" onclick="closeEditProductOnBg(event)">
+  <div class="prod-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Editar producto</h3><button class="modal-close" onclick="closeEditProduct()">&#10005;</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-prod-id">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="edit-prod-name"></div>
+        <div class="form-group"><label>Precio mayorista *</label><input type="number" id="edit-prod-price"></div>
+        <div class="form-group"><label>Stock</label><input type="number" id="edit-prod-stock"></div>
+        <div class="form-group"><label>Categoria</label><select id="edit-prod-cat"><option>Tecnologia</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
+        <div class="form-group"><label>URL de imagen</label><input type="url" id="edit-prod-img" placeholder="https://..."></div>
+        <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios &#10003;</button>
       </div>
     </div>
   </div>
@@ -1271,6 +1292,9 @@ function sendMsg() {
   chatMsgs.push({ tipo: 'sent', texto: txt, hora: getHora() });
   renderChat();
   scrollChat();
+  if (provActual) {
+    try { sb.from('mensajes').insert({ proveedor_id: provActual.id, mensaje: txt, remitente: currentUser ? currentUser.email : 'anonimo', leido: false }); } catch(er) {}
+  }
   const t = txt.toLowerCase();
   let resp = 'Gracias por tu mensaje! Te respondemos a la brevedad.';
   if (t.includes('precio') || t.includes('cuanto') || t.includes('costo')) resp = 'Los precios dependen del volumen. Te paso la lista por aca. Cual es tu WhatsApp?';
@@ -1506,7 +1530,7 @@ function renderProdGrid() {
         <div class="price">$${(p.precio || 0).toLocaleString('es-AR')}</div>
         <div class="stock">Stock: ${p.stock || 'S/D'}</div>
         <div class="prod-actions">
-          <button class="prod-edit-btn" onclick="showToast('Editando...')">Editar</button>
+          <button class="prod-edit-btn" onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')">Editar</button>
           <button class="prod-del-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
         </div>
       </div>
@@ -1552,7 +1576,8 @@ async function addProduct() {
   const stock = document.getElementById('new-prod-stock').value;
   const cat   = document.getElementById('new-prod-cat').value;
   if (!name || !price) { showToast('Completa nombre y precio'); return; }
-  const newProd = { nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: cat, proveedor_id: currentUser?.proveedorId || null };
+  const imgUrl = (document.getElementById('new-prod-img')?.value || '').trim();
+  const newProd = { nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: cat, imagen_url: imgUrl || null, proveedor_id: currentUser?.proveedorId || null };
   try {
     const { data } = await sb.from('productos').insert(newProd).select().single();
     productos.unshift(data || { ...newProd, id: Date.now() });
@@ -1562,10 +1587,49 @@ async function addProduct() {
   renderProdGrid();
   closeAddProduct();
   showToast('Producto guardado');
-  ['new-prod-name','new-prod-price','new-prod-stock','new-prod-desc'].forEach(id => {
+  ['new-prod-name','new-prod-price','new-prod-stock','new-prod-desc','new-prod-img'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+}
+
+function editarProducto(id, nombre, precio, stock, cat) {
+  document.getElementById('edit-prod-id').value = id;
+  document.getElementById('edit-prod-name').value = nombre;
+  document.getElementById('edit-prod-price').value = precio;
+  document.getElementById('edit-prod-stock').value = stock;
+  const sel = document.getElementById('edit-prod-cat');
+  if (sel) { for(let i=0;i<sel.options.length;i++) { if(sel.options[i].text===cat||sel.options[i].value===cat) { sel.selectedIndex=i; break; } } }
+  document.getElementById('editProdModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeEditProduct() {
+  document.getElementById('editProdModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeEditProductOnBg(e) {
+  if (e.target === document.getElementById('editProdModal')) closeEditProduct();
+}
+async function guardarEdicionProducto() {
+  const id    = document.getElementById('edit-prod-id').value;
+  const name  = document.getElementById('edit-prod-name').value.trim();
+  const price = document.getElementById('edit-prod-price').value;
+  const stock = document.getElementById('edit-prod-stock').value;
+  const cat   = document.getElementById('edit-prod-cat').value;
+  const img   = (document.getElementById('edit-prod-img').value || '').trim();
+  if (!name || !price) { showToast('Completa nombre y precio'); return; }
+  try {
+    await sb.from('productos').update({
+      nombre: name, precio: parseFloat(price),
+      stock: stock ? parseInt(stock) : null,
+      categoria: cat, imagen_url: img || null
+    }).eq('id', id);
+    const idx = productos.findIndex(p => String(p.id) === String(id));
+    if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: cat };
+    renderProdGrid();
+    closeEditProduct();
+    showToast('Producto actualizado!');
+  } catch(e) { showToast('Error al guardar'); }
 }
 
 // ===== NAV =====
@@ -1642,6 +1706,13 @@ async function showRegSuccess() {
       plan: 'gratis', estado: 'pendiente'
     });
     showToast('Solicitud enviada con exito!');
+    try {
+      await sb.from('reportes').insert({
+        tipo: 'nuevo_registro',
+        descripcion: 'Nuevo proveedor pendiente: ' + (document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '') + ' (' + (document.querySelector('#reg-step1 input[type="email"]')?.value || '') + ')',
+        estado: 'pendiente'
+      });
+    } catch(er) {}
   } catch(e) { showToast('Solicitud recibida'); }
   ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id => {
     const el = document.getElementById(id);
@@ -1818,6 +1889,7 @@ async function cargarProductosReales() {
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: bgsColores[i % bgsColores.length],
+        imgUrl: p.imagen_url || '',
         whatsapp: p.proveedores?.whatsapp || '',
         esPro: p.proveedores?.plan === 'pro'
       }));
@@ -1833,18 +1905,18 @@ function getEmojiCat(cat) {
 }
 
 function getProdLista() {
-  return productosReales.length > 0 ? productosReales : productosDemo;
+  return productosReales.length > 0 ? productosReales : [];
 }
 
 function renderProdInicio() {
   const el = document.getElementById('prodInicioGrid');
   if (!el) return;
   const lista = getProdLista().slice(0, 6);
-  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Cargando productos...</div>'; return; }
+  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Los primeros productos apareceran pronto.</div>'; return; }
   el.innerHTML = lista.map(p => `
     <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
       <div class="prod-inicio-img" style="background:${p.provColor}18">
-        ${p.emoji}
+        ${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
         <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
       </div>
       <div class="prod-inicio-body">
@@ -1864,7 +1936,7 @@ function renderProdBuscar(filtro) {
   el.innerHTML = lista.map(p => `
     <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
       <div class="prod-inicio-img" style="background:${p.provColor}18;height:90px">
-        ${p.emoji}
+        ${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
         <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
       </div>
       <div class="prod-inicio-body">
