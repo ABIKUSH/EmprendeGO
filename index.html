@@ -389,6 +389,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .prod-det-pname{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:var(--navy)}
 .prod-det-psub{font-size:.73rem;color:var(--gray)}
 
+
+.search-summary{padding:8px 20px 0;font-size:.78rem;color:var(--gray)}
+.prod-buscar-card{background:white;border-radius:16px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .18s, box-shadow .18s}
+.prod-buscar-card:active{transform:scale(.98)}
+.prod-buscar-card .top{width:100%;height:108px;display:flex;align-items:center;justify-content:center;font-size:2.4rem;position:relative;background:linear-gradient(135deg,#f0f4ff,#eef2ff)}
+.prod-buscar-card .body{padding:10px 11px 12px}
+.prod-buscar-card .title{font-family:'Sora',sans-serif;font-size:.83rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3;min-height:2.1em}
+.prod-buscar-card .price{font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:3px}
+.prod-buscar-card .meta{font-size:.69rem;color:var(--gray);display:flex;align-items:center;gap:4px;margin-bottom:9px}
+.prod-buscar-card .actions{display:flex;gap:7px}
+.prod-buscar-card .mini-btn{flex:1;border:none;border-radius:10px;padding:8px 8px;font-size:.73rem;font-weight:800;cursor:pointer}
+.prod-buscar-card .mini-btn.primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:white}
+.prod-buscar-card .mini-btn.soft{background:var(--blue-light);color:var(--blue)}
+.prod-buscar-badge{position:absolute;top:7px;left:7px;font-size:.62rem;font-weight:800;padding:3px 8px;border-radius:7px;color:white;background:var(--blue)}
+.prod-buscar-min{font-size:.68rem;color:var(--gray);margin-bottom:8px}
+
 </style>
 </head>
 <body>
@@ -509,9 +525,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 <!-- ===== BUSCAR ===== -->
 <div class="screen" id="screen-buscar">
-  <div class="topbar"><span class="topbar-logo">Explorar</span></div>
-  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Explorar Proveedores</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Encontrá el socio ideal para tu negocio</p></div>
-  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar por nombre o categoría..." id="searchInput" oninput="filterProvs()"></div>
+  <div class="topbar"><span class="topbar-logo">Buscar</span></div>
+  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales para abastecerte.</p></div>
+  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()"></div>
   <div class="chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
     <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
@@ -524,7 +540,17 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
     <div class="search-tab" id="tab-proveedores" onclick="switchBuscarTab('proveedores',this)">&#127981; Proveedores</div>
   </div>
+  <div style="padding:10px 20px 0">
+    <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:1.15rem;line-height:1">&#128161;</div>
+      <div>
+        <div style="font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:2px">Tip rápido</div>
+        <div style="font-size:.78rem;color:var(--gray);line-height:1.5">Primero mirá productos para ver si te sirve el margen. Después entrá al proveedor y contactalo.</div>
+      </div>
+    </div>
+  </div>
   <div id="buscar-productos-view">
+    <div id="buscarSummary" class="search-summary"></div>
     <div class="prod-inicio-grid" id="prodBuscarGrid" style="padding:12px 20px 0"></div>
   </div>
   <div id="buscar-proveedores-view" style="display:none">
@@ -988,7 +1014,8 @@ function toggleFav(id) {
   else { favs.push(p); showToast('Guardado en favoritos!'); }
   guardarFavs();
   renderFavs();
-  filterProvs();
+  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
+  else filterProvs();
 }
 
 function toggleFavActual() {
@@ -1159,7 +1186,8 @@ function setChip(el, cat) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   currentCat = cat;
-  filterProvs();
+  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
+  else filterProvs();
 }
 
 function filterCat(cat) {
@@ -2023,22 +2051,43 @@ function renderProdInicio() {
     </div>`).join('');
 }
 
-function renderProdBuscar(filtro) {
+function renderProdBuscar(filtro, query = '') {
   const el = document.getElementById('prodBuscarGrid');
+  const summary = document.getElementById('buscarSummary');
   if (!el) return;
   let lista = getProdLista();
-  if (filtro) lista = lista.filter(p => p.cat === filtro || p.cat === filtro + 'a' || p.cat === filtro.replace('Tecnología','Tecnologia'));
-  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">No hay productos en este rubro todavia.</div>'; return; }
+  const q = (query || '').toLowerCase().trim();
+  if (filtro && filtro !== 'Todas') {
+    lista = lista.filter(p => (p.cat || '').toLowerCase() === filtro.toLowerCase() || (p.cat || '').toLowerCase() === filtro.replace('í','i').toLowerCase());
+  }
+  if (q) {
+    lista = lista.filter(p =>
+      (p.nombre || '').toLowerCase().includes(q) ||
+      (p.cat || '').toLowerCase().includes(q) ||
+      (p.provNombre || '').toLowerCase().includes(q) ||
+      (p.provRubro || '').toLowerCase().includes(q)
+    );
+  }
+  if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;background:white;border-radius:16px;border:1px solid var(--border)"><div class="ei">🔎</div><p>No encontramos productos con esos filtros. Probá con otro rubro o buscá un proveedor.</p></div>';
+    return;
+  }
   el.innerHTML = lista.map(p => `
-    <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
-      <div class="prod-inicio-img" style="background:${p.provColor}18;height:90px">
+    <div class="prod-buscar-card" onclick="abrirDetalleProd('${p.id}')">
+      <div class="top" style="background:${p.provColor}18">
         ${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
-        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+        <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
       </div>
-      <div class="prod-inicio-body">
-        <div class="prod-inicio-name">${p.nombre}</div>
-        <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+      <div class="body">
+        <div class="title">${p.nombre}</div>
+        <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
+        <div class="meta"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+        <div class="prod-buscar-min">${p.pedido_minimo || 'Pedido mínimo: consultar'}</div>
+        <div class="actions">
+          <button class="mini-btn primary" onclick="event.stopPropagation(); abrirDetalleProd('${p.id}')">Ver detalle</button>
+          <button class="mini-btn soft" onclick="event.stopPropagation(); abrirDetalle('${p.provId}')">Proveedor</button>
+        </div>
       </div>
     </div>`).join('');
 }
@@ -2049,25 +2098,35 @@ function switchBuscarTab(tab, el) {
   el.classList.add('active');
   const prodView = document.getElementById('buscar-productos-view');
   const provView = document.getElementById('buscar-proveedores-view');
+  const summary = document.getElementById('buscarSummary');
   if (tab === 'productos') {
     if (prodView) prodView.style.display = 'block';
     if (provView) provView.style.display = 'none';
+    if (summary) summary.style.display = 'block';
+    renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
   } else {
     if (prodView) prodView.style.display = 'none';
     if (provView) provView.style.display = 'block';
+    if (summary) summary.style.display = 'none';
+    filterProvs();
   }
 }
 
+function applySearchInput() {
+  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
+  else filterProvs();
+}
+
 function abrirDetalleProd(id) {
-  const p = productosDemo.find(x => x.id === id);
+  const p = getProdLista().find(x => String(x.id) === String(id));
   if (!p) return;
   productoActual = p;
   const active = document.querySelector('.screen.active');
   pantallaAnteriorProd = active ? active.id.replace('screen-', '') : 'inicio';
 
-  document.getElementById('prod-det-emoji').innerHTML = `${p.emoji}
+  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
     <button class="prod-det-back" onclick="volverDetProd()">&#8592; Volver</button>
-    <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>`;
+    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? '❤️' : '♡'}</button>`;
   document.getElementById('prod-det-name').textContent = p.nombre;
   document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
   document.getElementById('prod-det-min').textContent = p.pedido_minimo;
@@ -2134,6 +2193,7 @@ cargarProveedores();
 renderQuestion();
 checkSession();
 cargarProductosReales();
+setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch(e) {} }, 300);
 
 </script>
 </body>
