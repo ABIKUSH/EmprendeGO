@@ -1160,41 +1160,60 @@ const proveedoresDEMO = [
   {id:'8',nombre:'CasaFacil Dist.',rubro:'Hogar',desc:'Muebles flat-pack y articulos de cocina. Entrega en 48hs.',pro:false,inicial:'CF',provincia:'Cordoba',pedido_minimo:'Desde $15.000',envios:'Cordoba',instagram:''}
 ];
 
-// ===== RESEÑAS =====
-let resenasDB = {};
-try { resenasDB = JSON.parse(localStorage.getItem('eg_resenas') || '{}'); } catch(e) { resenasDB = {}; }
+// ===== RESEÑAS (Supabase real) =====
+// Cache en memoria para no pedir siempre lo mismo
+const resenasCache = {};
 
-// Reseñas demo
-const resenasDEMO = {
-  '1': [
-    {autor:'Carlos M.',rating:5,texto:'Excelente proveedor, los productos llegaron en perfectas condiciones y el precio es muy competitivo.',fecha:'hace 2 días'},
-    {autor:'Valentina R.',rating:4,texto:'Muy buena atencion, me ayudo a elegir los productos. Entrega rapida.',fecha:'hace 1 semana'},
-    {autor:'Diego P.',rating:5,texto:'Los mejores precios que encontre para accesorios tech. 100% recomendado.',fecha:'hace 2 semanas'}
-  ],
-  '2': [{autor:'Laura S.',rating:3,texto:'Buen producto pero la comunicacion podria ser mejor.',fecha:'hace 3 dias'}],
-  '3': [
-    {autor:'Micaela T.',rating:5,texto:'Amo los diseños! Siempre tienen novedades y los precios son re buenos.',fecha:'hace 1 dia'},
-    {autor:'Paula N.',rating:4,texto:'Muy linda ropa, llego todo bien. Solo tardo un poquito mas de lo esperado.',fecha:'hace 5 dias'}
-  ],
-  '5': [{autor:'Roberto G.',rating:5,texto:'Productos organicos de primera calidad. Mis clientes quedaron encantados.',fecha:'hace 1 semana'}],
-  '6': [{autor:'Hernan L.',rating:4,texto:'Buenos precios en celulares. El minimo es alto pero vale la pena.',fecha:'hace 4 dias'}]
-};
-
-function getProvRating(provId) {
-  const pid = String(provId);
-  const local = resenasDB[pid] || [];
-  const demo = resenasDEMO[pid] || [];
-  const all = [...demo, ...local];
-  if (!all.length) return { avg: 0, count: 0, dist: [0,0,0,0,0], all: [] };
-  const dist = [0,0,0,0,0];
-  all.forEach(r => { if(r.rating >= 1 && r.rating <= 5) dist[r.rating-1]++; });
-  const avg = all.reduce((s,r) => s + r.rating, 0) / all.length;
-  return { avg, count: all.length, dist, all };
+function renderStarsHTML(rating, size) {
+  const sizes = {sm:'1rem', xs:'.78rem'};
+  const s = sizes[size] || '1rem';
+  return [1,2,3,4,5].map(n => `<span style="color:${n<=Math.round(rating)?'#F59E0B':'#d1d5db'};font-size:${s}">★</span>`).join('');
 }
 
-function renderRatingSummary(provId) {
+function calcRatingStats(resenas) {
+  if (!resenas.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
+  const dist = [0,0,0,0,0];
+  resenas.forEach(r => { if(r.rating >= 1 && r.rating <= 5) dist[r.rating-1]++; });
+  const avg = resenas.reduce((s,r) => s + r.rating, 0) / resenas.length;
+  return { avg, count: resenas.length, dist };
+}
+
+// Función para leer desde Supabase
+async function cargarResenas(provId) {
   const pid = String(provId);
-  const { avg, count, dist, all } = getProvRating(pid);
+  // Si ya las tenemos en cache, las devolvemos
+  if (resenasCache[pid]) return resenasCache[pid];
+  try {
+    const { data, error } = await sb
+      .from('resenas')
+      .select('*')
+      .eq('proveedor_id', pid)
+      .order('fecha', { ascending: false });
+    if (error) throw error;
+    resenasCache[pid] = data || [];
+    return resenasCache[pid];
+  } catch(e) {
+    return [];
+  }
+}
+
+// También expone rating para cards (sin await — usa cache o 0)
+function getProvRating(provId) {
+  const pid = String(provId);
+  const cached = resenasCache[pid];
+  if (!cached || !cached.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
+  return calcRatingStats(cached);
+}
+
+async function renderRatingSummary(provId) {
+  const pid = String(provId);
+
+  // Mostrar loading mientras carga
+  const listEl = document.getElementById('det-resenas-list');
+  if (listEl) listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:12px 0">Cargando reseñas...</p>';
+
+  const resenas = await cargarResenas(pid);
+  const { avg, count, dist } = calcRatingStats(resenas);
 
   // Avg
   const avgEl = document.getElementById('det-rating-avg');
@@ -1208,7 +1227,7 @@ function renderRatingSummary(provId) {
   const countEl = document.getElementById('det-rating-count');
   if (countEl) countEl.textContent = count > 0 ? `${count} reseña${count!==1?'s':''}` : 'Sin reseñas aún';
 
-  // Bars
+  // Barras
   const barsEl = document.getElementById('det-rating-bars');
   if (barsEl) {
     barsEl.innerHTML = [5,4,3,2,1].map(n => {
@@ -1222,31 +1241,29 @@ function renderRatingSummary(provId) {
     }).join('');
   }
 
-  // Reseñas
-  const listEl = document.getElementById('det-resenas-list');
+  // Lista de reseñas
   if (listEl) {
-    if (!all.length) {
-      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Sé el primero en dejar una reseña</p>';
+    if (!resenas.length) {
+      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Sé el primero en dejar una reseña ✍️</p>';
     } else {
-      listEl.innerHTML = all.slice(0,3).map(r => `
-        <div class="resena-card">
+      listEl.innerHTML = resenas.slice(0,5).map(r => {
+        const fechaStr = r.fecha ? timeAgo(new Date(r.fecha)) : 'Reciente';
+        return `<div class="resena-card">
           <div class="resena-header">
             <div>
               <div class="resena-autor">${r.autor}</div>
               <div style="display:flex;gap:2px;margin-top:2px">${renderStarsHTML(r.rating,'xs')}</div>
             </div>
-            <div class="resena-fecha">${r.fecha || 'Reciente'}</div>
+            <div class="resena-fecha">${fechaStr}</div>
           </div>
           <div class="resena-texto">${r.texto}</div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
     }
   }
-}
 
-function renderStarsHTML(rating, size) {
-  const sizes = {sm:'1rem', xs:'.78rem'};
-  const s = sizes[size] || '1rem';
-  return [1,2,3,4,5].map(n => `<span style="color:${n<=Math.round(rating)?'#F59E0B':'#d1d5db'};font-size:${s}">★</span>`).join('');
+  // Actualizar rating en cards si están visibles
+  filterProvs();
 }
 
 let resenaRatingActual = 0;
@@ -1254,7 +1271,7 @@ function openResenaModal() {
   if (!provActual) return;
   resenaRatingActual = 0;
   document.getElementById('resena-prov-name').textContent = provActual.nombre;
-  document.getElementById('resena-autor-input').value = '';
+  document.getElementById('resena-autor-input').value = currentUser ? currentUser.name : '';
   document.getElementById('resena-texto-input').value = '';
   document.getElementById('resena-rating-label').textContent = 'Tocá para calificar';
   document.querySelectorAll('#resenaStars .star').forEach(s => s.classList.remove('filled'));
@@ -1269,24 +1286,45 @@ function closeResenaOnBg(e) { if (e.target === document.getElementById('resenaMo
 
 function setResenaRating(val) {
   resenaRatingActual = val;
-  const labels = ['','Muy malo','Malo','Regular','Bueno','Excelente'];
+  const labels = ['','Muy malo 😕','Malo 😐','Regular 🙂','Bueno 😊','Excelente 🤩'];
   document.getElementById('resena-rating-label').textContent = labels[val] || '';
   document.querySelectorAll('#resenaStars .star').forEach(s => {
     s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
   });
 }
-function submitResena() {
-  if (!resenaRatingActual) { showToast('Por favor calificá primero'); return; }
+
+async function submitResena() {
+  if (!resenaRatingActual) { showToast('Por favor calificá primero ⭐'); return; }
   const autor = document.getElementById('resena-autor-input').value.trim() || 'Anónimo';
   const texto = document.getElementById('resena-texto-input').value.trim();
   if (!texto) { showToast('Escribí tu experiencia'); return; }
+
   const pid = String(provActual.id);
-  if (!resenasDB[pid]) resenasDB[pid] = [];
-  resenasDB[pid].unshift({ autor, rating: resenaRatingActual, texto, fecha: 'Ahora mismo' });
-  try { localStorage.setItem('eg_resenas', JSON.stringify(resenasDB)); } catch(e) {}
+  const nuevaResena = {
+    proveedor_id: pid,
+    autor,
+    rating: resenaRatingActual,
+    texto,
+    usuario_email: currentUser?.email || null
+  };
+
+  // Guardar en Supabase
+  try {
+    const { data, error } = await sb.from('resenas').insert(nuevaResena).select().single();
+    if (error) throw error;
+    // Actualizar cache local
+    if (!resenasCache[pid]) resenasCache[pid] = [];
+    resenasCache[pid].unshift(data);
+    showToast('¡Reseña publicada! Gracias 🙌');
+  } catch(e) {
+    // Si falla Supabase igual mostramos localmente
+    if (!resenasCache[pid]) resenasCache[pid] = [];
+    resenasCache[pid].unshift({ ...nuevaResena, fecha: new Date().toISOString() });
+    showToast('Reseña guardada localmente');
+  }
+
   closeResenaModal();
   renderRatingSummary(pid);
-  showToast('¡Reseña publicada! Gracias 🙌');
 }
 
 // ===== NOTIFICACIONES =====
@@ -1685,7 +1723,7 @@ function abrirDetalle(id) {
   const cr = document.getElementById('calc-result');
   if (cr) cr.style.display = 'none';
 
-  // Rating
+  // Rating (async — carga desde Supabase)
   renderRatingSummary(p.id);
 
   // Comp button
