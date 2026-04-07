@@ -1218,6 +1218,7 @@ function abrirDetalle(id) {
   if (cr) cr.style.display = 'none';
 
   try { sb.from('busquedas').insert({termino: p.nombre}); } catch(e) {}
+  try { sb.from('historial').insert({proveedor_id: p.id, visited_at: new Date().toISOString()}); } catch(e) {}
   cargarProductosDetalle(p.id);
   goTo('detalle');
 }
@@ -1438,6 +1439,7 @@ function updatePerfilUI() {
       if (cfgd) cfgd.value = pd.descripcion || '';
     }
     cargarProductosProveedor();
+    cargarStatsDashboard();
   } else {
     document.getElementById('perfil-user').style.display      = 'block';
     document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1535,6 +1537,40 @@ function renderProdGrid() {
         </div>
       </div>
     </div>`).join('');
+}
+
+async function cargarStatsDashboard() {
+  if (!currentUser || !currentUser.proveedorId) return;
+  const provId = currentUser.proveedorId;
+  try {
+    // 1. Productos publicados
+    const { data: prods } = await sb.from('productos')
+      .select('id', { count: 'exact' })
+      .eq('proveedor_id', provId);
+    const numProds = prods ? prods.length : 0;
+    const sp = document.getElementById('stat-productos');
+    if (sp) sp.textContent = numProds;
+
+    // 2. Mensajes recibidos (leads)
+    const { data: msgs } = await sb.from('mensajes')
+      .select('id', { count: 'exact' })
+      .eq('proveedor_id', provId);
+    const numMsgs = msgs ? msgs.length : 0;
+    const sl = document.getElementById('stat-leads');
+    if (sl) sl.textContent = numMsgs;
+
+    // 3. Visitas (busquedas con nombre del proveedor)
+    const { data: visits } = await sb.from('busquedas')
+      .select('id', { count: 'exact' })
+      .eq('termino', currentUser.name);
+    const numVisits = visits ? visits.length : 0;
+    const sv = document.getElementById('stat-visitas');
+    if (sv) sv.textContent = numVisits;
+
+    // 4. En favoritos - no hay tabla dedicada, dejamos 0 por ahora
+  } catch(e) {
+    console.error('Error cargando stats:', e);
+  }
 }
 
 async function cargarProductosProveedor() {
@@ -1640,7 +1676,7 @@ function goTo(s) {
   if (scr) scr.classList.add('active');
   const nav = document.getElementById('nav-' + s);
   if (nav) nav.classList.add('active');
-  if (s === 'perfil' && currentUser) updatePerfilUI();
+  if (s === 'perfil' && currentUser) { updatePerfilUI(); if (currentUser.type === 'proveedor') cargarStatsDashboard(); }
   if (s === 'perfil' && currentUser?.type === 'user') cargarHistorial();
   if (s === 'favoritos') renderFavs();
   window.scrollTo(0, 0);
