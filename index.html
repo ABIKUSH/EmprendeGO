@@ -409,29 +409,77 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
   <div class="hero">
     <div class="hero-content">
-      <div class="hero-pill"><span class="dot"></span> Marketplace Mayorista Argentina</div>
-      <h1>Encontra el producto <span class="grad">ideal</span> para <span class="grad2">vender.</span></h1>
-      <p class="hero-sub">Miles de productos mayoristas verificados. Calculadora de ganancia incluida.</p>
+      <div class="hero-pill"><span class="dot"></span> La app para empezar a vender desde cero</div>
+      <h1>Empeza tu negocio aunque no sepas <span class="grad">qué vender</span> <span class="grad2">todavía.</span></h1>
+      <p class="hero-sub">Descubrí qué producto te conviene, calculá cuánto podrías ganar y conectate con proveedores reales para arrancar hoy.</p>
       <div class="hero-cta-row">
-        <button class="btn-primary" onclick="goTo('buscar')">&#128269; Explorar Productos</button>
-        <button class="btn-secondary" onclick="openTest()">&#129302; Test IA &mdash; Que vender?</button>
+        <button class="btn-primary" onclick="openTest()">&#128640; Empezar mi negocio</button>
+        <button class="btn-secondary" onclick="goTo('buscar')">&#128269; Ver oportunidades reales</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+        <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);color:white;padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:700">Sin experiencia</span>
+        <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);color:white;padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:700">Sin local</span>
+        <span style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.14);color:white;padding:6px 10px;border-radius:999px;font-size:.72rem;font-weight:700">Con proveedores reales</span>
       </div>
     </div>
     <div class="hero-stats">
       <div class="stat-card"><div class="stat-num">+2k</div><div class="stat-label">Productos</div></div>
       <div class="stat-card"><div class="stat-num">+500</div><div class="stat-label">Proveedores</div></div>
-      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Para empezar</div></div>
+      <div class="stat-card"><div class="stat-num">$0</div><div class="stat-label">Para mirar opciones</div></div>
     </div>
   </div>
-  <div style="padding:14px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128293; Productos destacados</div>
-    <span style="color:var(--blue);font-size:.82rem;font-weight:700;cursor:pointer" onclick="goTo('buscar')">Ver todos →</span>
+
+  <div style="padding:18px 20px 0">
+    <div style="background:white;border:1px solid var(--border);border-radius:18px;padding:18px 16px;box-shadow:0 4px 18px rgba(13,27,62,.05)">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);margin-bottom:6px">No somos solo un directorio de proveedores</div>
+      <p style="font-size:.86rem;line-height:1.6;color:var(--gray);margin-bottom:14px">EmprendeGo está pensado para ayudarte a decidir <strong style="color:var(--navy)">qué vender</strong>, validar si te conviene y dar tu primer paso con más claridad.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:var(--blue-light);color:var(--blue);border-radius:12px;padding:10px;font-size:.77rem;font-weight:700">&#129302; Test de rubro</div>
+        <div style="background:#f0fdf8;color:var(--green);border-radius:12px;padding:10px;font-size:.77rem;font-weight:700">&#128200; Cálculo de ganancia</div>
+        <div style="background:#fff8f5;color:var(--orange);border-radius:12px;padding:10px;font-size:.77rem;font-weight:700">&#128269; Opciones reales</div>
+        <div style="background:#f5f0ff;color:var(--purple);border-radius:12px;padding:10px;font-size:.77rem;font-weight:700">&#128172; Contacto directo</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128640; Si no sabés por dónde arrancar</div>
+  </div>
+  <div style="padding:10px 20px 0;display:flex;flex-direction:column;gap:10px">
+    <div style="background:white;border-radius:16px;padding:14px;border:1px solid var(--border)">
+      <div style="font-size:.74rem;font-weight:800;color:var(--blue);margin-bottom:4px">PASO 1</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:var(--navy);margin-bottom:4px">Hacé el test</div>
+      <div style="font-size:.82rem;line-height:1.55;color:var(--gray)">Respondé algunas preguntas y descubrí qué rubro encaja mejor con vos.</div>
+    </div>
+    <div style="background:white;border-radius:16px;padding:14px;border:1px solid var(--border)">
+      <div style="font-size:.74rem;font-weight:800;color:var(--purple);margin-bottom:4px">PASO 2</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:var(--navy);margin-bottom:4px">Mirá opciones reales</div>
+      <div style="font-size:.82rem;line-height:1.55;color:var(--gray)">Explorá productos y proveedores según el rubro que más te convenga.</div>
+    </div>
+    <div style="background:white;border-radius:16px;padding:14px;border:1px solid var(--border)">
+      <div style="font-size:.74rem;font-weight:800;color:var(--green);margin-bottom:4px">PASO 3</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:var(--navy);margin-bottom:4px">Calculá si te cierra</div>
+      <div style="font-size:.82rem;line-height:1.55;color:var(--gray)">Estimá inversión, margen y ganancia antes de contactar al proveedor.</div>
+    </div>
+  </div>
+
+  <div class="ai-banner" style="margin-top:18px" onclick="openTest()">
+    <div class="ai-tag">&#10024; Tu primer paso</div>
+    <h3>¿No sabés qué vender?</h3>
+    <p>Nuestro test inteligente analiza tu situación y te recomienda un rubro para empezar con más claridad.</p>
+    <button class="ai-btn">Hacer el test gratis →</button>
+  </div>
+
+  <div style="padding:18px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128293; Oportunidades para empezar</div>
+    <span style="color:var(--blue);font-size:.82rem;font-weight:700;cursor:pointer" onclick="goTo('buscar')">Ver todas →</span>
   </div>
   <div class="prod-inicio-grid" id="prodInicioGrid">
     <!-- Se llena con JS -->
   </div>
+
   <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128269; Explorar por rubro</div>
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy)">&#128269; Elegí un camino para empezar</div>
   </div>
   <div style="display:flex;gap:8px;padding:10px 20px 0;overflow-x:auto;scrollbar-width:none">
     <div style="white-space:nowrap;background:#fff5f8;border:1.5px solid #ffd6e8;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--pink);cursor:pointer;flex-shrink:0" onclick="filterCat('Moda')">&#128247; Moda</div>
@@ -440,18 +488,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div style="white-space:nowrap;background:#fff8f5;border:1.5px solid #ffe0cc;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--orange);cursor:pointer;flex-shrink:0" onclick="filterCat('Bazar')">&#128722; Bazar</div>
     <div style="white-space:nowrap;background:#f5f0ff;border:1.5px solid #e9d8fd;border-radius:20px;padding:7px 14px;font-size:.83rem;font-weight:700;color:var(--purple);cursor:pointer;flex-shrink:0" onclick="filterCat('Alimentos')">&#129367; Alimentos</div>
   </div>
-  <div class="ai-banner" style="margin-top:16px" onclick="openTest()">
-    <div class="ai-tag">&#10024; Powered by IA</div>
-    <h3>No sabes que vender?</h3>
-    <p>Nuestro test inteligente analiza tu localidad, capital y experiencia para recomendarte el rubro ideal.</p>
-    <button class="ai-btn">Hacer el test gratis →</button>
-  </div>
+
   <div class="how">
-    <h2>Como funciona?</h2><p>Tres pasos para empezar a vender</p>
+    <h2>Cómo funciona EmprendeGo</h2><p>Un recorrido simple para pasar de la duda a la acción</p>
     <div class="steps">
-      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Encontra el producto ideal</strong><span>Explora por rubro o busca directamente.</span></div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Contacta al proveedor</strong><span>Chat interno o WhatsApp directo.</span></div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Empieza a vender</strong><span>Compra al por mayor y revendé desde casa.</span></div></div>
+      <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Descubrí qué te conviene vender</strong><span>Con el test o explorando rubros con demanda.</span></div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Compará opciones reales</strong><span>Mirá productos, proveedores y condiciones concretas.</span></div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Calculá y arrancá</strong><span>Validá tu margen, contactá al proveedor y empezá hoy.</span></div></div>
+    </div>
+  </div>
+
+  <div style="padding:0 20px 20px">
+    <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:22px 18px;color:white">
+      <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:800;margin-bottom:6px">¿Tenés un negocio mayorista?</div>
+      <p style="font-size:.85rem;line-height:1.6;color:rgba(255,255,255,.72);margin-bottom:14px">Publicá tu catálogo y conectate con personas que realmente quieren empezar a vender.</p>
+      <button class="btn-primary" style="padding:13px 16px" onclick="goTo('registro')">&#127981; Quiero publicar mi negocio</button>
     </div>
   </div>
 </div>
