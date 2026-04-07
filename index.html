@@ -1294,7 +1294,15 @@ function sendMsg() {
   renderChat();
   scrollChat();
   if (provActual) {
-    try { sb.from('mensajes').insert({ proveedor_id: provActual.id, mensaje: txt, remitente: currentUser ? currentUser.email : 'anonimo', leido: false }); } catch(er) {}
+    try {
+      sb.from('mensajes').insert({
+        proveedor_id: provActual.id,
+        de_tipo: 'usuario',
+        de_nombre: currentUser ? currentUser.name : 'Anonimo',
+        texto: txt,
+        leido: false
+      });
+    } catch(er) {}
   }
   const t = txt.toLowerCase();
   let resp = 'Gracias por tu mensaje! Te respondemos a la brevedad.';
@@ -1551,10 +1559,11 @@ async function cargarStatsDashboard() {
     const sp = document.getElementById('stat-productos');
     if (sp) sp.textContent = numProds;
 
-    // 2. Mensajes recibidos (leads)
+    // 2. Mensajes recibidos (leads) - solo de usuarios
     const { data: msgs } = await sb.from('mensajes')
-      .select('id', { count: 'exact' })
-      .eq('proveedor_id', provId);
+      .select('id')
+      .eq('proveedor_id', provId)
+      .eq('de_tipo', 'usuario');
     const numMsgs = msgs ? msgs.length : 0;
     const sl = document.getElementById('stat-leads');
     if (sl) sl.textContent = numMsgs;
