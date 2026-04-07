@@ -390,20 +390,28 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .prod-det-psub{font-size:.73rem;color:var(--gray)}
 
 
-.search-summary{padding:8px 20px 0;font-size:.78rem;color:var(--gray)}
-.prod-buscar-card{background:white;border-radius:16px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .18s, box-shadow .18s}
-.prod-buscar-card:active{transform:scale(.98)}
-.prod-buscar-card .top{width:100%;height:108px;display:flex;align-items:center;justify-content:center;font-size:2.4rem;position:relative;background:linear-gradient(135deg,#f0f4ff,#eef2ff)}
-.prod-buscar-card .body{padding:10px 11px 12px}
-.prod-buscar-card .title{font-family:'Sora',sans-serif;font-size:.83rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3;min-height:2.1em}
-.prod-buscar-card .price{font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:3px}
-.prod-buscar-card .meta{font-size:.69rem;color:var(--gray);display:flex;align-items:center;gap:4px;margin-bottom:9px}
-.prod-buscar-card .actions{display:flex;gap:7px}
-.prod-buscar-card .mini-btn{flex:1;border:none;border-radius:10px;padding:8px 8px;font-size:.73rem;font-weight:800;cursor:pointer}
-.prod-buscar-card .mini-btn.primary{background:linear-gradient(135deg,var(--blue),var(--purple));color:white}
-.prod-buscar-card .mini-btn.soft{background:var(--blue-light);color:var(--blue)}
-.prod-buscar-badge{position:absolute;top:7px;left:7px;font-size:.62rem;font-weight:800;padding:3px 8px;border-radius:7px;color:white;background:var(--blue)}
-.prod-buscar-min{font-size:.68rem;color:var(--gray);margin-bottom:8px}
+/* ===== SISTEMA DE RESEÑAS ===== */
+.resenas-section{background:white;border-radius:14px;padding:15px;margin-bottom:12px}
+.resenas-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.resenas-title{font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy)}
+.resenas-avg{display:flex;align-items:center;gap:6px}
+.resenas-avg-num{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:var(--navy)}
+.resenas-avg-stars{color:#F59E0B;font-size:1rem}
+.resenas-avg-count{font-size:.75rem;color:var(--gray)}
+.btn-calificar{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:10px;padding:8px 14px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer}
+.resena-item{padding:10px 0;border-bottom:1px solid #f4f7ff}
+.resena-item:last-child{border-bottom:none}
+.resena-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.resena-user{font-size:.82rem;font-weight:700;color:var(--navy)}
+.resena-stars{color:#F59E0B;font-size:.85rem}
+.resena-texto{font-size:.79rem;color:var(--gray);line-height:1.5}
+.resena-fecha{font-size:.68rem;color:var(--gray);margin-top:3px}
+.no-resenas{text-align:center;padding:20px;color:var(--gray);font-size:.84rem}
+
+/* MODAL CALIFICAR */
+.rating-stars-input{display:flex;gap:8px;justify-content:center;margin:16px 0}
+.star-btn{font-size:2rem;background:none;border:none;cursor:pointer;opacity:.3;transition:opacity .15s}
+.star-btn.active{opacity:1}
 
 </style>
 </head>
@@ -525,9 +533,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 <!-- ===== BUSCAR ===== -->
 <div class="screen" id="screen-buscar">
-  <div class="topbar"><span class="topbar-logo">Buscar</span></div>
-  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales para abastecerte.</p></div>
-  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()"></div>
+  <div class="topbar"><span class="topbar-logo">Explorar</span></div>
+  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Explorar Proveedores</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Encontrá el socio ideal para tu negocio</p></div>
+  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar por nombre o categoría..." id="searchInput" oninput="filterProvs()"></div>
   <div class="chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
     <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
@@ -540,17 +548,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
     <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
     <div class="search-tab" id="tab-proveedores" onclick="switchBuscarTab('proveedores',this)">&#127981; Proveedores</div>
   </div>
-  <div style="padding:10px 20px 0">
-    <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
-      <div style="font-size:1.15rem;line-height:1">&#128161;</div>
-      <div>
-        <div style="font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:2px">Tip rápido</div>
-        <div style="font-size:.78rem;color:var(--gray);line-height:1.5">Primero mirá productos para ver si te sirve el margen. Después entrá al proveedor y contactalo.</div>
-      </div>
-    </div>
-  </div>
   <div id="buscar-productos-view">
-    <div id="buscarSummary" class="search-summary"></div>
     <div class="prod-inicio-grid" id="prodBuscarGrid" style="padding:12px 20px 0"></div>
   </div>
   <div id="buscar-proveedores-view" style="display:none">
@@ -611,6 +609,21 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
         <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
       </div>
+    </div>
+    <!-- RESEÑAS -->
+    <div class="resenas-section" id="det-resenas-section">
+      <div class="resenas-header">
+        <div class="resenas-title">&#11088; Calificaciones</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="resenas-avg" id="det-avg-container" style="display:none">
+            <span class="resenas-avg-num" id="det-avg-num">0</span>
+            <span class="resenas-avg-stars">&#11088;</span>
+            <span class="resenas-avg-count" id="det-avg-count">(0)</span>
+          </div>
+          <button class="btn-calificar" onclick="abrirRating()">+ Calificar</button>
+        </div>
+      </div>
+      <div id="det-resenas-list"><div class="no-resenas">Todavia no hay calificaciones.</div></div>
     </div>
     <!-- PRODUCTOS DEL PROVEEDOR -->
     <div id="det-productos-section" style="margin-bottom:12px">
@@ -971,6 +984,34 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
 </div>
 
+
+<!-- MODAL CALIFICAR PROVEEDOR -->
+<div class="modal-overlay" id="ratingModal" onclick="closeRatingOnBg(event)">
+  <div class="prod-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>Calificar proveedor</h3>
+      <button class="modal-close" onclick="closeRating()">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--gray);margin-bottom:8px;text-align:center" id="rating-prov-name">Proveedor</p>
+      <div class="rating-stars-input" id="rating-stars">
+        <button class="star-btn" data-val="1" onclick="setRatingStar(1)">&#11088;</button>
+        <button class="star-btn" data-val="2" onclick="setRatingStar(2)">&#11088;</button>
+        <button class="star-btn" data-val="3" onclick="setRatingStar(3)">&#11088;</button>
+        <button class="star-btn" data-val="4" onclick="setRatingStar(4)">&#11088;</button>
+        <button class="star-btn" data-val="5" onclick="setRatingStar(5)">&#11088;</button>
+      </div>
+      <p style="text-align:center;font-size:.8rem;color:var(--gray);margin-bottom:14px" id="rating-label">Toca una estrella</p>
+      <div class="form-group">
+        <label>Comentario (opcional)</label>
+        <textarea id="rating-texto" placeholder="Contanos tu experiencia con este proveedor..." style="min-height:80px"></textarea>
+      </div>
+      <button class="submit-btn" style="margin-top:14px" onclick="enviarResena()">Enviar calificacion &#10003;</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
@@ -1014,8 +1055,7 @@ function toggleFav(id) {
   else { favs.push(p); showToast('Guardado en favoritos!'); }
   guardarFavs();
   renderFavs();
-  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
-  else filterProvs();
+  filterProvs();
 }
 
 function toggleFavActual() {
@@ -1186,8 +1226,7 @@ function setChip(el, cat) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   currentCat = cat;
-  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
-  else filterProvs();
+  filterProvs();
 }
 
 function filterCat(cat) {
@@ -1299,6 +1338,7 @@ function abrirDetalle(id) {
   try { sb.from('busquedas').insert({termino: p.nombre}); } catch(e) {}
   try { sb.from('historial').insert({proveedor_id: p.id, visited_at: new Date().toISOString()}); } catch(e) {}
   cargarProductosDetalle(p.id);
+  cargarResenas(p.id);
   goTo('detalle');
 }
 
@@ -1655,7 +1695,15 @@ async function cargarStatsDashboard() {
     const sv = document.getElementById('stat-visitas');
     if (sv) sv.textContent = numVisits;
 
-    // 4. En favoritos - no hay tabla dedicada, dejamos 0 por ahora
+    // 4. Resenas recibidas
+    const { data: resenas } = await sb.from('resenas')
+      .select('estrellas')
+      .eq('proveedor_id', provId);
+    if (resenas && resenas.length) {
+      const avgR = (resenas.reduce((s,r) => s+r.estrellas,0)/resenas.length).toFixed(1);
+      const sfav = document.getElementById('stat-favoritos');
+      if (sfav) { sfav.textContent = avgR + ' ★'; sfav.parentElement.querySelector('.dash-stat-label').textContent = 'Rating promedio'; }
+    }
   } catch(e) {
     console.error('Error cargando stats:', e);
   }
@@ -1754,6 +1802,96 @@ async function guardarEdicionProducto() {
     closeEditProduct();
     showToast('Producto actualizado!');
   } catch(e) { showToast('Error al guardar'); }
+}
+
+
+// ===== SISTEMA DE RESEÑAS =====
+let ratingSeleccionado = 0;
+const ratingLabels = ['','Muy malo','Malo','Regular','Bueno','Excelente'];
+
+function abrirRating() {
+  if (!currentUser) { showToast('Tenes que iniciar sesion para calificar'); goTo('perfil'); return; }
+  if (!provActual) return;
+  ratingSeleccionado = 0;
+  document.getElementById('rating-prov-name').textContent = provActual.nombre;
+  document.getElementById('rating-label').textContent = 'Toca una estrella';
+  document.getElementById('rating-texto').value = '';
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('ratingModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRating() {
+  document.getElementById('ratingModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeRatingOnBg(e) {
+  if (e.target === document.getElementById('ratingModal')) closeRating();
+}
+
+function setRatingStar(val) {
+  ratingSeleccionado = val;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+  });
+  document.getElementById('rating-label').textContent = ratingLabels[val] + ' (' + val + '/5)';
+}
+
+async function enviarResena() {
+  if (!ratingSeleccionado) { showToast('Selecciona una calificacion'); return; }
+  if (!provActual || !currentUser) return;
+  const texto = document.getElementById('rating-texto').value.trim();
+  try {
+    const { error } = await sb.from('resenas').insert({
+      proveedor_id: String(provActual.id),
+      usuario_nombre: currentUser.name,
+      estrellas: ratingSeleccionado,
+      texto: texto || 'Sin comentario'
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    closeRating();
+    showToast('Calificacion enviada! Gracias ');
+    cargarResenas(provActual.id);
+    // Notificar al proveedor via reportes
+    sb.from('reportes').insert({
+      tipo: 'nueva_resena',
+      descripcion: currentUser.name + ' califico a ' + provActual.nombre + ' con ' + ratingSeleccionado + ' estrellas',
+      estado: 'pendiente'
+    });
+  } catch(e) { showToast('Error al enviar'); }
+}
+
+async function cargarResenas(proveedorId) {
+  const listEl = document.getElementById('det-resenas-list');
+  const avgEl  = document.getElementById('det-avg-container');
+  const avgNum = document.getElementById('det-avg-num');
+  const avgCnt = document.getElementById('det-avg-count');
+  if (!listEl) return;
+  try {
+    const { data, error } = await sb.from('resenas')
+      .select('*')
+      .eq('proveedor_id', String(proveedorId))
+      .order('created_at', { ascending: false });
+    if (error || !data || !data.length) {
+      listEl.innerHTML = '<div class="no-resenas">Todavia no hay calificaciones. Se el primero!</div>';
+      if (avgEl) avgEl.style.display = 'none';
+      return;
+    }
+    const avg = (data.reduce((s, r) => s + r.estrellas, 0) / data.length).toFixed(1);
+    if (avgEl) { avgEl.style.display = 'flex'; avgNum.textContent = avg; avgCnt.textContent = '(' + data.length + ')'; }
+    listEl.innerHTML = data.map(r => `
+      <div class="resena-item">
+        <div class="resena-top">
+          <span class="resena-user">${r.usuario_nombre}</span>
+          <span class="resena-stars">${'⭐'.repeat(r.estrellas)}</span>
+        </div>
+        <div class="resena-texto">${r.texto}</div>
+        <div class="resena-fecha">${new Date(r.created_at).toLocaleDateString('es-AR')}</div>
+      </div>`).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="no-resenas">Error al cargar calificaciones.</div>';
+  }
 }
 
 // ===== NAV =====
@@ -2051,43 +2189,22 @@ function renderProdInicio() {
     </div>`).join('');
 }
 
-function renderProdBuscar(filtro, query = '') {
+function renderProdBuscar(filtro) {
   const el = document.getElementById('prodBuscarGrid');
-  const summary = document.getElementById('buscarSummary');
   if (!el) return;
   let lista = getProdLista();
-  const q = (query || '').toLowerCase().trim();
-  if (filtro && filtro !== 'Todas') {
-    lista = lista.filter(p => (p.cat || '').toLowerCase() === filtro.toLowerCase() || (p.cat || '').toLowerCase() === filtro.replace('í','i').toLowerCase());
-  }
-  if (q) {
-    lista = lista.filter(p =>
-      (p.nombre || '').toLowerCase().includes(q) ||
-      (p.cat || '').toLowerCase().includes(q) ||
-      (p.provNombre || '').toLowerCase().includes(q) ||
-      (p.provRubro || '').toLowerCase().includes(q)
-    );
-  }
-  if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
-  if (!lista.length) {
-    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;background:white;border-radius:16px;border:1px solid var(--border)"><div class="ei">🔎</div><p>No encontramos productos con esos filtros. Probá con otro rubro o buscá un proveedor.</p></div>';
-    return;
-  }
+  if (filtro) lista = lista.filter(p => p.cat === filtro || p.cat === filtro + 'a' || p.cat === filtro.replace('Tecnología','Tecnologia'));
+  if (!lista.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">No hay productos en este rubro todavia.</div>'; return; }
   el.innerHTML = lista.map(p => `
-    <div class="prod-buscar-card" onclick="abrirDetalleProd('${p.id}')">
-      <div class="top" style="background:${p.provColor}18">
+    <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
+      <div class="prod-inicio-img" style="background:${p.provColor}18;height:90px">
         ${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
-        <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
       </div>
-      <div class="body">
-        <div class="title">${p.nombre}</div>
-        <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="meta"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
-        <div class="prod-buscar-min">${p.pedido_minimo || 'Pedido mínimo: consultar'}</div>
-        <div class="actions">
-          <button class="mini-btn primary" onclick="event.stopPropagation(); abrirDetalleProd('${p.id}')">Ver detalle</button>
-          <button class="mini-btn soft" onclick="event.stopPropagation(); abrirDetalle('${p.provId}')">Proveedor</button>
-        </div>
+      <div class="prod-inicio-body">
+        <div class="prod-inicio-name">${p.nombre}</div>
+        <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
+        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
       </div>
     </div>`).join('');
 }
@@ -2098,35 +2215,25 @@ function switchBuscarTab(tab, el) {
   el.classList.add('active');
   const prodView = document.getElementById('buscar-productos-view');
   const provView = document.getElementById('buscar-proveedores-view');
-  const summary = document.getElementById('buscarSummary');
   if (tab === 'productos') {
     if (prodView) prodView.style.display = 'block';
     if (provView) provView.style.display = 'none';
-    if (summary) summary.style.display = 'block';
-    renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
   } else {
     if (prodView) prodView.style.display = 'none';
     if (provView) provView.style.display = 'block';
-    if (summary) summary.style.display = 'none';
-    filterProvs();
   }
 }
 
-function applySearchInput() {
-  if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
-  else filterProvs();
-}
-
 function abrirDetalleProd(id) {
-  const p = getProdLista().find(x => String(x.id) === String(id));
+  const p = productosDemo.find(x => x.id === id);
   if (!p) return;
   productoActual = p;
   const active = document.querySelector('.screen.active');
   pantallaAnteriorProd = active ? active.id.replace('screen-', '') : 'inicio';
 
-  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? '<img src="'+p.imgUrl+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">' : p.emoji}
+  document.getElementById('prod-det-emoji').innerHTML = `${p.emoji}
     <button class="prod-det-back" onclick="volverDetProd()">&#8592; Volver</button>
-    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? '❤️' : '♡'}</button>`;
+    <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>`;
   document.getElementById('prod-det-name').textContent = p.nombre;
   document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
   document.getElementById('prod-det-min').textContent = p.pedido_minimo;
@@ -2193,7 +2300,6 @@ cargarProveedores();
 renderQuestion();
 checkSession();
 cargarProductosReales();
-setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch(e) {} }, 300);
 
 </script>
 </body>
