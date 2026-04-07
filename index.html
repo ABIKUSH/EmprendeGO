@@ -407,8 +407,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 .resena-texto{font-size:.79rem;color:var(--gray);line-height:1.5}
 .resena-fecha{font-size:.68rem;color:var(--gray);margin-top:3px}
 .no-resenas{text-align:center;padding:20px;color:var(--gray);font-size:.84rem}
-
-/* MODAL CALIFICAR */
 .rating-stars-input{display:flex;gap:8px;justify-content:center;margin:16px 0}
 .star-btn{font-size:2rem;background:none;border:none;cursor:pointer;opacity:.3;transition:opacity .15s}
 .star-btn.active{opacity:1}
@@ -610,8 +608,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
       </div>
     </div>
+    <!-- PRODUCTOS DEL PROVEEDOR -->
+    <div id="det-productos-section" style="margin-bottom:12px">
+      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Productos</div>
+      <div id="det-productos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
     <!-- RESEÑAS -->
-    <div class="resenas-section" id="det-resenas-section">
+    <div class="resenas-section">
       <div class="resenas-header">
         <div class="resenas-title">&#11088; Calificaciones</div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -624,11 +627,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         </div>
       </div>
       <div id="det-resenas-list"><div class="no-resenas">Todavia no hay calificaciones.</div></div>
-    </div>
-    <!-- PRODUCTOS DEL PROVEEDOR -->
-    <div id="det-productos-section" style="margin-bottom:12px">
-      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Productos</div>
-      <div id="det-productos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
     </div>
     <div class="det-cta">
       <button class="det-btn-wa" id="det-wa-btn" style="display:none" onclick="detWA()">&#128172; Contactar por WhatsApp</button>
@@ -1338,7 +1336,6 @@ function abrirDetalle(id) {
   try { sb.from('busquedas').insert({termino: p.nombre}); } catch(e) {}
   try { sb.from('historial').insert({proveedor_id: p.id, visited_at: new Date().toISOString()}); } catch(e) {}
   cargarProductosDetalle(p.id);
-  cargarResenas(p.id);
   goTo('detalle');
 }
 
@@ -1695,15 +1692,7 @@ async function cargarStatsDashboard() {
     const sv = document.getElementById('stat-visitas');
     if (sv) sv.textContent = numVisits;
 
-    // 4. Resenas recibidas
-    const { data: resenas } = await sb.from('resenas')
-      .select('estrellas')
-      .eq('proveedor_id', provId);
-    if (resenas && resenas.length) {
-      const avgR = (resenas.reduce((s,r) => s+r.estrellas,0)/resenas.length).toFixed(1);
-      const sfav = document.getElementById('stat-favoritos');
-      if (sfav) { sfav.textContent = avgR + ' ★'; sfav.parentElement.querySelector('.dash-stat-label').textContent = 'Rating promedio'; }
-    }
+    // 4. En favoritos - no hay tabla dedicada, dejamos 0 por ahora
   } catch(e) {
     console.error('Error cargando stats:', e);
   }
@@ -1802,96 +1791,6 @@ async function guardarEdicionProducto() {
     closeEditProduct();
     showToast('Producto actualizado!');
   } catch(e) { showToast('Error al guardar'); }
-}
-
-
-// ===== SISTEMA DE RESEÑAS =====
-let ratingSeleccionado = 0;
-const ratingLabels = ['','Muy malo','Malo','Regular','Bueno','Excelente'];
-
-function abrirRating() {
-  if (!currentUser) { showToast('Tenes que iniciar sesion para calificar'); goTo('perfil'); return; }
-  if (!provActual) return;
-  ratingSeleccionado = 0;
-  document.getElementById('rating-prov-name').textContent = provActual.nombre;
-  document.getElementById('rating-label').textContent = 'Toca una estrella';
-  document.getElementById('rating-texto').value = '';
-  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('ratingModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeRating() {
-  document.getElementById('ratingModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function closeRatingOnBg(e) {
-  if (e.target === document.getElementById('ratingModal')) closeRating();
-}
-
-function setRatingStar(val) {
-  ratingSeleccionado = val;
-  document.querySelectorAll('.star-btn').forEach(b => {
-    b.classList.toggle('active', parseInt(b.dataset.val) <= val);
-  });
-  document.getElementById('rating-label').textContent = ratingLabels[val] + ' (' + val + '/5)';
-}
-
-async function enviarResena() {
-  if (!ratingSeleccionado) { showToast('Selecciona una calificacion'); return; }
-  if (!provActual || !currentUser) return;
-  const texto = document.getElementById('rating-texto').value.trim();
-  try {
-    const { error } = await sb.from('resenas').insert({
-      proveedor_id: String(provActual.id),
-      usuario_nombre: currentUser.name,
-      estrellas: ratingSeleccionado,
-      texto: texto || 'Sin comentario'
-    });
-    if (error) { showToast('Error: ' + error.message); return; }
-    closeRating();
-    showToast('Calificacion enviada! Gracias ');
-    cargarResenas(provActual.id);
-    // Notificar al proveedor via reportes
-    sb.from('reportes').insert({
-      tipo: 'nueva_resena',
-      descripcion: currentUser.name + ' califico a ' + provActual.nombre + ' con ' + ratingSeleccionado + ' estrellas',
-      estado: 'pendiente'
-    });
-  } catch(e) { showToast('Error al enviar'); }
-}
-
-async function cargarResenas(proveedorId) {
-  const listEl = document.getElementById('det-resenas-list');
-  const avgEl  = document.getElementById('det-avg-container');
-  const avgNum = document.getElementById('det-avg-num');
-  const avgCnt = document.getElementById('det-avg-count');
-  if (!listEl) return;
-  try {
-    const { data, error } = await sb.from('resenas')
-      .select('*')
-      .eq('proveedor_id', String(proveedorId))
-      .order('created_at', { ascending: false });
-    if (error || !data || !data.length) {
-      listEl.innerHTML = '<div class="no-resenas">Todavia no hay calificaciones. Se el primero!</div>';
-      if (avgEl) avgEl.style.display = 'none';
-      return;
-    }
-    const avg = (data.reduce((s, r) => s + r.estrellas, 0) / data.length).toFixed(1);
-    if (avgEl) { avgEl.style.display = 'flex'; avgNum.textContent = avg; avgCnt.textContent = '(' + data.length + ')'; }
-    listEl.innerHTML = data.map(r => `
-      <div class="resena-item">
-        <div class="resena-top">
-          <span class="resena-user">${r.usuario_nombre}</span>
-          <span class="resena-stars">${'⭐'.repeat(r.estrellas)}</span>
-        </div>
-        <div class="resena-texto">${r.texto}</div>
-        <div class="resena-fecha">${new Date(r.created_at).toLocaleDateString('es-AR')}</div>
-      </div>`).join('');
-  } catch(e) {
-    listEl.innerHTML = '<div class="no-resenas">Error al cargar calificaciones.</div>';
-  }
 }
 
 // ===== NAV =====
@@ -2292,6 +2191,95 @@ function calcProdDet() {
   document.getElementById('pdcalc-mrg').textContent = mrg + '%';
   document.getElementById('pdcalc-tot').textContent = '$' + tot.toLocaleString('es-AR');
   if (resEl) resEl.style.display = 'grid';
+}
+
+
+// ===== SISTEMA DE RESEÑAS =====
+let ratingSeleccionado = 0;
+const ratingLabels = ['','Muy malo','Malo','Regular','Bueno','Excelente'];
+
+function abrirRating() {
+  if (!currentUser) { showToast('Tenes que iniciar sesion para calificar'); goTo('perfil'); return; }
+  if (!provActual) return;
+  ratingSeleccionado = 0;
+  document.getElementById('rating-prov-name').textContent = provActual.nombre;
+  document.getElementById('rating-label').textContent = 'Toca una estrella';
+  document.getElementById('rating-texto').value = '';
+  document.querySelectorAll('.star-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('ratingModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRating() {
+  document.getElementById('ratingModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function closeRatingOnBg(e) {
+  if (e.target === document.getElementById('ratingModal')) closeRating();
+}
+
+function setRatingStar(val) {
+  ratingSeleccionado = val;
+  document.querySelectorAll('.star-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.val) <= val);
+  });
+  document.getElementById('rating-label').textContent = ratingLabels[val] + ' (' + val + '/5)';
+}
+
+async function enviarResena() {
+  if (!ratingSeleccionado) { showToast('Selecciona una calificacion'); return; }
+  if (!provActual || !currentUser) return;
+  const texto = document.getElementById('rating-texto').value.trim();
+  try {
+    const { error } = await sb.from('resenas').insert({
+      proveedor_id: String(provActual.id),
+      usuario_nombre: currentUser.name,
+      estrellas: ratingSeleccionado,
+      texto: texto || 'Sin comentario'
+    });
+    if (error) { showToast('Error: ' + error.message); return; }
+    closeRating();
+    showToast('Calificacion enviada! Gracias');
+    cargarResenas(provActual.id);
+    sb.from('reportes').insert({
+      tipo: 'nueva_resena',
+      descripcion: currentUser.name + ' califico a ' + provActual.nombre + ' con ' + ratingSeleccionado + ' estrellas',
+      estado: 'pendiente'
+    });
+  } catch(e) { showToast('Error al enviar'); }
+}
+
+async function cargarResenas(proveedorId) {
+  const listEl = document.getElementById('det-resenas-list');
+  const avgEl  = document.getElementById('det-avg-container');
+  const avgNum = document.getElementById('det-avg-num');
+  const avgCnt = document.getElementById('det-avg-count');
+  if (!listEl) return;
+  try {
+    const { data, error } = await sb.from('resenas')
+      .select('*')
+      .eq('proveedor_id', String(proveedorId))
+      .order('created_at', { ascending: false });
+    if (error || !data || !data.length) {
+      listEl.innerHTML = '<div class="no-resenas">Todavia no hay calificaciones. Se el primero!</div>';
+      if (avgEl) avgEl.style.display = 'none';
+      return;
+    }
+    const avg = (data.reduce((s, r) => s + r.estrellas, 0) / data.length).toFixed(1);
+    if (avgEl) { avgEl.style.display = 'flex'; avgNum.textContent = avg; avgCnt.textContent = '(' + data.length + ')'; }
+    listEl.innerHTML = data.map(r => `
+      <div class="resena-item">
+        <div class="resena-top">
+          <span class="resena-user">${r.usuario_nombre}</span>
+          <span class="resena-stars">${'⭐'.repeat(r.estrellas)}</span>
+        </div>
+        <div class="resena-texto">${r.texto}</div>
+        <div class="resena-fecha">${new Date(r.created_at).toLocaleDateString('es-AR')}</div>
+      </div>`).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="no-resenas">Error al cargar calificaciones.</div>';
+  }
 }
 
 // ===== INIT =====
