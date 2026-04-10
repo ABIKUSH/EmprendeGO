@@ -451,6 +451,27 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 /* Comparar btn en cards */
 .prov-card-actions{display:flex;gap:7px;align-items:center}
+
+/* ===== CARRITO ===== */
+.carrito-fab{position:fixed;bottom:90px;left:16px;background:linear-gradient(135deg,#00A651,#00c45e);color:white;border:none;border-radius:50px;padding:12px 16px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer;box-shadow:0 6px 24px rgba(0,166,81,.4);z-index:300;display:none;align-items:center;gap:8px;transition:all .3s;animation:fabPop .3s ease}
+.carrito-fab.show{display:flex}
+.carrito-count{background:white;color:#00A651;border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:900;flex-shrink:0}
+.add-carrito-btn{background:linear-gradient(135deg,#00A651,#00c45e);color:white;border:none;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.carrito-item{background:white;border-radius:14px;padding:13px;display:flex;align-items:center;gap:12px;border:1px solid var(--border)}
+.carrito-item-info{flex:1;min-width:0}
+.carrito-item-name{font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.carrito-item-price{font-size:.78rem;color:var(--gray)}
+.carrito-qty{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.qty-btn{width:28px;height:28px;border-radius:8px;border:1.5px solid var(--border);background:white;font-size:1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--navy)}
+.qty-num{font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;min-width:24px;text-align:center}
+.carrito-total-box{background:linear-gradient(135deg,#f0fdf8,#eef2ff);border:1.5px solid #a7f3d0;border-radius:14px;padding:14px;margin:12px 0}
+.carrito-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:.82rem;color:var(--gray)}
+.carrito-total-val{font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:var(--navy)}
+.carrito-wa-btn{width:100%;background:#25d366;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.carrito-chat-btn{width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.pro-lock{background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px;text-align:center;margin-top:8px}
+.pro-lock-text{font-size:.8rem;color:#92400e;margin-bottom:8px;line-height:1.5}
+.pro-lock-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:10px;padding:9px 16px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer}
 </style>
 </head>
 <body>
@@ -468,6 +489,44 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   <span>&#9878; Comparar</span>
   <span class="comparador-count" id="comparadorCount">0</span>
 </button>
+
+<!-- FAB CARRITO -->
+<button class="carrito-fab" id="carritoFab" onclick="openCarrito()">
+  <span>🛒 Mi pedido</span>
+  <span class="carrito-count" id="carritoCount">0</span>
+</button>
+
+<!-- MODAL CARRITO -->
+<div class="modal-overlay" id="carritoModal" onclick="closeCarritoOnBg(event)">
+  <div class="modal" style="max-height:90vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>🛒 Mi pedido</h3>
+      <button class="modal-close" onclick="closeCarrito()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="carrito-prov-info" style="display:flex;align-items:center;gap:10px;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:14px">
+        <div id="carrito-prov-avatar" style="width:36px;height:36px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:.85rem;color:white;flex-shrink:0">EG</div>
+        <div>
+          <div id="carrito-prov-name" style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy)">Proveedor</div>
+          <div style="font-size:.72rem;color:var(--gray)">Tu pedido va directo a este proveedor</div>
+        </div>
+      </div>
+      <div id="carrito-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+      <div class="carrito-total-box">
+        <div class="carrito-total-row"><span>Subtotal</span><span id="carrito-subtotal">$0</span></div>
+        <div class="carrito-total-row"><span>Unidades</span><span id="carrito-unidades">0</span></div>
+        <div style="border-top:1px solid #a7f3d0;margin:8px 0"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800">Total estimado</span>
+          <span class="carrito-total-val" id="carrito-total">$0</span>
+        </div>
+      </div>
+      <div id="carrito-actions"></div>
+      <button onclick="limpiarCarrito()" style="width:100%;background:none;border:1.5px solid #fee2e2;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#ef4444;cursor:pointer;margin-top:8px">🗑 Vaciar pedido</button>
+    </div>
+  </div>
+</div>
 
 <!-- ===== INICIO ===== -->
 <div class="screen active" id="screen-inicio">
@@ -743,6 +802,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <button class="add-carrito-btn" onclick="agregarAlCarrito()">🛒 Agregar al pedido</button>
       <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
       <button class="det-btn-chat" onclick="detChatProd()">&#128172; Enviar mensaje</button>
     </div>
@@ -2666,6 +2726,174 @@ function calcProdDet(){
   document.getElementById('pdcalc-mrg').textContent=mrg+'%';
   document.getElementById('pdcalc-tot').textContent='$'+tot.toLocaleString('es-AR');
   if(resEl)resEl.style.display='grid';
+}
+
+// ===== CARRITO =====
+let carrito = []; // { producto, cantidad, provId, provNombre, provWA, provPro }
+let carritoProvId = null; // Solo un proveedor por pedido
+
+function agregarAlCarrito() {
+  if (!productoActual) return;
+
+  // Verificar que sea del mismo proveedor
+  if (carritoProvId && carritoProvId !== String(productoActual.provId)) {
+    showToast('Solo podés pedir a un proveedor a la vez. Vaciá el carrito primero.');
+    return;
+  }
+
+  // Buscar proveedor real para obtener WA real
+  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const prov = lista.find(x => String(x.id) === String(productoActual.provId));
+
+  const existente = carrito.find(i => i.producto.id === productoActual.id);
+  if (existente) {
+    existente.cantidad++;
+  } else {
+    carrito.push({
+      producto: { ...productoActual },
+      cantidad: 1,
+      provId: String(productoActual.provId),
+      provNombre: productoActual.provNombre,
+      provWA: prov?.whatsapp || '',
+      provPro: prov?.pro || false
+    });
+    carritoProvId = String(productoActual.provId);
+  }
+
+  actualizarCarritoFab();
+  showToast('✓ Agregado al pedido');
+}
+
+function actualizarCarritoFab() {
+  const fab = document.getElementById('carritoFab');
+  const cnt = document.getElementById('carritoCount');
+  const total = carrito.reduce((s, i) => s + i.cantidad, 0);
+  fab.classList.toggle('show', carrito.length > 0);
+  cnt.textContent = total;
+}
+
+function openCarrito() {
+  renderCarrito();
+  document.getElementById('carritoModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeCarrito() {
+  document.getElementById('carritoModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeCarritoOnBg(e) {
+  if (e.target === document.getElementById('carritoModal')) closeCarrito();
+}
+
+function cambiarCantidad(idx, delta) {
+  carrito[idx].cantidad += delta;
+  if (carrito[idx].cantidad <= 0) carrito.splice(idx, 1);
+  if (!carrito.length) carritoProvId = null;
+  actualizarCarritoFab();
+  renderCarrito();
+}
+
+function limpiarCarrito() {
+  carrito = [];
+  carritoProvId = null;
+  actualizarCarritoFab();
+  closeCarrito();
+  showToast('Pedido vaciado');
+}
+
+function renderCarrito() {
+  if (!carrito.length) { closeCarrito(); return; }
+
+  const item0 = carrito[0];
+  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+
+  // Info proveedor
+  const avatarEl = document.getElementById('carrito-prov-avatar');
+  const nameEl   = document.getElementById('carrito-prov-name');
+  if (avatarEl) { avatarEl.textContent = item0.provNombre.substring(0,2).toUpperCase(); avatarEl.style.background = bgs[0]; }
+  if (nameEl)   nameEl.textContent = item0.provNombre;
+
+  // Items
+  const itemsEl = document.getElementById('carrito-items');
+  itemsEl.innerHTML = carrito.map((item, idx) => `
+    <div class="carrito-item">
+      <div style="width:42px;height:42px;border-radius:10px;background:${bgs[idx%bgs.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">
+        ${item.producto.imgUrl ? `<img src="${item.producto.imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : item.producto.emoji}
+      </div>
+      <div class="carrito-item-info">
+        <div class="carrito-item-name">${item.producto.nombre}</div>
+        <div class="carrito-item-price">$${Number(item.producto.precio).toLocaleString('es-AR')} c/u · Total: $${Number(item.producto.precio * item.cantidad).toLocaleString('es-AR')}</div>
+      </div>
+      <div class="carrito-qty">
+        <button class="qty-btn" onclick="cambiarCantidad(${idx},-1)">−</button>
+        <span class="qty-num">${item.cantidad}</span>
+        <button class="qty-btn" onclick="cambiarCantidad(${idx},1)">+</button>
+      </div>
+    </div>`).join('');
+
+  // Totales
+  const subtotal  = carrito.reduce((s,i) => s + (i.producto.precio * i.cantidad), 0);
+  const unidades  = carrito.reduce((s,i) => s + i.cantidad, 0);
+  document.getElementById('carrito-subtotal').textContent  = '$' + subtotal.toLocaleString('es-AR');
+  document.getElementById('carrito-unidades').textContent  = unidades + ' unidades';
+  document.getElementById('carrito-total').textContent     = '$' + subtotal.toLocaleString('es-AR');
+
+  // Botones según plan
+  const actionsEl = document.getElementById('carrito-actions');
+  const esPro     = item0.provPro;
+  const tieneWA   = item0.provWA && item0.provWA.trim() !== '';
+
+  if (esPro && tieneWA) {
+    actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA()">📲 Enviar pedido por WhatsApp</button>`;
+  } else if (!esPro) {
+    actionsEl.innerHTML = `
+      <button class="carrito-chat-btn" onclick="enviarPedidoPorChat()">💬 Enviar pedido por chat</button>
+      <div class="pro-lock">
+        <div class="pro-lock-text">🔒 El proveedor necesita el <strong>Plan PRO</strong> para recibir pedidos por WhatsApp directo.</div>
+        <button class="pro-lock-btn" onclick="closeCarrito();goTo('planes')">Ver Plan PRO →</button>
+      </div>`;
+  } else {
+    // Es PRO pero no tiene WA cargado
+    actionsEl.innerHTML = `<button class="carrito-chat-btn" onclick="enviarPedidoPorChat()">💬 Enviar pedido por chat</button>`;
+  }
+}
+
+function generarMensajePedido() {
+  const item0 = carrito[0];
+  let msg = `Hola! Te hago un pedido desde EmprendeGo 🚀
+
+`;
+  carrito.forEach(item => {
+    msg += `📦 ${item.producto.nombre} x${item.cantidad} = $${Number(item.producto.precio * item.cantidad).toLocaleString('es-AR')}
+`;
+  });
+  const total = carrito.reduce((s,i) => s + (i.producto.precio * i.cantidad), 0);
+  msg += `
+💰 Total estimado: $${total.toLocaleString('es-AR')}
+`;
+  msg += `
+¿Podés confirmar disponibilidad y formas de pago? Gracias!`;
+  return msg;
+}
+
+function enviarPedidoPorWA() {
+  const item0 = carrito[0];
+  if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
+  const num = item0.provWA.replace(/[^0-9]/g, '');
+  const msg = generarMensajePedido();
+  window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
+  closeCarrito();
+}
+
+function enviarPedidoPorChat() {
+  const item0 = carrito[0];
+  closeCarrito();
+  // Abrir chat con el mensaje del pedido pre-cargado
+  abrirChatDirecto(item0.provId);
+  setTimeout(() => {
+    const inp = document.getElementById('chat-inp');
+    if (inp) inp.value = generarMensajePedido();
+  }, 400);
 }
 
 // ===== INIT =====
