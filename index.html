@@ -2077,9 +2077,13 @@ let mlProductoImportado = null;
 let mlImportadosCount = 0;
 
 function extraerMLId(url) {
-  // Soporta formatos: MLA-123456789, MLA123456789
-  const match = url.match(/MLA-?(\d+)/i);
-  return match ? match[1] : null;
+  // 1. Prioridad: item_id en query params (?pdp_filters=item_id:MLA1576860927)
+  const qMatch = url.match(/item_id[=:](MLA\d+)/i);
+  if (qMatch) return qMatch[1].replace('MLA','');
+  // 2. MLA directo en la URL
+  const directMatch = url.match(/MLA-(\d{7,12})/i) || url.match(/MLA(\d{8,12})/i);
+  if (directMatch) return directMatch[1];
+  return null;
 }
 
 async function importarDesdeML() {
@@ -2087,18 +2091,30 @@ async function importarDesdeML() {
   if (!url) { showToast('Pegá el link de MercadoLibre'); return; }
 
   const itemId = extraerMLId(url);
-  if (!itemId) { showToast('Link inválido. Asegurate de copiar la URL completa de ML'); return; }
+  if (!itemId) { showToast('Link inválido. Copiá la URL completa de ML'); return; }
 
   const btn = document.getElementById('ml-import-btn-text');
   btn.textContent = '⏳ Buscando producto...';
 
+  const mlApiUrl = 'https://api.mercadolibre.com/items/MLA' + itemId;
+  const proxies = [
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(mlApiUrl),
+    'https://corsproxy.io/?' + encodeURIComponent(mlApiUrl),
+    'https://api.codetabs.com/v1/proxy?quest=' + mlApiUrl
+  ];
+
   try {
-    // API pública de ML — no requiere auth para leer publicaciones
-    // Usamos corsproxy.io para evitar el bloqueo CORS del navegador
-    const mlUrl = `https://api.mercadolibre.com/items/MLA${itemId}`;
-    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(mlUrl)}`);
-    if (!res.ok) throw new Error('No encontrado');
-    const data = await res.json();
+    let data = null;
+    for (const proxyUrl of proxies) {
+      try {
+        const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (j && (j.id || j.title)) { data = j; break; }
+      } catch(e) { continue; }
+    }
+    if (!data) throw new Error('Sin datos');
+
 
     mlProductoImportado = {
       nombre:   data.title,
