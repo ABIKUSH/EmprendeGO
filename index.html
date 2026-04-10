@@ -1188,9 +1188,9 @@ async function cargarResenas(provId) {
       .from('resenas')
       .select('*')
       .eq('proveedor_id', pid)
-      .order('fecha', { ascending: false });
+      .order('created_at', { ascending: false });
     if (error) throw error;
-    resenasCache[pid] = data || [];
+    resenasCache[pid] = (data || []).map(r => ({ ...r, autor: r.usuario_nombre, rating: r.estrellas, fecha: r.created_at }));
     return resenasCache[pid];
   } catch(e) {
     return [];
@@ -1300,27 +1300,29 @@ async function submitResena() {
   if (!texto) { showToast('Escribí tu experiencia'); return; }
 
   const pid = String(provActual.id);
+  // Usamos los nombres de columna reales de tu tabla Supabase
   const nuevaResena = {
-    proveedor_id: pid,
-    autor,
-    rating: resenaRatingActual,
-    texto,
-    usuario_email: currentUser?.email || null
+    proveedor_id:   pid,
+    usuario_nombre: autor,
+    estrellas:      resenaRatingActual,
+    texto
   };
 
   // Guardar en Supabase
   try {
     const { data, error } = await sb.from('resenas').insert(nuevaResena).select().single();
     if (error) throw error;
-    // Actualizar cache local
+    // Normalizar y agregar al cache
     if (!resenasCache[pid]) resenasCache[pid] = [];
-    resenasCache[pid].unshift(data);
+    const normalizada = { ...data, autor: data.usuario_nombre, rating: data.estrellas, fecha: data.created_at };
+    resenasCache[pid].unshift(normalizada);
     showToast('¡Reseña publicada! Gracias 🙌');
   } catch(e) {
-    // Si falla Supabase igual mostramos localmente
+    console.error('Error guardando reseña:', e);
+    // Fallback local si falla Supabase
     if (!resenasCache[pid]) resenasCache[pid] = [];
-    resenasCache[pid].unshift({ ...nuevaResena, fecha: new Date().toISOString() });
-    showToast('Reseña guardada localmente');
+    resenasCache[pid].unshift({ usuario_nombre: autor, autor, estrellas: resenaRatingActual, rating: resenaRatingActual, texto, fecha: new Date().toISOString() });
+    showToast('Reseña guardada (sin conexión)');
   }
 
   closeResenaModal();
