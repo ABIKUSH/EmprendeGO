@@ -2260,13 +2260,21 @@ async function cargarMisConversaciones() {
       return;
     }
 
-    // Paso 2: traer TODOS los mensajes de esas conversaciones (de ambos lados)
+    // Paso 2: traer nombre del proveedor por separado (sin join, por diferencia de tipos)
+    const provNombres = {};
+    const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+    provIds.forEach(pid => {
+      const prov = lista.find(p => String(p.id) === String(pid));
+      provNombres[pid] = prov ? prov.nombre : 'Proveedor';
+    });
+
+    // Paso 3: traer TODOS los mensajes de esas conversaciones
     const { data: todosLosMsgs } = await sb.from('mensajes')
-      .select('proveedor_id, texto, created_at, de_tipo, leido, proveedores(id, nombre, rubro)')
+      .select('proveedor_id, texto, created_at, de_tipo, leido')
       .in('proveedor_id', provIds)
       .order('created_at', { ascending: false });
 
-    if (!todosLosMsgs.length) {
+    if (!todosLosMsgs || !todosLosMsgs.length) {
       el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
       return;
     }
@@ -2279,19 +2287,16 @@ async function cargarMisConversaciones() {
       if (!convMap[pid]) {
         convMap[pid] = {
           provId: pid,
-          provNombre: m.proveedores?.nombre || 'Proveedor',
-          provRubro: m.proveedores?.rubro || '',
+          provNombre: provNombres[pid] || 'Proveedor',
           ultimoMsg: m.texto,
           ultimaFecha: m.created_at,
           noLeidos: 0
         };
       }
-      // El mensaje más reciente como preview
       if (new Date(m.created_at) > new Date(convMap[pid].ultimaFecha)) {
         convMap[pid].ultimoMsg = m.texto;
         convMap[pid].ultimaFecha = m.created_at;
       }
-      // Contar no leídos del proveedor hacia el usuario
       if (m.de_tipo === 'proveedor' && !m.leido) convMap[pid].noLeidos++;
     });
 
