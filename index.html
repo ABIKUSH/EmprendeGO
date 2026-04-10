@@ -3338,12 +3338,22 @@ function enviarPedidoPorChat() {
 async function subirAvatar(file, carpeta) {
   if (!file) return null;
   if (file.size > 3 * 1024 * 1024) { showToast('La imagen es muy grande. Máx 3MB'); return null; }
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = carpeta + '/' + Date.now() + '.' + ext;
-  const { data, error } = await sb.storage.from('avatares').upload(path, file, { upsert: true });
-  if (error) { showToast('Error al subir imagen'); return null; }
-  const { data: urlData } = sb.storage.from('avatares').getPublicUrl(path);
-  return urlData.publicUrl;
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  // Nombre único para evitar conflictos
+  const path = carpeta + '/' + Math.random().toString(36).substring(2) + '_' + Date.now() + '.' + ext;
+  try {
+    const { data, error } = await sb.storage.from('avatares').upload(path, file);
+    if (error) {
+      console.error('Storage error:', error);
+      showToast('Error al subir: ' + (error.message || 'intenta de nuevo'));
+      return null;
+    }
+    const { data: urlData } = sb.storage.from('avatares').getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch(e) {
+    showToast('Error al subir imagen');
+    return null;
+  }
 }
 
 async function subirAvatarUsuario(input) {
