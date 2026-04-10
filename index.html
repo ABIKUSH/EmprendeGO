@@ -1340,7 +1340,10 @@ function renderFavs() {
     const avgR = getProvRating(pid).avg.toFixed(1);
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
-        <div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>
+        ${p.logo_url
+          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+        }
         <div style="flex:1;min-width:0">
           <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || ''}${p.provincia ? ' · ' + p.provincia : ''}</div>
@@ -1374,7 +1377,8 @@ async function cargarProveedores() {
         desc: p.descripcion || '', pro: p.plan === 'pro',
         inicial: p.nombre.substring(0,2).toUpperCase(), whatsapp: p.whatsapp || '',
         provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
-        envios: p.envios || 'Consultar', instagram: p.instagram || ''
+        envios: p.envios || 'Consultar', instagram: p.instagram || '',
+        logo_url: p.logo_url || ''
       }));
     } else { proveedoresDB = proveedoresDEMO; }
   } catch(e) { proveedoresDB = proveedoresDEMO; }
@@ -1820,7 +1824,10 @@ function renderProvs(list) {
     const enComp = comparadorList.some(x => String(x.id) === pid);
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
-        <div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>
+        ${p.logo_url
+          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+        }
         <div style="flex:1;min-width:0">
           <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || 'General'}${p.provincia ? ' · ' + p.provincia : ''}</div>
@@ -1972,7 +1979,13 @@ function abrirDetalle(id) {
   pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   addToHistorial(p);
 
-  document.getElementById('det-logo').textContent     = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+  const detLogoEl = document.getElementById('det-logo');
+  const detIni = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
+  if (p.logo_url) {
+    detLogoEl.innerHTML = `<img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+  } else {
+    detLogoEl.textContent = detIni;
+  }
   document.getElementById('det-nombre').textContent   = p.nombre;
   document.getElementById('det-rubro').textContent    = (p.rubro || 'General') + (p.provincia ? ' · ' + p.provincia : '');
   document.getElementById('det-desc').textContent     = p.desc || p.descripcion || 'Sin descripcion.';
