@@ -25,6 +25,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden}
 .screen{display:none;min-height:100vh;padding-bottom:80px;animation:fadeIn .25s ease}
 .screen.active{display:block}
+#screen-prov-chat.active{display:flex!important;flex-direction:column}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
 /* TOPBAR */
@@ -1015,7 +1016,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 </div>
 
 <!-- ===== CHAT PROVEEDOR (pantalla completa) ===== -->
-<div class="screen" id="screen-prov-chat" style="padding-bottom:0;display:flex;flex-direction:column;height:100vh">
+<div class="screen" id="screen-prov-chat" style="padding-bottom:0;flex-direction:column;height:100vh">
   <div class="prov-chat-header">
     <button class="prov-chat-back" onclick="volverProvChat()">← Volver</button>
     <div style="flex:1">
