@@ -2018,14 +2018,22 @@ async function abrirChatDirecto(id) {
       .eq('proveedor_id', p.id)
       .order('created_at', { ascending: true });
     if (data && data.length) {
-      chatMsgs = data.map(m => ({
-        tipo:  m.de_tipo === 'proveedor' ? 'recv' : 'sent',
-        texto: m.texto,
-        hora:  m.created_at ? timeAgo(new Date(m.created_at)) : '',
-        dbId:  m.id,
-        nombre: m.de_tipo === 'proveedor' ? p.nombre : null
-      }));
-      renderChat();
+      // Filtrar solo mensajes del proveedor + mensajes del usuario actual
+      const misMsgs = data.filter(m =>
+        m.de_tipo === 'proveedor' ||
+        m.usuario_email === currentUser?.email ||
+        m.de_nombre === currentUser?.name
+      );
+      if (misMsgs.length) {
+        chatMsgs = misMsgs.map(m => ({
+          tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+          texto:  m.texto,
+          hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
+          dbId:   m.id,
+          nombre: m.de_tipo === 'proveedor' ? p.nombre : null
+        }));
+        renderChat();
+      }
     }
   } catch(e) {}
 
@@ -2100,6 +2108,7 @@ async function sendMsg() {
         proveedor_id: provActual.id,
         de_tipo: 'usuario',
         de_nombre: currentUser ? currentUser.name : 'Anónimo',
+        usuario_email: currentUser ? currentUser.email : null,
         texto: txt,
         leido: false
       });
@@ -2226,18 +2235,24 @@ async function cargarHistorial() {
 
 async function cargarMisConversaciones() {
   const el = document.getElementById('mis-conversaciones-list');
-  if (!el) return;
+  if (!el || !currentUser) return;
   try {
-    // Traer mensajes donde participó el usuario actual
+    // Traer mensajes del proveedor_id donde el usuario participó (por email o nombre)
     const { data } = await sb.from('mensajes')
-      .select('proveedor_id, texto, created_at, de_tipo, proveedores(id, nombre, rubro)')
+      .select('proveedor_id, texto, created_at, de_tipo, leido, proveedores(id, nombre, rubro)')
+      .or('usuario_email.eq.' + currentUser.email + ',de_nombre.eq.' + currentUser.name)
       .order('created_at', { ascending: false });
-    if (!data || !data.length) return;
 
-    // Agrupar por proveedor
+    if (!data || !data.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      return;
+    }
+
+    // Agrupar por proveedor_id
     const convMap = {};
     data.forEach(m => {
       const pid = m.proveedor_id;
+      if (!pid) return;
       if (!convMap[pid]) {
         convMap[pid] = {
           provId: pid,
@@ -2248,30 +2263,36 @@ async function cargarMisConversaciones() {
           noLeidos: 0
         };
       }
-      // Contar no leídos del proveedor
+      // El mensaje más reciente como preview
+      if (new Date(m.created_at) > new Date(convMap[pid].ultimaFecha)) {
+        convMap[pid].ultimoMsg = m.texto;
+        convMap[pid].ultimaFecha = m.created_at;
+      }
+      // Contar no leídos del proveedor hacia el usuario
       if (m.de_tipo === 'proveedor' && !m.leido) convMap[pid].noLeidos++;
     });
 
     const convs = Object.values(convMap).slice(0, 8);
-    if (!convs.length) return;
+    if (!convs.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      return;
+    }
 
     const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
     el.innerHTML = convs.map((c, i) => {
       const ini = c.provNombre.substring(0,2).toUpperCase();
-      const preview = (c.ultimoMsg||'').substring(0,45) + (c.ultimoMsg?.length > 45 ? '...' : '');
-      return `<div class="hist-item" onclick="abrirChatDirecto('${c.provId}')" style="position:relative">
-        <div class="hist-logo" style="background:${bgs[i%bgs.length]};color:white">${ini}</div>
-        <div class="hist-info">
-          <strong>${c.provNombre}</strong>
-          <span>${preview}</span>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-          <span class="hist-time">${timeAgo(new Date(c.ultimaFecha))}</span>
-          ${c.noLeidos > 0 ? '<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">'+c.noLeidos+'</span>' : ''}
-        </div>
-      </div>`;
+      const preview = (c.ultimoMsg||'').split(String.fromCharCode(10)).join(' ').substring(0,45) + ((c.ultimoMsg||'').length > 45 ? '...' : '');
+      return `<div class="hist-item" onclick="abrirChatDirecto('${c.provId}')" style="position:relative">` +
+        `<div class="hist-logo" style="background:${bgs[i%bgs.length]};color:white">${ini}</div>` +
+        `<div class="hist-info"><strong>${c.provNombre}</strong><span>${preview}</span></div>` +
+        `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">` +
+        `<span class="hist-time">${timeAgo(new Date(c.ultimaFecha))}</span>` +
+        (c.noLeidos > 0 ? `<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
+        '</div></div>';
     }).join('');
-  } catch(e) {}
+  } catch(e) {
+    console.error('Error cargando conversaciones:', e);
+  }
 }
 function timeAgo(date) {
   const mins = Math.floor((new Date()-date)/60000);
