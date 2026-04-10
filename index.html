@@ -751,71 +751,37 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 <!-- ===== REGISTRO ===== -->
 <div class="screen" id="screen-registro">
-  <div class="topbar"><span class="topbar-logo">Sumar mi negocio</span></div>
-  <div class="reg-shell">
+  <div class="topbar"><span class="topbar-logo">Ser Proveedor</span></div>
+  <div style="padding:0 20px 32px">
     <div id="reg-intro" style="padding-top:24px">
-      <div class="reg-premium-hero">
-        <div class="reg-premium-pill"><span class="dot"></span> Oportunidad para mayoristas</div>
-        <div class="reg-premium-title">Conseguí nuevos clientes sin complicarte</div>
-        <div class="reg-premium-sub">Mostrá tu negocio en EmprendeGo y conectate con personas que ya están buscando qué vender. Entrás rápido y completás el resto después.</div>
-        <div class="reg-premium-badges">
-          <span>Más consultas</span><span>Alta simple</span><span>WhatsApp directo</span>
-        </div>
+      <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:24px;margin-bottom:20px;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:10px">🏭</div>
+        <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:white;margin-bottom:8px">Publicá tu negocio</h2>
+        <p style="color:rgba(255,255,255,.7);font-size:.88rem;line-height:1.6">Llegá a miles de emprendedores. Tu perfil será revisado antes de publicarse.</p>
       </div>
-
-      <div class="reg-benefit-grid">
-        <div class="reg-benefit-card"><div class="reg-benefit-icon">📈</div><strong>Más visibilidad</strong><span>Te mostramos a nuevos emprendedores por rubro, provincia y oportunidad.</span></div>
-        <div class="reg-benefit-card"><div class="reg-benefit-icon">💬</div><strong>Consultas reales</strong><span>Tu negocio puede recibir mensajes y contactos sin depender solo de Instagram.</span></div>
-        <div class="reg-benefit-card"><div class="reg-benefit-icon">⚡</div><strong>Alta liviana</strong><span>Primero completás lo básico. Después terminás catálogo y detalles.</span></div>
-        <div class="reg-benefit-card"><div class="reg-benefit-icon">🛡️</div><strong>Perfil confiable</strong><span>Validamos datos para que tu negocio se vea más serio y genere confianza.</span></div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+        <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:1.3rem">✅</span><div><div style="font-size:.88rem;font-weight:700">Verificación con CUIT</div><div style="font-size:.78rem;color:var(--gray)">Validamos tu identidad antes de publicar</div></div></div>
+        <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:1.3rem">🚀</span><div><div style="font-size:.88rem;font-weight:700">Publicación en 24-48hs</div><div style="font-size:.78rem;color:var(--gray)">Una vez aprobado aparecés en el directorio</div></div></div>
       </div>
-
-      <div class="reg-proof">
-        <div class="reg-proof-top"><div class="reg-proof-title">Lo que gana tu negocio al sumarse</div><span class="reg-proof-tag">SIN CARGA PESADA</span></div>
-        <div class="reg-proof-list">
-          <div class="reg-proof-item"><span>✓</span><div><b>Mostrás tu catálogo</b> a personas que quieren empezar a vender.</div></div>
-          <div class="reg-proof-item"><span>✓</span><div><b>Podés destacar productos</b> y aparecer en búsquedas por rubro o provincia.</div></div>
-          <div class="reg-proof-item"><span>✓</span><div><b>Entrás con pocos datos</b> y completás el resto cuando quieras.</div></div>
-        </div>
-      </div>
-
-      <div class="reg-cta-stack">
-        <button class="submit-btn" onclick="showRegStep(1)">Quiero publicar mi negocio →</button>
-        <button class="reg-whatsapp-btn" onclick="abrirWA('5491112345678')">Prefiero que me ayuden por WhatsApp</button>
-      </div>
-      <div class="reg-soft-link">¿Solo explorás? <span onclick="goTo('buscar')">Ver proveedores</span></div>
-
-      <div class="reg-mini-preview" style="margin-top:16px">
-        <div class="reg-mini-preview-head"><strong>Así se vería tu perfil</strong><span>Preview</span></div>
-        <div class="reg-preview-card">
-          <div class="reg-preview-top">
-            <div class="reg-preview-logo">LB</div>
-            <div>
-              <div class="reg-preview-name">Luxury Blanco Mayorista</div>
-              <div class="reg-preview-sub">Blanquería · Buenos Aires</div>
-            </div>
-          </div>
-          <div class="reg-preview-badges"><span class="green">Verificado</span><span class="blue">WhatsApp directo</span></div>
-          <div class="reg-preview-cta"><button class="primary">Contactar</button><button class="soft">Ver catálogo</button></div>
-        </div>
-      </div>
+      <button class="submit-btn" onclick="showRegStep(1)">Quiero ser proveedor →</button>
+      <p style="text-align:center;margin-top:14px;font-size:.82rem;color:var(--gray)">¿Solo explorás? <span style="color:var(--blue);font-weight:700;cursor:pointer" onclick="goTo('buscar')">Buscá proveedores</span></p>
     </div>
-    <div id="reg-step1" style="display:none;padding-top:20px"><div class="reg-step-card">
-      <div class="reg-progress-row"><button onclick="showRegStep(0)" class="reg-back-btn">←</button><div style="flex:1"><div class="reg-progress-copy">Paso 1 de 3</div><div class="reg-progress-bar"><span style="width:33%"></span></div></div></div>
-      <div class="reg-step-title">Entrás con lo básico</div>
-      <div class="reg-step-sub">Completá estos datos y ya podemos comenzar a revisar tu negocio.</div>
+    <div id="reg-step1" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(0)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 1 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:33%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Datos personales</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Información del responsable</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Nombre y apellido *</label><input type="text" placeholder="Ej: Carlos Rodríguez"></div>
         <div class="form-group"><label>Email *</label><input type="email" placeholder="carlos@minegocio.com"></div>
         <div class="form-group"><label>WhatsApp *</label><input type="tel" placeholder="+54 9 11 1234-5678"></div>
         <div class="form-group"><label>Provincia *</label><select><option value="">Seleccioná</option><option>Buenos Aires</option><option>CABA</option><option>Córdoba</option><option>Santa Fe</option><option>Mendoza</option><option>Otra</option></select></div>
       </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(2)">Continuar →</button><div class="reg-tip-box"><b>Tip:</b> con estos datos ya podemos reservarte lugar y después completás el resto.</div>
-    </div></div>
-    <div id="reg-step2" style="display:none;padding-top:20px"><div class="reg-step-card">
-      <div class="reg-progress-row"><button onclick="showRegStep(1)" class="reg-back-btn">←</button><div style="flex:1"><div class="reg-progress-copy">Paso 2 de 3</div><div class="reg-progress-bar"><span style="width:66%"></span></div></div></div>
-      <div class="reg-step-title">Ahora contanos de tu negocio</div>
-      <div class="reg-step-sub">Esto nos ayuda a mostrar tu perfil con más seriedad y confianza.</div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(2)">Continuar →</button>
+    </div>
+    <div id="reg-step2" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(1)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 2 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:66%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Tu negocio</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Datos oficiales de verificación</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
         <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"></div>
@@ -823,31 +789,24 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <div class="form-group"><label>Instagram o red social</label><input type="text" placeholder="@minegocio"></div>
         <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
       </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(3)">Continuar →</button><div class="reg-tip-box"><b>Consejo:</b> no hace falta tener todo perfecto hoy. Lo importante es entrar rápido y activar tu perfil.</div>
-    </div></div>
-    <div id="reg-step3" style="display:none;padding-top:20px"><div class="reg-step-card">
-      <div class="reg-progress-row"><button onclick="showRegStep(2)" class="reg-back-btn">←</button><div style="flex:1"><div class="reg-progress-copy">Paso 3 de 3</div><div class="reg-progress-bar"><span style="width:100%"></span></div></div></div>
-      <div class="reg-step-title">Último paso</div>
-      <div class="reg-step-sub">Con estos datos terminamos de validar tu perfil para publicarlo mejor.</div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(3)">Continuar →</button>
+    </div>
+    <div id="reg-step3" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(2)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 3 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Verificación</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Confirmamos que tu negocio es real</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>¿Hacés envíos? *</label><select><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local / GBA</option><option>El comprador retira</option></select></div>
         <div class="form-group"><label>Pedido mínimo *</label><select><option value="">Seleccioná</option><option>Sin mínimo</option><option>Desde $5.000</option><option>Desde $10.000</option><option>Desde $50.000</option><option>Desde $100.000+</option></select></div>
         <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>📋 Términos:</strong> Al enviar, aceptás que verificaremos tu CUIT en AFIP. Aprobación en 24-48hs hábiles.</div>
       </div>
-      <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button><div class="reg-tip-box"><b>Tranquilo:</b> revisamos tus datos y te avisamos por WhatsApp. No necesitás cargar un catálogo completo para arrancar.</div>
-    </div></div>
-    <div id="reg-success" style="display:none;padding-top:26px;text-align:center">
-      <div class="reg-success-card">
-        <div class="emoji">🎉</div>
-        <h2 style="font-family:'Sora',sans-serif;font-size:1.45rem;font-weight:900;margin-bottom:10px">¡Tu solicitud ya entró!</h2>
-        <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:10px">En las próximas <strong>24-48hs hábiles</strong> revisamos tu negocio y te escribimos por WhatsApp para ayudarte a dejarlo impecable.</p>
-        <div class="reg-success-steps">
-          <div class="reg-success-step"><b>1.</b> Validamos tus datos y rubro.</div>
-          <div class="reg-success-step"><b>2.</b> Te contactamos si falta algo para publicar mejor tu perfil.</div>
-          <div class="reg-success-step"><b>3.</b> Activás tu negocio y empezás a recibir visibilidad dentro de EmprendeGo.</div>
-        </div>
-        <button class="submit-btn" onclick="goTo('buscar')">Explorar la app mientras tanto →</button>
-      </div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button>
+    </div>
+    <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
+      <div style="font-size:4rem;margin-bottom:16px">🎉</div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:24px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
+      <button class="submit-btn" onclick="goTo('buscar')">Explorar proveedores mientras tanto →</button>
     </div>
   </div>
 </div>
@@ -1036,20 +995,65 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
 </div>
 
-<!-- ===== MODAL ADD PRODUCTO ===== -->
+<!-- ===== MODAL ADD PRODUCTO (con fotos + carga múltiple) ===== -->
 <div class="modal-overlay" id="addProdModal" onclick="closeAddProductOnBg(event)">
   <div class="prod-modal">
     <div class="modal-handle"></div>
-    <div class="modal-header"><h3>Agregar producto</h3><button class="modal-close" onclick="closeAddProduct()">✕</button></div>
+    <div class="modal-header">
+      <h3>Agregar productos</h3>
+      <button class="modal-close" onclick="closeAddProduct()">✕</button>
+    </div>
     <div class="modal-body">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda para iPhone 15"></div>
-        <div class="form-group"><label>Precio mayorista *</label><input type="number" id="new-prod-price" placeholder="Ej: 2500"></div>
-        <div class="form-group"><label>Stock disponible</label><input type="number" id="new-prod-stock" placeholder="Ej: 100"></div>
-        <div class="form-group"><label>Categoría</label><select id="new-prod-cat"><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
-        <div class="form-group"><label>URL de imagen (opcional)</label><input type="url" id="new-prod-img" placeholder="https://..."></div>
-        <div class="form-group"><label>Descripción</label><textarea id="new-prod-desc" placeholder="Descripción breve del producto"></textarea></div>
-        <button class="submit-btn" onclick="addProduct()">Agregar al catálogo ✓</button>
+      <!-- Tabs: uno o varios -->
+      <div style="display:flex;background:#f0f4ff;border-radius:12px;padding:3px;margin-bottom:18px">
+        <div id="tab-uno" style="flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">📦 Un producto</div>
+        <div id="tab-multi" style="flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">📋 Carga múltiple</div>
+      </div>
+
+      <!-- TAB: UN PRODUCTO -->
+      <div id="add-tab-uno">
+        <!-- Foto real desde celu -->
+        <div style="margin-bottom:16px">
+          <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">📷 Foto del producto</label>
+          <div id="foto-preview" style="width:100%;height:140px;background:var(--blue-light);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #c7d4f8;position:relative;overflow:hidden" onclick="document.getElementById('foto-input').click()">
+            <img id="foto-preview-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+            <div id="foto-placeholder" style="text-align:center">
+              <div style="font-size:2rem;margin-bottom:6px">📷</div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--blue)">Tocá para subir foto</div>
+              <div style="font-size:.7rem;color:var(--gray);margin-top:2px">JPG, PNG · Máx 5MB</div>
+            </div>
+            <button id="foto-remove-btn" onclick="event.stopPropagation();removeFoto()" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:4px 8px;font-size:.72rem;cursor:pointer">✕ Quitar</button>
+          </div>
+          <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda iPhone 15 Pro"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>Precio mayorista *</label><input type="number" id="new-prod-price" placeholder="2500"></div>
+            <div class="form-group"><label>Stock</label><input type="number" id="new-prod-stock" placeholder="100"></div>
+          </div>
+          <div class="form-group"><label>Categoría</label>
+            <select id="new-prod-cat">
+              <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Descripción (opcional)</label><textarea id="new-prod-desc" placeholder="Breve descripción del producto..." style="min-height:60px"></textarea></div>
+        </div>
+        <button class="submit-btn" style="margin-top:16px" onclick="addProduct()">
+          <span id="add-btn-text">Agregar al catálogo ✓</span>
+        </button>
+      </div>
+
+      <!-- TAB: CARGA MÚLTIPLE -->
+      <div id="add-tab-multi" style="display:none">
+        <div style="background:#f0fdf8;border:1.5px solid #a7f3d0;border-radius:12px;padding:12px;margin-bottom:16px;font-size:.8rem;color:var(--navy);line-height:1.6">
+          💡 <strong>Cómo funciona:</strong> Completá cada producto en su fila. Podés agregar hasta 10 a la vez. Solo nombre y precio son obligatorios.
+        </div>
+        <div id="multi-prod-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button onclick="agregarFilaMulti()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:8px">+ Agregar otra fila</button>
+        <button class="submit-btn" style="margin-top:12px" onclick="addProductosMultiples()">
+          <span id="multi-btn-text">Guardar todos los productos ✓</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1962,23 +1966,169 @@ async function deleteProduct(id) {
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid(); showToast('Producto eliminado');
 }
-function openAddProduct() { document.getElementById('addProdModal').classList.add('open'); document.body.style.overflow='hidden'; }
+// ===== FOTO UPLOAD =====
+let fotoFile = null;
+
+function previewFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('La foto es muy grande. Máx 5MB'); return; }
+  fotoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('foto-preview-img');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('foto-placeholder').style.display = 'none';
+    document.getElementById('foto-remove-btn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeFoto() {
+  fotoFile = null;
+  document.getElementById('foto-preview-img').style.display = 'none';
+  document.getElementById('foto-preview-img').src = '';
+  document.getElementById('foto-placeholder').style.display = 'block';
+  document.getElementById('foto-remove-btn').style.display = 'none';
+  document.getElementById('foto-input').value = '';
+}
+
+async function subirFotoStorage(file, provId) {
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `${provId}/${Date.now()}.${ext}`;
+  const { data, error } = await sb.storage.from('productos').upload(path, file, { upsert: true });
+  if (error) throw error;
+  const { data: urlData } = sb.storage.from('productos').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+// ===== TABS MODAL ===
+function switchAddTab(tab) {
+  document.getElementById('add-tab-uno').style.display   = tab === 'uno'   ? 'block' : 'none';
+  document.getElementById('add-tab-multi').style.display = tab === 'multi' ? 'block' : 'none';
+  document.getElementById('tab-uno').style.cssText   = tab === 'uno'
+    ? 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer'
+    : 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer';
+  document.getElementById('tab-multi').style.cssText = tab === 'multi'
+    ? 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer'
+    : 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer';
+}
+
+// ===== CARGA MÚLTIPLE =====
+let filasMulti = [];
+function initFilasMulti() {
+  filasMulti = [{ id: Date.now() }];
+  renderFilasMulti();
+}
+function agregarFilaMulti() {
+  if (filasMulti.length >= 10) { showToast('Máximo 10 productos a la vez'); return; }
+  filasMulti.push({ id: Date.now() });
+  renderFilasMulti();
+}
+function eliminarFilaMulti(id) {
+  filasMulti = filasMulti.filter(f => f.id !== id);
+  renderFilasMulti();
+}
+function renderFilasMulti() {
+  const el = document.getElementById('multi-prod-list');
+  if (!el) return;
+  el.innerHTML = filasMulti.map((f, i) => `
+    <div style="background:#f8f9ff;border-radius:12px;padding:12px;border:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span style="font-size:.78rem;font-weight:800;color:var(--blue)">Producto ${i+1}</span>
+        ${filasMulti.length > 1 ? `<button onclick="eliminarFilaMulti(${f.id})" style="background:#fee2e2;color:#ef4444;border:none;border-radius:7px;padding:3px 8px;font-size:.72rem;cursor:pointer">✕</button>` : ''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input type="text" data-field="nombre" data-id="${f.id}" placeholder="Nombre del producto *" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input type="number" data-field="precio" data-id="${f.id}" placeholder="Precio *" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
+          <input type="number" data-field="stock" data-id="${f.id}" placeholder="Stock" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
+        </div>
+        <select data-field="cat" data-id="${f.id}" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
+          <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+async function addProductosMultiples() {
+  const rows = document.querySelectorAll('#multi-prod-list [data-field="nombre"]');
+  const prods = [];
+  let hayError = false;
+  rows.forEach(row => {
+    const id   = row.dataset.id;
+    const nombre = row.value.trim();
+    const precio = parseFloat(document.querySelector(`[data-field="precio"][data-id="${id}"]`)?.value || '0');
+    const stock  = parseInt(document.querySelector(`[data-field="stock"][data-id="${id}"]`)?.value || '0') || null;
+    const cat    = document.querySelector(`[data-field="cat"][data-id="${id}"]`)?.value || 'General';
+    if (!nombre || !precio) { hayError = true; return; }
+    prods.push({ nombre, precio, stock, categoria: cat, proveedor_id: currentUser?.proveedorId || null });
+  });
+  if (hayError) { showToast('Completá nombre y precio en todas las filas'); return; }
+  if (!prods.length) { showToast('No hay productos para guardar'); return; }
+  const btn = document.getElementById('multi-btn-text');
+  if (btn) btn.textContent = 'Guardando...';
+  try {
+    const { data } = await sb.from('productos').insert(prods).select();
+    (data || prods.map((p,i) => ({...p, id: Date.now()+i}))).forEach(p => productos.unshift(p));
+    showToast(`✓ ${prods.length} productos guardados`);
+  } catch(e) {
+    prods.forEach((p,i) => productos.unshift({...p, id: Date.now()+i}));
+    showToast(`${prods.length} productos guardados`);
+  }
+  renderProdGrid();
+  closeAddProduct();
+  if (btn) btn.textContent = 'Guardar todos los productos ✓';
+}
+
+function openAddProduct() {
+  fotoFile = null;
+  removeFoto();
+  document.getElementById('addProdModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  switchAddTab('uno');
+  initFilasMulti();
+}
 function closeAddProduct() { document.getElementById('addProdModal').classList.remove('open'); document.body.style.overflow=''; }
 function closeAddProductOnBg(e) { if(e.target===document.getElementById('addProdModal')) closeAddProduct(); }
+
 async function addProduct() {
-  const name = document.getElementById('new-prod-name').value;
+  const name  = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
   const stock = document.getElementById('new-prod-stock').value;
-  const cat = document.getElementById('new-prod-cat').value;
-  if (!name || !price) { showToast('Completa nombre y precio'); return; }
-  const imgUrl = (document.getElementById('new-prod-img')?.value||'').trim();
-  const newProd = {nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat,imagen_url:imgUrl||null,proveedor_id:currentUser?.proveedorId||null};
+  const cat   = document.getElementById('new-prod-cat').value;
+  if (!name || !price) { showToast('Completá nombre y precio'); return; }
+
+  const btn = document.getElementById('add-btn-text');
+  if (btn) btn.textContent = 'Guardando...';
+
+  let imgUrl = null;
+  // Subir foto si eligió una
+  if (fotoFile && currentUser?.proveedorId) {
+    try {
+      imgUrl = await subirFotoStorage(fotoFile, currentUser.proveedorId);
+    } catch(e) {
+      showToast('No se pudo subir la foto, se guardó sin imagen');
+    }
+  }
+
+  const newProd = {
+    nombre: name, precio: parseFloat(price),
+    stock: stock ? parseInt(stock) : null,
+    categoria: cat, imagen_url: imgUrl,
+    proveedor_id: currentUser?.proveedorId || null
+  };
   try {
     const { data } = await sb.from('productos').insert(newProd).select().single();
-    productos.unshift(data||{...newProd,id:Date.now()});
-  } catch(e) { productos.unshift({...newProd,id:Date.now()}); }
-  renderProdGrid(); closeAddProduct(); showToast('Producto guardado');
-  ['new-prod-name','new-prod-price','new-prod-stock','new-prod-desc','new-prod-img'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+    productos.unshift(data || { ...newProd, id: Date.now() });
+  } catch(e) {
+    productos.unshift({ ...newProd, id: Date.now() });
+  }
+  renderProdGrid();
+  closeAddProduct();
+  showToast('✓ Producto guardado');
+  if (btn) btn.textContent = 'Agregar al catálogo ✓';
 }
 function editarProducto(id,nombre,precio,stock,cat) {
   document.getElementById('edit-prod-id').value = id;
