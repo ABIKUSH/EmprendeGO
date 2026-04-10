@@ -2019,13 +2019,24 @@ async function abrirChatDirecto(id) {
       .order('created_at', { ascending: true });
     if (data && data.length) {
       // Filtrar solo mensajes del proveedor + mensajes del usuario actual
+      // Mostrar todos los mensajes: los del usuario (de_nombre) + los del proveedor (de_tipo)
       const misMsgs = data.filter(m =>
         m.de_tipo === 'proveedor' ||
-        m.usuario_email === currentUser?.email ||
-        m.de_nombre === currentUser?.name
+        m.de_nombre === currentUser?.name ||
+        m.usuario_email === currentUser?.email
       );
       if (misMsgs.length) {
         chatMsgs = misMsgs.map(m => ({
+          tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+          texto:  m.texto,
+          hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
+          dbId:   m.id,
+          nombre: m.de_tipo === 'proveedor' ? p.nombre : null
+        }));
+        renderChat();
+      } else if (data.length) {
+        // Fallback: mostrar todos si no podemos filtrar
+        chatMsgs = data.map(m => ({
           tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
           texto:  m.texto,
           hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
@@ -3043,12 +3054,24 @@ async function abrirConvProveedor(nombre) {
   document.getElementById('provChatModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   try {
-    const { data } = await sb
-      .from('mensajes').select('*')
+    // Traer TODOS los mensajes de esta conversacion (usuario + proveedor)
+    const { data: msgsUsuario } = await sb.from('mensajes').select('*')
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_nombre', nombre)
+      .eq('de_tipo', 'usuario')
       .order('created_at', { ascending: true });
-    convActual.msgs = data || [];
+
+    const { data: msgsProveedor } = await sb.from('mensajes').select('*')
+      .eq('proveedor_id', currentUser.proveedorId)
+      .eq('de_tipo', 'proveedor')
+      .order('created_at', { ascending: true });
+
+    // Combinar y ordenar por fecha
+    const todos = [...(msgsUsuario||[]), ...(msgsProveedor||[])];
+    todos.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    convActual.msgs = todos;
+
+    // Marcar como leidos los del usuario
     await sb.from('mensajes').update({ leido: true })
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_nombre', nombre).eq('de_tipo', 'usuario');
