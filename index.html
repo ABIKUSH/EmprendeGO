@@ -3342,13 +3342,13 @@ async function subirAvatar(file, carpeta) {
   // Nombre único para evitar conflictos
   const path = carpeta + '/' + Math.random().toString(36).substring(2) + '_' + Date.now() + '.' + ext;
   try {
-    const { data, error } = await sb.storage.from('avatares').upload(path, file);
+    const { data, error } = await sb.storage.from('Avatares').upload(path, file);
     if (error) {
       console.error('Storage error:', error);
       showToast('Error al subir: ' + (error.message || 'intenta de nuevo'));
       return null;
     }
-    const { data: urlData } = sb.storage.from('avatares').getPublicUrl(path);
+    const { data: urlData } = sb.storage.from('Avatares').getPublicUrl(path);
     return urlData.publicUrl;
   } catch(e) {
     showToast('Error al subir imagen');
