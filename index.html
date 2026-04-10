@@ -2853,8 +2853,7 @@ async function cargarConversaciones() {
     el.innerHTML = convs.map((c,i) => {
       const ini = c.nombre.substring(0,2).toUpperCase();
       const ultimo = c.ultimo;
-      const preview = ultimo.texto.replace(/
-/g,' ').substring(0,50) + (ultimo.texto.length > 50 ? '...' : '');
+      const preview = (ultimo.texto||'').replace(/\n/g,' ').substring(0,50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
       const tiempo = timeAgo(new Date(ultimo.created_at));
       return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${c.nombre.replace(/'/g,"\'")}')">
         <div class="conv-avatar">${ini}</div>
@@ -2924,8 +2923,7 @@ function renderProvChat() {
     const esProveedor = m.de_tipo === 'proveedor';
     const tipo = esProveedor ? 'sent' : 'recv';
     const hora = m.created_at ? timeAgo(new Date(m.created_at)) : '';
-    return `<div class="chat-msg ${tipo}">${m.texto.replace(/
-/g,'<br>')}<div class="chat-msg-time">${hora}</div></div>`;
+    return `<div class="chat-msg ${tipo}">${(m.texto||""  ).replace(/\n/g,"<br>")}<div class="chat-msg-time">${hora}</div></div>`;
   }).join('');
 
   el.scrollTop = el.scrollHeight;
