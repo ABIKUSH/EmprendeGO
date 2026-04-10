@@ -2094,7 +2094,9 @@ async function importarDesdeML() {
 
   try {
     // API pública de ML — no requiere auth para leer publicaciones
-    const res = await fetch(`https://api.mercadolibre.com/items/MLA${itemId}`);
+    // Usamos corsproxy.io para evitar el bloqueo CORS del navegador
+    const mlUrl = `https://api.mercadolibre.com/items/MLA${itemId}`;
+    const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(mlUrl)}`);
     if (!res.ok) throw new Error('No encontrado');
     const data = await res.json();
 
