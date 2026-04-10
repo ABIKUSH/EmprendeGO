@@ -1779,14 +1779,44 @@ async function cargarProductosDetalle(proveedorId) {
       return;
     }
     const iconM = {'Tecnologia':'📱','Tecnología':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};
-    el.innerHTML = data.map(p => `
-      <div style="background:white;border-radius:12px;overflow:hidden;border:1px solid var(--border)">
-        <div style="width:100%;height:80px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:1.8rem">${iconM[p.categoria]||'📦'}</div>
+    const bgsColores = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+    // Agregar productos al listado global para que sean clickeables
+    data.forEach((p, i) => {
+      const existente = productosReales.find(x => x.idReal == p.id);
+      if (!existente) {
+        productosReales.push({
+          id: 'real_' + p.id,
+          idReal: p.id,
+          nombre: p.nombre,
+          precio: p.precio || 0,
+          pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
+          cat: p.categoria || 'General',
+          emoji: getEmojiCat(p.categoria),
+          provId: String(p.proveedor_id),
+          provNombre: provActual?.nombre || 'Proveedor',
+          provRubro: (provActual?.rubro || '') + (provActual?.provincia ? ' · ' + provActual.provincia : ''),
+          provColor: bgsColores[i % bgsColores.length],
+          imgUrl: p.imagen_url || '',
+          whatsapp: provActual?.whatsapp || '',
+          esPro: provActual?.pro || false
+        });
+      }
+    });
+    el.innerHTML = data.map((p, i) => {
+      const prodId = 'real_' + p.id;
+      const img = p.imagen_url
+        ? `<img src="${p.imagen_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
+        : (iconM[p.categoria] || '📦');
+      return `
+      <div onclick="abrirDetalleProd('${prodId}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .15s;active:transform:scale(.97)">
+        <div style="width:100%;height:80px;background:${bgsColores[i%bgsColores.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;position:relative">${img}</div>
         <div style="padding:8px 10px 10px">
-          <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:3px">${p.nombre}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:3px;line-height:1.3">${p.nombre}</div>
           <div style="font-size:.95rem;font-weight:900;color:var(--blue)">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
+          <div style="font-size:.68rem;color:var(--gray);margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Consultar stock'}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   } catch(e) {
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
   }
