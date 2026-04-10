@@ -28,6 +28,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 #screen-prov-chat.active{display:flex!important;flex-direction:column;height:100vh;padding-bottom:0;min-height:unset}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
+/* AVATAR UPLOAD */
+.avatar-upload-wrap{position:relative;display:inline-block;cursor:pointer;margin-bottom:12px}
+.avatar-upload-wrap:hover .avatar-edit-badge{opacity:1}
+.avatar-edit-badge{position:absolute;bottom:0;right:0;width:24px;height:24px;background:var(--blue);border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:.7rem;opacity:.85;transition:opacity .2s}
+.avatar-upload-input{display:none}
+
 /* TOPBAR */
 .topbar{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Sora',sans-serif;font-weight:900;font-size:1.22rem;color:var(--blue);letter-spacing:-.01em}
@@ -929,8 +935,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   </div>
   <div id="perfil-user" style="display:none">
     <div class="perfil-header">
-      <img id="user-avatar-img" class="perfil-avatar" src="" alt="" style="display:none">
-      <div id="user-avatar-placeholder" class="perfil-avatar-placeholder">?</div>
+      <div class="avatar-upload-wrap" onclick="document.getElementById('user-avatar-input').click()" title="Cambiar foto">
+        <img id="user-avatar-img" class="perfil-avatar" src="" alt="" style="display:none">
+        <div id="user-avatar-placeholder" class="perfil-avatar-placeholder">?</div>
+        <div class="avatar-edit-badge">📷</div>
+      </div>
+      <input type="file" id="user-avatar-input" class="avatar-upload-input" accept="image/*" onchange="subirAvatarUsuario(this)">
+      <div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:-8px;margin-bottom:8px">Tocá para cambiar · Recomendado: 400×400px</div>
       <div class="perfil-name" id="user-display-name">Usuario</div>
       <div class="perfil-email" id="user-display-email">usuario@email.com</div>
       <div class="perfil-badge-row">
@@ -968,7 +979,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
   <div id="perfil-proveedor" style="display:none">
     <div class="dash-header">
       <div class="dash-top">
-        <div class="dash-avatar" id="dash-avatar-el"><span id="dash-avatar-initials">EG</span></div>
+        <div class="avatar-upload-wrap" onclick="document.getElementById('prov-logo-input').click()" title="Cambiar logo">
+          <div class="dash-avatar" id="dash-avatar-el">
+            <img id="dash-avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px">
+            <span id="dash-avatar-initials">EG</span>
+          </div>
+          <div class="avatar-edit-badge">📷</div>
+        </div>
+        <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
         <div class="dash-info"><h3 id="dash-nombre">Mi Negocio</h3><p id="dash-rubro-label">Rubro · Argentina</p></div>
         <span class="dash-pro-badge">⭐ PRO</span>
       </div>
@@ -1261,7 +1279,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
 
 <div class="toast" id="toast"></div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ===== ESTADO GLOBAL =====
 let currentUser = null;
 let historial = [];
@@ -2213,6 +2231,7 @@ function updatePerfilUI() {
       const ed = document.getElementById('edit-desc'); if(ed) ed.value = pd.descripcion||'';
     }
     cargarProductosProveedor();
+    cargarLogoProveedor();
   } else {
     document.getElementById('perfil-user').style.display = 'block';
     document.getElementById('perfil-proveedor').style.display = 'none';
@@ -2224,6 +2243,7 @@ function updatePerfilUI() {
       img.src = currentUser.picture; img.style.display = 'block';
       document.getElementById('user-avatar-placeholder').style.display = 'none';
     }
+    cargarAvatarUsuario();
     cargarHistorial();
   }
 }
@@ -3312,6 +3332,84 @@ function enviarPedidoPorChat() {
     const inp = document.getElementById('chat-inp');
     if (inp) inp.value = generarMensajePedido();
   }, 400);
+}
+
+// ===== UPLOAD AVATARES =====
+async function subirAvatar(file, carpeta) {
+  if (!file) return null;
+  if (file.size > 3 * 1024 * 1024) { showToast('La imagen es muy grande. Máx 3MB'); return null; }
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = carpeta + '/' + Date.now() + '.' + ext;
+  const { data, error } = await sb.storage.from('avatares').upload(path, file, { upsert: true });
+  if (error) { showToast('Error al subir imagen'); return null; }
+  const { data: urlData } = sb.storage.from('avatares').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+async function subirAvatarUsuario(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('Subiendo foto...');
+  const url = await subirAvatar(file, 'usuarios');
+  if (!url) return;
+  // Mostrar en la UI
+  const img = document.getElementById('user-avatar-img');
+  img.src = url;
+  img.style.display = 'block';
+  document.getElementById('user-avatar-placeholder').style.display = 'none';
+  // Guardar en Supabase
+  try {
+    if (currentUser?.email) {
+      await sb.from('usuarios').upsert({ email: currentUser.email, foto_url: url }, { onConflict: 'email' });
+    }
+  } catch(e) {}
+  showToast('✓ Foto actualizada');
+}
+
+async function subirLogoProveedor(input) {
+  const file = input.files[0];
+  if (!file) return;
+  showToast('Subiendo logo...');
+  const url = await subirAvatar(file, 'proveedores');
+  if (!url) return;
+  // Mostrar en la UI
+  const img = document.getElementById('dash-avatar-img');
+  if (img) { img.src = url; img.style.display = 'block'; }
+  const initials = document.getElementById('dash-avatar-initials');
+  if (initials) initials.style.display = 'none';
+  // Guardar en Supabase
+  try {
+    if (currentUser?.proveedorId) {
+      await sb.from('proveedores').update({ logo_url: url }).eq('id', currentUser.proveedorId);
+    }
+  } catch(e) {}
+  showToast('✓ Logo actualizado');
+}
+
+async function cargarAvatarUsuario() {
+  if (!currentUser?.email) return;
+  try {
+    const { data } = await sb.from('usuarios').select('foto_url').eq('email', currentUser.email).single();
+    if (data?.foto_url) {
+      const img = document.getElementById('user-avatar-img');
+      if (img) { img.src = data.foto_url; img.style.display = 'block'; }
+      const ph = document.getElementById('user-avatar-placeholder');
+      if (ph) ph.style.display = 'none';
+    }
+  } catch(e) {}
+}
+
+async function cargarLogoProveedor() {
+  if (!currentUser?.proveedorId) return;
+  try {
+    const { data } = await sb.from('proveedores').select('logo_url').eq('id', currentUser.proveedorId).single();
+    if (data?.logo_url) {
+      const img = document.getElementById('dash-avatar-img');
+      if (img) { img.src = data.logo_url; img.style.display = 'block'; }
+      const initials = document.getElementById('dash-avatar-initials');
+      if (initials) initials.style.display = 'none';
+    }
+  } catch(e) {}
 }
 
 // ===== INIT =====
