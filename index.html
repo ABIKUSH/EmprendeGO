@@ -1004,10 +1004,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <button class="modal-close" onclick="closeAddProduct()">✕</button>
     </div>
     <div class="modal-body">
-      <!-- Tabs: uno o varios -->
-      <div style="display:flex;background:#f0f4ff;border-radius:12px;padding:3px;margin-bottom:18px">
-        <div id="tab-uno" style="flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">📦 Un producto</div>
-        <div id="tab-multi" style="flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">📋 Carga múltiple</div>
+      <!-- Tabs -->
+      <div style="display:flex;background:#f0f4ff;border-radius:12px;padding:3px;margin-bottom:18px;gap:2px">
+        <div id="tab-uno" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">📦 Manual</div>
+        <div id="tab-ml" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('ml')">🛒 MercadoLibre</div>
+        <div id="tab-multi" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">📋 Múltiple</div>
       </div>
 
       <!-- TAB: UN PRODUCTO -->
@@ -1042,6 +1043,54 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
         <button class="submit-btn" style="margin-top:16px" onclick="addProduct()">
           <span id="add-btn-text">Agregar al catálogo ✓</span>
         </button>
+      </div>
+
+      <!-- TAB: MERCADOLIBRE -->
+      <div id="add-tab-ml" style="display:none">
+        <div style="background:linear-gradient(135deg,#fff7e6,#fff3cd);border:1.5px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#92400e;margin-bottom:4px">🛒 Importar desde MercadoLibre</div>
+          <div style="font-size:.78rem;color:#78350f;line-height:1.5">Pegá el link de cualquier publicación de ML y traemos el nombre, precio y foto automáticamente.</div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Link de MercadoLibre *</label>
+          <input type="url" id="ml-url-input" placeholder="https://articulo.mercadolibre.com.ar/MLA-..." style="font-size:.85rem">
+        </div>
+        <button onclick="importarDesdeML()" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
+          <span id="ml-import-btn-text">🔍 Traer datos del producto</span>
+        </button>
+
+        <!-- Preview del producto importado -->
+        <div id="ml-preview" style="display:none;background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px">
+          <div style="display:flex;gap:12px;padding:12px">
+            <img id="ml-preview-img" src="" style="width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0;background:var(--blue-light)">
+            <div style="flex:1;min-width:0">
+              <div id="ml-preview-name" style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3"></div>
+              <div id="ml-preview-price" style="font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:6px"></div>
+              <span style="background:#e6f7ee;color:var(--green);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:6px">✓ Importado de ML</span>
+            </div>
+          </div>
+          <div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="form-group"><label>Ajustar precio *</label><input type="number" id="ml-precio-edit" placeholder="Tu precio mayorista"></div>
+              <div class="form-group"><label>Stock</label><input type="number" id="ml-stock-edit" placeholder="100"></div>
+            </div>
+            <div class="form-group"><label>Categoría</label>
+              <select id="ml-cat-edit">
+                <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button id="ml-save-btn" onclick="guardarProductoML()" style="display:none;width:100%" class="submit-btn">
+          Agregar al catálogo ✓
+        </button>
+
+        <!-- Historial de importados en esta sesión -->
+        <div id="ml-importados" style="display:none;margin-top:8px">
+          <div style="font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:6px" id="ml-importados-label"></div>
+          <button onclick="importarOtro()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">+ Importar otro producto</button>
+        </div>
       </div>
 
       <!-- TAB: CARGA MÚLTIPLE -->
@@ -2005,14 +2054,124 @@ async function subirFotoStorage(file, provId) {
 
 // ===== TABS MODAL ===
 function switchAddTab(tab) {
-  document.getElementById('add-tab-uno').style.display   = tab === 'uno'   ? 'block' : 'none';
-  document.getElementById('add-tab-multi').style.display = tab === 'multi' ? 'block' : 'none';
-  document.getElementById('tab-uno').style.cssText   = tab === 'uno'
-    ? 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer'
-    : 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer';
-  document.getElementById('tab-multi').style.cssText = tab === 'multi'
-    ? 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer'
-    : 'flex:1;text-align:center;padding:8px;font-size:.82rem;font-weight:700;color:var(--gray);cursor:pointer';
+  // Ocultar todos los paneles
+  ['uno','ml','multi'].forEach(t => {
+    const panel = document.getElementById('add-tab-' + t);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('tab-' + t);
+    if (btn) {
+      if (t === tab) {
+        btn.style.background = 'white';
+        btn.style.color = 'var(--blue)';
+        btn.style.borderRadius = '10px';
+      } else {
+        btn.style.background = 'transparent';
+        btn.style.color = 'var(--gray)';
+      }
+    }
+  });
+}
+
+// ===== MERCADOLIBRE IMPORT =====
+let mlProductoImportado = null;
+let mlImportadosCount = 0;
+
+function extraerMLId(url) {
+  // Soporta formatos: MLA-123456789, MLA123456789
+  const match = url.match(/MLA-?(\d+)/i);
+  return match ? match[1] : null;
+}
+
+async function importarDesdeML() {
+  const url = document.getElementById('ml-url-input').value.trim();
+  if (!url) { showToast('Pegá el link de MercadoLibre'); return; }
+
+  const itemId = extraerMLId(url);
+  if (!itemId) { showToast('Link inválido. Asegurate de copiar la URL completa de ML'); return; }
+
+  const btn = document.getElementById('ml-import-btn-text');
+  btn.textContent = '⏳ Buscando producto...';
+
+  try {
+    // API pública de ML — no requiere auth para leer publicaciones
+    const res = await fetch(`https://api.mercadolibre.com/items/MLA${itemId}`);
+    if (!res.ok) throw new Error('No encontrado');
+    const data = await res.json();
+
+    mlProductoImportado = {
+      nombre:   data.title,
+      precio:   data.price,
+      foto:     data.thumbnail?.replace('-I.jpg', '-O.jpg') || data.pictures?.[0]?.url || '',
+      desc:     data.subtitle || '',
+      cat:      'General'
+    };
+
+    // Mostrar preview
+    document.getElementById('ml-preview-name').textContent  = data.title;
+    document.getElementById('ml-preview-price').textContent = '$' + Number(data.price).toLocaleString('es-AR');
+    const imgEl = document.getElementById('ml-preview-img');
+    imgEl.src = mlProductoImportado.foto;
+    imgEl.onerror = () => { imgEl.style.display = 'none'; };
+
+    // Pre-llenar precio editable
+    document.getElementById('ml-precio-edit').value = data.price;
+
+    document.getElementById('ml-preview').style.display  = 'block';
+    document.getElementById('ml-save-btn').style.display = 'block';
+    btn.textContent = '🔍 Traer datos del producto';
+    showToast('✓ Producto encontrado!');
+
+  } catch(e) {
+    btn.textContent = '🔍 Traer datos del producto';
+    showToast('No se pudo importar. Verificá el link.');
+  }
+}
+
+async function guardarProductoML() {
+  if (!mlProductoImportado) return;
+  const precio = parseFloat(document.getElementById('ml-precio-edit').value);
+  const stock  = parseInt(document.getElementById('ml-stock-edit').value) || null;
+  const cat    = document.getElementById('ml-cat-edit').value;
+  if (!precio) { showToast('Ingresá el precio mayorista'); return; }
+
+  const newProd = {
+    nombre:      mlProductoImportado.nombre,
+    precio,
+    stock,
+    categoria:   cat,
+    imagen_url:  mlProductoImportado.foto,
+    proveedor_id: currentUser?.proveedorId || null
+  };
+
+  try {
+    const { data } = await sb.from('productos').insert(newProd).select().single();
+    productos.unshift(data || { ...newProd, id: Date.now() });
+  } catch(e) {
+    productos.unshift({ ...newProd, id: Date.now() });
+  }
+
+  mlImportadosCount++;
+  renderProdGrid();
+  showToast('✓ Producto importado al catálogo!');
+
+  // Mostrar opción de importar otro
+  document.getElementById('ml-preview').style.display   = 'none';
+  document.getElementById('ml-save-btn').style.display  = 'none';
+  document.getElementById('ml-url-input').value         = '';
+  mlProductoImportado = null;
+
+  const importadosEl = document.getElementById('ml-importados');
+  const labelEl      = document.getElementById('ml-importados-label');
+  importadosEl.style.display = 'block';
+  labelEl.textContent = `✓ ${mlImportadosCount} producto${mlImportadosCount !== 1 ? 's' : ''} importado${mlImportadosCount !== 1 ? 's' : ''} en esta sesión`;
+}
+
+function importarOtro() {
+  document.getElementById('ml-preview').style.display   = 'none';
+  document.getElementById('ml-save-btn').style.display  = 'none';
+  document.getElementById('ml-url-input').value         = '';
+  mlProductoImportado = null;
+  document.getElementById('ml-import-btn-text').textContent = '🔍 Traer datos del producto';
 }
 
 // ===== CARGA MÚLTIPLE =====
@@ -2088,6 +2247,10 @@ function openAddProduct() {
   document.getElementById('addProdModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   switchAddTab('uno');
+  mlImportadosCount = 0;
+  mlProductoImportado = null;
+  const impEl = document.getElementById('ml-importados');
+  if(impEl) impEl.style.display = 'none';
   initFilasMulti();
 }
 function closeAddProduct() { document.getElementById('addProdModal').classList.remove('open'); document.body.style.overflow=''; }
