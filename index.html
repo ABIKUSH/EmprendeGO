@@ -2237,25 +2237,23 @@ async function cargarMisConversaciones() {
   const el = document.getElementById('mis-conversaciones-list');
   if (!el || !currentUser) return;
   try {
-    // Traer mensajes donde el usuario participó (por nombre)
-    const { data } = await sb.from('mensajes')
-      .select('proveedor_id, texto, created_at, de_tipo, leido, proveedores(id, nombre, rubro)')
-      .eq('de_nombre', currentUser.name)
+    // Paso 1: traer todos los proveedor_id donde el usuario envió mensajes
+    const { data: misEnvios } = await sb.from('mensajes')
+      .select('proveedor_id')
       .eq('de_tipo', 'usuario')
-      .order('created_at', { ascending: false });
+      .eq('de_nombre', currentUser.name);
 
-    // También traer respuestas del proveedor en esas conversaciones
-    const provIds = [...new Set((data||[]).map(m => m.proveedor_id).filter(Boolean))];
-    let respuestas = [];
-    if (provIds.length) {
-      const { data: resp } = await sb.from('mensajes')
-        .select('proveedor_id, texto, created_at, de_tipo, leido, proveedores(id, nombre, rubro)')
-        .in('proveedor_id', provIds)
-        .eq('de_tipo', 'proveedor')
-        .order('created_at', { ascending: false });
-      respuestas = resp || [];
+    const provIds = [...new Set((misEnvios||[]).map(m => m.proveedor_id).filter(Boolean))];
+    if (!provIds.length) {
+      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      return;
     }
-    const todosLosMsgs = [...(data||[]), ...respuestas];
+
+    // Paso 2: traer TODOS los mensajes de esas conversaciones (de ambos lados)
+    const { data: todosLosMsgs } = await sb.from('mensajes')
+      .select('proveedor_id, texto, created_at, de_tipo, leido, proveedores(id, nombre, rubro)')
+      .in('proveedor_id', provIds)
+      .order('created_at', { ascending: false });
 
     if (!todosLosMsgs.length) {
       el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
