@@ -2096,24 +2096,12 @@ async function importarDesdeML() {
   const btn = document.getElementById('ml-import-btn-text');
   btn.textContent = '⏳ Buscando producto...';
 
-  const mlApiUrl = 'https://api.mercadolibre.com/items/MLA' + itemId;
-  const proxies = [
-    'https://api.allorigins.win/raw?url=' + encodeURIComponent(mlApiUrl),
-    'https://corsproxy.io/?' + encodeURIComponent(mlApiUrl),
-    'https://api.codetabs.com/v1/proxy?quest=' + mlApiUrl
-  ];
-
   try {
-    let data = null;
-    for (const proxyUrl of proxies) {
-      try {
-        const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
-        if (!r.ok) continue;
-        const j = await r.json();
-        if (j && (j.id || j.title)) { data = j; break; }
-      } catch(e) { continue; }
-    }
-    if (!data) throw new Error('Sin datos');
+    // Usamos nuestra propia función Vercel — sin problemas de CORS
+    const r = await fetch('/api/ml?id=' + itemId, { signal: AbortSignal.timeout(8000) });
+    if (!r.ok) throw new Error('Error en la función');
+    const data = await r.json();
+    if (!data || !data.title) throw new Error('Sin datos');
 
 
     mlProductoImportado = {
