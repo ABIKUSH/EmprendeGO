@@ -1999,18 +1999,65 @@ function abrirChatDirecto(id) {
   pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
-  chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:getHora() }];
+  chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:getHora(), nombre: p.nombre }];
   renderChat();
   goTo('chat');
+  iniciarChatPolling(p.id);
 }
-function volverChat() { goTo(pantallaAnterior); }
+function volverChat() { detenerChatPolling(); goTo(pantallaAnterior); }
 function getHora() { return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
 function renderChat() {
   const el = document.getElementById('chat-msgs');
   if (!el) return;
-  el.innerHTML = chatMsgs.map(m => `<div class="chat-msg ${m.tipo}">${m.texto.replace(/\n/g,'<br>')}<div class="chat-msg-time">${m.hora}</div></div>`).join('');
+  el.innerHTML = chatMsgs.map(m => {
+    const nombre = m.tipo === 'recv' && m.nombre ? '<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">' + m.nombre + '</div>' : '';
+    return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + (m.texto||'').replace(/\n/g,'<br>') + '<div class="chat-msg-time">' + m.hora + '</div></div></div>';
+  }).join('');
   el.scrollTop = el.scrollHeight;
 }
+let chatPollingInterval = null;
+
+function iniciarChatPolling(provId) {
+  if (chatPollingInterval) clearInterval(chatPollingInterval);
+  chatPollingInterval = setInterval(async () => {
+    if (!provActual) return;
+    try {
+      const { data } = await sb.from('mensajes')
+        .select('*')
+        .eq('proveedor_id', provId)
+        .eq('de_tipo', 'proveedor')
+        .order('created_at', { ascending: true });
+      if (!data || !data.length) return;
+      // Ver si hay mensajes nuevos del proveedor
+      const hayNuevos = data.some(m => {
+        const yaEsta = chatMsgs.some(cm => cm.dbId === m.id);
+        return !yaEsta;
+      });
+      if (hayNuevos) {
+        // Recargar todos los mensajes de la conversación
+        const { data: todos } = await sb.from('mensajes')
+          .select('*')
+          .eq('proveedor_id', provId)
+          .order('created_at', { ascending: true });
+        if (todos) {
+          chatMsgs = todos.map(m => ({
+            tipo: m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+            texto: m.texto,
+            hora: timeAgo(new Date(m.created_at)),
+            dbId: m.id,
+            nombre: m.de_tipo === 'proveedor' ? (provActual?.nombre || 'Proveedor') : null
+          }));
+          renderChat();
+        }
+      }
+    } catch(e) {}
+  }, 8000); // cada 8 segundos
+}
+
+function detenerChatPolling() {
+  if (chatPollingInterval) { clearInterval(chatPollingInterval); chatPollingInterval = null; }
+}
+
 async function sendMsg() {
   const inp = document.getElementById('chat-inp');
   const txt = inp.value.trim();
@@ -2902,19 +2949,20 @@ async function abrirConvProveedor(nombre) {
 function renderProvChat() {
   const el = document.getElementById('prov-chat-msgs');
   if (!el || !convActual) return;
-
   if (!convActual.msgs.length) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:.85rem">No hay mensajes aún.</div>';
     return;
   }
-
   el.innerHTML = convActual.msgs.map(m => {
     const esProveedor = m.de_tipo === 'proveedor';
     const tipo = esProveedor ? 'sent' : 'recv';
-    const hora = m.created_at ? timeAgo(new Date(m.created_at)) : '';
-    return `<div class="chat-msg ${tipo}">${(m.texto||""  ).replace(/\n/g,"<br>")}<div class="chat-msg-time">${hora}</div></div>`;
+    const hora = m.created_at ? timeAgo(new Date(m.created_at)) : 'Ahora';
+    const nombre = !esProveedor ? `<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">${m.de_nombre || 'Emprendedor'}</div>` : '';
+    return `<div style="display:flex;flex-direction:column;align-items:${esProveedor ? 'flex-end' : 'flex-start'}">
+      ${nombre}
+      <div class="chat-msg ${tipo}">${(m.texto||'').replace(/\n/g,'<br>')}<div class="chat-msg-time">${hora}</div></div>
+    </div>`;
   }).join('');
-
   el.scrollTop = el.scrollHeight;
 }
 
