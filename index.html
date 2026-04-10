@@ -614,41 +614,28 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
   </div>
   <div class="prod-inicio-grid" id="prodInicioGrid"></div>
 
-  <!-- CÓMO FUNCIONA — minimalista -->
-  <div style="margin:24px 20px 0;background:#ECEAE6;border-radius:18px;padding:20px">
-    <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">Cómo funciona</div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div style="display:flex;gap:14px;align-items:center">
-        <div style="width:28px;height:28px;border-radius:50%;background:#1A1A1A;color:white;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.75rem;font-weight:900;flex-shrink:0">1</div>
-        <div style="font-size:.85rem;color:#3A3A3A;line-height:1.5"><strong>Buscá</strong> por rubro, producto o provincia</div>
-      </div>
-      <div style="display:flex;gap:14px;align-items:center">
-        <div style="width:28px;height:28px;border-radius:50%;background:#1A1A1A;color:white;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.75rem;font-weight:900;flex-shrink:0">2</div>
-        <div style="font-size:.85rem;color:#3A3A3A;line-height:1.5"><strong>Compará</strong> precios, reseñas y condiciones</div>
-      </div>
-      <div style="display:flex;gap:14px;align-items:center">
-        <div style="width:28px;height:28px;border-radius:50%;background:#1A1A1A;color:white;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.75rem;font-weight:900;flex-shrink:0">3</div>
-        <div style="font-size:.85rem;color:#3A3A3A;line-height:1.5"><strong>Contactá</strong> directo por WhatsApp o chat</div>
-      </div>
+  <!-- BANNER IA — verde llamativo -->
+  <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:18px;padding:20px 20px;cursor:pointer;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
+    <div style="position:absolute;bottom:-30px;right:20px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;margin-bottom:10px">
+      <span style="font-size:.68rem;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.06em">✦ Test gratuito</span>
+    </div>
+    <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px;line-height:1.2">¿No sabés qué<br>vender todavía?</div>
+    <p style="font-size:.82rem;color:rgba(255,255,255,.75);line-height:1.5;margin-bottom:14px">Respondé 4 preguntas y descubrí el rubro que más te conviene según tu situación.</p>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:white;color:#006039;border-radius:10px;padding:10px 16px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800">
+      Hacer el test →
     </div>
   </div>
 
-  <!-- ¿NO SABÉS QUÉ VENDER? — sobrio -->
-  <div style="margin:16px 20px 0;border:1.5px solid #D8D3CB;border-radius:18px;padding:18px;background:white">
-    <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">¿No sabés qué vender?</div>
-    <p style="font-size:.82rem;color:#6B6B6B;line-height:1.5;margin-bottom:14px">Hacé el test de rubro y descubrí qué te conviene vender según tu situación.</p>
-    <button onclick="openTest()" style="background:#ECEAE6;color:#1A1A1A;border:none;border-radius:10px;padding:10px 18px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Hacer el test →</button>
-  </div>
-
-  <!-- ¿TENÉS UN NEGOCIO? -->
-  <div style="margin:16px 20px 24px;background:#1A1A1A;border-radius:18px;padding:22px 20px">
-    <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white;margin-bottom:6px">¿Tenés un negocio mayorista?</div>
-    <p style="font-size:.83rem;line-height:1.6;color:rgba(255,255,255,.6);margin-bottom:16px">Publicá tu catálogo y conectate con emprendedores que buscan exactamente lo que vendés.</p>
-    <div style="display:flex;flex-direction:column">
-        <button class="btn-primary" style="padding:13px 16px" onclick="goTo('registro')">&#127981; Quiero publicar mi negocio</button>
-        <button class="btn-secondary" style="padding:13px 16px;background:rgba(255,255,255,.1)" onclick="window.open('https://wa.me/5491100000000','_blank')">&#128172; Quiero ayuda por WhatsApp</button>
-      </div>
+  <!-- ¿TENÉS UN NEGOCIO? — compacto -->
+  <div style="margin:14px 20px 28px;border:1.5px solid #E5E5E5;border-radius:18px;padding:18px 20px;background:white;display:flex;align-items:center;gap:14px">
+    <div style="width:42px;height:42px;border-radius:12px;background:#006039;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🏭</div>
+    <div style="flex:1">
+      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">¿Tenés un negocio mayorista?</div>
+      <div style="font-size:.76rem;color:#777;line-height:1.4">Publicá gratis y llegá a miles de emprendedores.</div>
     </div>
+    <button onclick="goTo('registro')" style="background:#006039;color:white;border:none;border-radius:10px;padding:9px 14px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">Publicar →</button>
   </div>
 </div>
 
