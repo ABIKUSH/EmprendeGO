@@ -935,6 +935,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);
       <h3>👁 Proveedores que exploraste</h3>
       <div class="hist-list" id="historialList"><div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div></div>
     </div>
+    <div class="historial-section" style="margin-top:4px">
+      <h3>💬 Mis conversaciones</h3>
+      <div id="mis-conversaciones-list" class="hist-list">
+        <div class="empty-state"><div class="ei">💬</div><p>Todavía no hablaste con ningún proveedor.</p></div>
+      </div>
+    </div>
     <div class="perfil-actions">
       <div class="action-row">
         <button class="action-btn" onclick="goTo('buscar')">🔍 Explorar proveedores</button>
@@ -1990,7 +1996,7 @@ function calcGanancia() {
 }
 
 // ===== CHAT =====
-function abrirChatDirecto(id) {
+async function abrirChatDirecto(id) {
   const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
@@ -1999,9 +2005,30 @@ function abrirChatDirecto(id) {
   pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
-  chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:getHora(), nombre: p.nombre }];
+
+  // Mensaje inicial de bienvenida (solo si no hay historial)
+  chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
   renderChat();
   goTo('chat');
+
+  // Cargar historial real desde Supabase
+  try {
+    const { data } = await sb.from('mensajes')
+      .select('*')
+      .eq('proveedor_id', p.id)
+      .order('created_at', { ascending: true });
+    if (data && data.length) {
+      chatMsgs = data.map(m => ({
+        tipo:  m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+        texto: m.texto,
+        hora:  m.created_at ? timeAgo(new Date(m.created_at)) : '',
+        dbId:  m.id,
+        nombre: m.de_tipo === 'proveedor' ? p.nombre : null
+      }));
+      renderChat();
+    }
+  } catch(e) {}
+
   iniciarChatPolling(p.id);
 }
 function volverChat() { detenerChatPolling(); goTo(pantallaAnterior); }
@@ -2185,14 +2212,66 @@ async function cargarHistorial() {
   const el = document.getElementById('historialList');
   if (!historial.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>';
-    return;
+  } else {
+    el.innerHTML = historial.map(p => `
+      <div class="hist-item" onclick="abrirDetalle('${p.id}')">
+        <div class="hist-logo">${(p.inicial||p.nombre.substring(0,2)).toUpperCase()}</div>
+        <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
+        <span class="hist-time">${timeAgo(p.visitedAt)}</span>
+      </div>`).join('');
   }
-  el.innerHTML = historial.map(p => `
-    <div class="hist-item" onclick="abrirDetalle('${p.id}')">
-      <div class="hist-logo">${(p.inicial||p.nombre.substring(0,2)).toUpperCase()}</div>
-      <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
-      <span class="hist-time">${timeAgo(p.visitedAt)}</span>
-    </div>`).join('');
+  // Cargar conversaciones reales desde Supabase
+  await cargarMisConversaciones();
+}
+
+async function cargarMisConversaciones() {
+  const el = document.getElementById('mis-conversaciones-list');
+  if (!el) return;
+  try {
+    // Traer mensajes donde participó el usuario actual
+    const { data } = await sb.from('mensajes')
+      .select('proveedor_id, texto, created_at, de_tipo, proveedores(id, nombre, rubro)')
+      .order('created_at', { ascending: false });
+    if (!data || !data.length) return;
+
+    // Agrupar por proveedor
+    const convMap = {};
+    data.forEach(m => {
+      const pid = m.proveedor_id;
+      if (!convMap[pid]) {
+        convMap[pid] = {
+          provId: pid,
+          provNombre: m.proveedores?.nombre || 'Proveedor',
+          provRubro: m.proveedores?.rubro || '',
+          ultimoMsg: m.texto,
+          ultimaFecha: m.created_at,
+          noLeidos: 0
+        };
+      }
+      // Contar no leídos del proveedor
+      if (m.de_tipo === 'proveedor' && !m.leido) convMap[pid].noLeidos++;
+    });
+
+    const convs = Object.values(convMap).slice(0, 8);
+    if (!convs.length) return;
+
+    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+    el.innerHTML = convs.map((c, i) => {
+      const ini = c.provNombre.substring(0,2).toUpperCase();
+      const preview = (c.ultimoMsg||'').substring(0,45) + (c.ultimoMsg?.length > 45 ? '...' : '');
+      return `<div class="hist-item" onclick="abrirChatDirecto('${c.provId}')" style="position:relative">
+        <div class="hist-logo" style="background:${bgs[i%bgs.length]};color:white">${ini}</div>
+        <div class="hist-info">
+          <strong>${c.provNombre}</strong>
+          <span>${preview}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+          <span class="hist-time">${timeAgo(new Date(c.ultimaFecha))}</span>
+          ${c.noLeidos > 0 ? '<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">'+c.noLeidos+'</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
 }
 function timeAgo(date) {
   const mins = Math.floor((new Date()-date)/60000);
