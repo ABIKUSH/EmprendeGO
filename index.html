@@ -1959,23 +1959,55 @@ function getHora() { return new Date().toLocaleTimeString('es-AR',{hour:'2-digit
 function renderChat() {
   const el = document.getElementById('chat-msgs');
   if (!el) return;
-  el.innerHTML = chatMsgs.map(m => `<div class="chat-msg ${m.tipo}">${m.texto}<div class="chat-msg-time">${m.hora}</div></div>`).join('');
+  el.innerHTML = chatMsgs.map(m => `<div class="chat-msg ${m.tipo}">${m.texto.replace(/\n/g,'<br>')}<div class="chat-msg-time">${m.hora}</div></div>`).join('');
   el.scrollTop = el.scrollHeight;
 }
-function sendMsg() {
+async function sendMsg() {
   const inp = document.getElementById('chat-inp');
   const txt = inp.value.trim();
   if (!txt) return;
   inp.value = '';
   chatMsgs.push({tipo:'sent',texto:txt,hora:getHora()});
   renderChat();
+
+  // Guardar en Supabase
+  if (provActual) {
+    try {
+      await sb.from('mensajes').insert({
+        proveedor_id: provActual.id,
+        de_tipo: 'usuario',
+        de_nombre: currentUser ? currentUser.name : 'Anónimo',
+        texto: txt,
+        leido: false
+      });
+    } catch(e) {}
+  }
+
+  // Respuesta automática inteligente (hasta que el proveedor tenga panel de chat real)
   const t = txt.toLowerCase();
-  let resp = 'Gracias por tu mensaje! Te respondemos a la brevedad.';
-  if (t.includes('precio')||t.includes('cuanto')) resp = 'Los precios dependen del volumen. ¿Cuál es tu WhatsApp?';
-  else if (t.includes('envio')) resp = 'Sí, enviamos a todo el país.';
-  else if (t.includes('minimo')) resp = 'El pedido mínimo es desde $10.000.';
-  else if (t.includes('hola')||t.includes('buenas')) resp = 'Hola! ¿En qué te puedo ayudar?';
-  setTimeout(() => { chatMsgs.push({tipo:'recv',texto:resp,hora:getHora()}); renderChat(); }, 1200);
+  let resp = '✅ Recibimos tu mensaje. Te respondemos a la brevedad por este chat o por WhatsApp.';
+  if (t.includes('precio')||t.includes('cuanto')||t.includes('costo')) {
+    resp = '💰 Los precios dependen del volumen. ¿Cuántas unidades necesitás? Te paso la lista.';
+  } else if (t.includes('envio')||t.includes('manda')||t.includes('despacho')) {
+    resp = '🚚 Sí, enviamos a todo el país por Andreani y OCA. El costo de envío lo acordamos al confirmar el pedido.';
+  } else if (t.includes('minimo')||t.includes('cantidad')) {
+    resp = '📦 El pedido mínimo lo podés ver en nuestro perfil. Podés combinar productos para llegar al mínimo.';
+  } else if (t.includes('hola')||t.includes('buenas')||t.includes('buen dia')) {
+    resp = '👋 ¡Hola! Bienvenido/a. ¿En qué te puedo ayudar hoy?';
+  } else if (t.includes('gracias')||t.includes('ok')||t.includes('dale')) {
+    resp = '😊 ¡De nada! Cualquier consulta no dudes en escribirme.';
+  } else if (t.includes('pedido')||t.includes('comprar')||t.includes('quiero')) {
+    resp = '🛒 ¡Genial! Contame qué productos te interesan y en qué cantidad para prepararte una cotización.';
+  } else if (t.includes('whatsapp')||t.includes('llamar')||t.includes('telefono')) {
+    resp = provActual?.pro && provActual?.whatsapp 
+      ? `📲 Podés escribirnos directo al WhatsApp desde nuestro perfil.`
+      : '📲 Por este chat podemos coordinar todo. ¿Qué necesitás?';
+  }
+
+  setTimeout(() => {
+    chatMsgs.push({tipo:'recv',texto:resp,hora:getHora()});
+    renderChat();
+  }, 1000);
 }
 
 // ===== AUTH =====
