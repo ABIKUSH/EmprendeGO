@@ -404,23 +404,58 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== PLANES ===== -->
 <div class="screen" id="screen-planes">
-  <div class="planes-hero"><h2>Potenciá tu Negocio</h2><p>Elegí el plan que impulse tu emprendimiento.</p></div>
-  <div class="plan-cards">
-    <div class="plan-card">
-      <div class="plan-tag">NIVEL ESTÁNDAR</div><div class="plan-name">Plan Gratis</div><div class="plan-desc">Herramientas esenciales para empezar.</div>
-      <div class="plan-price"><span class="amount">$0</span><span class="period">/mes</span></div>
-      <ul class="plan-features"><li>Listado de productos estándar</li><li>Chat interno únicamente</li><li>Hasta 5 productos publicados</li><li>Perfil básico visible</li></ul>
-      <button class="plan-btn free" onclick="showToast('Plan Gratis activado ✓')">Empezar gratis</button>
+<!-- ===== PLANES ===== -->
+<div class="screen" id="screen-planes">
+  <div class="topbar"><span class="topbar-logo">Planes</span></div>
+  <div style="background:linear-gradient(135deg,#0D1B3E,#1a2d6b);padding:32px 24px;text-align:center">
+    <h2 style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white;margin-bottom:8px">Hacé crecer tu negocio</h2>
+    <p style="color:#8899bb;font-size:.9rem;line-height:1.6">Elegí el plan que mejor se adapte a tu emprendimiento.</p>
+  </div>
+  <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div style="background:white;border-radius:20px;padding:24px;border:2px solid transparent">
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px">NIVEL INICIAL</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px">Plan Gratis</div>
+      <div style="color:var(--gray);font-size:.85rem;margin-bottom:16px">Para conocer la plataforma.</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:20px">
+        <span style="font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800;color:var(--navy)">$0</span>
+        <span style="color:var(--gray);font-size:.85rem;padding-bottom:8px">/mes</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Perfil visible en el directorio</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Hasta 5 productos publicados</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Chat interno con clientes</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin WhatsApp directo</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin estadísticas</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin pedidos organizados</div>
+      </div>
+      <button style="width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:var(--light);color:var(--navy)" onclick="showToast('Plan Gratis activado ✓')">Tu plan actual</button>
     </div>
-    <div class="plan-card pro">
-      <div class="plan-tag pro">NIVEL PREMIUM</div><div class="plan-name">Plan Pro ●</div><div class="plan-desc">Maximizá tu visibilidad y confianza.</div>
-      <div class="plan-price"><span class="amount">$29</span><span class="period">/mes</span></div>
-      <ul class="plan-features"><li>Botón de WhatsApp directo</li><li>Insignia de "Verificado" ✓</li><li>Anuncios para Exposición</li><li>Banner Premium</li><li>Soporte Técnico (WhatsApp)</li><li>Productos ilimitados</li><li>Dashboard con estadísticas</li></ul>
-      <button class="plan-btn paid" }onclick="iniciarPagoPro()">Mejorar a Pro</button>
+    <div style="background:white;border-radius:20px;padding:24px;border:2px solid var(--blue);position:relative;overflow:hidden">
+      <div style="position:absolute;top:16px;right:-24px;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;font-size:.65rem;font-weight:800;padding:4px 32px;transform:rotate(45deg)">RECOMENDADO</div>
+      <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:6px">NIVEL PROFESIONAL</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px">Plan Pro</div>
+      <div style="color:var(--gray);font-size:.85rem;margin-bottom:16px">Todo lo que necesitás para vender más.</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:20px">
+        <span style="font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800;color:var(--navy)">$20.000</span>
+        <span style="color:var(--gray);font-size:.85rem;padding-bottom:8px">/mes</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Todo lo del plan Gratis</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> WhatsApp directo con clientes</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Productos ilimitados</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Badge PRO Verificado</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Pedidos organizados en el dashboard</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Estadísticas de visitas y contactos</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Carga masiva de productos</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Importación desde MercadoLibre</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Prioridad en resultados de búsqueda</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Soporte prioritario por WhatsApp</div>
+        <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--blue);font-weight:600"><span>🔜</span> Próximamente: anuncios destacados</div>
+      </div>
+      <button style="width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;box-shadow:0 6px 20px rgba(0,96,57,.3)" onclick="iniciarPagoPro()">Activar Plan Pro →</button>
     </div>
   </div>
 </div>
-
 <!-- ===== PERFIL ===== -->
 <div class="screen" id="screen-perfil">
   <div id="perfil-login">
