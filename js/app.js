@@ -2164,3 +2164,31 @@ renderQuestion();
 checkSession();
 cargarProductosReales();
 setTimeout(()=>{try{renderProdBuscar(currentCat,'');}catch(e){}},300);
+// ===== MERCADO PAGO - PLAN PRO =====
+async function iniciarPagoPro() {
+  if (!currentUser || !currentUser.proveedorId) {
+    showToast('Primero tenés que estar logueado como proveedor');
+    return;
+  }
+  showToast('Redirigiendo a Mercado Pago...');
+  try {
+    const res = await fetch('/api/crear-pago', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: currentUser.email,
+        proveedorId: currentUser.proveedorId
+      })
+    });
+    const data = await res.json();
+    if (data.sandbox_init_point) {
+      window.location.href = data.sandbox_init_point;
+    } else if (data.init_point) {
+      window.location.href = data.init_point;
+    } else {
+      showToast('Error al crear el pago. Intentá de nuevo.');
+    }
+  } catch(e) {
+    showToast('Error de conexión. Intentá de nuevo.');
+  }
+}
