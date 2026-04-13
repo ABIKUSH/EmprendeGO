@@ -23,7 +23,7 @@ export default async function handler(req, res) {
           description: 'WhatsApp directo, badge verificado, productos ilimitados, estadísticas',
           quantity: 1,
           currency_id: 'ARS',
-          unit_price: 29
+          unit_price: 20000
         }],
         payer: { email },
         metadata: { proveedor_id: proveedorId, email },
