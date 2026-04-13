@@ -69,7 +69,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </div>
 
 <!-- ===== INICIO ===== -->
-<!-- ===== INICIO ===== -->
 <div class="screen active" id="screen-inicio">
   <div class="topbar">
     <span class="topbar-logo">EmprendeGo</span>
@@ -79,91 +78,81 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 
-  <div style="padding:20px 20px 16px;background:white">
-    <div style="display:inline-flex;align-items:center;gap:6px;background:#E8F2EE;border-radius:999px;padding:6px 12px;margin-bottom:14px">
-      <span style="width:6px;height:6px;background:#006039;border-radius:50%;display:inline-block"></span>
-      <span style="font-size:.72rem;font-weight:700;color:#006039;letter-spacing:.04em;text-transform:uppercase">Proveedores verificados · Argentina</span>
+  <!-- HERO — limpio, sin gradientes -->
+  <div style="padding:32px 22px 28px;background:#F5F2EE;border-bottom:1px solid #E8E3DC">
+    <div style="display:inline-flex;align-items:center;gap:6px;background:#ECEAE6;border-radius:20px;padding:5px 12px;margin-bottom:18px">
+      <span style="width:6px;height:6px;background:#1A1A1A;border-radius:50%;display:inline-block"></span>
+      <span style="font-size:.72rem;font-weight:700;color:#1A1A1A;letter-spacing:.04em;text-transform:uppercase">Proveedores verificados · Argentina</span>
     </div>
-
-    <h1 style="font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:900;line-height:1.15;color:#1A1A1A;margin-bottom:10px">
-      Encontrá proveedores<br>para tu negocio
-    </h1>
-
-    <p style="font-size:.92rem;color:#6B6B6B;line-height:1.55;margin-bottom:16px">
-      Buscá por rubro o provincia, compará opciones y contactá directo.
-    </p>
-
-    <div onclick="goTo('buscar')" style="background:#F8F8F8;border:1px solid #E5E5E5;border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;margin-bottom:12px">
-      <span style="font-size:1rem">🔍</span>
-      <span style="font-size:.9rem;color:#777">Buscar proveedor o producto...</span>
+    <h1 style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;line-height:1.15;color:#1A1A1A;margin-bottom:12px">Encontrá el proveedor<br>que tu negocio necesita.</h1>
+    <p style="font-size:.93rem;color:#6B6B6B;line-height:1.65;margin-bottom:24px">Buscá por rubro o provincia, mirá reseñas reales y contactá directo. Sin vueltas.</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="goTo('buscar')" style="background:#1A1A1A;color:white;border:none;border-radius:14px;padding:15px 20px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;width:100%">Buscar proveedores →</button>
+      <button onclick="goTo('registro')" style="background:transparent;color:#1A1A1A;border:1.5px solid #C8C3BB;border-radius:14px;padding:14px 20px;font-family:'Sora',sans-serif;font-size:.92rem;font-weight:600;cursor:pointer;width:100%">Publicar mi negocio</button>
     </div>
-
-    <div style="display:flex;gap:10px">
-      <button onclick="goTo('buscar')" style="flex:1;background:#006039;color:white;border:none;border-radius:12px;padding:13px 14px;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer">
-        Buscar
-      </button>
-      <button onclick="goTo('registro')" style="flex:1;background:#F2F2F2;color:#1A1A1A;border:none;border-radius:12px;padding:13px 14px;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer">
-        Publicar
-      </button>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-top:16px">
-      <div style="flex:1;background:#F8F8F8;border:1px solid #E5E5E5;border-radius:14px;padding:12px 8px;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A">+500</div>
-        <div style="font-size:.68rem;color:#777;font-weight:700;text-transform:uppercase">Proveedores</div>
+    <!-- Stats minimalistas -->
+    <div style="display:flex;gap:0;margin-top:24px;border-top:1px solid #E8E3DC;padding-top:20px">
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A">+500</div>
+        <div style="font-size:.68rem;color:#9E9E9E;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Proveedores</div>
       </div>
-      <div style="flex:1;background:#F8F8F8;border:1px solid #E5E5E5;border-radius:14px;padding:12px 8px;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A">+2k</div>
-        <div style="font-size:.68rem;color:#777;font-weight:700;text-transform:uppercase">Productos</div>
+      <div style="width:1px;background:#E8E3DC"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A">+2k</div>
+        <div style="font-size:.68rem;color:#9E9E9E;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Productos</div>
       </div>
-      <div style="flex:1;background:#F8F8F8;border:1px solid #E5E5E5;border-radius:14px;padding:12px 8px;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A">100%</div>
-        <div style="font-size:.68rem;color:#777;font-weight:700;text-transform:uppercase">Verificados</div>
+      <div style="width:1px;background:#E8E3DC"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A">100%</div>
+        <div style="font-size:.68rem;color:#9E9E9E;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Verificados</div>
       </div>
     </div>
   </div>
 
-  <div style="padding:16px 20px 0">
-    <div style="font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;color:#1A1A1A;margin-bottom:10px">
-      Categorías destacadas
-    </div>
-
+  <!-- RUBROS — pills neutros -->
+  <div style="padding:20px 20px 0">
+    <div style="font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;color:#9E9E9E;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Explorá por rubro</div>
     <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px">
-      <div onclick="filterCat('Moda')" style="white-space:nowrap;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Textil</div>
-      <div onclick="filterCat('Tecnología')" style="white-space:nowrap;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Tecnología</div>
-      <div onclick="filterCat('Hogar')" style="white-space:nowrap;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Hogar</div>
-      <div onclick="filterCat('Bazar')" style="white-space:nowrap;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Bazar</div>
-      <div onclick="filterCat('Alimentos')" style="white-space:nowrap;background:#F2F2F2;border:1px solid #E5E5E5;border-radius:20px;padding:8px 14px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Alimentos</div>
+      <div onclick="filterCat('Moda')" style="white-space:nowrap;background:#ECEAE6;border:1.5px solid #D8D3CB;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Moda</div>
+      <div onclick="filterCat('Tecnología')" style="white-space:nowrap;background:#ECEAE6;border:1.5px solid #D8D3CB;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Tecnología</div>
+      <div onclick="filterCat('Hogar')" style="white-space:nowrap;background:#ECEAE6;border:1.5px solid #D8D3CB;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Hogar</div>
+      <div onclick="filterCat('Bazar')" style="white-space:nowrap;background:#ECEAE6;border:1.5px solid #D8D3CB;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Bazar</div>
+      <div onclick="filterCat('Alimentos')" style="white-space:nowrap;background:#ECEAE6;border:1.5px solid #D8D3CB;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:#1A1A1A;cursor:pointer;flex-shrink:0">Alimentos</div>
+      <div onclick="goTo('mapa')" style="white-space:nowrap;background:#1A1A1A;border:1.5px solid #1A1A1A;border-radius:20px;padding:8px 16px;font-size:.82rem;font-weight:600;color:white;cursor:pointer;flex-shrink:0">Por provincia →</div>
     </div>
   </div>
 
+  <!-- PRODUCTOS DESTACADOS -->
   <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A">Productos para revender</div>
-    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#6B6B6B;cursor:pointer">Ver todos</span>
+    <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A">Productos destacados</div>
+    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#6B6B6B;cursor:pointer;text-decoration:underline">Ver todos</span>
   </div>
   <div class="prod-inicio-grid" id="prodInicioGrid"></div>
 
-  <div onclick="openTest()" style="margin:20px 20px 0;background:#111827;border-radius:18px;padding:18px 18px;cursor:pointer">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:6px">No sabés qué vender?</div>
-    <p style="font-size:.82rem;color:rgba(255,255,255,.75);line-height:1.5;margin-bottom:12px">Hacé el test y descubrí qué rubro te conviene explorar.</p>
-    <div style="display:inline-flex;align-items:center;gap:8px;background:white;color:#111827;border-radius:10px;padding:10px 14px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800">
-      Hacer test IA →
+  <!-- BANNER IA — verde llamativo -->
+  <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:18px;padding:20px 20px;cursor:pointer;position:relative;overflow:hidden">
+    <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
+    <div style="position:absolute;bottom:-30px;right:20px;width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+    <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 10px;margin-bottom:10px">
+      <span style="font-size:.68rem;font-weight:700;color:white;text-transform:uppercase;letter-spacing:.06em">✦ Test gratuito</span>
+    </div>
+    <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px;line-height:1.2">¿No sabés qué<br>vender todavía?</div>
+    <p style="font-size:.82rem;color:rgba(255,255,255,.75);line-height:1.5;margin-bottom:14px">Respondé 4 preguntas y descubrí el rubro que más te conviene según tu situación.</p>
+    <div style="display:inline-flex;align-items:center;gap:8px;background:white;color:#006039;border-radius:10px;padding:10px 16px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800">
+      Hacer el test →
     </div>
   </div>
 
-  <div style="margin:16px 20px 28px;background:#006039;border-radius:18px;padding:18px 18px;display:flex;align-items:center;gap:14px">
-    <div style="width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🏭</div>
+  <!-- ¿TENÉS UN NEGOCIO? — compacto -->
+  <div style="margin:14px 20px 28px;border:1.5px solid #E5E5E5;border-radius:18px;padding:18px 20px;background:white;display:flex;align-items:center;gap:14px">
+    <div style="width:42px;height:42px;border-radius:12px;background:#006039;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🏭</div>
     <div style="flex:1">
-      <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:white;margin-bottom:2px">¿Tenés un negocio mayorista?</div>
-      <div style="font-size:.76rem;color:rgba(255,255,255,.8);line-height:1.4">Publicá tu perfil y conseguí clientes.</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">¿Tenés un negocio mayorista?</div>
+      <div style="font-size:.76rem;color:#777;line-height:1.4">Publicá gratis y llegá a miles de emprendedores.</div>
     </div>
-    <button onclick="goTo('registro')" style="background:white;color:#006039;border:none;border-radius:10px;padding:9px 14px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">
-      Publicar →
-    </button>
+    <button onclick="goTo('registro')" style="background:#006039;color:white;border:none;border-radius:10px;padding:9px 14px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">Publicar →</button>
   </div>
 </div>
-
-<!-- ===== BUSCAR ===== -->
 
 <!-- ===== BUSCAR ===== -->
 <div class="screen" id="screen-buscar">
@@ -415,56 +404,23 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== PLANES ===== -->
 <div class="screen" id="screen-planes">
-  <div class="topbar"><span class="topbar-logo">Planes</span></div>
-  <div style="background:linear-gradient(135deg,#0D1B3E,#1a2d6b);padding:32px 24px;text-align:center">
-    <h2 style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white;margin-bottom:8px">Hacé crecer tu negocio</h2>
-    <p style="color:#8899bb;font-size:.9rem;line-height:1.6">Elegí el plan que mejor se adapte a tu emprendimiento.</p>
-  </div>
-  <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
-    <div style="background:white;border-radius:20px;padding:24px;border:2px solid transparent">
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:6px">NIVEL INICIAL</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px">Plan Gratis</div>
-      <div style="color:var(--gray);font-size:.85rem;margin-bottom:16px">Para conocer la plataforma.</div>
-      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:20px">
-        <span style="font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800;color:var(--navy)">$0</span>
-        <span style="color:var(--gray);font-size:.85rem;padding-bottom:8px">/mes</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Perfil visible en el directorio</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Hasta 5 productos publicados</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Chat interno con clientes</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin WhatsApp directo</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin estadísticas</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--gray)"><span style="color:#ccc;font-weight:800">✕</span> Sin pedidos organizados</div>
-      </div>
-      <button style="width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:var(--light);color:var(--navy)" onclick="showToast('Plan Gratis activado ✓')">Tu plan actual</button>
+  <div class="planes-hero"><h2>Potenciá tu Negocio</h2><p>Elegí el plan que impulse tu emprendimiento.</p></div>
+  <div class="plan-cards">
+    <div class="plan-card">
+      <div class="plan-tag">NIVEL ESTÁNDAR</div><div class="plan-name">Plan Gratis</div><div class="plan-desc">Herramientas esenciales para empezar.</div>
+      <div class="plan-price"><span class="amount">$0</span><span class="period">/mes</span></div>
+      <ul class="plan-features"><li>Listado de productos estándar</li><li>Chat interno únicamente</li><li>Hasta 5 productos publicados</li><li>Perfil básico visible</li></ul>
+      <button class="plan-btn free" onclick="showToast('Plan Gratis activado ✓')">Empezar gratis</button>
     </div>
-    <div style="background:white;border-radius:20px;padding:24px;border:2px solid var(--blue);position:relative;overflow:hidden">
-      <div style="position:absolute;top:16px;right:-24px;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;font-size:.65rem;font-weight:800;padding:4px 32px;transform:rotate(45deg)">RECOMENDADO</div>
-      <div style="font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--blue);margin-bottom:6px">NIVEL PROFESIONAL</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;margin-bottom:4px">Plan Pro</div>
-      <div style="color:var(--gray);font-size:.85rem;margin-bottom:16px">Todo lo que necesitás para vender más.</div>
-      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:20px">
-        <span style="font-family:'Sora',sans-serif;font-size:2.5rem;font-weight:800;color:var(--navy)">$20.000</span>
-        <span style="color:var(--gray);font-size:.85rem;padding-bottom:8px">/mes</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Todo lo del plan Gratis</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> WhatsApp directo con clientes</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Productos ilimitados</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Badge PRO Verificado</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Pedidos organizados en el dashboard</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Estadísticas de visitas y contactos</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Carga masiva de productos</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Importación desde MercadoLibre</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Prioridad en resultados de búsqueda</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.88rem;color:var(--navy)"><span style="color:var(--blue);font-weight:800">✓</span> Soporte prioritario por WhatsApp</div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.85rem;color:var(--blue);font-weight:600"><span>🔜</span> Próximamente: anuncios destacados</div>
-      </div>
-      <button style="width:100%;padding:14px;border-radius:12px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;box-shadow:0 6px 20px rgba(0,96,57,.3)" onclick="iniciarPagoPro()">Activar Plan Pro →</button>
+    <div class="plan-card pro">
+      <div class="plan-tag pro">NIVEL PREMIUM</div><div class="plan-name">Plan Pro ●</div><div class="plan-desc">Maximizá tu visibilidad y confianza.</div>
+      <div class="plan-price"><span class="amount">$29</span><span class="period">/mes</span></div>
+      <ul class="plan-features"><li>Botón de WhatsApp directo</li><li>Insignia de "Verificado" ✓</li><li>Anuncios para Exposición</li><li>Banner Premium</li><li>Soporte Técnico (WhatsApp)</li><li>Productos ilimitados</li><li>Dashboard con estadísticas</li></ul>
+      <button class="plan-btn paid" onclick="showToast('Redirigiendo al pago... 💳')">Mejorar a Pro</button>
     </div>
   </div>
 </div>
+
 <!-- ===== PERFIL ===== -->
 <div class="screen" id="screen-perfil">
   <div id="perfil-login">
@@ -544,14 +500,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div class="ranking-card">
       <div class="rank-num" style="font-size:1rem;color:var(--gray)">🏆</div>
       <div class="rank-info"><strong>Tu ranking</strong><span>Aparecera cuando tengas visitas</span></div>
-      <div class="rank-trend"><span style="font-size:1.2rem">📈</span><span style="font-size:.7rem;color:var(--gray)">Pronto</span></div><div id="pro-upgrade-banner" style="margin:16px 20px 0;background:linear-gradient(135deg,#006039,#004D2E);border-radius:16px;padding:18px;cursor:pointer" onclick="goTo('planes')">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-    <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white">Mejorá tu plan a PRO</div>
-    <div style="background:rgba(255,255,255,.2);color:white;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">$29/mes</div>
-  </div>
-  <div style="color:rgba(255,255,255,.7);font-size:.8rem;line-height:1.5;margin-bottom:12px">WhatsApp directo, productos ilimitados, badge verificado y estadísticas.</div>
-  <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:10px;text-align:center" onclick="event.stopPropagation();iniciarPagoPro()">Activar Plan Pro →</div>
-</div>
+      <div class="rank-trend"><span style="font-size:1.2rem">📈</span><span style="font-size:.7rem;color:var(--gray)">Pronto</span></div>
     </div>
     <div class="dash-tabs">
       <div class="dash-tab active" onclick="switchTab('catalogo',this)">📦 Catálogo</div>
