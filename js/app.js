@@ -963,6 +963,7 @@ function updatePerfilUI() {
       const ed = document.getElementById('edit-desc'); if(ed) ed.value = pd.descripcion||'';
     }
     cargarProductosProveedor();
+    cargarStatsDashboard();
     cargarLogoProveedor();
   } else {
     document.getElementById('perfil-user').style.display = 'block';
@@ -979,7 +980,26 @@ function updatePerfilUI() {
     cargarHistorial();
   }
 }
-
+// ===== STATS DASHBOARD =====
+async function cargarStatsDashboard() {
+  if (!currentUser || !currentUser.proveedorId) return;
+  try {
+    const { data: prov } = await sb.from('proveedores').select('visitas').eq('id', currentUser.proveedorId).single();
+    if (prov) {
+      const el = document.getElementById('stat-visitas');
+      if (el) el.textContent = prov.visitas || 0;
+    }
+    const { data: msgs } = await sb.from('mensajes').select('id').eq('proveedor_id', currentUser.proveedorId).eq('de_tipo', 'usuario');
+    const totalMsgs = msgs ? msgs.length : 0;
+    const elMsgs = document.getElementById('dash-msgs-count');
+    if (elMsgs) elMsgs.textContent = totalMsgs;
+    const elLeads = document.getElementById('stat-leads');
+    if (elLeads) elLeads.textContent = totalMsgs;
+    const noLeidos = msgs ? msgs.filter(m => !m.leido).length : 0;
+    const elNew = document.getElementById('dash-msgs-new');
+    if (elNew && noLeidos > 0) { elNew.style.display = 'inline'; elNew.textContent = noLeidos + ' New'; }
+  } catch(e) {}
+}
 // ===== HISTORIAL =====
 async function addToHistorial(proveedor) {
   if (!currentUser || currentUser.type !== 'user') return;
