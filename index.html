@@ -643,7 +643,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Mis productos</div>
         <button onclick="openAddProduct()" style="background:#006039;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
       </div>
-      <div class="prod-grid" id="prodGrid"></div>
+      <div id="prodGrid" style="display:flex;flex-direction:column"></div>
     </div>
 
     <!-- ANUNCIOS (PRO) -->
