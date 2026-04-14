@@ -588,7 +588,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div style="padding:16px 20px 0">
       <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mensajes y consultas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div onclick="switchTab('mensajes-prov',document.querySelector('.dash-tab:nth-child(2)'))" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
+        <div onclick="document.getElementById('tab-mensajes-prov').style.display='block';cargarConversaciones()" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
           <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
             <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
             <span id="dash-msgs-new" style="background:#006039;color:white;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:10px;display:none">0 New</span>
