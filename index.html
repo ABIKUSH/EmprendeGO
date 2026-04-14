@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
@@ -17,11 +18,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <body>
 
 <nav class="navbar">
-  <div class="nav-item active" id="nav-inicio" onclick="goTo('inicio')"><span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span class="nav-label">Inicio</span></div>
-  <div class="nav-item" id="nav-buscar" onclick="goTo('buscar')"><span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><span class="nav-label">Buscar</span></div>
-  <div class="nav-item" id="nav-favoritos" onclick="goTo('favoritos')"><span class="nav-icon nav-icon-wrap"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="fav-badge" id="fav-badge">0</span></span><span class="nav-label">Favoritos</span></div>
-  <div class="nav-item" id="nav-mapa" onclick="goTo('mapa')"><span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><span class="nav-label">Mapa</span></div>
-  <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span><span class="nav-label">Perfil</span></div>
+  <div class="nav-item active" id="nav-inicio" onclick="goTo('inicio')"><span class="nav-icon">&#127968;</span><span class="nav-label">Inicio</span></div>
+  <div class="nav-item" id="nav-buscar" onclick="goTo('buscar')"><span class="nav-icon">&#128269;</span><span class="nav-label">Buscar</span></div>
+  <div class="nav-item" id="nav-favoritos" onclick="goTo('favoritos')"><span class="nav-icon nav-icon-wrap">&#10084;<span class="fav-badge" id="fav-badge">0</span></span><span class="nav-label">Favoritos</span></div>
+  <div class="nav-item" id="nav-mapa" onclick="goTo('mapa')"><span class="nav-icon">&#128205;</span><span class="nav-label">Mapa</span></div>
+  <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon">&#128100;</span><span class="nav-label">Perfil</span></div>
 </nav>
 
 <!-- FAB COMPARADOR -->
@@ -84,10 +85,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div style="position:relative;z-index:1;padding:20px 22px 24px">
       <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">PROVEEDORES VERIFICADOS · ARGENTINA</div>
       <h1 style="font-family:'Sora',sans-serif;font-size:1.85rem;font-weight:900;line-height:1.15;color:#fff;margin-bottom:16px">Encontrá el proveedor<br>que tu negocio necesita</h1>
-      <div style="display:flex;background:white;border-radius:50px;overflow:hidden;align-items:center;margin-bottom:12px;padding:4px 4px 4px 16px">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" style="flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Buscar por rubro o provincia..." style="flex:1;border:none;outline:none;padding:10px 10px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:#333;background:transparent" onfocus="goTo('buscar')">
-        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:10px 22px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;border-radius:50px">Buscar</div>
+      <div style="display:flex;background:white;border-radius:12px;overflow:hidden;align-items:center;margin-bottom:12px">
+        <div style="padding:0 12px;display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <input type="text" placeholder="Buscar por rubro o provincia..." style="flex:1;border:none;outline:none;padding:13px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent" onfocus="goTo('buscar')">
+        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:13px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap">Buscar</div>
       </div>
       <button onclick="goTo('registro')" style="background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;backdrop-filter:blur(4px)">Publicar mi negocio</button>
     </div>
@@ -539,7 +540,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         </div>
         <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
         <div class="dash-info"><h3 id="dash-nombre">Mi Negocio</h3><p id="dash-rubro-label">Rubro · Argentina</p></div>
-        <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">PRO</span>
+        <span class="dash-pro-badge">⭐ PRO</span>
       </div>
       <div class="dash-stats-grid">
         <div class="dash-stat"><div class="dash-stat-val" id="stat-visitas">0</div><div class="dash-stat-label">Visitas al perfil</div></div>
@@ -709,9 +710,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div class="modal-body">
       <!-- Tabs -->
       <div style="display:flex;background:#f0f4ff;border-radius:12px;padding:3px;margin-bottom:18px;gap:2px">
-        <div id="tab-uno" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">📦 Manual</div>
-        <div id="tab-ml" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('ml')">🛒 MercadoLibre</div>
-        <div id="tab-multi" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">📋 Múltiple</div>
+        <div id="tab-uno" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">Manual</div>
+        <div id="tab-ml" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('ml')">MercadoLibre</div>
+        <div id="tab-excel" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('excel')">Excel</div>
+        <div id="tab-multi" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">Múltiple</div>
       </div>
 
       <!-- TAB: UN PRODUCTO -->
@@ -793,6 +795,43 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div id="ml-importados" style="display:none;margin-top:8px">
           <div style="font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:6px" id="ml-importados-label"></div>
           <button onclick="importarOtro()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">+ Importar otro producto</button>
+        </div>
+      </div>
+
+      <!-- TAB: EXCEL IMPORT -->
+      <div id="add-tab-excel" style="display:none">
+        <div style="background:#E8F2EE;border:1.5px solid #c3ddd3;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">Importar desde Excel</div>
+          <div style="font-size:.78rem;color:#333;line-height:1.5">Subí tu lista de precios en Excel o CSV. Vos elegís qué columna corresponde a cada dato.</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div id="excel-upload-zone" style="width:100%;min-height:100px;background:#fafafa;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #ccc;padding:20px" onclick="document.getElementById('excel-file-input').click()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.5" style="margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div style="font-size:.85rem;font-weight:700;color:#006039">Tocá para subir tu Excel</div>
+            <div style="font-size:.72rem;color:#999;margin-top:4px">.xlsx, .xls o .csv</div>
+          </div>
+          <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="leerExcelImport(this)">
+        </div>
+        <div id="excel-file-name" style="display:none;background:#f0f4ff;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;font-weight:600;color:var(--navy);display:none"></div>
+        <div id="excel-mapping-section" style="display:none">
+          <div style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy);margin-bottom:4px">Enlazá tus columnas</div>
+          <div style="font-size:.76rem;color:var(--gray);margin-bottom:14px">Seleccioná qué columna de tu Excel corresponde a cada campo.</div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="excel-mapping-fields">
+            <div class="form-group"><label>Nombre del producto *</label><select id="excel-map-nombre"><option value="">— Seleccioná columna —</option></select></div>
+            <div class="form-group"><label>Precio *</label><select id="excel-map-precio"><option value="">— Seleccioná columna —</option></select></div>
+            <div class="form-group"><label>Stock (opcional)</label><select id="excel-map-stock"><option value="">— No importar —</option></select></div>
+            <div class="form-group"><label>Categoría (opcional)</label><select id="excel-map-cat"><option value="">— No importar —</option></select></div>
+          </div>
+          <div id="excel-preview-count" style="margin-top:14px;background:#E8F2EE;border-radius:10px;padding:12px;text-align:center;font-size:.85rem;font-weight:700;color:#006039"></div>
+          <button class="submit-btn" style="margin-top:14px" onclick="importarDesdeExcel()">
+            <span id="excel-import-btn-text">Importar productos</span>
+          </button>
+        </div>
+        <div id="excel-result" style="display:none;margin-top:14px">
+          <div style="background:#E8F2EE;border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:.85rem;font-weight:700;color:#006039" id="excel-result-text"></div>
+          </div>
+          <button onclick="resetExcelImport()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px">Importar otro archivo</button>
         </div>
       </div>
 
