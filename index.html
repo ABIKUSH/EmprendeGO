@@ -862,7 +862,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="form-group"><label>Precio mayorista *</label><input type="number" id="edit-prod-price"></div>
         <div class="form-group"><label>Stock</label><input type="number" id="edit-prod-stock"></div>
         <div class="form-group"><label>Categoria</label><select id="edit-prod-cat"><option>Tecnologia</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
-        <div class="form-group"><label>URL de imagen</label><input type="url" id="edit-prod-img" placeholder="https://..."></div>
+       <div style="margin-bottom:12px">
+  <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">Foto del producto</label>
+  <div id="edit-foto-preview" style="width:100%;height:120px;background:var(--blue-light);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #c7d4f8;position:relative;overflow:hidden" onclick="document.getElementById('edit-foto-input').click()">
+    <img id="edit-foto-preview-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+    <div id="edit-foto-placeholder" style="text-align:center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.5" style="margin-bottom:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <div style="font-size:.78rem;font-weight:700;color:var(--blue)">Tocá para cambiar foto</div>
+    </div>
+    <button id="edit-foto-remove-btn" onclick="event.stopPropagation();removeEditFoto()" style="display:none;position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer">✕</button>
+  </div>
+  <input type="file" id="edit-foto-input" accept="image/*" style="display:none" onchange="previewEditFoto(this)">
+</div>
         <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios ✓</button>
       </div>
     </div>
