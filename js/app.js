@@ -1159,7 +1159,7 @@ async function subirFotoStorage(file, provId) {
 // ===== TABS MODAL ===
 function switchAddTab(tab) {
   // Ocultar todos los paneles
-  ['uno','ml','multi'].forEach(t => {
+  ['uno','ml','excel','multi'].forEach(t => {
     const panel = document.getElementById('add-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('tab-' + t);
@@ -2151,6 +2151,108 @@ async function cargarLogoProveedor() {
       if (initials) initials.style.display = 'none';
     }
   } catch(e) {}
+}
+
+// ===== EXCEL IMPORT =====
+let excelData = null;
+let excelHeaders = [];
+
+function leerExcelImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const nameEl = document.getElementById('excel-file-name');
+  nameEl.style.display = 'block';
+  nameEl.textContent = '📄 ' + file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' });
+      if (!jsonData.length) { showToast('El archivo está vacío'); return; }
+      excelData = jsonData;
+      excelHeaders = Object.keys(jsonData[0]);
+      const selects = ['excel-map-nombre', 'excel-map-precio', 'excel-map-stock', 'excel-map-cat'];
+      const defaults = [['nombre','producto','articulo','descripcion','item','title'],
+                        ['precio','price','valor','costo','importe','monto'],
+                        ['stock','cantidad','cant','qty','disponible','inventario'],
+                        ['categoria','rubro','cat','tipo','category']];
+      selects.forEach((selId, idx) => {
+        const sel = document.getElementById(selId);
+        sel.innerHTML = idx < 2 ? '<option value="">— Seleccioná columna —</option>' : '<option value="">— No importar —</option>';
+        excelHeaders.forEach(h => {
+          const opt = document.createElement('option');
+          opt.value = h; opt.textContent = h;
+          const match = defaults[idx].some(d => h.toLowerCase().includes(d));
+          if (match) opt.selected = true;
+          sel.appendChild(opt);
+        });
+      });
+      document.getElementById('excel-mapping-section').style.display = 'block';
+      document.getElementById('excel-preview-count').textContent = 'Se detectaron ' + jsonData.length + ' filas en tu archivo';
+      document.getElementById('excel-result').style.display = 'none';
+    } catch(err) {
+      showToast('Error al leer el archivo. Verificá que sea un Excel válido.');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function importarDesdeExcel() {
+  const colNombre = document.getElementById('excel-map-nombre').value;
+  const colPrecio = document.getElementById('excel-map-precio').value;
+  const colStock = document.getElementById('excel-map-stock').value;
+  const colCat = document.getElementById('excel-map-cat').value;
+  if (!colNombre || !colPrecio) { showToast('Seleccioná al menos Nombre y Precio'); return; }
+  if (!excelData || !excelData.length) { showToast('No hay datos para importar'); return; }
+  const btn = document.getElementById('excel-import-btn-text');
+  btn.textContent = 'Importando...';
+  const prods = [];
+  let errores = 0;
+  excelData.forEach(row => {
+    const nombre = String(row[colNombre] || '').trim();
+    const precioRaw = String(row[colPrecio] || '').replace(/[^0-9.,]/g, '').replace(',', '.');
+    const precio = parseFloat(precioRaw);
+    if (!nombre || !precio || isNaN(precio)) { errores++; return; }
+    const prod = {
+      nombre,
+      precio,
+      stock: colStock ? (parseInt(row[colStock]) || null) : null,
+      categoria: colCat ? (String(row[colCat] || 'General').trim()) : 'General',
+      proveedor_id: currentUser?.proveedorId || null
+    };
+    prods.push(prod);
+  });
+  if (!prods.length) { showToast('No se encontraron productos válidos'); btn.textContent = 'Importar productos'; return; }
+  try {
+    const batchSize = 20;
+    let imported = 0;
+    for (let i = 0; i < prods.length; i += batchSize) {
+      const batch = prods.slice(i, i + batchSize);
+      const { data } = await sb.from('productos').insert(batch).select();
+      if (data) data.forEach(p => productos.unshift(p));
+      imported += batch.length;
+      btn.textContent = `Importando... ${imported}/${prods.length}`;
+    }
+    renderProdGrid();
+    document.getElementById('excel-mapping-section').style.display = 'none';
+    document.getElementById('excel-result').style.display = 'block';
+    document.getElementById('excel-result-text').textContent = '✓ ' + prods.length + ' productos importados' + (errores > 0 ? ' (' + errores + ' filas ignoradas por datos incompletos)' : '');
+    showToast('✓ ' + prods.length + ' productos importados');
+  } catch(e) {
+    showToast('Error al importar. Intentá de nuevo.');
+  }
+  btn.textContent = 'Importar productos';
+}
+
+function resetExcelImport() {
+  excelData = null;
+  excelHeaders = [];
+  document.getElementById('excel-file-input').value = '';
+  document.getElementById('excel-file-name').style.display = 'none';
+  document.getElementById('excel-mapping-section').style.display = 'none';
+  document.getElementById('excel-result').style.display = 'none';
 }
 
 // ===== INIT =====
