@@ -588,7 +588,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div style="padding:16px 20px 0">
       <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mensajes y consultas</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div onclick="document.getElementById('tab-mensajes-prov').style.display='block';cargarConversaciones()" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
+        <div onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones()" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
           <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
             <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
             <span id="dash-msgs-new" style="background:#006039;color:white;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:10px;display:none">0 New</span>
@@ -680,16 +680,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button class="logout-btn" onclick="logout()" style="margin-top:12px">Cerrar sesión</button>
     </div>
 
-    <!-- TABS OCULTOS PARA MENSAJES (se abre desde el card de mensajes) -->
-    <div class="tab-content" id="tab-mensajes-prov" style="display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 20px">
-        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy)">Consultas recibidas</div>
-        <button onclick="cargarConversaciones()" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:9px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer">↻ Actualizar</button>
-      </div>
-      <div id="conv-list-el" class="conv-list" style="padding:0 20px">
-        <div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando mensajes...</div>
-      </div>
-    </div>
     <div class="tab-content" id="tab-perfil-info" style="display:none">
       <div style="display:flex;flex-direction:column;gap:12px;padding:4px 20px">
         <div class="form-group"><label>Nombre del negocio</label><input type="text" id="edit-nombre"></div>
@@ -701,7 +691,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 </div>
-
+<!-- MODAL LISTA MENSAJES -->
+<div class="modal-overlay" id="provMsgListModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-height:85vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Mensajes</h3><button class="modal-close" onclick="document.getElementById('provMsgListModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="padding:12px 20px 24px">
+      <div id="conv-list-el" class="conv-list">
+        <div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando mensajes...</div>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ===== MODAL CHAT PROVEEDOR ===== -->
 <div class="modal-overlay" id="provChatModal" onclick="closeProvChatOnBg(event)">
   <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
