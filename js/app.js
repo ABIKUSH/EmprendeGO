@@ -1112,20 +1112,24 @@ const iconMap = {'Tecnologia':'💻','Tecnología':'💻','Hogar':'🏠','Moda':
 function renderProdGrid() {
   const el = document.getElementById('prodGrid');
   if (!el) return;
-  if (!productos.length) { el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:8px">📦</div><p style="font-size:.88rem">No tenes productos aun.</p></div>'; return; }
-  el.innerHTML = productos.map(p => `
-    <div class="prod-card">
-      <div class="prod-img">${iconMap[p.categoria||p.cat]||'📦'}</div>
-      <div class="prod-body">
-        <h4>${p.nombre}</h4>
-        <div class="price">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div class="stock">Stock: ${p.stock||'S/D'}</div>
-        <div class="prod-actions">
-          <button class="prod-edit-btn" onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')">Editar</button>
-          <button class="prod-del-btn" onclick="deleteProduct('${p.id}')">Eliminar</button>
-        </div>
+  if (!productos.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:8px">📦</div><p style="font-size:.88rem">No tenés productos aún.</p></div>'; return; }
+  el.innerHTML = productos.map(p => {
+    const img = p.imagen_url 
+      ? `<img src="${p.imagen_url}" style="width:56px;height:56px;object-fit:cover;border-radius:10px">`
+      : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
+    return `<div style="background:white;border-radius:12px;padding:12px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      ${img}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.85rem;font-weight:700;color:#111;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.95rem;font-weight:900;color:#006039">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock definido'} · ${p.categoria||'General'}</div>
       </div>
-    </div>`).join('');
+      <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 async function cargarProductosProveedor() {
   if (!currentUser || !currentUser.proveedorId) { productos = []; renderProdGrid(); return; }
