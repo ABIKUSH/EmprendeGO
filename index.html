@@ -529,9 +529,19 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
   <div id="perfil-proveedor" style="display:none">
-    <div class="dash-header">
-      <div class="dash-top">
-        <div class="avatar-upload-wrap" onclick="document.getElementById('prov-logo-input').click()" title="Cambiar logo">
+    <!-- HEADER -->
+    <div style="background:#111;padding:20px 20px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
+          <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:white;letter-spacing:-.3px">EmprendeGo</span>
+        </div>
+        <button class="notif-bell" onclick="toggleNotifPanel()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div class="avatar-upload-wrap" onclick="document.getElementById('prov-logo-input').click()" title="Cambiar logo" style="margin-bottom:0">
           <div class="dash-avatar" id="dash-avatar-el">
             <img id="dash-avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px">
             <span id="dash-avatar-initials">EG</span>
@@ -539,72 +549,154 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div class="avatar-edit-badge">📷</div>
         </div>
         <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
-        <div class="dash-info"><h3 id="dash-nombre">Mi Negocio</h3><p id="dash-rubro-label">Rubro · Argentina</p></div>
-        <span class="dash-pro-badge">⭐ PRO</span>
-      </div>
-      <div class="dash-stats-grid">
-        <div class="dash-stat"><div class="dash-stat-val" id="stat-visitas">0</div><div class="dash-stat-label">Visitas al perfil</div></div>
-        <div class="dash-stat"><div class="dash-stat-val" id="stat-leads">0</div><div class="dash-stat-label">Contactos recibidos</div></div>
-        <div class="dash-stat"><div class="dash-stat-val" id="stat-productos">0</div><div class="dash-stat-label">Productos publicados</div></div>
-        <div class="dash-stat"><div class="dash-stat-val" id="stat-favoritos">0</div><div class="dash-stat-label">En favoritos</div></div>
-      </div>
-    </div>
-    <div class="ranking-card">
-      <div class="rank-num" style="font-size:1rem;color:var(--gray)">🏆</div>
-      <div class="rank-info"><strong>Tu ranking</strong><span>Aparecera cuando tengas visitas</span></div>
-      <div class="rank-trend"><span style="font-size:1.2rem">📈</span><span style="font-size:.7rem;color:var(--gray)">Pronto</span></div>
-    </div>
-    <!-- BANNER PRO DASHBOARD -->
-    <div id="pro-upgrade-banner" style="margin:12px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer" onclick="goTo('planes')">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-        <div>
-          <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:white">Activá el Plan Pro</div>
-          <div style="font-size:.72rem;color:rgba(255,255,255,.6)">$20.000/mes · Cancelá cuando quieras</div>
+        <div style="flex:1">
+          <h3 id="dash-nombre" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:white;margin-bottom:2px">Mi Negocio</h3>
+          <p id="dash-rubro-label" style="color:rgba(255,255,255,.45);font-size:.78rem">Rubro · Argentina</p>
         </div>
+        <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">PRO</span>
       </div>
-      <div style="font-size:.78rem;color:rgba(255,255,255,.7);line-height:1.5;margin-bottom:12px">WhatsApp directo, productos ilimitados, badge verificado, estadísticas, carga masiva y soporte prioritario.</div>
-      <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:10px;text-align:center" onclick="event.stopPropagation();iniciarPagoPro()">Activar Plan Pro →</div>
-    </div>
-    <div class="dash-tabs">
-      <div class="dash-tab active" onclick="switchTab('catalogo',this)">📦 Catálogo</div>
-      <div class="dash-tab" onclick="switchTab('mensajes-prov',this)">💬 Mensajes<span class="notif-badge-tab" id="msgs-badge">!</span></div>
-      <div class="dash-tab" onclick="switchTab('anuncios',this)">📢 Anuncios</div>
-      <div class="dash-tab" onclick="switchTab('perfil-info',this)">⚙️ Mi Perfil</div>
-    </div>
-    <div class="tab-content active" id="tab-catalogo">
-      <div class="cat-actions"><button class="add-prod-btn" onclick="openAddProduct()">+ Agregar producto</button></div>
-      <div class="prod-grid" id="prodGrid"></div>
-    </div>
-    <!-- TAB MENSAJES PROVEEDOR -->
-    <div class="tab-content" id="tab-mensajes-prov">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy)">Consultas recibidas</div>
-        <button onclick="cargarConversaciones()" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:9px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer">↻ Actualizar</button>
-      </div>
-      <div id="conv-list-el" class="conv-list">
-        <div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando mensajes...</div>
+      <!-- STATS GRID -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px">
+          <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:6px">Visitas al perfil</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="stat-visitas" style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white">0</span>
+            <span style="font-size:.68rem;font-weight:600;color:#4ade80;display:flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>12%</span>
+          </div>
+          <div style="display:flex;gap:3px;margin-top:10px;height:24px;align-items:flex-end">
+            <div style="flex:1;background:rgba(0,96,57,.15);height:40%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.25);height:55%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.15);height:30%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.35);height:70%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.2);height:50%;border-radius:2px"></div>
+            <div style="flex:1;background:#006039;height:100%;border-radius:2px"></div>
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px">
+          <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:6px">Contactos</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="stat-leads" style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white">0</span>
+          </div>
+          <div style="margin-top:10px;height:24px;background:rgba(255,255,255,.06);border-radius:20px;overflow:hidden">
+            <div style="height:100%;width:38%;background:#006039;border-radius:20px"></div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="tab-content" id="tab-anuncios">
-      <div class="anuncio-card">
-        <div class="anuncio-header"><div class="anuncio-title">Banner Principal</div><span class="anuncio-status active">● Activo</span></div>
-        <div class="anuncio-preview" style="background:linear-gradient(135deg,var(--navy),#1a2d6b)">Tu anuncio aquí</div>
-        <div class="anuncio-bar-label"><span>Alcance actual</span><span style="color:var(--blue);font-weight:700">60%</span></div>
-        <div class="anuncio-bar"><div class="anuncio-bar-fill" style="width:60%"></div></div>
-        <div class="anuncio-btns"><button class="anuncio-btn edit" onclick="showToast('Editor próximamente')">✏️ Editar</button><button class="anuncio-btn pause" onclick="showToast('Anuncio pausado')">⏸ Pausar</button></div>
+    <!-- MENSAJES & CONSULTAS -->
+    <div style="padding:16px 20px 0">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mensajes y consultas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div onclick="switchTab('mensajes-prov',document.querySelector('.dash-tab:nth-child(2)'))" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <span id="dash-msgs-new" style="background:#006039;color:white;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:10px;display:none">0 New</span>
+          </div>
+          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#111" id="dash-msgs-count">0</div>
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999">Mensajes</div>
+        </div>
+        <div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          </div>
+          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#111" id="dash-consultas-count">0</div>
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999">Consultas</div>
+        </div>
       </div>
-      <button class="nueva-campaña-btn" onclick="showToast('Creando nueva campaña... 🚀')">+ Nueva Campaña</button>
     </div>
-    <div class="tab-content" id="tab-perfil-info">
-      <div style="display:flex;flex-direction:column;gap:12px;padding-top:4px">
+
+    <!-- BANNER PRO -->
+    <div style="padding:16px 20px 0">
+      <div id="pro-upgrade-banner" style="background:linear-gradient(135deg,#006039,#004D2E);border-radius:14px;padding:20px;position:relative;overflow:hidden;cursor:pointer" onclick="goTo('planes')">
+        <div style="position:absolute;right:-20px;bottom:-20px;opacity:.08"><svg width="100" height="100" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.7)">Premium Experience</span>
+        </div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:900;color:white;line-height:1.25;margin-bottom:6px">Potenciá tu negocio con el Plan Pro.</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Estadísticas avanzadas, prioridad en búsquedas y contacto directo por WhatsApp.</div>
+        <div onclick="event.stopPropagation();iniciarPagoPro()" style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;border-radius:8px;padding:10px 16px;display:inline-block;cursor:pointer">Activar Plan Pro · $20.000/mes</div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS RECIENTES -->
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Pedidos recientes</div>
+        <span style="font-size:.78rem;font-weight:700;color:#006039;cursor:pointer">Ver todos</span>
+      </div>
+      <div id="dash-pedidos-list" style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:.82rem;font-weight:700;color:#111">Todavía no recibiste pedidos</div>
+            <div style="font-size:.72rem;color:#999">Los pedidos del carrito aparecen acá</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIS PRODUCTOS -->
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Mis productos</div>
+        <button onclick="openAddProduct()" style="background:#006039;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
+      </div>
+      <div class="prod-grid" id="prodGrid"></div>
+    </div>
+
+    <!-- ANUNCIOS (PRO) -->
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Anuncios</div>
+        <span style="font-size:.6rem;font-weight:800;color:#006039;background:#E8F2EE;padding:3px 10px;border-radius:8px;letter-spacing:.03em">SOLO PRO</span>
+      </div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid #eee;opacity:.5">
+        <div style="text-align:center;padding:12px 0">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <div style="font-size:.82rem;font-weight:700;color:#999">Activá el Plan Pro para crear anuncios</div>
+          <div style="font-size:.72rem;color:#bbb;margin-top:4px">Destacá tus productos en los resultados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AYUDA -->
+    <div style="padding:16px 20px">
+      <div style="background:#f8f8f8;border-radius:12px;padding:18px;border:1.5px solid #eee">
+        <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#111;margin-bottom:4px">Necesitás ayuda?</div>
+        <div style="font-size:.78rem;color:#777;line-height:1.5;margin-bottom:14px">Nuestro equipo está disponible para ayudarte con tu cuenta y publicaciones.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <a href="https://wa.me/5491100000000" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:white;border:1.5px solid #eee;border-radius:10px;font-size:.8rem;font-weight:700;color:#111;text-decoration:none;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            WhatsApp
+          </a>
+          <a href="mailto:soporte@emprendego.com" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:white;border:1.5px solid #eee;border-radius:10px;font-size:.8rem;font-weight:700;color:#111;text-decoration:none;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </a>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="margin-top:12px">Cerrar sesión</button>
+    </div>
+
+    <!-- TABS OCULTOS PARA MENSAJES (se abre desde el card de mensajes) -->
+    <div class="tab-content" id="tab-mensajes-prov" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding:0 20px">
+        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy)">Consultas recibidas</div>
+        <button onclick="cargarConversaciones()" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:9px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer">↻ Actualizar</button>
+      </div>
+      <div id="conv-list-el" class="conv-list" style="padding:0 20px">
+        <div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando mensajes...</div>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-perfil-info" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:4px 20px">
         <div class="form-group"><label>Nombre del negocio</label><input type="text" id="edit-nombre"></div>
         <div class="form-group"><label>Descripción</label><textarea id="edit-desc"></textarea></div>
         <div class="form-group"><label>WhatsApp</label><input type="tel"></div>
         <div class="form-group"><label>Instagram</label><input type="text"></div>
         <button class="submit-btn" onclick="showToast('Perfil guardado ✓')">Guardar cambios</button>
-        <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
       </div>
     </div>
   </div>
