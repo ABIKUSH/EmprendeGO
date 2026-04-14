@@ -727,6 +727,7 @@ function abrirDetalle(id) {
   updateDetCompBtn();
 
   try { sb.from('busquedas').insert({termino: p.nombre}); } catch(e) {}
+  try { sb.from('proveedores').update({ visitas: (parseInt(p.visitas)||0) + 1 }).eq('id', p.id); } catch(e) {}
   cargarProductosDetalle(p.id);
   goTo('detalle');
 }
