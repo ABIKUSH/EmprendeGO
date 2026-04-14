@@ -1414,6 +1414,33 @@ function editarProducto(id,nombre,precio,stock,cat) {
 }
 function closeEditProduct() { document.getElementById('editProdModal').classList.remove('open'); document.body.style.overflow=''; }
 function closeEditProductOnBg(e) { if(e.target===document.getElementById('editProdModal')) closeEditProduct(); }
+// ===== EDIT FOTO =====
+let editFotoFile = null;
+
+function previewEditFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('La foto es muy grande. Máx 5MB'); return; }
+  editFotoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('edit-foto-preview-img');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('edit-foto-placeholder').style.display = 'none';
+    document.getElementById('edit-foto-remove-btn').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeEditFoto() {
+  editFotoFile = null;
+  document.getElementById('edit-foto-preview-img').style.display = 'none';
+  document.getElementById('edit-foto-preview-img').src = '';
+  document.getElementById('edit-foto-placeholder').style.display = 'block';
+  document.getElementById('edit-foto-remove-btn').style.display = 'none';
+  document.getElementById('edit-foto-input').value = '';
+}
 async function guardarEdicionProducto() {
   const id = document.getElementById('edit-prod-id').value;
   const name = document.getElementById('edit-prod-name').value.trim();
@@ -1421,8 +1448,11 @@ async function guardarEdicionProducto() {
   const stock = document.getElementById('edit-prod-stock').value;
   const cat = document.getElementById('edit-prod-cat').value;
   if (!name||!price) { showToast('Completa nombre y precio'); return; }
-  try {
-    await sb.from('productos').update({nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat}).eq('id',id);
+let imgUrl = null;
+  if (editFotoFile && currentUser?.proveedorId) {
+    try { imgUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch(e) {}
+  }  try {
+    await sb.from('productos').update({nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat,imagen_url:imgUrl||undefined}).eq('id',id);
     const idx = productos.findIndex(p=>String(p.id)===String(id));
     if(idx>=0) productos[idx]={...productos[idx],nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat};
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
