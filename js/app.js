@@ -634,7 +634,7 @@ function abrirWA(num) {
 }
 
 async function cargarProductosDetalle(proveedorId) {
-  const el = document.getElementById('det-productos-grid');
+  const el = document.getElementById('renderDetCarousels(prodsDetalle);');
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
@@ -1681,6 +1681,7 @@ async function cargarProductosReales() {
         provColor:bgs[i%bgs.length],imgUrl:p.imagen_url||'',
         whatsapp:p.proveedores?.whatsapp||'',esPro:p.proveedores?.plan==='pro'
       }));
+      renderHomeCarousels();
     }
   } catch(e){}
   renderProdInicio();
@@ -2308,6 +2309,102 @@ function resetExcelImport() {
   document.getElementById('excel-file-name').style.display = 'none';
   document.getElementById('excel-mapping-section').style.display = 'none';
   document.getElementById('excel-result').style.display = 'none';
+}
+
+// ===== MIS PRODUCTOS MODAL =====
+function abrirMisProductos() {
+  document.getElementById('misProductosModal').classList.add('open');
+  ordenarMisProds('nuevo');
+}
+
+function ordenarMisProds(tipo) {
+  ['az','za','nuevo','viejo'].forEach(t => {
+    const btn = document.getElementById('sort-'+t);
+    if (btn) btn.style.background = t === tipo ? '#006039' : 'white';
+    if (btn) btn.style.color = t === tipo ? 'white' : '#111';
+  });
+  let sorted = [...productos];
+  if (tipo === 'az') sorted.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
+  if (tipo === 'za') sorted.sort((a,b) => (b.nombre||'').localeCompare(a.nombre||''));
+  if (tipo === 'nuevo') sorted.sort((a,b) => (b.id||'').localeCompare(a.id||''));
+  if (tipo === 'viejo') sorted.sort((a,b) => (a.id||'').localeCompare(b.id||''));
+  const el = document.getElementById('misProductosList');
+  if (!el) return;
+  if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">No tenés productos aún.</div>'; return; }
+  el.innerHTML = sorted.map(p => {
+    const img = p.imagen_url
+      ? `<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
+    return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
+      ${img}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock'} · ${p.categoria||'General'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'\\&#39;')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ===== HOME CAROUSELS =====
+function renderProdCard(p) {
+  const img = p.imagen_url
+    ? `<img src="${p.imagen_url}" style="width:100%;height:100px;object-fit:cover">`
+    : `<div style="width:100%;height:100px;background:#f0f0f0;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
+  return `<div onclick="abrirDetalleProducto('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0">
+    ${img}
+    <div style="padding:8px 10px">
+      <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+      <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+    </div>
+  </div>`;
+}
+
+function renderHomeCarousels() {
+  const all = todosProductos || [];
+  const c1 = document.getElementById('prodInicioCarousel1');
+  const c2 = document.getElementById('prodInicioCarousel2');
+  if (!c1 || !c2) return;
+  const first8 = all.slice(0, 8);
+  const second8 = all.slice(8, 16);
+  c1.innerHTML = first8.length ? first8.map(p => renderProdCard(p)).join('') : '<div style="color:#999;font-size:.85rem;padding:20px">No hay productos aún</div>';
+  c2.innerHTML = second8.length ? second8.map(p => renderProdCard(p)).join('') : '';
+  if (!second8.length && c2.parentElement) {
+    const title = c2.previousElementSibling;
+    if (title) title.style.display = 'none';
+    c2.style.display = 'none';
+  }
+}
+
+// ===== DETALLE PROVEEDOR CAROUSELS POR MARCA =====
+function renderDetCarousels(prodsDetalle) {
+  const container = document.getElementById('det-productos-carousels');
+  if (!container) return;
+  if (!prodsDetalle || !prodsDetalle.length) {
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:.85rem">Este proveedor no tiene productos aún.</div>';
+    return;
+  }
+  const brands = {};
+  prodsDetalle.forEach(p => {
+    const brand = p.categoria || p.cat || 'General';
+    if (!brands[brand]) brands[brand] = [];
+    brands[brand].push(p);
+  });
+  let html = '';
+  Object.keys(brands).forEach(brand => {
+    const prods = brands[brand];
+    html += `<div style="margin-bottom:16px">
+      <div style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#111;margin-bottom:8px;padding:0 4px">${brand}</div>
+      <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
+        ${prods.slice(0, 20).map(p => renderProdCard(p)).join('')}
+      </div>
+    </div>`;
+  });
+  container.innerHTML = html;
 }
 
 // ===== INIT =====
