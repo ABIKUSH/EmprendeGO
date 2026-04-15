@@ -148,12 +148,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos destacados</div>
     <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
   </div>
-  <div id="prodInicioCarousel1" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
-  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Más productos</div>
-    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
-  </div>
-  <div id="prodInicioCarousel2" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
+  <div class="prod-inicio-grid" id="prodInicioGrid"></div>
 
   <!-- BANNER TEST -->
   <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px">
@@ -248,7 +243,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 </div>
-   <!-- ===== DETALLE PROVEEDOR ===== -->
+
+<!-- ===== DETALLE PROVEEDOR ===== -->
 <div class="screen" id="screen-detalle">
   <div class="det-hero">
     <div class="det-top-row">
@@ -258,93 +254,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <button id="det-comp-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer" onclick="toggleComparar()">&#9878; Comparar</button>
       </div>
     </div>
-
     <div class="det-logo" id="det-logo">EG</div>
     <div class="det-nombre" id="det-nombre">Proveedor</div>
     <div class="det-rubro" id="det-rubro">Rubro</div>
-
     <div class="det-badges-row">
       <span class="badge pro" id="det-pro-badge" style="display:none">PRO</span>
       <span class="badge green">&#10003; Verificado</span>
     </div>
   </div>
-
   <div class="det-body">
     <div class="det-desc-box" id="det-desc">Sin descripcion.</div>
 
-    <div class="det-info-card">
-      <div class="det-info-title">Informacion del negocio</div>
-      <div class="det-info-row"><span>&#128230;</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
-      <div class="det-info-row"><span>&#128666;</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
-      <div class="det-info-row"><span>&#128205;</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
-      <div class="det-info-row"><span>&#128247;</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
-    </div>
-
-    <div class="calc-box">
-      <div class="calc-title">&#129518; Calculadora de ganancia</div>
-      <div class="calc-row"><label>Precio mayorista $</label><input type="number" id="calc-costo" placeholder="2500" oninput="calcGanancia()"></div>
-      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="calc-venta" placeholder="5000" oninput="calcGanancia()"></div>
-      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="calc-cantidad" placeholder="50" oninput="calcGanancia()"></div>
-      <div class="calc-result" id="calc-result" style="display:none">
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-inv">-</div><div class="calc-result-label">Inversion</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="calc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
-      </div>
-    </div>
-
-    <div class="det-cta">
-      <button 
-        id="det-wa-btn" 
-        onclick="detWA()" 
-        style="
-          width:100%;
-          display:none;
-          align-items:center;
-          justify-content:center;
-          gap:8px;
-          background:linear-gradient(135deg,#25D366,#1ebe5d);
-          color:white;
-          border:none;
-          border-radius:16px;
-          padding:16px;
-          font-family:'Sora',sans-serif;
-          font-size:1rem;
-          font-weight:800;
-          box-shadow:0 10px 24px rgba(37,211,102,.28);
-          cursor:pointer;
-          margin:14px 0 10px 0;
-        "
-      >
-        💬 Contactar por WhatsApp
-      </button>
-
-      <button 
-        class="det-btn-chat"
-        onclick="detChat()" 
-        style="
-          width:100%;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          gap:8px;
-          background:linear-gradient(135deg,#1847C8,#3b6cff);
-          color:white;
-          border:none;
-          border-radius:16px;
-          padding:16px;
-          font-family:'Sora',sans-serif;
-          font-size:1rem;
-          font-weight:800;
-          box-shadow:0 10px 24px rgba(24,71,200,.28);
-          cursor:pointer;
-          margin-bottom:14px;
-        "
-      >
-        💬 Contactar proveedor
-      </button>
-    </div>
-
+    <!-- RATING SUMMARY -->
     <div class="rating-summary">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
         <div style="text-align:center">
@@ -358,8 +279,32 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button class="write-resena-btn" onclick="openResenaModal()">&#9997; Escribir una reseña</button>
     </div>
 
+    <div class="det-info-card">
+      <div class="det-info-title">Informacion del negocio</div>
+      <div class="det-info-row"><span>&#128230;</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
+      <div class="det-info-row"><span>&#128666;</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
+      <div class="det-info-row"><span>&#128205;</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
+      <div class="det-info-row"><span>&#128247;</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">&#129518; Calculadora de ganancia</div>
+      <div class="calc-row"><label>Precio mayorista $</label><input type="number" id="calc-costo" placeholder="2500" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="calc-venta" placeholder="5000" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="calc-cantidad" placeholder="50" oninput="calcGanancia()"></div>
+      <div class="calc-result" id="calc-result" style="display:none">
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-inv">-</div><div class="calc-result-label">Inversion</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
+      </div>
+    </div>
     <div id="det-productos-section" style="margin-bottom:12px">
-      <div id="det-productos-carousels"></div>
+      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Productos</div>
+      <div id="det-productos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+    <div class="det-cta">
+      <button class="det-btn-wa" id="det-wa-btn" style="display:none" onclick="detWA()">&#128172; Contactar por WhatsApp</button>
+      <button class="det-btn-chat" onclick="detChat()">&#128172; Enviar mensaje</button>
     </div>
   </div>
 </div>
@@ -694,24 +639,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     <!-- MIS PRODUCTOS -->
     <div style="padding:16px 20px 0">
-      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mis productos</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div onclick="openAddProduct()" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
-          <div style="width:40px;height:40px;border-radius:10px;background:#006039;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-          <div style="flex:1">
-            <div style="font-size:.85rem;font-weight:700;color:#111">Agregar productos</div>
-            <div style="font-size:.72rem;color:#999">Manual, Excel o MercadoLibre</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="display:flex;flex-direction:column;gap:8px">
+      <div onclick="openAddProduct()" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
+        <div style="width:40px;height:40px;border-radius:10px;background:#006039;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+        <div style="flex:1">
+          <div style="font-size:.85rem;font-weight:700;color:#111">Agregar productos</div>
+          <div style="font-size:.72rem;color:#999">Manual, Excel o MercadoLibre</div>
         </div>
-        <div onclick="abrirMisProductos()" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
-          <div style="width:40px;height:40px;border-radius:10px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
-          <div style="flex:1">
-            <div style="font-size:.85rem;font-weight:700;color:#111">Ver mis productos</div>
-            <div style="font-size:.72rem;color:#999" id="dash-prod-count">0 publicados</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div onclick="goTo('mis-productos')" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
+        <div style="width:40px;height:40px;border-radius:10px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+        <div style="flex:1">
+          <div style="font-size:.85rem;font-weight:700;color:#111">Ver mis productos</div>
+          <div style="font-size:.72rem;color:#999" id="dash-prod-count">0 publicados</div>
         </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+        <button onclick="openAddProduct()" style="background:#006039;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:.75rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:4px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Agregar</button>
       </div>
     </div>
 
@@ -760,26 +707,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 </div>
-<!-- MODAL MIS PRODUCTOS -->
-<div class="modal-overlay" id="misProductosModal" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" style="max-height:90vh">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <h3>Mis productos</h3>
-      <button class="modal-close" onclick="document.getElementById('misProductosModal').classList.remove('open')">✕</button>
-    </div>
-    <div style="padding:8px 20px 0;display:flex;gap:6px">
-      <button onclick="ordenarMisProds('az')" id="sort-az" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">A → Z</button>
-      <button onclick="ordenarMisProds('za')" id="sort-za" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Z → A</button>
-      <button onclick="ordenarMisProds('nuevo')" id="sort-nuevo" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Más nuevo</button>
-      <button onclick="ordenarMisProds('viejo')" id="sort-viejo" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Más viejo</button>
-    </div>
-    <div class="modal-body" style="padding:12px 20px 24px">
-      <div id="misProductosList" style="display:flex;flex-direction:column;gap:8px"></div>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL LISTA MENSAJES -->
 <div class="modal-overlay" id="provMsgListModal" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal" style="max-height:85vh">
