@@ -269,44 +269,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </div>
   <div class="det-body">
     <div class="det-desc-box" id="det-desc">Sin descripcion.</div>
-
-    <!-- RATING SUMMARY -->
-    <div class="rating-summary">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
-        <div style="text-align:center">
-          <div class="rating-avg" id="det-rating-avg">4.2</div>
-          <div class="rating-stars" style="justify-content:center;margin:4px 0" id="det-rating-stars"></div>
-          <div class="rating-count" id="det-rating-count">0 reseñas</div>
-        </div>
-        <div style="flex:1" id="det-rating-bars"></div>
-      </div>
-      <div class="resenas-list" id="det-resenas-list"></div>
-      <button class="write-resena-btn" onclick="openResenaModal()">&#9997; Escribir una reseña</button>
-    </div>
-
-    <div class="det-info-card">
-      <div class="det-info-title">Informacion del negocio</div>
-      <div class="det-info-row"><span>&#128230;</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
-      <div class="det-info-row"><span>&#128666;</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
-      <div class="det-info-row"><span>&#128205;</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
-      <div class="det-info-row"><span>&#128247;</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
-    </div>
-    <div class="calc-box">
-      <div class="calc-title">&#129518; Calculadora de ganancia</div>
-      <div class="calc-row"><label>Precio mayorista $</label><input type="number" id="calc-costo" placeholder="2500" oninput="calcGanancia()"></div>
-      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="calc-venta" placeholder="5000" oninput="calcGanancia()"></div>
-      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="calc-cantidad" placeholder="50" oninput="calcGanancia()"></div>
-      <div class="calc-result" id="calc-result" style="display:none">
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-inv">-</div><div class="calc-result-label">Inversion</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="calc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
-        <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
-      </div>
-    </div>
-    <div id="det-productos-section" style="margin-bottom:12px">
-      <div id="det-productos-carousels"></div>
-    </div>
-    <div class="det-cta">
+ <div class="det-cta">
      <button 
   id="det-wa-btn" 
   onclick="detWA()" 
@@ -358,6 +321,43 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 </div>
+    <!-- RATING SUMMARY -->
+    <div class="rating-summary">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
+        <div style="text-align:center">
+          <div class="rating-avg" id="det-rating-avg">4.2</div>
+          <div class="rating-stars" style="justify-content:center;margin:4px 0" id="det-rating-stars"></div>
+          <div class="rating-count" id="det-rating-count">0 reseñas</div>
+        </div>
+        <div style="flex:1" id="det-rating-bars"></div>
+      </div>
+      <div class="resenas-list" id="det-resenas-list"></div>
+      <button class="write-resena-btn" onclick="openResenaModal()">&#9997; Escribir una reseña</button>
+    </div>
+
+    <div class="det-info-card">
+      <div class="det-info-title">Informacion del negocio</div>
+      <div class="det-info-row"><span>&#128230;</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
+      <div class="det-info-row"><span>&#128666;</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
+      <div class="det-info-row"><span>&#128205;</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
+      <div class="det-info-row"><span>&#128247;</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">&#129518; Calculadora de ganancia</div>
+      <div class="calc-row"><label>Precio mayorista $</label><input type="number" id="calc-costo" placeholder="2500" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="calc-venta" placeholder="5000" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="calc-cantidad" placeholder="50" oninput="calcGanancia()"></div>
+      <div class="calc-result" id="calc-result" style="display:none">
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-inv">-</div><div class="calc-result-label">Inversion</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
+      </div>
+    </div>
+    <div id="det-productos-section" style="margin-bottom:12px">
+      <div id="det-productos-carousels"></div>
+    </div>
+   
 
 <!-- ===== CHAT ===== -->
 <div class="screen" id="screen-chat" style="padding-bottom:20px">
