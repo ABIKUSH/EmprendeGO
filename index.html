@@ -269,11 +269,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </div>
   <div class="det-body">
     <div class="det-desc-box" id="det-desc">Sin descripcion.</div>
- <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
-      <button class="add-carrito-btn" onclick="agregarAlCarrito()">🛒 Agregar al pedido</button>
-      <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
-      <button class="det-btn-chat" onclick="detChatProd()">&#128172; Enviar mensaje</button>
-    </div>
+
     <!-- RATING SUMMARY -->
     <div class="rating-summary">
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px">
@@ -357,7 +353,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-tot">-</div><div class="calc-result-label">Total</div></div>
       </div>
     </div>
-   
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <button class="add-carrito-btn" onclick="agregarAlCarrito()">🛒 Agregar al pedido</button>
+      <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
+      <button class="det-btn-chat" onclick="detChatProd()">&#128172; Enviar mensaje</button>
+    </div>
   </div>
 </div>
 
