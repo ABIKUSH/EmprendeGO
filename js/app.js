@@ -1,4 +1,6 @@
-// ===== ESTADO GLOBAL =====
+// ==========================================
+// 1. ESTADO GLOBAL Y CONFIGURACIÓN
+// ==========================================
 let currentUser = null;
 let historial = [];
 let productos = [];
@@ -12,7 +14,22 @@ let buscarTab = 'productos';
 let productoActual = null;
 let pantallaAnteriorProd = 'inicio';
 
-// ===== FAVORITOS =====
+// --- Función de seguridad: evita que textos maliciosos rompan la app ---
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// --- Lógica de Plan PRO ---
+function esPro(p) {
+  return p && (p.plan === 'pro' || p.pro === true);
+}
+
+// ==========================================
+// 2. FAVORITOS (Optimizado)
+// ==========================================
 let favs = [];
 try { favs = JSON.parse(localStorage.getItem('eg_favs') || '[]'); } catch(e) { favs = []; }
 
@@ -20,566 +37,125 @@ function guardarFavs() {
   try { localStorage.setItem('eg_favs', JSON.stringify(favs)); } catch(e) {}
   refreshFavBadge();
 }
+
 function refreshFavBadge() {
   const b = document.getElementById('fav-badge');
   if (!b) return;
-  if (favs.length > 0) { b.style.display = 'flex'; b.textContent = favs.length; }
-  else b.style.display = 'none';
+  b.style.display = favs.length > 0 ? 'flex' : 'none';
+  b.textContent = favs.length;
 }
-function esFav(id) { return favs.some(f => String(f.id) === String(id)); }
+
+function esFav(id) { 
+  return favs.some(f => String(f.id) === String(id)); 
+}
+
 function toggleFav(id) {
   const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
+  
   const idx = favs.findIndex(f => String(f.id) === String(id));
-  if (idx >= 0) { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
-  else { favs.push(p); showToast('¡Guardado en favoritos!'); }
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    showToast('Eliminado de favoritos');
+  } else {
+    favs.push(p);
+    showToast('¡Guardado en favoritos! ❤️');
+  }
   guardarFavs();
   renderFavs();
 }
+
 function toggleFavActual() {
   if (!provActual) return;
   toggleFav(provActual.id);
   const btn = document.getElementById('det-fav-btn');
   if (btn) btn.textContent = esFav(provActual.id) ? '❤️' : '♡';
 }
+
 function renderFavs() {
   const el = document.getElementById('favs-list');
   if (!el) return;
   if (!favs.length) {
-    el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6B7A99"><div style="font-size:3rem;margin-bottom:12px">❤️</div><p style="font-size:.88rem;line-height:1.6">Todavia no guardaste favoritos.<br>Toca el corazon en cualquier proveedor.</p></div>';
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:#6B7A99">
+        <div style="font-size:3rem;margin-bottom:12px">❤️</div>
+        <p style="font-size:.88rem">Todavía no tenés favoritos.<br>Toca el corazón en cualquier proveedor.</p>
+      </div>`;
     return;
   }
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
-  el.innerHTML = favs.map((p, i) => {
-    const pid = String(p.id);
-    const bg = bgs[i % bgs.length];
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
-    const avgR = getProvRating(pid).avg.toFixed(1);
-    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
-        ${p.logo_url
-          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
-        }
-        <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || ''}${p.provincia ? ' · ' + p.provincia : ''}</div>
-        </div>
-        <div style="font-size:.76rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avgR} ★</div>
-      </div>
-      <div style="padding:0 14px 13px">
-        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${p.desc || ''}</p>
-        <div style="display:flex;gap:7px">
-          <button data-favid="${pid}" style="background:#FFF0F5;color:#F43F8E;border:none;border-radius:9px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer">❤️ Quitar</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-  el.onclick = function(e) {
-    const fb = e.target.closest('[data-favid]');
-    const card = e.target.closest('[data-id]');
-    if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (card) abrirDetalle(card.dataset.id);
-  };
+  // Reutilizamos la lógica de renderizado para mantener coherencia
+  renderProvsEnContenedor(favs, el, true);
 }
 
-// ===== SUPABASE =====
-async function cargarProveedores() {
-  try {
-    const { data, error } = await sb.from('proveedores').select('*').eq('estado','aprobado').order('created_at',{ascending:false});
-    if (error) throw error;
-    if (data && data.length > 0) {
-      proveedoresDB = data.map(p => ({
-        id: String(p.id), nombre: p.nombre, rubro: p.rubro || 'General',
-        desc: p.descripcion || '', pro: p.plan === 'pro',
-        inicial: p.nombre.substring(0,2).toUpperCase(), whatsapp: p.whatsapp || '',
-        provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
-        envios: p.envios || 'Consultar', instagram: p.instagram || '',
-        logo_url: p.logo_url || ''
-      }));
-    } else { proveedoresDB = proveedoresDEMO; }
-  } catch(e) { proveedoresDB = proveedoresDEMO; }
-  renderProvs(proveedoresDB);
-  renderMapaProvincias();
-  renderMapaAllProvs();
-}
+// ==========================================
+// 3. RENDERIZADO DE PROVEEDORES (Limpio y Seguro)
+// ==========================================
 
-const proveedoresDEMO = [
-  {id:'1',nombre:'TechMayor BA',rubro:'Tecnologia',desc:'Mayorista de accesorios y electronica. Precios desde $500. Envio a todo el pais.',pro:true,inicial:'TM',provincia:'Buenos Aires',whatsapp:'5491112345678',pedido_minimo:'Desde $10.000',envios:'Si, a todo el pais',instagram:'@techmayor_ba'},
-  {id:'2',nombre:'HomeDeco Sur',rubro:'Hogar',desc:'Articulos de decoracion y hogar al por mayor. Minimo 10 unidades.',pro:false,inicial:'HD',provincia:'Buenos Aires',pedido_minimo:'10 unidades',envios:'Solo zona local',instagram:''},
-  {id:'3',nombre:'Modas del Litoral',rubro:'Moda',desc:'Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.',pro:true,inicial:'ML',provincia:'Santa Fe',whatsapp:'5493412345678',pedido_minimo:'Desde $5.000',envios:'Si, a todo el pais',instagram:'@modaslitoral'},
-  {id:'4',nombre:'Bazar Mayorista GBA',rubro:'Bazar',desc:'Todo para el bazar: utensilios, limpieza, papeleria. Bajo precio.',pro:false,inicial:'BM',provincia:'Buenos Aires',pedido_minimo:'Sin minimo',envios:'GBA y CABA',instagram:''},
-  {id:'5',nombre:'AlimVerde SRL',rubro:'Alimentos',desc:'Productos naturales y organicos al por mayor. Certificados.',pro:true,inicial:'AV',provincia:'Cordoba',whatsapp:'5493514444444',pedido_minimo:'Desde $20.000',envios:'Si, a todo el pais',instagram:''},
-  {id:'6',nombre:'CelularPro Dist.',rubro:'Tecnologia',desc:'Distribucion de celulares y repuestos. Garantia de fabrica.',pro:true,inicial:'CP',provincia:'CABA',whatsapp:'5491187654321',pedido_minimo:'Desde $50.000',envios:'Si, a todo el pais',instagram:''},
-  {id:'7',nombre:'RopaKids Mayoreo',rubro:'Moda',desc:'Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.',pro:false,inicial:'RK',provincia:'Buenos Aires',pedido_minimo:'Desde $8.000',envios:'GBA',instagram:''},
-  {id:'8',nombre:'CasaFacil Dist.',rubro:'Hogar',desc:'Muebles flat-pack y articulos de cocina. Entrega en 48hs.',pro:false,inicial:'CF',provincia:'Cordoba',pedido_minimo:'Desde $15.000',envios:'Cordoba',instagram:''}
-];
-
-// ===== RESEÑAS (Supabase real) =====
-// Cache en memoria para no pedir siempre lo mismo
-const resenasCache = {};
-
-function renderStarsHTML(rating, size) {
-  const sizes = {sm:'1rem', xs:'.78rem'};
-  const s = sizes[size] || '1rem';
-  return [1,2,3,4,5].map(n => `<span style="color:${n<=Math.round(rating)?'#F59E0B':'#d1d5db'};font-size:${s}">★</span>`).join('');
-}
-
-function calcRatingStats(resenas) {
-  if (!resenas.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
-  const dist = [0,0,0,0,0];
-  resenas.forEach(r => { if(r.rating >= 1 && r.rating <= 5) dist[r.rating-1]++; });
-  const avg = resenas.reduce((s,r) => s + r.rating, 0) / resenas.length;
-  return { avg, count: resenas.length, dist };
-}
-
-// Función para leer desde Supabase
-async function cargarResenas(provId) {
-  const pid = String(provId);
-  // Si ya las tenemos en cache, las devolvemos
-  if (resenasCache[pid]) return resenasCache[pid];
-  try {
-    const { data, error } = await sb
-      .from('resenas')
-      .select('*')
-      .eq('proveedor_id', pid)
-      .order('created_at', { ascending: false });
-    if (error) throw error;
-    resenasCache[pid] = (data || []).map(r => ({ ...r, autor: r.usuario_nombre, rating: r.estrellas, fecha: r.created_at }));
-    return resenasCache[pid];
-  } catch(e) {
-    return [];
-  }
-}
-
-// También expone rating para cards (sin await — usa cache o 0)
-function getProvRating(provId) {
-  const pid = String(provId);
-  const cached = resenasCache[pid];
-  if (!cached || !cached.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
-  return calcRatingStats(cached);
-}
-
-async function renderRatingSummary(provId) {
-  const pid = String(provId);
-
-  // Mostrar loading mientras carga
-  const listEl = document.getElementById('det-resenas-list');
-  if (listEl) listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:12px 0">Cargando reseñas...</p>';
-
-  const resenas = await cargarResenas(pid);
-  const { avg, count, dist } = calcRatingStats(resenas);
-
-  // Avg
-  const avgEl = document.getElementById('det-rating-avg');
-  if (avgEl) avgEl.textContent = count > 0 ? avg.toFixed(1) : '—';
-
-  // Stars
-  const starsEl = document.getElementById('det-rating-stars');
-  if (starsEl) starsEl.innerHTML = renderStarsHTML(avg, 'sm');
-
-  // Count
-  const countEl = document.getElementById('det-rating-count');
-  if (countEl) countEl.textContent = count > 0 ? `${count} reseña${count!==1?'s':''}` : 'Sin reseñas aún';
-
-  // Barras
-  const barsEl = document.getElementById('det-rating-bars');
-  if (barsEl) {
-    barsEl.innerHTML = [5,4,3,2,1].map(n => {
-      const c = dist[n-1];
-      const pct = count > 0 ? Math.round((c/count)*100) : 0;
-      return `<div class="rating-bar-row">
-        <span class="rating-bar-label">${n}</span>
-        <div class="rating-bar-track"><div class="rating-bar-fill" style="width:${pct}%"></div></div>
-        <span class="rating-bar-count">${c}</span>
-      </div>`;
-    }).join('');
-  }
-
-  // Lista de reseñas
-  if (listEl) {
-    if (!resenas.length) {
-      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Sé el primero en dejar una reseña ✍️</p>';
-    } else {
-      listEl.innerHTML = resenas.slice(0,5).map(r => {
-        const fechaStr = r.fecha ? timeAgo(new Date(r.fecha)) : 'Reciente';
-        return `<div class="resena-card">
-          <div class="resena-header">
-            <div>
-              <div class="resena-autor">${r.autor}</div>
-              <div style="display:flex;gap:2px;margin-top:2px">${renderStarsHTML(r.rating,'xs')}</div>
-            </div>
-            <div class="resena-fecha">${fechaStr}</div>
-          </div>
-          <div class="resena-texto">${r.texto}</div>
-        </div>`;
-      }).join('');
-    }
-  }
-
-  // Actualizar rating en cards si están visibles
-  filterProvs();
-}
-
-let resenaRatingActual = 0;
-function openResenaModal() {
-  if (!provActual) return;
-  resenaRatingActual = 0;
-  document.getElementById('resena-prov-name').textContent = provActual.nombre;
-  document.getElementById('resena-autor-input').value = currentUser ? currentUser.name : '';
-  document.getElementById('resena-texto-input').value = '';
-  document.getElementById('resena-rating-label').textContent = 'Tocá para calificar';
-  document.querySelectorAll('#resenaStars .star').forEach(s => s.classList.remove('filled'));
-  document.getElementById('resenaModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeResenaModal() {
-  document.getElementById('resenaModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeResenaOnBg(e) { if (e.target === document.getElementById('resenaModal')) closeResenaModal(); }
-
-function setResenaRating(val) {
-  resenaRatingActual = val;
-  const labels = ['','Muy malo 😕','Malo 😐','Regular 🙂','Bueno 😊','Excelente 🤩'];
-  document.getElementById('resena-rating-label').textContent = labels[val] || '';
-  document.querySelectorAll('#resenaStars .star').forEach(s => {
-    s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
-  });
-}
-
-async function submitResena() {
-  if (!resenaRatingActual) { showToast('Por favor calificá primero ⭐'); return; }
-  const autor = document.getElementById('resena-autor-input').value.trim() || 'Anónimo';
-  const texto = document.getElementById('resena-texto-input').value.trim();
-  if (!texto) { showToast('Escribí tu experiencia'); return; }
-
-  const pid = String(provActual.id);
-  // Usamos los nombres de columna reales de tu tabla Supabase
-  const nuevaResena = {
-    proveedor_id:   pid,
-    usuario_nombre: autor,
-    estrellas:      resenaRatingActual,
-    texto
-  };
-
-  // Guardar en Supabase
-  try {
-    const { data, error } = await sb.from('resenas').insert(nuevaResena).select().single();
-    if (error) throw error;
-    // Normalizar y agregar al cache
-    if (!resenasCache[pid]) resenasCache[pid] = [];
-    const normalizada = { ...data, autor: data.usuario_nombre, rating: data.estrellas, fecha: data.created_at };
-    resenasCache[pid].unshift(normalizada);
-    showToast('¡Reseña publicada! Gracias 🙌');
-  } catch(e) {
-    console.error('Error guardando reseña:', e);
-    // Fallback local si falla Supabase
-    if (!resenasCache[pid]) resenasCache[pid] = [];
-    resenasCache[pid].unshift({ usuario_nombre: autor, autor, estrellas: resenaRatingActual, rating: resenaRatingActual, texto, fecha: new Date().toISOString() });
-    showToast('Reseña guardada (sin conexión)');
-  }
-
-  closeResenaModal();
-  renderRatingSummary(pid);
-}
-
-// ===== NOTIFICACIONES =====
-let notificaciones = [];
-let notifLeidas = new Set();
-try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch(e) {}
-
-function initNotificaciones() {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  notificaciones = [
-    { id:'n1', tipo:'new', icon:'🆕', titulo:'Nuevo proveedor: ' + (lista[0]?.nombre || 'TechMayor BA'), texto:'Se acaba de unir a EmprendeGo. ¡Mirá su catálogo!', tiempo:'Hace 5 min', provId: lista[0]?.id },
-    { id:'n2', tipo:'tip', icon:'💡', titulo:'Tip del día', texto:'Los proveedores de Moda en Santa Fe tienen los mejores precios esta semana.', tiempo:'Hace 1 hora' },
-    { id:'n3', tipo:'new', icon:'🆕', titulo:'Nuevo proveedor: ' + (lista[2]?.nombre || 'Modas del Litoral'), texto:'Nuevos modelos de temporada disponibles.', tiempo:'Hace 2 horas', provId: lista[2]?.id },
-    { id:'n4', tipo:'promo', icon:'🔥', titulo:'Oferta limitada', texto:'3 proveedores de Bazar lanzaron precios especiales por fin de mes.', tiempo:'Hace 3 horas' },
-    { id:'n5', tipo:'tip', icon:'💡', titulo:'Consejo', texto:'Usá el comparador para elegir mejor entre proveedores similares.', tiempo:'Ayer' }
-  ];
-  const tieneNoLeidas = notificaciones.some(n => !notifLeidas.has(n.id));
-  document.getElementById('notifDot').classList.toggle('show', tieneNoLeidas);
-  const d2 = document.getElementById('notifDot2');
-  if (d2) d2.classList.toggle('show', tieneNoLeidas);
-}
-
-function renderNotifPanel() {
-  const el = document.getElementById('notifList');
-  if (!el) return;
-  el.innerHTML = notificaciones.map(n => `
-    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId||''}')">
-      <div class="notif-icon ${n.tipo}">${n.icon}</div>
-      <div class="notif-text"><strong>${n.titulo}</strong><span>${n.texto}</span></div>
-      <div class="notif-time">${n.tiempo}</div>
-    </div>`).join('');
-}
-function onNotifClick(id, provId) {
-  notifLeidas.add(id);
-  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch(e) {}
-  document.getElementById('notifDot').classList.remove('show');
-  const d2 = document.getElementById('notifDot2');
-  if (d2) d2.classList.remove('show');
-  closeNotifPanel();
-  if (provId) { setTimeout(() => abrirDetalle(provId), 150); }
-}
-function toggleNotifPanel() {
-  const p = document.getElementById('notifPanel');
-  const bg = document.getElementById('notifPanelBg');
-  if (p.style.display === 'none' || !p.style.display) {
-    renderNotifPanel();
-    p.style.display = 'block';
-    bg.style.display = 'block';
-  } else { closeNotifPanel(); }
-}
-function closeNotifPanel() {
-  document.getElementById('notifPanel').style.display = 'none';
-  document.getElementById('notifPanelBg').style.display = 'none';
-}
-
-// ===== COMPARADOR =====
-let comparadorList = [];
-function toggleComparar() {
-  if (!provActual) return;
-  const idx = comparadorList.findIndex(p => String(p.id) === String(provActual.id));
-  if (idx >= 0) {
-    comparadorList.splice(idx, 1);
-    showToast('Quitado del comparador');
-  } else {
-    if (comparadorList.length >= 3) { showToast('Máximo 3 proveedores a la vez'); return; }
-    comparadorList.push(provActual);
-    showToast('Agregado al comparador ✓');
-  }
-  updateComparadorFab();
-  updateDetCompBtn();
-}
-function updateComparadorFab() {
-  const fab = document.getElementById('comparadorFab');
-  const cnt = document.getElementById('comparadorCount');
-  fab.classList.toggle('show', comparadorList.length >= 2);
-  cnt.textContent = comparadorList.length;
-}
-function updateDetCompBtn() {
-  const btn = document.getElementById('det-comp-btn');
-  if (!btn || !provActual) return;
-  const enComp = comparadorList.some(p => String(p.id) === String(provActual.id));
-  btn.textContent = enComp ? '✓ En comparador' : '⚖ Comparar';
-  btn.style.background = enComp ? 'rgba(0,166,81,.3)' : 'rgba(255,255,255,.15)';
-}
-function openComparador() {
-  if (comparadorList.length < 2) { showToast('Agregá al menos 2 proveedores'); return; }
-  renderComparadorModal();
-  document.getElementById('comparadorModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeComparador() {
-  document.getElementById('comparadorModal').classList.remove('open');
-  document.body.style.overflow = '';
-}
-function closeComparadorOnBg(e) { if (e.target === document.getElementById('comparadorModal')) closeComparador(); }
-
-function renderComparadorModal() {
-  const el = document.getElementById('compModalBody');
-  if (!el) return;
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED'];
-  const campos = [
-    { key:'rubro', label:'Rubro' },
-    { key:'provincia', label:'Provincia' },
-    { key:'pedido_minimo', label:'Pedido mínimo' },
-    { key:'envios', label:'Envíos' },
-    { key:'pro', label:'Plan' },
-    { key:'_rating', label:'Rating' }
-  ];
-
-  // Headers
-  let thead = '<thead><tr><th style="width:90px">Atributo</th>';
-  comparadorList.forEach((p,i) => {
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
-    thead += `<th><div class="comp-header-cell">
-      <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
-      <div class="comp-header-name">${p.nombre}</div>
-      ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:2px 7px;border-radius:10px">PRO</span>' : ''}
-    </div></th>`;
-  });
-  thead += '</tr></thead>';
-
-  // Rows
-  let tbody = '<tbody>';
-  campos.forEach(c => {
-    tbody += `<tr><td>${c.label}</td>`;
-    comparadorList.forEach(p => {
-      let val = '';
-      if (c.key === '_rating') {
-        const { avg, count } = getProvRating(p.id);
-        val = count > 0 ? `${avg.toFixed(1)} ★ (${count})` : 'Sin reseñas';
-      } else if (c.key === 'pro') {
-        val = p.pro ? '⭐ PRO' : 'Gratis';
-      } else {
-        val = p[c.key] || '—';
-      }
-      tbody += `<td>${val}</td>`;
-    });
-    tbody += '</tr>';
-  });
-  tbody += '</tbody>';
-
-  el.innerHTML = `
-    <div style="overflow-x:auto;margin-bottom:20px">
-      <table class="comp-table">${thead}${tbody}</table>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      ${comparadorList.map(p => `
-        <button onclick="closeComparador();abrirDetalle('${p.id}')" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
-          Ver perfil de ${p.nombre} →
-        </button>`).join('')}
-      <button onclick="comparadorList=[];updateComparadorFab();closeComparador();showToast('Comparador limpiado')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:4px">
-        Limpiar comparador
-      </button>
-    </div>`;
-}
-
-// ===== MAPA PROVINCIAS =====
-const provinciaEmojis = {
-  'Buenos Aires':'🌆','CABA':'🏙️','Cordoba':'🏛️','Santa Fe':'🌾',
-  'Mendoza':'🍇','Otra':'📍'
-};
-
-function getProvsPorProvincia() {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  const mapa = {};
-  lista.forEach(p => {
-    const prov = p.provincia || 'Otra';
-    if (!mapa[prov]) mapa[prov] = [];
-    mapa[prov].push(p);
-  });
-  return mapa;
-}
-
-function renderMapaProvincias() {
-  const el = document.getElementById('provinciasGrid');
-  if (!el) return;
-  const mapa = getProvsPorProvincia();
-  const total = Object.values(mapa).reduce((s,a) => s+a.length, 0);
-  const provincias = Object.keys(mapa).sort((a,b) => mapa[b].length - mapa[a].length);
-  el.innerHTML = provincias.map(prov => {
-    const count = mapa[prov].length;
-    const pct = Math.round((count/total)*100);
-    const emoji = provinciaEmojis[prov] || '📍';
-    return `<div class="prov-tile" data-prov="${prov}" onclick="filtrarPorProvincia('${prov}')">
-      <div style="position:relative;z-index:1">
-        <div style="font-size:1.1rem;margin-bottom:3px">${emoji}</div>
-        <div class="prov-tile-name">${prov}</div>
-        <div class="prov-tile-count">${count} proveedor${count!==1?'es':''}</div>
-      </div>
-      <div class="prov-tile-bar" style="width:${pct}%"></div>
-    </div>`;
-  }).join('');
-}
-
-function renderMapaAllProvs() {
-  const el = document.getElementById('mapaAllList');
-  if (!el) return;
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  el.innerHTML = lista.slice(0,6).map((p,i) => renderProvCardMini(p,i)).join('');
-  el.onclick = function(e) {
-    const card = e.target.closest('[data-id]');
-    if (card) abrirDetalle(card.dataset.id);
-  };
-}
-
-function filtrarPorProvincia(prov) {
-  document.querySelectorAll('.prov-tile').forEach(t => t.classList.toggle('selected', t.dataset.prov === prov));
-  const mapa = getProvsPorProvincia();
-  const lista = mapa[prov] || [];
-  document.getElementById('mapaResultados').style.display = 'block';
-  document.getElementById('mapaAllProvs').style.display = 'none';
-  document.getElementById('mapaResultLabel').textContent = `${lista.length} en ${prov}`;
-  const el = document.getElementById('mapaProvList');
-  el.innerHTML = lista.map((p,i) => renderProvCardMini(p,i)).join('');
-  el.onclick = function(e) {
-    const card = e.target.closest('[data-id]');
-    if (card) abrirDetalle(card.dataset.id);
-  };
-}
-
-function clearMapaFilter() {
-  document.querySelectorAll('.prov-tile').forEach(t => t.classList.remove('selected'));
-  document.getElementById('mapaResultados').style.display = 'none';
-  document.getElementById('mapaAllProvs').style.display = 'block';
-}
-
-function renderProvCardMini(p, i) {
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
-  const bg = bgs[i % bgs.length];
-  const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
-  const { avg, count } = getProvRating(p.id);
-  return `<div data-id="${p.id}" style="background:white;border-radius:14px;border:1px solid var(--border);padding:13px;cursor:pointer;display:flex;align-items:center;gap:12px">
-    <div style="width:42px;height:42px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>
-    <div style="flex:1;min-width:0">
-      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
-      <div style="font-size:.73rem;color:var(--gray)">${p.rubro}${p.provincia ? ' · ' + p.provincia : ''}</div>
-      ${count > 0 ? `<div style="font-size:.7rem;color:var(--yellow);margin-top:2px;font-weight:700">${avg.toFixed(1)} ★ · ${count} reseña${count!==1?'s':''}</div>` : ''}
-    </div>
-    ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:3px 8px;border-radius:10px;flex-shrink:0">PRO</span>' : ''}
-  </div>`;
-}
-
-// ===== RENDER PROVEEDORES =====
+// Esta es la función principal que dibuja las tarjetitas
 function renderProvs(list) {
   const el = document.getElementById('provList');
+  renderProvsEnContenedor(list, el, false);
+}
+
+function renderProvsEnContenedor(list, el, esSeccionFavs) {
+  if (!el) return;
   if (!list || !list.length) {
     el.innerHTML = '<p style="color:var(--gray);text-align:center;padding:30px 0">No se encontraron proveedores</p>';
     return;
   }
+
   const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+  
   el.innerHTML = list.map((p, i) => {
     const pid = String(p.id);
-    const fav = esFav(pid);
+    const favIcon = esFav(pid) ? '❤️' : '♡';
     const bg = bgs[i % bgs.length];
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+    const iniciales = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
     const { avg, count } = getProvRating(pid);
     const enComp = comparadorList.some(x => String(x.id) === pid);
-    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;overflow:hidden;cursor:pointer">
+    const esProveedorPro = esPro(p);
+
+    return `
+    <div data-id="${pid}" class="card-proveedor" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
           ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0">${esc(iniciales)}</div>`
         }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || 'General'}${p.provincia ? ' · ' + p.provincia : ''}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.nombre)}</div>
+          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${esc(p.rubro)} ${p.provincia ? ' · ' + esc(p.provincia) : ''}</div>
         </div>
-        ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avg.toFixed(1)} ★</div>` : ''}
+        ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B">${avg.toFixed(1)} ★</div>` : ''}
       </div>
+      
       <div style="padding:0 14px 13px">
-        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${p.desc || ''}</p>
+        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${esc(p.desc || p.descripcion)}</p>
+        
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-          <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF2FF;color:#1847C8">${p.rubro || 'General'}</span>
-          ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white">PRO</span>' : ''}
+          ${esProveedorPro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
-        <div class="prov-card-actions">
-          ${p.pro
-            ? `<button data-wa="${p.whatsapp||''}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
-            : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
-          <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
-          <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
+
+        <div class="prov-card-actions" style="display:flex; gap:8px">
+          ${esProveedorPro
+            ? `<button onclick="event.stopPropagation(); abrirWA('${p.whatsapp}')" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;flex:1;cursor:pointer">💬 WhatsApp</button>`
+            : `<button onclick="event.stopPropagation(); abrirChatDirecto('${pid}')" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;flex:1;cursor:pointer">💬 Chat</button>`
+          }
+          <button onclick="event.stopPropagation(); toggleFav('${pid}')" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;font-size:.95rem">${favIcon}</button>
+          <button onclick="event.stopPropagation(); toggleCompararById('${pid}')" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // Delegación de eventos para abrir detalle
   el.onclick = function(e) {
-    const fb   = e.target.closest('[data-favid]');
-    const wb   = e.target.closest('[data-wa]');
-    const cb   = e.target.closest('[data-chatid]');
-    const compb= e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
-    if (fb)    { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb)    { e.stopPropagation(); abrirWA(wb.dataset.wa); return; }
-    if (cb)    { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
-    if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
-    if (card)  abrirDetalle(card.dataset.id);
+    if (card && !e.target.closest('button')) {
+      abrirDetalle(card.dataset.id);
+    }
   };
 }
 
