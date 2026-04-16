@@ -86,6 +86,103 @@ function renderFavs() {
   }
   // Reutilizamos la lógica de renderizado para mantener coherencia
   renderProvsEnContenedor(favs, el, true);
+  // ==========================================
+// 4. MOTOR DE DATOS (Supabase y Demo)
+// ==========================================
+
+// Datos de prueba (para cuando no hay internet o la DB está vacía)
+const proveedoresDEMO = [
+  {id:'1',nombre:'TechMayor BA',rubro:'Tecnología',desc:'Mayorista de accesorios y electronica. Precios desde $500.',pro:true,inicial:'TM',provincia:'Buenos Aires',whatsapp:'5491112345678',pedido_minimo:'Desde $10.000',envios:'Si, a todo el pais'},
+  {id:'2',nombre:'HomeDeco Sur',rubro:'Hogar',desc:'Articulos de decoracion y hogar al por mayor. Minimo 10 unidades.',pro:false,inicial:'HD',provincia:'Buenos Aires',pedido_minimo:'10 unidades',envios:'Solo zona local'},
+  {id:'3',nombre:'Modas del Litoral',rubro:'Moda',desc:'Ropa de mujer y accesorios. Colecciones actualizadas.',pro:true,inicial:'ML',provincia:'Santa Fe',whatsapp:'5493412345678',pedido_minimo:'Desde $5.000',envios:'Si, a todo el pais'}
+];
+
+async function cargarProveedores() {
+  try {
+    // Intentamos traer datos reales de Supabase
+    const { data, error } = await sb.from('proveedores').select('*').eq('estado','aprobado').order('created_at',{ascending:false});
+    
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      proveedoresDB = data.map(p => ({
+        id: String(p.id), 
+        nombre: p.nombre, 
+        rubro: p.rubro || 'General',
+        desc: p.descripcion || '', 
+        pro: p.plan === 'pro',
+        inicial: p.nombre.substring(0,2).toUpperCase(), 
+        whatsapp: p.whatsapp || '',
+        provincia: p.provincia || '', 
+        pedido_minimo: p.pedido_minimo || 'Sin minimo',
+        envios: p.envios || 'Consultar', 
+        instagram: p.instagram || '',
+        logo_url: p.logo_url || ''
+      }));
+    } else { 
+      proveedoresDB = proveedoresDEMO; 
+    }
+  } catch(e) { 
+    console.error("Error cargando proveedores:", e);
+    proveedoresDB = proveedoresDEMO; 
+  }
+  
+  // Una vez cargados, los dibujamos en la pantalla
+  renderProvs(proveedoresDB);
+  if (typeof renderMapaProvincias === 'function') renderMapaProvincias();
+  if (typeof renderMapaAllProvs === 'function') renderMapaAllProvs();
+}
+
+// ==========================================
+// 5. AUTENTICACIÓN (Google Login)
+// ==========================================
+
+async function simulateGoogleLogin() {
+  try {
+    const { data, error } = await sb.auth.signInWithOAuth({ 
+      provider:'google', 
+      options:{ redirectTo: window.location.origin } 
+    });
+    if (error) throw error;
+  } catch(e) { 
+    showToast('Error al iniciar sesión con Google'); 
+  }
+}
+
+async function checkSession() {
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      const user = session.user;
+      const name = user.user_metadata?.full_name || user.email.split('@')[0];
+      const email = user.email;
+      const picture = user.user_metadata?.avatar_url || '';
+      
+      const { data: provList } = await sb.from('proveedores')
+        .select('*')
+        .eq('email', email.toLowerCase().trim());
+        
+      const prov = provList && provList.length > 0 ? provList[0] : null;
+      
+      if (prov && prov.estado === 'aprobado') {
+        handleLogin({name:prov.nombre||name, email, picture, type:'proveedor', proveedorId:prov.id, provData:prov});
+      } else {
+        handleLogin({name, email, picture, type:'user'});
+      }
+    }
+  } catch(e) {}
+}
+
+// Esta función debe estar al final de tu archivo para que arranque todo
+function inicializarApp() {
+  refreshFavBadge();
+  cargarProveedores();
+  checkSession();
+  if (typeof cargarProductosReales === 'function') cargarProductosReales();
+}
+
+// Llamamos a la inicialización
+inicializarApp();
 }
 
 // ==========================================
