@@ -2,837 +2,1040 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EmprendeGo — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>EmprendeGo</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </script>
-<style>
-:root{
-  --blue:#1a6bff;--blue-light:#e8f0ff;--navy:#0d1b3e;--gray:#6b7a99;
-  --light:#f4f7ff;--white:#fff;--green:#00c48c;--orange:#ff6b2b;
-  --purple:#7c3aed;--pink:#f43f8e;--red:#ef4444;--yellow:#f59e0b;
-  --radius:14px;
-}
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--navy);min-height:100vh}
-
-/* LOGIN */
-#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(135deg,var(--navy) 0%,#1a2d6b 100%)}
-.login-card{background:white;border-radius:24px;padding:36px 28px;width:100%;max-width:380px;text-align:center}
-.login-logo{font-family:'Sora',sans-serif;font-weight:900;font-size:1.6rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
-.login-sub{color:var(--gray);font-size:.85rem;margin-bottom:28px}
-.login-card input{width:100%;border:1.5px solid #e0e7ff;border-radius:12px;padding:13px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;margin-bottom:12px;transition:border-color .15s}
-.login-card input:focus{border-color:var(--blue)}
-.login-btn{width:100%;background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .2s}
-.login-btn:active{transform:scale(.97)}
-.login-error{color:var(--red);font-size:.82rem;margin-top:8px;display:none}
-
-/* LAYOUT */
-#admin-app{display:none;min-height:100vh;background:var(--light)}
-.topbar{background:white;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.topbar-logo{font-family:'Sora',sans-serif;font-weight:900;font-size:1.1rem;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.admin-badge{background:linear-gradient(135deg,var(--orange),#f97316);color:white;font-size:.68rem;font-weight:800;padding:3px 10px;border-radius:20px;letter-spacing:.04em}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.topbar-time{font-size:.8rem;color:var(--gray)}
-.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:10px;padding:6px 14px;color:var(--red);font-size:.82rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-
-/* SIDEBAR + CONTENT */
-.app-body{display:flex;min-height:calc(100vh - 57px)}
-.sidebar{width:220px;background:white;border-right:1px solid #eef0f8;padding:16px 0;flex-shrink:0;position:sticky;top:57px;height:calc(100vh - 57px);overflow-y:auto}
-@media(max-width:768px){.sidebar{display:none}}
-.nav-group{margin-bottom:20px}
-.nav-group-label{font-size:.68rem;font-weight:800;color:var(--gray);letter-spacing:.08em;text-transform:uppercase;padding:0 20px;margin-bottom:8px}
-.nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;font-size:.88rem;font-weight:600;color:var(--gray);cursor:pointer;transition:all .15s;border-left:3px solid transparent}
-.nav-link:hover{background:var(--blue-light);color:var(--blue)}
-.nav-link.active{background:var(--blue-light);color:var(--blue);border-left-color:var(--blue)}
-.nav-link .ni{font-size:1rem;width:20px;text-align:center}
-.nav-badge{margin-left:auto;background:var(--red);color:white;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:20px}
-
-.main-content{flex:1;padding:24px;overflow-x:hidden}
-
-/* PAGE */
-.page{display:none}
-.page.active{display:block}
-.page-title{font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:4px}
-.page-sub{color:var(--gray);font-size:.88rem;margin-bottom:24px}
-
-/* METRICS GRID */
-.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
-.metric-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.metric-icon{font-size:1.4rem;margin-bottom:8px}
-.metric-val{font-family:'Sora',sans-serif;font-size:1.8rem;font-weight:900;color:var(--navy)}
-.metric-label{font-size:.75rem;color:var(--gray);font-weight:600;margin-top:2px}
-.metric-trend{font-size:.75rem;font-weight:700;margin-top:6px}
-.metric-trend.up{color:var(--green)}
-.metric-trend.down{color:var(--red)}
-
-/* CHARTS */
-.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-@media(max-width:600px){.chart-row{grid-template-columns:1fr}}
-.chart-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-.chart-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:16px}
-.bar-chart{display:flex;flex-direction:column;gap:10px}
-.bar-row{display:flex;align-items:center;gap:10px}
-.bar-label{font-size:.75rem;color:var(--gray);width:70px;flex-shrink:0;font-weight:600}
-.bar-track{flex:1;height:8px;background:#f0f4ff;border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .6s ease}
-.bar-val{font-size:.75rem;font-weight:700;color:var(--navy);width:30px;text-align:right}
-.donut-wrapper{display:flex;align-items:center;gap:16px}
-.donut-legends{display:flex;flex-direction:column;gap:8px;flex:1}
-.legend-item{display:flex;align-items:center;gap:8px;font-size:.78rem}
-.legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.legend-label{color:var(--gray);flex:1}
-.legend-val{font-weight:700;color:var(--navy)}
-
-/* ACTIVITY */
-.activity-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:24px}
-.activity-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:14px}
-.activity-list{display:flex;flex-direction:column;gap:0}
-.activity-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #f4f7ff}
-.activity-item:last-child{border-bottom:none}
-.a-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
-.a-icon.blue{background:var(--blue-light)}
-.a-icon.green{background:#e6faf4}
-.a-icon.orange{background:#fff3e0}
-.a-icon.red{background:#fee2e2}
-.a-text{flex:1}
-.a-text strong{font-size:.85rem;font-weight:700;display:block}
-.a-text span{font-size:.75rem;color:var(--gray)}
-.a-time{font-size:.72rem;color:var(--gray)}
-
-/* TABLE */
-.table-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px;overflow-x:auto}
-.table-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.table-title{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800}
-.table-actions{display:flex;gap:8px;align-items:center}
-.search-mini{border:1.5px solid #e0e7ff;border-radius:10px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--navy);outline:none;width:160px}
-.search-mini:focus{border-color:var(--blue)}
-.filter-select{border:1.5px solid #e0e7ff;border-radius:10px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--navy);outline:none;background:white;cursor:pointer}
-table{width:100%;border-collapse:collapse;min-width:500px}
-th{text-align:left;font-size:.72rem;font-weight:800;color:var(--gray);letter-spacing:.06em;text-transform:uppercase;padding:8px 12px;border-bottom:2px solid #f0f4ff}
-td{padding:12px;font-size:.85rem;border-bottom:1px solid #f4f7ff;vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:#fafbff}
-.status-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700}
-.status-badge.pending{background:#fff3e0;color:var(--orange)}
-.status-badge.approved{background:#e6faf4;color:var(--green)}
-.status-badge.rejected{background:#fee2e2;color:var(--red)}
-.status-badge.pro{background:linear-gradient(90deg,var(--blue),var(--purple));color:white}
-.status-badge.free{background:var(--blue-light);color:var(--blue)}
-.action-group{display:flex;gap:6px}
-.tbl-btn{border:none;border-radius:8px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
-.tbl-btn.approve{background:#e6faf4;color:var(--green)}
-.tbl-btn.reject{background:#fee2e2;color:var(--red)}
-.tbl-btn.view{background:var(--blue-light);color:var(--blue)}
-.tbl-btn.warn{background:#fff3e0;color:var(--orange)}
-.tbl-btn.ban{background:#fee2e2;color:var(--red)}
-.avatar-cell{display:flex;align-items:center;gap:8px}
-.cell-avatar{width:30px;height:30px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:800;font-size:.75rem;color:var(--blue);flex-shrink:0}
-
-/* REPORTS */
-.report-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:12px}
-.report-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
-.report-type{font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px}
-.report-type.estafa{background:#fee2e2;color:var(--red)}
-.report-type.spam{background:#fff3e0;color:var(--orange)}
-.report-type.falso{background:#fef3c7;color:var(--yellow)}
-.report-body{font-size:.85rem;color:var(--gray);line-height:1.6;margin-bottom:12px}
-.report-meta{font-size:.75rem;color:var(--gray);margin-bottom:12px}
-.report-actions{display:flex;gap:8px}
-
-/* SETTINGS */
-.settings-section{background:white;border-radius:var(--radius);padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:16px}
-.settings-section h3{font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #f0f4ff}
-.setting-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f4f7ff}
-.setting-row:last-child{border-bottom:none}
-.setting-info strong{font-size:.88rem;font-weight:700;display:block}
-.setting-info span{font-size:.75rem;color:var(--gray)}
-.toggle{width:44px;height:24px;background:#e0e7ff;border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
-.toggle.on{background:var(--green)}
-.toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:white;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
-.toggle.on::after{transform:translateX(20px)}
-.settings-input{border:1.5px solid #e0e7ff;border-radius:10px;padding:8px 12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;width:180px}
-.save-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:10px;padding:10px 20px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:12px}
-
-/* MOBILE NAV */
-.mobile-nav{display:none;background:white;border-bottom:1px solid #eef0f8;padding:8px 16px;overflow-x:auto;gap:8px}
-@media(max-width:768px){.mobile-nav{display:flex}}
-.mobile-nav-btn{white-space:nowrap;background:var(--light);border:1.5px solid #e0e7ff;border-radius:20px;padding:7px 14px;font-size:.78rem;font-weight:700;color:var(--gray);cursor:pointer;flex-shrink:0}
-.mobile-nav-btn.active{background:var(--blue);color:white;border-color:var(--blue)}
-
-/* TOAST */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:white;padding:12px 20px;border-radius:12px;font-size:.85rem;font-weight:600;opacity:0;transition:all .3s;z-index:999;white-space:nowrap;pointer-events:none}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(13,27,62,.5);z-index:500;display:none;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(4px)}
-.modal-overlay.open{display:flex}
-.modal-box{background:white;border-radius:20px;padding:28px;width:100%;max-width:420px;animation:popIn .2s ease}
-@keyframes popIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
-.modal-box h3{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;margin-bottom:8px}
-.modal-box p{color:var(--gray);font-size:.88rem;line-height:1.6;margin-bottom:20px}
-.modal-actions{display:flex;gap:10px;justify-content:flex-end}
-.modal-btn{border:none;border-radius:10px;padding:10px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer}
-.modal-btn.cancel{background:var(--light);color:var(--navy)}
-.modal-btn.confirm-approve{background:var(--green);color:white}
-.modal-btn.confirm-reject{background:var(--red);color:white}
-</style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-card">
-    <div style="font-size:2.5rem;margin-bottom:12px">🛡️</div>
-    <div class="login-logo">EmprendeGo</div>
-    <div class="login-sub">Panel de Administración — Solo acceso autorizado</div>
-    <input type="password" id="pw-input" placeholder="Contraseña de administrador" onkeydown="if(event.key==='Enter')tryLogin()">
-    <button class="login-btn" onclick="tryLogin()">Ingresar al panel</button>
-    <div class="login-error" id="login-error">❌ Contraseña incorrecta</div>
-    <p style="margin-top:16px;font-size:.75rem;color:var(--gray)">Contraseña demo: <strong>admin123</strong></p>
+<nav class="navbar">
+  <div class="nav-item active" id="nav-inicio" onclick="goTo('inicio')"><span class="nav-icon">&#127968;</span><span class="nav-label">Inicio</span></div>
+  <div class="nav-item" id="nav-buscar" onclick="goTo('buscar')"><span class="nav-icon">&#128269;</span><span class="nav-label">Buscar</span></div>
+  <div class="nav-item" id="nav-favoritos" onclick="goTo('favoritos')"><span class="nav-icon nav-icon-wrap">&#10084;<span class="fav-badge" id="fav-badge">0</span></span><span class="nav-label">Favoritos</span></div>
+  <div class="nav-item" id="nav-mapa" onclick="goTo('mapa')"><span class="nav-icon">&#128205;</span><span class="nav-label">Mapa</span></div>
+  <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon">&#128100;</span><span class="nav-label">Perfil</span></div>
+</nav>
+
+<!-- FAB COMPARADOR -->
+<button class="comparador-fab" id="comparadorFab" onclick="openComparador()">
+  <span>&#9878; Comparar</span>
+  <span class="comparador-count" id="comparadorCount">0</span>
+</button>
+
+<!-- FAB CARRITO -->
+<button class="carrito-fab" id="carritoFab" onclick="openCarrito()">
+  <span>🛒 Mi pedido</span>
+  <span class="carrito-count" id="carritoCount">0</span>
+</button>
+
+<!-- MODAL CARRITO -->
+<div class="modal-overlay" id="carritoModal" onclick="closeCarritoOnBg(event)">
+  <div class="modal" style="max-height:90vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>🛒 Mi pedido</h3>
+      <button class="modal-close" onclick="closeCarrito()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="carrito-prov-info" style="display:flex;align-items:center;gap:10px;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:14px">
+        <div id="carrito-prov-avatar" style="width:36px;height:36px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:.85rem;color:white;flex-shrink:0">EG</div>
+        <div>
+          <div id="carrito-prov-name" style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy)">Proveedor</div>
+          <div style="font-size:.72rem;color:var(--gray)">Tu pedido va directo a este proveedor</div>
+        </div>
+      </div>
+      <div id="carrito-items" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+      <div class="carrito-total-box">
+        <div class="carrito-total-row"><span>Subtotal</span><span id="carrito-subtotal">$0</span></div>
+        <div class="carrito-total-row"><span>Unidades</span><span id="carrito-unidades">0</span></div>
+        <div style="border-top:1px solid #a7f3d0;margin:8px 0"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800">Total estimado</span>
+          <span class="carrito-total-val" id="carrito-total">$0</span>
+        </div>
+      </div>
+      <div id="carrito-actions"></div>
+      <button onclick="limpiarCarrito()" style="width:100%;background:none;border:1.5px solid #fee2e2;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#ef4444;cursor:pointer;margin-top:8px">🗑 Vaciar pedido</button>
+    </div>
   </div>
 </div>
 
-<!-- ADMIN APP -->
-<div id="admin-app">
+<!-- ===== INICIO ===== -->
+<div class="screen active" id="screen-inicio">
   <div class="topbar">
-    <div class="topbar-left">
-      <span class="topbar-logo">EmprendeGo</span>
-      <span class="admin-badge">ADMIN</span>
-    </div>
+    <span class="topbar-logo">EmprendeGo</span>
     <div class="topbar-right">
-      <span class="topbar-time" id="clock"></span>
-      <button class="logout-btn" onclick="adminLogout()">Salir</button>
+      <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()">&#128276;<span class="notif-dot" id="notifDot"></span></button>
+      <button class="topbar-btn" id="topbar-login-btn" onclick="goTo('perfil')">&#8594; Ingresar</button>
     </div>
   </div>
 
-  <!-- MOBILE NAV -->
-  <div class="mobile-nav">
-    <button class="mobile-nav-btn active" onclick="showPage('dashboard',this)">📊 Dashboard</button>
-    <button class="mobile-nav-btn" onclick="showPage('proveedores',this)">🏭 Proveedores</button>
-    <button class="mobile-nav-btn" onclick="showPage('usuarios',this)">👥 Usuarios</button>
-    <button class="mobile-nav-btn" onclick="showPage('reportes',this)">🚨 Reportes</button>
-    <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
-    <button class="mobile-nav-btn" onclick="showPage('config',this)">⚙️ Config</button>
+  <!-- HERO CON IMAGEN DE FONDO -->
+  <div style="position:relative;min-height:320px;background:url('https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80') center/cover;overflow:hidden">
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.7) 100%)"></div>
+    <div style="position:relative;z-index:1;padding:20px 22px 24px">
+      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">PROVEEDORES VERIFICADOS · ARGENTINA</div>
+      <h1 style="font-family:'Sora',sans-serif;font-size:1.85rem;font-weight:900;line-height:1.15;color:#fff;margin-bottom:16px">Encontrá el proveedor<br>que tu negocio necesita</h1>
+      <div style="display:flex;background:white;border-radius:12px;overflow:hidden;align-items:center;margin-bottom:12px">
+        <div style="padding:0 12px;display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <input type="text" placeholder="Buscar por rubro o provincia..." style="flex:1;border:none;outline:none;padding:13px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent" onfocus="goTo('buscar')">
+        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:13px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap">Buscar</div>
+      </div>
+      <button onclick="goTo('registro')" style="background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;backdrop-filter:blur(4px)">Publicar mi negocio</button>
+    </div>
+    <!-- Stats flotantes -->
+    <div style="position:relative;z-index:1;margin:-8px 16px 0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px;display:flex;box-shadow:0 4px 20px rgba(0,0,0,.1)">
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">+500</div>
+        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Proveedores</div>
+      </div>
+      <div style="width:1px;background:#eee"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">+2k</div>
+        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Productos</div>
+      </div>
+      <div style="width:1px;background:#eee"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#006039">100%</div>
+        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Verificados</div>
+      </div>
+    </div>
   </div>
 
-  <div class="app-body">
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-      <div class="nav-group">
-        <div class="nav-group-label">General</div>
-        <div class="nav-link active" onclick="showPage('dashboard',this)"><span class="ni">📊</span>Dashboard</div>
-        <div class="nav-link" onclick="showPage('actividad',this)"><span class="ni">⚡</span>Actividad reciente</div>
+  <!-- CATEGORÍAS CON IMÁGENES -->
+  <div style="padding:24px 20px 0">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Categorías Destacadas</div>
+    <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
+      <div onclick="filterCat('Tecnología')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
+        <img src="https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
+        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Tecnología</span>
       </div>
-      <div class="nav-group">
-        <div class="nav-group-label">Usuarios</div>
-        <div class="nav-link" onclick="showPage('proveedores',this)"><span class="ni">🏭</span>Proveedores<span class="nav-badge">3</span></div>
-        <div class="nav-link" onclick="showPage('usuarios',this)"><span class="ni">👥</span>Usuarios</div>
-        <div class="nav-link" onclick="showPage('planes',this)"><span class="ni">⭐</span>Planes & Pagos</div>
+      <div onclick="filterCat('Moda')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
+        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Moda</span>
       </div>
-      <div class="nav-group">
-        <div class="nav-group-label">Contenido</div>
-        <div class="nav-link" onclick="showPage('busquedas',this)"><span class="ni">🔍</span>Búsquedas</div>
-        <div class="nav-link" onclick="showPage('rubros',this)"><span class="ni">📦</span>Rubros</div>
+      <div onclick="filterCat('Hogar')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
+        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
+        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Hogar</span>
       </div>
-      <div class="nav-group">
-        <div class="nav-group-label">Moderación</div>
-        <div class="nav-link" onclick="showPage('reportes',this)"><span class="ni">🚨</span>Reportes<span class="nav-badge">2</span></div>
+      <div onclick="filterCat('Bazar')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
+        <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
+        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Bazar</span>
       </div>
-      <div class="nav-group">
-        <div class="nav-group-label">Sistema</div>
-        <div class="nav-link" onclick="showPage('config',this)"><span class="ni">⚙️</span>Configuración</div>
+      <div onclick="filterCat('Alimentos')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
+        <img src="https://images.unsplash.com/photo-1506617420156-8e4536971650?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
+        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Alimentos</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCTOS DESTACADOS -->
+  <div style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos destacados</div>
+    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+  </div>
+  <div id="prodInicioCarousel1" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
+  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Más productos</div>
+    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+  </div>
+  <div id="prodInicioCarousel2" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
+
+  <!-- BANNER TEST -->
+  <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px">
+    <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+    <div style="flex:1">
+      <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:white;margin-bottom:2px">No sabés qué vender?</div>
+      <div style="font-size:.76rem;color:rgba(255,255,255,.65)">Hacé el test y descubrí tu rubro ideal</div>
+    </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+
+  <!-- PUBLICAR NEGOCIO -->
+  <div style="margin:12px 20px 28px;background:white;border:1.5px solid #E5E5E5;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goTo('registro')">
+    <div style="width:44px;height:44px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div>
+    <div style="flex:1">
+      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Sos mayorista?</div>
+      <div style="font-size:.76rem;color:#777;line-height:1.4">Publicá gratis y llegá a miles de emprendedores.</div>
+    </div>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+</div>
+
+<!-- ===== BUSCAR ===== -->
+<div class="screen" id="screen-buscar">
+  <div class="topbar"><span class="topbar-logo">Buscar</span>
+    <button class="notif-bell" onclick="toggleNotifPanel()">&#128276;<span class="notif-dot" id="notifDot2"></span></button>
+  </div>
+  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales.</p></div>
+  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()"></div>
+  <div class="chips">
+    <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
+    <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
+    <div class="chip" onclick="setChip(this,'Hogar')">Hogar</div>
+    <div class="chip" onclick="setChip(this,'Moda')">Moda</div>
+    <div class="chip" onclick="setChip(this,'Bazar')">Bazar</div>
+    <div class="chip" onclick="setChip(this,'Alimentos')">Alimentos</div>
+  </div>
+  <div class="search-tabs">
+    <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
+    <div class="search-tab" id="tab-proveedores" onclick="switchBuscarTab('proveedores',this)">&#127981; Proveedores</div>
+  </div>
+  <div style="padding:10px 20px 0">
+    <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:1.15rem;line-height:1">&#128161;</div>
+      <div><div style="font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:2px">Tip rápido</div><div style="font-size:.78rem;color:var(--gray);line-height:1.5">Primero mirá productos para ver si te sirve el margen. Después entrá al proveedor y contactalo.</div></div>
+    </div>
+  </div>
+  <div id="buscar-productos-view">
+    <div id="buscarSummary" class="search-summary"></div>
+    <div class="prod-inicio-grid" id="prodBuscarGrid" style="padding:12px 20px 0"></div>
+  </div>
+  <div id="buscar-proveedores-view" style="display:none">
+    <div class="filtros-row">
+      <select class="filtro-sel" id="fil-prov" onchange="filterProvs()">
+        <option value="">&#128205; Todas las provincias</option>
+        <option>Buenos Aires</option><option>CABA</option><option>Cordoba</option>
+        <option>Santa Fe</option><option>Mendoza</option><option>Otra</option>
+      </select>
+      <select class="filtro-sel" id="fil-plan" onchange="filterProvs()">
+        <option value="">&#11088; Todos los planes</option>
+        <option value="pro">Solo PRO</option>
+        <option value="gratis">Solo Gratis</option>
+      </select>
+    </div>
+    <div class="prov-list" id="provList"></div>
+  </div>
+</div>
+
+<!-- ===== FAVORITOS ===== -->
+<div class="screen" id="screen-favoritos">
+  <div class="topbar"><span class="topbar-logo">Mis Favoritos</span></div>
+  <div id="favs-list" style="padding:8px 20px 0"></div>
+</div>
+
+<!-- ===== MAPA ===== -->
+<div class="screen" id="screen-mapa">
+  <div class="topbar"><span class="topbar-logo">Mapa de Proveedores</span></div>
+  <div class="mapa-container">
+    <div class="mapa-title">&#128205; Proveedores por provincia</div>
+    <div class="mapa-sub">Tocá una provincia para ver sus proveedores</div>
+    <div class="provincias-grid" id="provinciasGrid"></div>
+    <div id="mapaResultados" style="display:none">
+      <div class="mapa-results-label">
+        <span id="mapaResultLabel">Proveedores</span>
+        <button class="mapa-clear" onclick="clearMapaFilter()">✕ Limpiar filtro</button>
+      </div>
+      <div id="mapaProvList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+    <div id="mapaAllProvs" style="display:block">
+      <div class="mapa-results-label"><span>Todos los proveedores</span></div>
+      <div id="mapaAllList" style="display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETALLE PROVEEDOR ===== -->
+<div class="screen" id="screen-detalle">
+  <div class="det-hero">
+    <div class="det-top-row">
+      <button class="det-back" onclick="volverDetalle()">&#8592; Volver</button>
+      <div style="display:flex;gap:8px">
+        <button class="fav-btn" id="det-fav-btn" onclick="toggleFavActual()">&#9825;</button>
+        <button id="det-comp-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer" onclick="toggleComparar()">&#9878; Comparar</button>
+      </div>
+    </div>
+    <div class="det-logo" id="det-logo">EG</div>
+    <div class="det-nombre" id="det-nombre">Proveedor</div>
+    <div class="det-rubro" id="det-rubro">Rubro</div>
+    <div class="det-badges-row">
+      <span class="badge pro" id="det-pro-badge" style="display:none">PRO</span>
+      <span class="badge green">&#10003; Verificado</span>
+    </div>
+  </div>
+  <div class="det-body">
+    <div class="det-desc-box" id="det-desc">Sin descripcion.</div>
+
+    <!-- BOTONES DE CONTACTO — arriba y llamativos -->
+    <div class="det-cta-top">
+      <button class="det-btn-wa-top" id="det-wa-btn" style="display:none" onclick="detWA()">
+        <span style="font-size:1.2rem">💬</span> Contactar por WhatsApp
+      </button>
+      <button class="det-btn-chat-top" onclick="detChat()">
+        <span style="font-size:1.2rem">✉️</span> Enviar mensaje
+      </button>
+    </div>
+
+    <div class="det-info-card">
+      <div class="det-info-title">Informacion del negocio</div>
+      <div class="det-info-row"><span>📦</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
+      <div class="det-info-row"><span>🚚</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
+      <div class="det-info-row"><span>📍</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
+      <div class="det-info-row"><span>📷</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
+    </div>
+
+    <!-- RESEÑAS COLAPSADAS -->
+    <div class="rating-summary">
+      <div class="rating-header" onclick="toggleResenas(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="rating-avg" id="det-rating-avg">—</div>
+          <div>
+            <div class="rating-stars" id="det-rating-stars"></div>
+            <div class="rating-count" id="det-rating-count">0 reseñas</div>
+          </div>
+        </div>
+        <span class="resenas-toggle-icon">▼ Ver reseñas</span>
+      </div>
+      <div class="resenas-collapsible" id="resenas-collapsible" style="display:none;margin-top:14px">
+        <div style="flex:1;margin-bottom:12px" id="det-rating-bars"></div>
+        <div class="resenas-list" id="det-resenas-list"></div>
+        <button class="write-resena-btn" onclick="openResenaModal()">✍ Escribir una reseña</button>
       </div>
     </div>
 
-    <div class="main-content">
+    <div id="det-productos-section" style="margin-bottom:12px">
+      <div id="det-productos-carousels"></div>
+    </div>
 
-      <!-- DASHBOARD -->
-      <div class="page active" id="page-dashboard">
-        <div class="page-title">Dashboard General</div>
-        <div class="page-sub" id="dash-date">Cargando...</div>
-        <div class="metrics-grid">
-          <div class="metric-card"><div class="metric-icon">🏭</div><div class="metric-val">47</div><div class="metric-label">Proveedores activos</div><div class="metric-trend up">↑ +3 esta semana</div></div>
-          <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val">1.284</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up">↑ +89 este mes</div></div>
-          <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" style="color:var(--orange)">3</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" style="color:var(--orange)">Requiere atención</div></div>
-          <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-val">$841</div><div class="metric-label">Ingresos este mes</div><div class="metric-trend up">↑ +$290 vs mes ant.</div></div>
-          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val">5.8k</div><div class="metric-label">Búsquedas hoy</div><div class="metric-trend up">↑ +24% vs ayer</div></div>
-          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" style="color:var(--red)">2</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down">Requiere revisión</div></div>
+    <div class="calc-box">
+      <div class="calc-title">🧮 Calculadora de ganancia</div>
+      <div class="calc-row"><label>Precio mayorista $</label><input type="number" id="calc-costo" placeholder="2500" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="calc-venta" placeholder="5000" oninput="calcGanancia()"></div>
+      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="calc-cantidad" placeholder="50" oninput="calcGanancia()"></div>
+      <div class="calc-result" id="calc-result" style="display:none">
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-inv">-</div><div class="calc-result-label">Inversion</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
+        <div class="calc-result-item"><div class="calc-result-val" id="calc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="calc-tot">-</div><div class="calc-result-label">Ingreso total</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHAT ===== -->
+<div class="screen" id="screen-chat" style="padding-bottom:20px">
+  <div class="chat-header">
+    <button class="chat-back" onclick="volverChat()">&#8592;</button>
+    <div><div class="chat-prov-name" id="chat-nombre">Proveedor</div><div class="chat-prov-sub" id="chat-rubro">Rubro</div></div>
+  </div>
+  <div class="chat-messages" id="chat-msgs" style="flex:1;overflow-y:auto"></div>
+  <div class="chat-bar">
+    <input class="chat-input" id="chat-inp" placeholder="Escribi tu mensaje..." onkeydown="if(event.key==='Enter')sendMsg()">
+    <button class="chat-send" onclick="sendMsg()">&#10148;</button>
+  </div>
+</div>
+
+<!-- ===== DETALLE PRODUCTO ===== -->
+<div class="screen" id="screen-detalle-producto">
+  <div class="prod-det-img" id="prod-det-emoji">&#128230;
+    <button class="prod-det-back" onclick="volverDetProd()">&#8592; Volver</button>
+    <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>
+  </div>
+  <div class="prod-det-body">
+    <div class="prod-det-name" id="prod-det-name">Producto</div>
+    <div class="prod-det-price" id="prod-det-price">$0</div>
+    <div class="prod-det-min" id="prod-det-min">Pedido minimo: consultar</div>
+    <div class="prod-det-tags"><span class="prod-det-tag" id="prod-det-cat">Categoria</span><span class="prod-det-tag g">&#10003; Verificado</span></div>
+    <div class="prod-det-prov" id="prod-det-prov-card" onclick="irAProveedorDesdeProd()">
+      <div class="prod-det-pav" id="prod-det-pav" style="background:#1847C8">EG</div>
+      <div style="flex:1"><div class="prod-det-pname" id="prod-det-pname">Proveedor</div><div class="prod-det-psub" id="prod-det-psub">Rubro</div></div>
+      <span style="color:var(--gray);font-size:1.1rem">&#8250;</span>
+    </div>
+    <div class="calc-box">
+      <div class="calc-title">&#129518; Calculadora de ganancia</div>
+      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="pdcalc-venta" placeholder="5000" oninput="calcProdDet()"></div>
+      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="pdcalc-cant" placeholder="10" oninput="calcProdDet()"></div>
+      <div class="calc-result" id="pdcalc-result" style="display:none">
+        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-inv">-</div><div class="calc-result-label">Inversion</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
+        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
+        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-tot">-</div><div class="calc-result-label">Total</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+      <button class="add-carrito-btn" onclick="agregarAlCarrito()">🛒 Agregar al pedido</button>
+      <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
+      <button class="det-btn-chat" onclick="detChatProd()">&#128172; Enviar mensaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REGISTRO ===== -->
+<div class="screen" id="screen-registro">
+  <div class="topbar"><span class="topbar-logo">Ser Proveedor</span></div>
+  <div style="padding:0 20px 32px">
+    <div id="reg-intro" style="padding-top:24px">
+      <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:24px;margin-bottom:20px;text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:10px">🏭</div>
+        <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:white;margin-bottom:8px">Publicá tu negocio</h2>
+        <p style="color:rgba(255,255,255,.7);font-size:.88rem;line-height:1.6">Llegá a miles de emprendedores. Tu perfil será revisado antes de publicarse.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+        <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:1.3rem">✅</span><div><div style="font-size:.88rem;font-weight:700">Verificación con CUIT</div><div style="font-size:.78rem;color:var(--gray)">Validamos tu identidad antes de publicar</div></div></div>
+        <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px"><span style="font-size:1.3rem">🚀</span><div><div style="font-size:.88rem;font-weight:700">Publicación en 24-48hs</div><div style="font-size:.78rem;color:var(--gray)">Una vez aprobado aparecés en el directorio</div></div></div>
+      </div>
+      <button class="submit-btn" onclick="showRegStep(1)">Quiero ser proveedor →</button>
+      <p style="text-align:center;margin-top:14px;font-size:.82rem;color:var(--gray)">¿Solo explorás? <span style="color:var(--blue);font-weight:700;cursor:pointer" onclick="goTo('buscar')">Buscá proveedores</span></p>
+    </div>
+    <div id="reg-step1" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(0)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 1 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:33%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Datos personales</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Información del responsable</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Nombre y apellido *</label><input type="text" placeholder="Ej: Carlos Rodríguez"></div>
+        <div class="form-group"><label>Email *</label><input type="email" placeholder="carlos@minegocio.com"></div>
+        <div class="form-group"><label>WhatsApp *</label><input type="tel" placeholder="+54 9 11 1234-5678"></div>
+        <div class="form-group"><label>Provincia *</label><select><option value="">Seleccioná</option><option>Buenos Aires</option><option>CABA</option><option>Córdoba</option><option>Santa Fe</option><option>Mendoza</option><option>Otra</option></select></div>
+      </div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(2)">Continuar →</button>
+    </div>
+    <div id="reg-step2" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(1)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 2 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:66%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Tu negocio</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Datos oficiales de verificación</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
+        <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"></div>
+        <div class="form-group"><label>Rubro *</label><select><option value="">Seleccioná</option><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option><option>Otro</option></select></div>
+        <div class="form-group"><label>Instagram o red social</label><input type="text" placeholder="@minegocio"></div>
+        <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
+      </div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(3)">Continuar →</button>
+    </div>
+    <div id="reg-step3" style="display:none;padding-top:20px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(2)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 3 de 3</div><div style="height:4px;background:#e0e7ff;border-radius:2px"><div style="height:100%;width:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Verificación</h2>
+      <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Confirmamos que tu negocio es real</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>¿Hacés envíos? *</label><select><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local / GBA</option><option>El comprador retira</option></select></div>
+        <div class="form-group"><label>Pedido mínimo *</label><select><option value="">Seleccioná</option><option>Sin mínimo</option><option>Desde $5.000</option><option>Desde $10.000</option><option>Desde $50.000</option><option>Desde $100.000+</option></select></div>
+        <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>📋 Términos:</strong> Al enviar, aceptás que verificaremos tu CUIT en AFIP. Aprobación en 24-48hs hábiles.</div>
+      </div>
+      <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button>
+    </div>
+    <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
+      <div style="font-size:4rem;margin-bottom:16px">🎉</div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:24px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
+      <button class="submit-btn" onclick="goTo('buscar')">Explorar proveedores mientras tanto →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PLANES ===== -->
+<div class="screen" id="screen-planes">
+  <div class="topbar"><span class="topbar-logo">Planes</span></div>
+  <div style="background:linear-gradient(135deg,#006039,#004D2E);padding:28px 24px;text-align:center">
+    <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white;margin-bottom:6px">Hacé crecer tu negocio</h2>
+    <p style="color:rgba(255,255,255,.6);font-size:.88rem;line-height:1.5">Elegí el plan que mejor se adapte a tu emprendimiento.</p>
+  </div>
+  <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+    <div style="background:white;border-radius:16px;padding:22px;border:1.5px solid #e5e5e5">
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--gray);margin-bottom:4px">NIVEL INICIAL</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px;color:var(--navy)">Plan Gratis</div>
+      <div style="color:var(--gray);font-size:.83rem;margin-bottom:14px">Para conocer la plataforma.</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:18px">
+        <span style="font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:800;color:var(--navy)">$0</span>
+        <span style="color:var(--gray);font-size:.83rem;padding-bottom:6px">/mes</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Perfil visible en el directorio</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Hasta 30 productos publicados</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Chat interno con clientes</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:#bbb"><span style="color:#ddd">✕</span> Sin WhatsApp directo</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:#bbb"><span style="color:#ddd">✕</span> Sin estadísticas</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:#bbb"><span style="color:#ddd">✕</span> Sin pedidos organizados</div>
+      </div>
+      <button style="width:100%;padding:13px;border-radius:10px;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer;border:none;background:#f5f5f5;color:var(--navy)">Tu plan actual</button>
+    </div>
+    <div style="background:white;border-radius:16px;padding:22px;border:2px solid #006039;position:relative;overflow:hidden">
+      <div style="position:absolute;top:14px;right:-28px;background:#006039;color:white;font-size:.6rem;font-weight:800;padding:4px 34px;transform:rotate(45deg)">RECOMENDADO</div>
+      <div style="font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#006039;margin-bottom:4px">NIVEL PROFESIONAL</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px;color:var(--navy)">Plan Pro</div>
+      <div style="color:var(--gray);font-size:.83rem;margin-bottom:14px">Todo lo que necesitás para vender más.</div>
+      <div style="display:flex;align-items:flex-end;gap:4px;margin-bottom:18px">
+        <span style="font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:800;color:var(--navy)">$20.000</span>
+        <span style="color:var(--gray);font-size:.83rem;padding-bottom:6px">/mes</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Todo lo del plan Gratis</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> WhatsApp directo con clientes</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Productos ilimitados</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Badge PRO Verificado</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Pedidos organizados en dashboard</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Estadísticas de visitas y contactos</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Métricas de búsqueda</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Carga masiva de productos</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Importación desde MercadoLibre</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Prioridad en resultados de búsqueda</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--navy)"><span style="color:#006039;font-weight:700">✓</span> Soporte prioritario por WhatsApp</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:.82rem;color:#006039;font-weight:600"><span>→</span> Próximamente: anuncios destacados</div>
+      </div>
+      <button style="width:100%;padding:14px;border-radius:10px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;border:none;background:#006039;color:white" onclick="iniciarPagoPro()">Activar Plan Pro →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PERFIL ===== -->
+<div class="screen" id="screen-perfil">
+  <div id="perfil-login">
+    <div class="topbar"><span class="topbar-logo">Mi Perfil</span></div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center;gap:16px">
+      <div style="width:80px;height:80px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem">👤</div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800">Ingresá a tu cuenta</h2>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.6">Guardá tus proveedores favoritos, accedé a tu historial y gestioná tu negocio.</p>
+      <button class="google-btn" onclick="simulateGoogleLogin()"><span class="g-logo">G</span> Continuar con Google</button>
+      <p style="font-size:.78rem;color:var(--gray)">Al ingresar aceptás los <span style="color:var(--blue);cursor:pointer">términos y condiciones</span></p>
+    </div>
+  </div>
+  <div id="perfil-user" style="display:none">
+    <div class="perfil-header">
+      <div class="avatar-upload-wrap" onclick="document.getElementById('user-avatar-input').click()" title="Cambiar foto">
+        <img id="user-avatar-img" class="perfil-avatar" src="" alt="" style="display:none">
+        <div id="user-avatar-placeholder" class="perfil-avatar-placeholder">?</div>
+        <div class="avatar-edit-badge">📷</div>
+      </div>
+      <input type="file" id="user-avatar-input" class="avatar-upload-input" accept="image/*" onchange="subirAvatarUsuario(this)">
+      <div style="font-size:.7rem;color:rgba(255,255,255,.5);margin-top:-8px;margin-bottom:8px">Tocá para cambiar · Recomendado: 400×400px</div>
+      <div class="perfil-name" id="user-display-name">Usuario</div>
+      <div class="perfil-email" id="user-display-email"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4b3e383e2a3922240b2e262a222765282426">[email&#160;protected]</a></div>
+      <div class="perfil-badge-row">
+        <span class="perfil-type-badge explorer">🛒 Explorador</span>
+        <span class="perfil-type-badge explorer" style="background:rgba(0,196,140,.2);color:#00c48c">✓ Verificado por Google</span>
+      </div>
+    </div>
+    <div class="historial-section">
+      <h3>👁 Proveedores que exploraste</h3>
+      <div class="hist-list" id="historialList"><div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div></div>
+    </div>
+    <div class="historial-section" style="margin-top:4px">
+      <h3>💬 Mis conversaciones</h3>
+      <div id="mis-conversaciones-list" class="hist-list">
+        <div class="empty-state"><div class="ei">💬</div><p>Todavía no hablaste con ningún proveedor.</p></div>
+      </div>
+    </div>
+    <div class="perfil-actions">
+      <div class="action-row">
+        <button class="action-btn" onclick="goTo('buscar')">🔍 Explorar proveedores</button>
+        <button class="action-btn" onclick="openTest()">🤖 Hacer test de rubro IA</button>
+        <button class="action-btn" onclick="goTo('registro')">🏭 Registrarme como proveedor</button>
+        <div onclick="goTo('planes')" style="background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;margin-top:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white">Sumate al Plan Pro</div>
+            <div style="background:rgba(255,255,255,.2);color:white;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">$20.000/mes</div>
+          </div>
+          <div style="color:rgba(255,255,255,.75);font-size:.8rem;line-height:1.5;margin-bottom:12px">WhatsApp directo, badge Verificado, productos ilimitados, estadísticas y mucho más.</div>
+          <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:9px;text-align:center">Ver beneficios →</div>
         </div>
-        <div class="chart-row">
-          <div class="chart-card">
-            <div class="chart-title">Búsquedas por rubro</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Moda</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">1.2k</span></div>
-              <div class="bar-row"><span class="bar-label">Tecnología</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-val">980</span></div>
-              <div class="bar-row"><span class="bar-label">Bazar</span><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><span class="bar-val">820</span></div>
-              <div class="bar-row"><span class="bar-label">Hogar</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">610</span></div>
-              <div class="bar-row"><span class="bar-label">Alimentos</span><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><span class="bar-val">410</span></div>
-            </div>
+        <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+  <div id="perfil-proveedor" style="display:none">
+    <!-- HEADER -->
+    <div style="background:#0F1A2E;padding:20px 20px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg>
+          <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:white;letter-spacing:-.3px">EmprendeGo</span>
+        </div>
+        <button class="notif-bell" onclick="toggleNotifPanel()" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </button>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+        <div class="avatar-upload-wrap" onclick="document.getElementById('prov-logo-input').click()" title="Cambiar logo" style="margin-bottom:0">
+          <div class="dash-avatar" id="dash-avatar-el">
+            <img id="dash-avatar-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:14px">
+            <span id="dash-avatar-initials">EG</span>
           </div>
-          <div class="chart-card">
-            <div class="chart-title">Distribución de planes</div>
-            <div class="donut-wrapper">
-              <svg width="80" height="80" viewBox="0 0 80 80">
-                <circle cx="40" cy="40" r="30" fill="none" stroke="#e0e7ff" stroke-width="12"/>
-                <circle cx="40" cy="40" r="30" fill="none" stroke="url(#grad1)" stroke-width="12" stroke-dasharray="113 75" stroke-dashoffset="-19" stroke-linecap="round"/>
-                <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#1a6bff"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient></defs>
-              </svg>
-              <div class="donut-legends">
-                <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div><span class="legend-label">Plan Gratis</span><span class="legend-val">38</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div><span class="legend-label">Plan Pro</span><span class="legend-val">9</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff"></div><span class="legend-label">Pendientes</span><span class="legend-val">3</span></div>
-              </div>
-            </div>
+          <div class="avatar-edit-badge">📷</div>
+        </div>
+        <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
+        <div style="flex:1">
+          <h3 id="dash-nombre" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800;color:white;margin-bottom:2px">Mi Negocio</h3>
+          <p id="dash-rubro-label" style="color:rgba(255,255,255,.45);font-size:.78rem">Rubro · Argentina</p>
+        </div>
+        <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">PRO</span>
+      </div>
+      <!-- STATS GRID -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px">
+          <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:6px">Visitas al perfil</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="stat-visitas" style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white">0</span>
+            <span style="font-size:.68rem;font-weight:600;color:#4ade80;display:flex;align-items:center;gap:2px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>12%</span>
+          </div>
+          <div style="display:flex;gap:3px;margin-top:10px;height:24px;align-items:flex-end">
+            <div style="flex:1;background:rgba(0,96,57,.15);height:40%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.25);height:55%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.15);height:30%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.35);height:70%;border-radius:2px"></div>
+            <div style="flex:1;background:rgba(0,96,57,.2);height:50%;border-radius:2px"></div>
+            <div style="flex:1;background:#006039;height:100%;border-radius:2px"></div>
           </div>
         </div>
-        <div class="chart-row">
-          <div class="chart-card">
-            <div class="chart-title">Registros últimos 7 días</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Lun</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">14</span></div>
-              <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">23</span></div>
-              <div class="bar-row"><span class="bar-label">Mié</span><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="bar-val">18</span></div>
-              <div class="bar-row"><span class="bar-label">Jue</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">29</span></div>
-              <div class="bar-row"><span class="bar-label">Vie</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="bar-val">34</span></div>
-              <div class="bar-row"><span class="bar-label">Sáb</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">25</span></div>
-              <div class="bar-row"><span class="bar-label">Dom</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="bar-val">12</span></div>
-            </div>
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px">
+          <div style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:6px">Contactos</div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span id="stat-leads" style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:900;color:white">0</span>
           </div>
-          <div class="chart-card">
-            <div class="chart-title">Usuarios por provincia</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Bs. Aires</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="bar-val">580</span></div>
-              <div class="bar-row"><span class="bar-label">CABA</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">310</span></div>
-              <div class="bar-row"><span class="bar-label">Córdoba</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">195</span></div>
-              <div class="bar-row"><span class="bar-label">Santa Fe</span><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><span class="bar-val">134</span></div>
-              <div class="bar-row"><span class="bar-label">Otras</span><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><span class="bar-val">65</span></div>
-            </div>
+          <div style="margin-top:10px;height:24px;background:rgba(255,255,255,.06);border-radius:20px;overflow:hidden">
+            <div style="height:100%;width:38%;background:#006039;border-radius:20px"></div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- ACTIVIDAD -->
-      <div class="page" id="page-actividad">
-        <div class="page-title">Actividad Reciente</div>
-        <div class="page-sub">Últimas acciones en la plataforma</div>
-        <div class="activity-card">
-          <div class="activity-list">
-            <div class="activity-item"><div class="a-icon blue">🏭</div><div class="a-text"><strong>Nuevo proveedor registrado</strong><span>Distribuidora Norte SRL — Rubro: Alimentos — CUIT: 30-71234567-8</span></div><span class="a-time">Hace 5 min</span></div>
-            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>TechMayor BA fue aprobado y publicado</span></div><span class="a-time">Hace 22 min</span></div>
-            <div class="activity-item"><div class="a-icon blue">👤</div><div class="a-text"><strong>Nuevo usuario registrado</strong><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="076a66756e6629606675646e6647606a666e6b2964686a">[email&#160;protected]</a> — Buenos Aires</span></div><span class="a-time">Hace 34 min</span></div>
-            <div class="activity-item"><div class="a-icon orange">🚨</div><div class="a-text"><strong>Reporte recibido</strong><span>"Bazar Express" reportado por posible estafa</span></div><span class="a-time">Hace 1h</span></div>
-            <div class="activity-item"><div class="a-icon green">💰</div><div class="a-text"><strong>Nuevo Plan Pro activado</strong><span>Modas del Litoral — $29/mes</span></div><span class="a-time">Hace 2h</span></div>
-            <div class="activity-item"><div class="a-icon blue">🤖</div><div class="a-text"><strong>Test IA completado</strong><span>Usuario anónimo — Resultado: Moda y Accesorios</span></div><span class="a-time">Hace 2h</span></div>
-            <div class="activity-item"><div class="a-icon orange">⚠️</div><div class="a-text"><strong>Intento de login fallido</strong><span>3 intentos fallidos desde IP 190.12.45.88</span></div><span class="a-time">Hace 3h</span></div>
-            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>AlimVerde SRL fue verificado y publicado</span></div><span class="a-time">Hace 4h</span></div>
-            <div class="activity-item"><div class="a-icon blue">🔍</div><div class="a-text"><strong>Pico de búsquedas</strong><span>+340% búsquedas de "ropa mayorista" — Posible tendencia</span></div><span class="a-time">Hace 5h</span></div>
+    <!-- MENSAJES & CONSULTAS -->
+    <div style="padding:16px 20px 0">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mensajes y consultas</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones()" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <span id="dash-msgs-new" style="background:#006039;color:white;font-size:.6rem;font-weight:800;padding:2px 8px;border-radius:10px;display:none">0 New</span>
+          </div>
+          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#111" id="dash-msgs-count">0</div>
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999">Mensajes</div>
+        </div>
+        <div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee">
+          <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px">
+            <div style="width:36px;height:36px;border-radius:8px;background:#E8F2EE;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+          </div>
+          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#111" id="dash-consultas-count">0</div>
+          <div style="font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#999">Consultas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANNER PRO -->
+    <div style="padding:16px 20px 0">
+      <div id="pro-upgrade-banner" style="background:linear-gradient(135deg,#006039,#004D2E);border-radius:14px;padding:20px;position:relative;overflow:hidden;cursor:pointer" onclick="goTo('planes')">
+        <div style="position:absolute;right:-20px;bottom:-20px;opacity:.08"><svg width="100" height="100" viewBox="0 0 24 24" fill="white"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          <span style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.7)">Premium Experience</span>
+        </div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:900;color:white;line-height:1.25;margin-bottom:6px">Potenciá tu negocio con el Plan Pro.</div>
+        <div style="font-size:.78rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Estadísticas avanzadas, prioridad en búsquedas y contacto directo por WhatsApp.</div>
+        <div onclick="event.stopPropagation();iniciarPagoPro()" style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;border-radius:8px;padding:10px 16px;display:inline-block;cursor:pointer">Activar Plan Pro · $20.000/mes</div>
+      </div>
+    </div>
+
+    <!-- PEDIDOS RECIENTES -->
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Pedidos recientes</div>
+        <span style="font-size:.78rem;font-weight:700;color:#006039;cursor:pointer">Ver todos</span>
+      </div>
+      <div id="dash-pedidos-list" style="display:flex;flex-direction:column;gap:8px">
+        <div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
+          <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:.82rem;font-weight:700;color:#111">Todavía no recibiste pedidos</div>
+            <div style="font-size:.72rem;color:#999">Los pedidos del carrito aparecen acá</div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- PROVEEDORES -->
-      <div class="page" id="page-proveedores">
-        <div class="page-title">Gestión de Proveedores</div>
-        <div class="page-sub">Aprobación, seguimiento y moderación</div>
-
-        <!-- PENDIENTES -->
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">⏳ Pendientes de aprobación <span style="background:#fff3e0;color:var(--orange);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">3</span></div>
+    <!-- MIS PRODUCTOS -->
+    <div style="padding:16px 20px 0">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111;margin-bottom:12px">Mis productos</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div onclick="openAddProduct()" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:10px;background:#006039;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:.85rem;font-weight:700;color:#111">Agregar productos</div>
+            <div style="font-size:.72rem;color:#999">Manual, Excel o MercadoLibre</div>
           </div>
-          <table>
-            <thead><tr><th>Negocio</th><th>CUIT</th><th>Rubro</th><th>Provincia</th><th>Fecha</th><th>Acciones</th></tr></thead>
-            <tbody id="pending-table">
-              <tr>
-                <td><div class="avatar-cell"><div class="cell-avatar">DN</div><div><strong>Distribuidora Norte</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7f1c1e0d13100c3f11100d0b1a511c1012">[email&#160;protected]</a></span></div></div></td>
-                <td>30-71234567-8</td><td>Alimentos</td><td>Córdoba</td><td>Hace 5 min</td>
-                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil completo...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'Distribuidora Norte')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'Distribuidora Norte')">✗ Rechazar</button></div></td>
-              </tr>
-              <tr>
-                <td><div class="avatar-cell"><div class="cell-avatar">RM</div><div><strong>RopaMax SRL</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="fa93949c95ba88958a9b979b82d4999597">[email&#160;protected]</a></span></div></div></td>
-                <td>20-34567890-1</td><td>Moda</td><td>Buenos Aires</td><td>Hace 1h</td>
-                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil completo...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'RopaMax SRL')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'RopaMax SRL')">✗ Rechazar</button></div></td>
-              </tr>
-              <tr>
-                <td><div class="avatar-cell"><div class="cell-avatar">BE</div><div><strong>Bazar Express</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5634372c3724332e262433252516313b373f3a7835393b">[email&#160;protected]</a></span></div></div></td>
-                <td>27-98765432-1</td><td>Bazar</td><td>CABA</td><td>Hace 3h</td>
-                <td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Abriendo perfil...')">👁 Ver</button><button class="tbl-btn approve" onclick="approveProvider(this,'Bazar Express')">✓ Aprobar</button><button class="tbl-btn reject" onclick="rejectProvider(this,'Bazar Express')">✗ Rechazar</button></div></td>
-              </tr>
-            </tbody>
-          </table>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
+        <div onclick="abrirMisProductos()" style="background:white;border-radius:12px;padding:14px 16px;border:1.5px solid #eee;display:flex;align-items:center;gap:14px;cursor:pointer">
+          <div style="width:40px;height:40px;border-radius:10px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+          <div style="flex:1">
+            <div style="font-size:.85rem;font-weight:700;color:#111">Ver mis productos</div>
+            <div style="font-size:.72rem;color:#999" id="dash-prod-count">0 publicados</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
 
-        <!-- TODOS LOS PROVEEDORES -->
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">Todos los proveedores</div>
-            <div class="table-actions">
-              <input class="search-mini" placeholder="Buscar..." oninput="filterTable(this,'prov-table')">
-              <select class="filter-select" onchange="filterByStatus(this,'prov-table')">
-                <option value="">Todos</option>
-                <option value="approved">Aprobados</option>
-                <option value="pro">Plan Pro</option>
-                <option value="free">Plan Gratis</option>
+    <!-- ANUNCIOS (PRO) -->
+    <div style="padding:16px 20px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Anuncios</div>
+        <span style="font-size:.6rem;font-weight:800;color:#006039;background:#E8F2EE;padding:3px 10px;border-radius:8px;letter-spacing:.03em">SOLO PRO</span>
+      </div>
+      <div style="background:white;border-radius:12px;padding:16px;border:1.5px solid #eee;opacity:.5">
+        <div style="text-align:center;padding:12px 0">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" style="margin:0 auto 8px"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+          <div style="font-size:.82rem;font-weight:700;color:#999">Activá el Plan Pro para crear anuncios</div>
+          <div style="font-size:.72rem;color:#bbb;margin-top:4px">Destacá tus productos en los resultados</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AYUDA -->
+    <div style="padding:16px 20px">
+      <div style="background:#f8f8f8;border-radius:12px;padding:18px;border:1.5px solid #eee">
+        <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#111;margin-bottom:4px">Necesitás ayuda?</div>
+        <div style="font-size:.78rem;color:#777;line-height:1.5;margin-bottom:14px">Nuestro equipo está disponible para ayudarte con tu cuenta y publicaciones.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <a href="https://wa.me/5491100000000" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:white;border:1.5px solid #eee;border-radius:10px;font-size:.8rem;font-weight:700;color:#111;text-decoration:none;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            WhatsApp
+          </a>
+          <a href="mailto:soporte@emprendego.com" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;background:white;border:1.5px solid #eee;border-radius:10px;font-size:.8rem;font-weight:700;color:#111;text-decoration:none;cursor:pointer">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </a>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="margin-top:12px">Cerrar sesión</button>
+    </div>
+
+    <div class="tab-content" id="tab-perfil-info" style="display:none">
+      <div style="display:flex;flex-direction:column;gap:12px;padding:4px 20px">
+        <div class="form-group"><label>Nombre del negocio</label><input type="text" id="edit-nombre"></div>
+        <div class="form-group"><label>Descripción</label><textarea id="edit-desc"></textarea></div>
+        <div class="form-group"><label>WhatsApp</label><input type="tel"></div>
+        <div class="form-group"><label>Instagram</label><input type="text"></div>
+        <button class="submit-btn" onclick="showToast('Perfil guardado ✓')">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- MODAL MIS PRODUCTOS -->
+<div class="modal-overlay" id="misProductosModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-height:90vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>Mis productos</h3>
+      <button class="modal-close" onclick="document.getElementById('misProductosModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="padding:8px 20px 0;display:flex;gap:6px">
+      <button onclick="ordenarMisProds('az')" id="sort-az" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">A → Z</button>
+      <button onclick="ordenarMisProds('za')" id="sort-za" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Z → A</button>
+      <button onclick="ordenarMisProds('nuevo')" id="sort-nuevo" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Más nuevo</button>
+      <button onclick="ordenarMisProds('viejo')" id="sort-viejo" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Más viejo</button>
+    </div>
+    <div class="modal-body" style="padding:12px 20px 24px">
+      <div id="misProductosList" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL LISTA MENSAJES -->
+<div class="modal-overlay" id="provMsgListModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-height:85vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Mensajes</h3><button class="modal-close" onclick="document.getElementById('provMsgListModal').classList.remove('open')">✕</button></div>
+    <div class="modal-body" style="padding:12px 20px 24px">
+      <div id="conv-list-el" class="conv-list">
+        <div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando mensajes...</div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- ===== MODAL CHAT PROVEEDOR ===== -->
+<div class="modal-overlay" id="provChatModal" onclick="closeProvChatOnBg(event)">
+  <div class="modal" style="max-height:88vh;display:flex;flex-direction:column">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div>
+        <div id="prov-chat-nombre" style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800">Chat</div>
+        <div id="prov-chat-sub" style="font-size:.72rem;color:var(--gray)">Emprendedor</div>
+      </div>
+      <button class="modal-close" onclick="closeProvChat()">✕</button>
+    </div>
+    <div id="prov-chat-msgs" style="flex:1;overflow-y:auto;padding:15px 20px;display:flex;flex-direction:column;gap:10px;min-height:200px;max-height:45vh"></div>
+    <div style="padding:12px 20px 20px;border-top:1px solid var(--border);display:flex;gap:9px;align-items:center">
+      <input class="chat-input" id="prov-chat-inp" placeholder="Escribí tu respuesta..." style="flex:1" onkeydown="if(event.key==='Enter')provSendMsg()">
+      <button class="chat-send" onclick="provSendMsg()">&#10148;</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL AI TEST ===== -->
+<div class="modal-overlay" id="testModal" onclick="closeTestOnBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Test IA — ¿Qué vender?</h3><button class="modal-close" onclick="closeTest()">✕</button></div>
+    <div class="modal-body">
+      <div id="questionsSection">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:25%"></div></div>
+        <div class="step-indicator" id="stepIndicator">Pregunta 1 de 4</div>
+        <div class="q-text" id="qText"></div>
+        <div class="q-sub" id="qSub"></div>
+        <div class="options-grid" id="optionsGrid"></div>
+        <button class="next-btn" id="nextBtn" onclick="nextStep()">Continuar →</button>
+      </div>
+      <div class="result-section" id="resultSection">
+        <div class="result-loading" id="resultLoading"><div class="ai-spinner"></div><p>Analizando tu perfil con IA...</p></div>
+        <div id="resultContent" style="display:none">
+          <div class="result-card">
+            <div class="result-badge">✨ Tu rubro ideal</div>
+            <div class="result-rubro" id="resultRubro"></div>
+            <div class="result-why" id="resultWhy"></div>
+            <div class="result-chips" id="resultChips"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <button class="btn-primary" onclick="closeTest();filterCat(currentResult)">🔍 Ver proveedores de este rubro</button>
+            <button onclick="resetTest()" style="background:white;color:var(--navy);border:1.5px solid #e0e7ff;border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer">↺ Repetir test</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL RESEÑA ===== -->
+<div class="modal-overlay" id="resenaModal" onclick="closeResenaOnBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Escribir reseña</h3><button class="modal-close" onclick="closeResenaModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:.85rem;color:var(--gray);margin-bottom:4px">¿Cómo calificarías a <strong id="resena-prov-name" style="color:var(--navy)"></strong>?</p>
+      <div class="resena-modal-stars" id="resenaStars">
+        <span class="star" data-val="1" onclick="setResenaRating(1)">★</span>
+        <span class="star" data-val="2" onclick="setResenaRating(2)">★</span>
+        <span class="star" data-val="3" onclick="setResenaRating(3)">★</span>
+        <span class="star" data-val="4" onclick="setResenaRating(4)">★</span>
+        <span class="star" data-val="5" onclick="setResenaRating(5)">★</span>
+      </div>
+      <p id="resena-rating-label" style="text-align:center;font-size:.82rem;color:var(--gray);margin-bottom:16px">Tocá para calificar</p>
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Tu nombre (o apodo)</label>
+        <input type="text" id="resena-autor-input" placeholder="Ej: Martina V.">
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Tu experiencia</label>
+        <textarea id="resena-texto-input" placeholder="Contá cómo fue tu experiencia con este proveedor..." style="min-height:100px"></textarea>
+      </div>
+      <button class="submit-btn" onclick="submitResena()">Publicar reseña ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MODAL COMPARADOR ===== -->
+<div class="modal-overlay" id="comparadorModal" onclick="closeComparadorOnBg(event)">
+  <div class="modal" style="max-height:88vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Comparar Proveedores</h3><button class="modal-close" onclick="closeComparador()">✕</button></div>
+    <div class="comp-modal-body" id="compModalBody"></div>
+  </div>
+</div>
+
+<!-- ===== MODAL ADD PRODUCTO (con fotos + carga múltiple) ===== -->
+<div class="modal-overlay" id="addProdModal" onclick="closeAddProductOnBg(event)">
+  <div class="prod-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <h3>Agregar productos</h3>
+      <button class="modal-close" onclick="closeAddProduct()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- Tabs -->
+      <div style="display:flex;background:#f0f4ff;border-radius:12px;padding:3px;margin-bottom:18px;gap:2px">
+        <div id="tab-uno" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--blue);background:white;border-radius:10px;cursor:pointer" onclick="switchAddTab('uno')">Manual</div>
+        <div id="tab-ml" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('ml')">MercadoLibre</div>
+        <div id="tab-excel" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('excel')">Excel</div>
+        <div id="tab-multi" style="flex:1;text-align:center;padding:7px 4px;font-size:.75rem;font-weight:700;color:var(--gray);cursor:pointer" onclick="switchAddTab('multi')">Múltiple</div>
+      </div>
+
+      <!-- TAB: UN PRODUCTO -->
+      <div id="add-tab-uno">
+        <!-- Foto real desde celu -->
+        <div style="margin-bottom:16px">
+          <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">📷 Foto del producto</label>
+          <div id="foto-preview" style="width:100%;height:140px;background:var(--blue-light);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #c7d4f8;position:relative;overflow:hidden" onclick="document.getElementById('foto-input').click()">
+            <img id="foto-preview-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+            <div id="foto-placeholder" style="text-align:center">
+              <div style="font-size:2rem;margin-bottom:6px">📷</div>
+              <div style="font-size:.78rem;font-weight:700;color:var(--blue)">Tocá para subir foto</div>
+              <div style="font-size:.7rem;color:var(--gray);margin-top:2px">JPG, PNG · Máx 5MB</div>
+            </div>
+            <button id="foto-remove-btn" onclick="event.stopPropagation();removeFoto()" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:4px 8px;font-size:.72rem;cursor:pointer">✕ Quitar</button>
+          </div>
+          <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda iPhone 15 Pro"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group"><label>Precio mayorista *</label><input type="number" id="new-prod-price" placeholder="2500"></div>
+            <div class="form-group"><label>Stock</label><input type="number" id="new-prod-stock" placeholder="100"></div>
+          </div>
+          <div class="form-group"><label>Categoría</label>
+            <select id="new-prod-cat">
+              <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Descripción (opcional)</label><textarea id="new-prod-desc" placeholder="Breve descripción del producto..." style="min-height:60px"></textarea></div>
+        </div>
+        <button class="submit-btn" style="margin-top:16px" onclick="addProduct()">
+          <span id="add-btn-text">Agregar al catálogo ✓</span>
+        </button>
+      </div>
+
+      <!-- TAB: MERCADOLIBRE -->
+      <div id="add-tab-ml" style="display:none">
+        <div style="background:linear-gradient(135deg,#fff7e6,#fff3cd);border:1.5px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#92400e;margin-bottom:4px">🛒 Importar desde MercadoLibre</div>
+          <div style="font-size:.78rem;color:#78350f;line-height:1.5">Pegá el link de cualquier publicación de ML y traemos el nombre, precio y foto automáticamente.</div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Link de MercadoLibre *</label>
+          <input type="url" id="ml-url-input" placeholder="https://articulo.mercadolibre.com.ar/MLA-..." style="font-size:.85rem">
+        </div>
+        <button onclick="importarDesdeML()" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
+          <span id="ml-import-btn-text">🔍 Traer datos del producto</span>
+        </button>
+
+        <!-- Preview del producto importado -->
+        <div id="ml-preview" style="display:none;background:white;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px">
+          <div style="display:flex;gap:12px;padding:12px">
+            <img id="ml-preview-img" src="" style="width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0;background:var(--blue-light)">
+            <div style="flex:1;min-width:0">
+              <div id="ml-preview-name" style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3"></div>
+              <div id="ml-preview-price" style="font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:6px"></div>
+              <span style="background:#e6f7ee;color:var(--green);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:6px">✓ Importado de ML</span>
+            </div>
+          </div>
+          <div style="padding:0 12px 12px;display:flex;flex-direction:column;gap:8px">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <div class="form-group"><label>Ajustar precio *</label><input type="number" id="ml-precio-edit" placeholder="Tu precio mayorista"></div>
+              <div class="form-group"><label>Stock</label><input type="number" id="ml-stock-edit" placeholder="100"></div>
+            </div>
+            <div class="form-group"><label>Categoría</label>
+              <select id="ml-cat-edit">
+                <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
               </select>
             </div>
           </div>
-          <table>
-            <thead><tr><th>Negocio</th><th>CUIT</th><th>Rubro</th><th>Plan</th><th>Leads</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody id="prov-table">
-              <tr data-status="approved pro"><td><div class="avatar-cell"><div class="cell-avatar">TM</div>TechMayor BA</div></td><td>20-12345678-9</td><td>Tecnología</td><td><span class="status-badge pro">⭐ PRO</span></td><td>1.284</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
-              <tr data-status="approved free"><td><div class="avatar-cell"><div class="cell-avatar">HD</div>HomeDeco Sur</div></td><td>27-87654321-0</td><td>Hogar</td><td><span class="status-badge free">Gratis</span></td><td>243</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
-              <tr data-status="approved pro"><td><div class="avatar-cell"><div class="cell-avatar">ML</div>Modas del Litoral</div></td><td>23-45678901-2</td><td>Moda</td><td><span class="status-badge pro">⭐ PRO</span></td><td>876</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
-              <tr data-status="approved free"><td><div class="avatar-cell"><div class="cell-avatar">AV</div>AlimVerde SRL</div></td><td>30-56789012-3</td><td>Alimentos</td><td><span class="status-badge free">Gratis</span></td><td>412</td><td><span class="status-badge approved">● Activo</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil...')">👁</button><button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button><button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫</button></div></td></tr>
-            </tbody>
-          </table>
+        </div>
+
+        <button id="ml-save-btn" onclick="guardarProductoML()" style="display:none;width:100%" class="submit-btn">
+          Agregar al catálogo ✓
+        </button>
+
+        <!-- Historial de importados en esta sesión -->
+        <div id="ml-importados" style="display:none;margin-top:8px">
+          <div style="font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:6px" id="ml-importados-label"></div>
+          <button onclick="importarOtro()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">+ Importar otro producto</button>
         </div>
       </div>
 
-      <!-- USUARIOS -->
-      <div class="page" id="page-usuarios">
-        <div class="page-title">Usuarios Registrados</div>
-        <div class="page-sub">Base completa de usuarios exploradores</div>
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">Todos los usuarios <span style="color:var(--gray);font-weight:400;font-size:.85rem">(1.284 total)</span></div>
-            <div class="table-actions">
-              <input class="search-mini" placeholder="Buscar usuario..." oninput="filterTable(this,'user-table')">
-              <select class="filter-select">
-                <option>Todos</option>
-                <option>Con historial</option>
-                <option>Sin actividad</option>
-              </select>
-            </div>
+      <!-- TAB: EXCEL IMPORT -->
+      <div id="add-tab-excel" style="display:none">
+        <div style="background:#E8F2EE;border:1.5px solid #c3ddd3;border-radius:14px;padding:14px;margin-bottom:16px">
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">Importar desde Excel</div>
+          <div style="font-size:.78rem;color:#333;line-height:1.5">Subí tu lista de precios en Excel o CSV. Vos elegís qué columna corresponde a cada dato.</div>
+        </div>
+        <div style="margin-bottom:16px">
+          <div id="excel-upload-zone" style="width:100%;min-height:100px;background:#fafafa;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #ccc;padding:20px" onclick="document.getElementById('excel-file-input').click()">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.5" style="margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <div style="font-size:.85rem;font-weight:700;color:#006039">Tocá para subir tu Excel</div>
+            <div style="font-size:.72rem;color:#999;margin-top:4px">.xlsx, .xls o .csv</div>
           </div>
-          <table>
-            <thead><tr><th>Usuario</th><th>Provincia</th><th>Registrado</th><th>Última visita</th><th>Proveedores vistos</th><th>Test IA</th><th>Acciones</th></tr></thead>
-            <tbody id="user-table">
-              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#ffd6e8;color:var(--pink)">MG</div><div><strong>María García</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="c3aea2b1aaa2eda4a2b1a0aaa283a4aea2aaafeda0acae">[email&#160;protected]</a></span></div></div></td><td>Buenos Aires</td><td>Hace 2 días</td><td>Hace 1h</td><td>12</td><td><span style="color:var(--green);font-weight:700">✓ Hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
-              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">JL</div><div><strong>Juan López</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a7cdcbc8d7c2dde7cfc8d3cac6cecb89c4c8ca">[email&#160;protected]</a></span></div></div></td><td>CABA</td><td>Hace 5 días</td><td>Hace 3h</td><td>7</td><td><span style="color:var(--gray)">— No hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
-              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#d4f4e8;color:var(--green)">AP</div><div><strong>Ana Pérez</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8aebe4e3feeba4faeff8eff0caede7ebe3e6a4e9e5e7">[email&#160;protected]</a></span></div></div></td><td>Córdoba</td><td>Hace 1 semana</td><td>Hace 1 día</td><td>23</td><td><span style="color:var(--green);font-weight:700">✓ Hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
-              <tr><td><div class="avatar-cell"><div class="cell-avatar" style="background:#ffe0cc;color:var(--orange)">CR</div><div><strong>Carlos Rodríguez</strong><br><span style="font-size:.72rem;color:var(--gray)"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3b585a4957544815497b544e4f5754545015585456">[email&#160;protected]</a></span></div></div></td><td>Santa Fe</td><td>Hace 2 semanas</td><td>Hace 4 días</td><td>3</td><td><span style="color:var(--gray)">— No hecho</span></td><td><div class="action-group"><button class="tbl-btn view" onclick="showToast('Ver perfil de usuario')">👁</button><button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button></div></td></tr>
-            </tbody>
-          </table>
+          <input type="file" id="excel-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="leerExcelImport(this)">
+        </div>
+        <div id="excel-file-name" style="display:none;background:#f0f4ff;border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;font-weight:600;color:var(--navy);display:none"></div>
+        <div id="excel-mapping-section" style="display:none">
+          <div style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy);margin-bottom:4px">Enlazá tus columnas</div>
+          <div style="font-size:.76rem;color:var(--gray);margin-bottom:14px">Seleccioná qué columna de tu Excel corresponde a cada campo.</div>
+          <div style="display:flex;flex-direction:column;gap:10px" id="excel-mapping-fields">
+            <div class="form-group"><label>Nombre del producto *</label><select id="excel-map-nombre"><option value="">— Seleccioná columna —</option></select></div>
+            <div class="form-group"><label>Precio *</label><select id="excel-map-precio"><option value="">— Seleccioná columna —</option></select></div>
+            <div class="form-group"><label>Stock (opcional)</label><select id="excel-map-stock"><option value="">— No importar —</option></select></div>
+            <div class="form-group"><label>Categoría (opcional)</label><select id="excel-map-cat"><option value="">— No importar —</option></select></div>
+          </div>
+          <div id="excel-preview-count" style="margin-top:14px;background:#E8F2EE;border-radius:10px;padding:12px;text-align:center;font-size:.85rem;font-weight:700;color:#006039"></div>
+          <button class="submit-btn" style="margin-top:14px" onclick="importarDesdeExcel()">
+            <span id="excel-import-btn-text">Importar productos</span>
+          </button>
+        </div>
+        <div id="excel-result" style="display:none;margin-top:14px">
+          <div style="background:#E8F2EE;border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:.85rem;font-weight:700;color:#006039" id="excel-result-text"></div>
+          </div>
+          <button onclick="resetExcelImport()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px">Importar otro archivo</button>
         </div>
       </div>
 
-      <!-- PLANES & PAGOS -->
-      <div class="page" id="page-planes">
-        <div class="page-title">Planes & Pagos</div>
-        <div class="page-sub">Control de suscripciones y facturación</div>
-        <div class="metrics-grid">
-          <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-val">$261</div><div class="metric-label">MRR (ingreso mensual)</div><div class="metric-trend up">↑ 9 suscriptores PRO</div></div>
-          <div class="metric-card"><div class="metric-icon">📈</div><div class="metric-val">$841</div><div class="metric-label">Ingresos totales</div><div class="metric-trend up">↑ +$290 vs mes ant.</div></div>
-          <div class="metric-card"><div class="metric-icon">🔄</div><div class="metric-val">89%</div><div class="metric-label">Tasa de renovación</div><div class="metric-trend up">↑ Muy buena</div></div>
+      <!-- TAB: CARGA MÚLTIPLE -->
+      <div id="add-tab-multi" style="display:none">
+        <div style="background:#f0fdf8;border:1.5px solid #a7f3d0;border-radius:12px;padding:12px;margin-bottom:16px;font-size:.8rem;color:var(--navy);line-height:1.6">
+          💡 <strong>Cómo funciona:</strong> Completá cada producto en su fila. Podés agregar hasta 10 a la vez. Solo nombre y precio son obligatorios.
         </div>
-        <div class="table-card">
-          <div class="table-title" style="margin-bottom:16px">Suscriptores Plan Pro</div>
-          <table>
-            <thead><tr><th>Proveedor</th><th>Desde</th><th>Próximo cobro</th><th>Monto</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody>
-              <tr><td>TechMayor BA</td><td>01/01/2026</td><td>01/04/2026</td><td>$29</td><td><span class="status-badge approved">● Al día</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
-              <tr><td>Modas del Litoral</td><td>15/02/2026</td><td>15/04/2026</td><td>$29</td><td><span class="status-badge approved">● Al día</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
-              <tr><td>CelularPro Dist.</td><td>01/03/2026</td><td>01/04/2026</td><td>$29</td><td><span class="status-badge pending">⚠ Pendiente</span></td><td><button class="tbl-btn view" onclick="showToast('Ver detalles de pago')">👁 Ver</button></td></tr>
-            </tbody>
-          </table>
-        </div>
+        <div id="multi-prod-list" style="display:flex;flex-direction:column;gap:10px"></div>
+        <button onclick="agregarFilaMulti()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:8px">+ Agregar otra fila</button>
+        <button class="submit-btn" style="margin-top:12px" onclick="addProductosMultiples()">
+          <span id="multi-btn-text">Guardar todos los productos ✓</span>
+        </button>
       </div>
-
-      <!-- BÚSQUEDAS -->
-      <div class="page" id="page-busquedas">
-        <div class="page-title">Análisis de Búsquedas</div>
-        <div class="page-sub">Qué está buscando tu audiencia</div>
-        <div class="chart-row">
-          <div class="chart-card" style="grid-column:1/-1">
-            <div class="chart-title">🔥 Términos más buscados hoy</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">ropa mujer</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="bar-val">342</span></div>
-              <div class="bar-row"><span class="bar-label">celulares</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">287</span></div>
-              <div class="bar-row"><span class="bar-label">bazar hogar</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">234</span></div>
-              <div class="bar-row"><span class="bar-label">mayorista</span><div class="bar-track"><div class="bar-fill" style="width:58%"></div></div><span class="bar-val">209</span></div>
-              <div class="bar-row"><span class="bar-label">accesorios</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">162</span></div>
-              <div class="bar-row"><span class="bar-label">alimentos</span><div class="bar-track"><div class="bar-fill" style="width:32%"></div></div><span class="bar-val">115</span></div>
-              <div class="bar-row"><span class="bar-label">indumentaria</span><div class="bar-track"><div class="bar-fill" style="width:24%"></div></div><span class="bar-val">86</span></div>
-            </div>
-          </div>
-        </div>
-        <div class="table-card">
-          <div class="table-title" style="margin-bottom:16px">Búsquedas sin resultados — Oportunidades de mercado</div>
-          <table>
-            <thead><tr><th>Término buscado</th><th>Veces</th><th>Provincia más frecuente</th><th>Sugerencia</th></tr></thead>
-            <tbody>
-              <tr><td><strong>juguetes mayorista</strong></td><td>89</td><td>Buenos Aires</td><td><span style="color:var(--blue);font-size:.78rem">→ Agregar rubro Juguetes</span></td></tr>
-              <tr><td><strong>librería por mayor</strong></td><td>67</td><td>Córdoba</td><td><span style="color:var(--blue);font-size:.78rem">→ Subrubro en Bazar</span></td></tr>
-              <tr><td><strong>cosméticos</strong></td><td>54</td><td>CABA</td><td><span style="color:var(--blue);font-size:.78rem">→ Nuevo rubro Belleza</span></td></tr>
-              <tr><td><strong>mascotas</strong></td><td>41</td><td>Buenos Aires</td><td><span style="color:var(--blue);font-size:.78rem">→ Rubro Mascotas</span></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- RUBROS -->
-      <div class="page" id="page-rubros">
-        <div class="page-title">Gestión de Rubros</div>
-        <div class="page-sub">Categorías activas en la plataforma</div>
-        <div class="table-card">
-          <div class="table-header">
-            <div class="table-title">Rubros activos</div>
-            <button class="save-btn" onclick="showToast('Nuevo rubro agregado ✓')">+ Agregar rubro</button>
-          </div>
-          <table>
-            <thead><tr><th>Rubro</th><th>Proveedores</th><th>Búsquedas/día</th><th>Crecimiento</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody>
-              <tr><td>👗 Moda</td><td>156</td><td>1.200</td><td><span style="color:var(--green);font-weight:700">↑ +12%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
-              <tr><td>💻 Tecnología</td><td>124</td><td>980</td><td><span style="color:var(--green);font-weight:700">↑ +8%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
-              <tr><td>🛒 Bazar</td><td>215</td><td>820</td><td><span style="color:var(--green);font-weight:700">↑ +5%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
-              <tr><td>🏠 Hogar</td><td>89</td><td>610</td><td><span style="color:var(--orange);font-weight:700">→ Estable</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
-              <tr><td>🥗 Alimentos</td><td>73</td><td>410</td><td><span style="color:var(--green);font-weight:700">↑ +15%</span></td><td><span class="status-badge approved">● Activo</span></td><td><button class="tbl-btn view" onclick="showToast('Editando rubro...')">✏️</button></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- REPORTES -->
-      <div class="page" id="page-reportes">
-        <div class="page-title">Reportes & Denuncias</div>
-        <div class="page-sub">Moderación y seguridad de la plataforma</div>
-        <div class="report-card">
-          <div class="report-header">
-            <div><strong style="font-size:.95rem">Bazar Express</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b0dac5d1de9edcdfc0d5caf0d7ddd1d9dc9ed3dfdd">[email&#160;protected]</a></span></div>
-            <span class="report-type estafa">🚨 Posible estafa</span>
-          </div>
-          <div class="report-body">"Me pidieron transferencia anticipada de $85.000 y nunca enviaron la mercadería. El número de WhatsApp ahora no responde. El CUIT que pusieron no existe en AFIP."</div>
-          <div class="report-meta">📅 Recibido: Hace 1h · 👁 2 reportes sobre este proveedor</div>
-          <div class="report-actions">
-            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
-            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada al proveedor')">⚠️ Advertir</button>
-            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido y usuario notificado')">🚫 Suspender</button>
-            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
-          </div>
-        </div>
-        <div class="report-card">
-          <div class="report-header">
-            <div><strong style="font-size:.95rem">TechOfertas BA</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="51303f307f213423342b11363c30383d7f323e3c">[email&#160;protected]</a></span></div>
-            <span class="report-type spam">📢 Spam</span>
-          </div>
-          <div class="report-body">"Este proveedor me mandó mensajes no solicitados al WhatsApp con publicidad. Obtuvo mi número sin mi consentimiento."</div>
-          <div class="report-meta">📅 Recibido: Hace 3h · 👁 1 reporte</div>
-          <div class="report-actions">
-            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
-            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️ Advertir</button>
-            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫 Suspender</button>
-            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONFIGURACIÓN -->
-      <div class="page" id="page-config">
-        <div class="page-title">Configuración</div>
-        <div class="page-sub">Ajustes generales de la plataforma</div>
-        <div class="settings-section">
-          <h3>🔔 Notificaciones de Admin</h3>
-          <div class="setting-row"><div class="setting-info"><strong>Nuevo proveedor registrado</strong><span>Recibir alerta cuando llegue una solicitud</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="setting-row"><div class="setting-info"><strong>Nuevo reporte o denuncia</strong><span>Alerta inmediata ante reportes</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="setting-row"><div class="setting-info"><strong>Nuevo pago recibido</strong><span>Confirmación de suscripciones Pro</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="setting-row"><div class="setting-info"><strong>Resumen diario</strong><span>Email con métricas del día</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-        </div>
-        <div class="settings-section">
-          <h3>🏭 Aprobación de proveedores</h3>
-          <div class="setting-row"><div class="setting-info"><strong>Aprobación manual</strong><span>Todos los proveedores requieren tu OK</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="setting-row"><div class="setting-info"><strong>Verificar CUIT automáticamente</strong><span>Consulta AFIP al recibir solicitud</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-          <div class="setting-row"><div class="setting-info"><strong>Foto obligatoria</strong><span>Requerir foto del negocio para aprobar</span></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
-        </div>
-        <div class="settings-section">
-          <h3>💰 Planes</h3>
-          <div class="setting-row"><div class="setting-info"><strong>Precio Plan Pro</strong><span>Precio mensual actual</span></div><input class="settings-input" value="$29 / mes"></div>
-          <div class="setting-row"><div class="setting-info"><strong>Email de facturación</strong><span>Para recibir confirmaciones de pago</span></div><input class="settings-input" value="admin@emprendego.com"></div>
-        </div>
-        <div class="settings-section">
-          <h3>🔐 Seguridad</h3>
-          <div class="setting-row"><div class="setting-info"><strong>Cambiar contraseña de admin</strong><span>Se recomienda cambiarla periódicamente</span></div><input class="settings-input" type="password" placeholder="Nueva contraseña"></div>
-          <div class="setting-row"><div class="setting-info"><strong>Bloqueo por intentos fallidos</strong><span>Bloquear IP tras 5 intentos</span></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
-        </div>
-        <button class="save-btn" onclick="showToast('✓ Configuración guardada')">Guardar todos los cambios</button>
-      </div>
-
-    </div><!-- end main-content -->
-  </div><!-- end app-body -->
-</div><!-- end admin-app -->
-
-<!-- MODAL CONFIRMACIÓN -->
-<div class="modal-overlay" id="confirmModal">
-  <div class="modal-box">
-    <h3 id="modal-title">Confirmar acción</h3>
-    <p id="modal-body">¿Estás seguro?</p>
-    <div class="modal-actions">
-      <button class="modal-btn cancel" onclick="closeModal()">Cancelar</button>
-      <button class="modal-btn" id="modal-confirm-btn" onclick="confirmAction()">Confirmar</button>
     </div>
   </div>
+</div>
+
+<!-- ===== MODAL EDIT PRODUCTO ===== -->
+<div class="modal-overlay" id="editProdModal" onclick="closeEditProductOnBg(event)">
+  <div class="prod-modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Editar producto</h3><button class="modal-close" onclick="closeEditProduct()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-prod-id">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="form-group"><label>Nombre *</label><input type="text" id="edit-prod-name"></div>
+        <div class="form-group"><label>Precio mayorista *</label><input type="number" id="edit-prod-price"></div>
+        <div class="form-group"><label>Stock</label><input type="number" id="edit-prod-stock"></div>
+        <div class="form-group"><label>Categoria</label><select id="edit-prod-cat"><option>Tecnologia</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
+       <div style="margin-bottom:12px">
+  <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">Foto del producto</label>
+  <div id="edit-foto-preview" style="width:100%;height:120px;background:var(--blue-light);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #c7d4f8;position:relative;overflow:hidden" onclick="document.getElementById('edit-foto-input').click()">
+    <img id="edit-foto-preview-img" src="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+    <div id="edit-foto-placeholder" style="text-align:center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.5" style="margin-bottom:4px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      <div style="font-size:.78rem;font-weight:700;color:var(--blue)">Tocá para cambiar foto</div>
+    </div>
+    <button id="edit-foto-remove-btn" onclick="event.stopPropagation();removeEditFoto()" style="display:none;position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer">✕</button>
+  </div>
+  <input type="file" id="edit-foto-input" accept="image/*" style="display:none" onchange="previewEditFoto(this)">
+</div>
+        <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL NOTIFICACIONES -->
+<div id="notifPanelBg" class="notif-overlay-bg" style="display:none" onclick="closeNotifPanel()"></div>
+<div id="notifPanel" class="notif-panel" style="display:none">
+  <div class="notif-panel-header">
+    <div class="notif-panel-title">🔔 Notificaciones</div>
+    <button class="notif-close-btn" onclick="closeNotifPanel()">✕</button>
+  </div>
+  <div id="notifList"></div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-const ADMIN_PASSWORD = 'admin123';
-let pendingAction = null;
-
-function tryLogin(){
-  const pw = document.getElementById('pw-input').value;
-  if(pw === ADMIN_PASSWORD){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('admin-app').style.display='block';
-    startClock();
-    setDashDate();
-    cargarDashboard();
-    cargarProveedoresPendientes();
-    cargarTodosProveedores();
-    cargarUsuarios();
-  } else {
-    document.getElementById('login-error').style.display='block';
-    document.getElementById('pw-input').value='';
-    setTimeout(()=>document.getElementById('login-error').style.display='none',2000);
-  }
-}
-
-function adminLogout(){
-  document.getElementById('admin-app').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('pw-input').value='';
-}
-
-function startClock(){
-  function tick(){
-    const now = new Date();
-    document.getElementById('clock').textContent = now.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
-  }
-  tick(); setInterval(tick,60000);
-}
-
-function setDashDate(){
-  const now = new Date();
-  document.getElementById('dash-date').textContent = now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-}
-
-// ===== SUPABASE: DASHBOARD METRICS =====
-async function cargarDashboard(){
-  try {
-    const [{data:provs},{data:users},{data:pendientes},{data:busqs}] = await Promise.all([
-      sb.from('proveedores').select('id,plan,estado'),
-      sb.from('usuarios').select('id'),
-      sb.from('proveedores').select('id').eq('estado','pendiente'),
-      sb.from('busquedas').select('id')
-    ]);
-    const activos = provs?.filter(p=>p.estado==='aprobado').length || 0;
-    const totalUsers = users?.length || 0;
-    const totalPend = pendientes?.length || 0;
-    const proPlan = provs?.filter(p=>p.plan==='pro').length || 0;
-    // Update metric cards
-    const cards = document.querySelectorAll('.metric-val');
-    if(cards[0]) cards[0].textContent = activos;
-    if(cards[1]) cards[1].textContent = totalUsers.toLocaleString('es-AR');
-    if(cards[2]) cards[2].textContent = totalPend;
-    // Update pending badges
-    document.querySelectorAll('.nav-badge').forEach(b=>{
-      if(b.closest('.nav-link')?.textContent.includes('Proveedor')) b.textContent=totalPend;
-    });
-  } catch(e){ console.log('dashboard error',e); }
-}
-
-// ===== SUPABASE: PROVEEDORES PENDIENTES =====
-async function cargarProveedoresPendientes(){
-  const tbody = document.getElementById('pending-table');
-  try {
-    const {data, error} = await sb
-      .from('proveedores')
-      .select('*')
-      .eq('estado','pendiente')
-      .order('created_at',{ascending:false});
-    if(error) throw error;
-    if(!data?.length){
-      tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">No hay solicitudes pendientes ✓</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(p=>`
-      <tr>
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${p.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${p.email}</span></div></div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
-        <td>${p.provincia||'—'}</td>
-        <td>${timeAgoAdmin(p.created_at)}</td>
-        <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁 Ver</button>
-          <button class="tbl-btn approve" onclick="aprobarProveedor('${p.id}','${p.nombre}',this)">✓ Aprobar</button>
-          <button class="tbl-btn reject" onclick="rechazarProveedor('${p.id}','${p.nombre}',this)">✗ Rechazar</button>
-        </div></td>
-      </tr>`).join('');
-  } catch(e){
-    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>';
-  }
-}
-
-// ===== SUPABASE: TODOS LOS PROVEEDORES =====
-async function cargarTodosProveedores(){
-  const tbody = document.getElementById('prov-table');
-  try {
-    const {data, error} = await sb
-      .from('proveedores')
-      .select('*')
-      .eq('estado','aprobado')
-      .order('created_at',{ascending:false});
-    if(error) throw error;
-    if(!data?.length){
-      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados aún</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(p=>`
-      <tr data-status="approved ${p.plan}">
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
-        <td><span class="status-badge ${p.plan==='pro'?'pro':'free'}">${p.plan==='pro'?'⭐ PRO':'Gratis'}</span></td>
-        <td>—</td>
-        <td><span class="status-badge approved">● Activo</span></td>
-        <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
-          <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
-          <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
-        </div></td>
-      </tr>`).join('');
-  } catch(e){ console.log('proveedores error',e); }
-}
-
-// ===== SUPABASE: USUARIOS =====
-async function cargarUsuarios(){
-  const tbody = document.getElementById('user-table');
-  try {
-    const {data, error} = await sb
-      .from('usuarios')
-      .select('*')
-      .order('created_at',{ascending:false});
-    if(error) throw error;
-    if(!data?.length){
-      tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay usuarios registrados aún</td></tr>';
-      return;
-    }
-    tbody.innerHTML = data.map(u=>`
-      <tr>
-        <td><div class="avatar-cell">
-          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${u.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${u.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${u.email}</span></div>
-        </div></td>
-        <td>${u.provincia||'—'}</td>
-        <td>${timeAgoAdmin(u.created_at)}</td>
-        <td>—</td>
-        <td>—</td>
-        <td>—</td>
-        <td><div class="action-group">
-          <button class="tbl-btn view" onclick="showToast('Ver perfil')">👁</button>
-          <button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button>
-        </div></td>
-      </tr>`).join('');
-  } catch(e){ console.log('usuarios error',e); }
-}
-
-// ===== ACCIONES =====
-function verProveedor(id){ showToast('ID: ' + id.substring(0,8) + '...'); }
-
-function aprobarProveedor(id, nombre, btn){
-  pendingAction = {type:'approve', id, nombre, btn};
-  document.getElementById('modal-title').textContent = 'Aprobar proveedor';
-  document.getElementById('modal-body').textContent = `¿Aprobás a "${nombre}"? Su perfil será publicado inmediatamente.`;
-  document.getElementById('modal-confirm-btn').className='modal-btn confirm-approve';
-  document.getElementById('modal-confirm-btn').textContent='✓ Aprobar';
-  document.getElementById('confirmModal').classList.add('open');
-}
-
-function rechazarProveedor(id, nombre, btn){
-  pendingAction = {type:'reject', id, nombre, btn};
-  document.getElementById('modal-title').textContent = 'Rechazar proveedor';
-  document.getElementById('modal-body').textContent = `¿Rechazás a "${nombre}"? Se le notificará por email.`;
-  document.getElementById('modal-confirm-btn').className='modal-btn confirm-reject';
-  document.getElementById('modal-confirm-btn').textContent='✗ Rechazar';
-  document.getElementById('confirmModal').classList.add('open');
-}
-
-async function suspenderProveedor(id){
-  try {
-    await sb.from('proveedores').update({estado:'suspendido'}).eq('id',id);
-    showToast('Proveedor suspendido');
-    cargarTodosProveedores();
-  } catch(e){ showToast('Error al suspender'); }
-}
-
-async function confirmAction(){
-  closeModal();
-  if(!pendingAction) return;
-  const nuevoEstado = pendingAction.type==='approve' ? 'aprobado' : 'rechazado';
-  try {
-    await sb.from('proveedores').update({estado: nuevoEstado}).eq('id', pendingAction.id);
-    showToast(pendingAction.type==='approve'
-      ? `✓ ${pendingAction.nombre} aprobado y publicado`
-      : `✗ ${pendingAction.nombre} rechazado`);
-    // Reload both tables
-    cargarProveedoresPendientes();
-    cargarTodosProveedores();
-    cargarDashboard();
-  } catch(e){ showToast('Error al procesar'); }
-  pendingAction = null;
-}
-
-function closeModal(){
-  document.getElementById('confirmModal').classList.remove('open');
-}
-
-function timeAgoAdmin(dateStr){
-  if(!dateStr) return '—';
-  const mins = Math.floor((new Date()-new Date(dateStr))/60000);
-  if(mins < 1) return 'Ahora';
-  if(mins < 60) return `Hace ${mins}m`;
-  if(mins < 1440) return `Hace ${Math.floor(mins/60)}h`;
-  return `Hace ${Math.floor(mins/1440)}d`;
-}
-
-function showPage(name, el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.mobile-nav-btn').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  if(el) el.classList.add('active');
-  // Reload data on tab switch
-  if(name==='proveedores'){ cargarProveedoresPendientes(); cargarTodosProveedores(); }
-  if(name==='usuarios') cargarUsuarios();
-  if(name==='dashboard') cargarDashboard();
-}
-
-function filterTable(input, tableId){
-  const q = input.value.toLowerCase();
-  document.querySelectorAll('#'+tableId+' tr').forEach(row=>{
-    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-  });
-}
-
-function filterByStatus(sel, tableId){
-  const val = sel.value;
-  document.querySelectorAll('#'+tableId+' tr').forEach(row=>{
-    if(!val){ row.style.display=''; return; }
-    row.style.display = row.dataset.status?.includes(val) ? '' : 'none';
-  });
-}
-
-function showToast(msg){
-  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2500);
-}
-</script>
+<script src="js/app.js"></script>
 </body>
 </html>
