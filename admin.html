@@ -258,62 +258,42 @@ tr:hover td{background:#fafbff}
         <div class="page-title">Dashboard General</div>
         <div class="page-sub" id="dash-date">Cargando...</div>
         <div class="metrics-grid">
-          <div class="metric-card"><div class="metric-icon">🏭</div><div class="metric-val">47</div><div class="metric-label">Proveedores activos</div><div class="metric-trend up">↑ +3 esta semana</div></div>
-          <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val">1.284</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up">↑ +89 este mes</div></div>
-          <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" style="color:var(--orange)">3</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" style="color:var(--orange)">Requiere atención</div></div>
-          <div class="metric-card"><div class="metric-icon">💰</div><div class="metric-val">$841</div><div class="metric-label">Ingresos este mes</div><div class="metric-trend up">↑ +$290 vs mes ant.</div></div>
-          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val">5.8k</div><div class="metric-label">Búsquedas hoy</div><div class="metric-trend up">↑ +24% vs ayer</div></div>
-          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" style="color:var(--red)">2</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down">Requiere revisión</div></div>
+          <div class="metric-card"><div class="metric-icon">🏭</div><div class="metric-val" id="metric-proveedores">—</div><div class="metric-label">Proveedores activos</div><div class="metric-trend up" id="trend-proveedores"></div></div>
+          <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val" id="metric-usuarios">—</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up" id="trend-usuarios"></div></div>
+          <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" id="metric-pendientes" style="color:var(--orange)">—</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" id="trend-pendientes" style="color:var(--orange)"></div></div>
+          <div class="metric-card"><div class="metric-icon">⭐</div><div class="metric-val" id="metric-pro">—</div><div class="metric-label">Proveedores Pro</div><div class="metric-trend up" id="trend-pro"></div></div>
+          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val" id="metric-busquedas">—</div><div class="metric-label">Búsquedas totales</div><div class="metric-trend up"></div></div>
+          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" id="metric-reportes" style="color:var(--red)">—</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down">Requiere revisión</div></div>
         </div>
         <div class="chart-row">
           <div class="chart-card">
             <div class="chart-title">Búsquedas por rubro</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Moda</span><div class="bar-track"><div class="bar-fill" style="width:85%"></div></div><span class="bar-val">1.2k</span></div>
-              <div class="bar-row"><span class="bar-label">Tecnología</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-val">980</span></div>
-              <div class="bar-row"><span class="bar-label">Bazar</span><div class="bar-track"><div class="bar-fill" style="width:60%"></div></div><span class="bar-val">820</span></div>
-              <div class="bar-row"><span class="bar-label">Hogar</span><div class="bar-track"><div class="bar-fill" style="width:45%"></div></div><span class="bar-val">610</span></div>
-              <div class="bar-row"><span class="bar-label">Alimentos</span><div class="bar-track"><div class="bar-fill" style="width:30%"></div></div><span class="bar-val">410</span></div>
-            </div>
+            <div class="bar-chart" id="chart-busquedas"><div style="color:var(--gray);font-size:.85rem">Cargando...</div></div>
           </div>
           <div class="chart-card">
             <div class="chart-title">Distribución de planes</div>
             <div class="donut-wrapper">
               <svg width="80" height="80" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="30" fill="none" stroke="#e0e7ff" stroke-width="12"/>
-                <circle cx="40" cy="40" r="30" fill="none" stroke="url(#grad1)" stroke-width="12" stroke-dasharray="113 75" stroke-dashoffset="-19" stroke-linecap="round"/>
+                <circle id="donut-arc" cx="40" cy="40" r="30" fill="none" stroke="url(#grad1)" stroke-width="12" stroke-dasharray="0 188" stroke-dashoffset="-19" stroke-linecap="round"/>
                 <defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#1a6bff"/><stop offset="100%" style="stop-color:#7c3aed"/></linearGradient></defs>
               </svg>
               <div class="donut-legends">
-                <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div><span class="legend-label">Plan Gratis</span><span class="legend-val">38</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div><span class="legend-label">Plan Pro</span><span class="legend-val">9</span></div>
-                <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff"></div><span class="legend-label">Pendientes</span><span class="legend-val">3</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div><span class="legend-label">Plan Gratis</span><span class="legend-val" id="plan-gratis">—</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div><span class="legend-label">Plan Pro</span><span class="legend-val" id="plan-pro">—</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#e0e7ff"></div><span class="legend-label">Pendientes</span><span class="legend-val" id="plan-pendientes">—</span></div>
               </div>
             </div>
           </div>
         </div>
         <div class="chart-row">
           <div class="chart-card">
-            <div class="chart-title">Registros últimos 7 días</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Lun</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">14</span></div>
-              <div class="bar-row"><span class="bar-label">Mar</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">23</span></div>
-              <div class="bar-row"><span class="bar-label">Mié</span><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="bar-val">18</span></div>
-              <div class="bar-row"><span class="bar-label">Jue</span><div class="bar-track"><div class="bar-fill" style="width:80%"></div></div><span class="bar-val">29</span></div>
-              <div class="bar-row"><span class="bar-label">Vie</span><div class="bar-track"><div class="bar-fill" style="width:95%"></div></div><span class="bar-val">34</span></div>
-              <div class="bar-row"><span class="bar-label">Sáb</span><div class="bar-track"><div class="bar-fill" style="width:70%"></div></div><span class="bar-val">25</span></div>
-              <div class="bar-row"><span class="bar-label">Dom</span><div class="bar-track"><div class="bar-fill" style="width:35%"></div></div><span class="bar-val">12</span></div>
-            </div>
+            <div class="chart-title">Proveedores por provincia</div>
+            <div class="bar-chart" id="chart-provincias"><div style="color:var(--gray);font-size:.85rem">Cargando...</div></div>
           </div>
           <div class="chart-card">
-            <div class="chart-title">Usuarios por provincia</div>
-            <div class="bar-chart">
-              <div class="bar-row"><span class="bar-label">Bs. Aires</span><div class="bar-track"><div class="bar-fill" style="width:90%"></div></div><span class="bar-val">580</span></div>
-              <div class="bar-row"><span class="bar-label">CABA</span><div class="bar-track"><div class="bar-fill" style="width:65%"></div></div><span class="bar-val">310</span></div>
-              <div class="bar-row"><span class="bar-label">Córdoba</span><div class="bar-track"><div class="bar-fill" style="width:40%"></div></div><span class="bar-val">195</span></div>
-              <div class="bar-row"><span class="bar-label">Santa Fe</span><div class="bar-track"><div class="bar-fill" style="width:28%"></div></div><span class="bar-val">134</span></div>
-              <div class="bar-row"><span class="bar-label">Otras</span><div class="bar-track"><div class="bar-fill" style="width:20%"></div></div><span class="bar-val">65</span></div>
-            </div>
+            <div class="chart-title">Actividad reciente</div>
+            <div id="actividad-reciente" style="font-size:.82rem;color:var(--gray)">Cargando...</div>
           </div>
         </div>
       </div>
@@ -323,17 +303,7 @@ tr:hover td{background:#fafbff}
         <div class="page-title">Actividad Reciente</div>
         <div class="page-sub">Últimas acciones en la plataforma</div>
         <div class="activity-card">
-          <div class="activity-list">
-            <div class="activity-item"><div class="a-icon blue">🏭</div><div class="a-text"><strong>Nuevo proveedor registrado</strong><span>Distribuidora Norte SRL — Rubro: Alimentos — CUIT: 30-71234567-8</span></div><span class="a-time">Hace 5 min</span></div>
-            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>TechMayor BA fue aprobado y publicado</span></div><span class="a-time">Hace 22 min</span></div>
-            <div class="activity-item"><div class="a-icon blue">👤</div><div class="a-text"><strong>Nuevo usuario registrado</strong><span><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="076a66756e6629606675646e6647606a666e6b2964686a">[email&#160;protected]</a> — Buenos Aires</span></div><span class="a-time">Hace 34 min</span></div>
-            <div class="activity-item"><div class="a-icon orange">🚨</div><div class="a-text"><strong>Reporte recibido</strong><span>"Bazar Express" reportado por posible estafa</span></div><span class="a-time">Hace 1h</span></div>
-            <div class="activity-item"><div class="a-icon green">💰</div><div class="a-text"><strong>Nuevo Plan Pro activado</strong><span>Modas del Litoral — $29/mes</span></div><span class="a-time">Hace 2h</span></div>
-            <div class="activity-item"><div class="a-icon blue">🤖</div><div class="a-text"><strong>Test IA completado</strong><span>Usuario anónimo — Resultado: Moda y Accesorios</span></div><span class="a-time">Hace 2h</span></div>
-            <div class="activity-item"><div class="a-icon orange">⚠️</div><div class="a-text"><strong>Intento de login fallido</strong><span>3 intentos fallidos desde IP 190.12.45.88</span></div><span class="a-time">Hace 3h</span></div>
-            <div class="activity-item"><div class="a-icon green">✅</div><div class="a-text"><strong>Proveedor aprobado</strong><span>AlimVerde SRL fue verificado y publicado</span></div><span class="a-time">Hace 4h</span></div>
-            <div class="activity-item"><div class="a-icon blue">🔍</div><div class="a-text"><strong>Pico de búsquedas</strong><span>+340% búsquedas de "ropa mayorista" — Posible tendencia</span></div><span class="a-time">Hace 5h</span></div>
-          </div>
+          <div class="activity-list" id="actividad-page">Cargando...</div>
         </div>
       </div>
 
@@ -634,25 +604,79 @@ function setDashDate(){
 // ===== SUPABASE: DASHBOARD METRICS =====
 async function cargarDashboard(){
   try {
-    const [{data:provs},{data:users},{data:pendientes},{data:busqs}] = await Promise.all([
-      sb.from('proveedores').select('id,plan,estado'),
-      sb.from('usuarios').select('id'),
-      sb.from('proveedores').select('id').eq('estado','pendiente'),
-      sb.from('busquedas').select('id')
+    const [{data:provs},{data:users},{data:busqs},{data:reportes},{data:ultProvs},{data:ultUsers}] = await Promise.all([
+      sb.from('proveedores').select('id,plan,estado,rubro,provincia,nombre,created_at').order('created_at',{ascending:false}),
+      sb.from('usuarios').select('id,nombre,email,created_at').order('created_at',{ascending:false}),
+      sb.from('busquedas').select('termino'),
+      sb.from('reportes').select('id,estado'),
+      sb.from('proveedores').select('nombre,created_at').order('created_at',{ascending:false}).limit(5),
+      sb.from('usuarios').select('nombre,email,created_at').order('created_at',{ascending:false}).limit(5)
     ]);
+
     const activos = provs?.filter(p=>p.estado==='aprobado').length || 0;
     const totalUsers = users?.length || 0;
-    const totalPend = pendientes?.length || 0;
+    const totalPend = provs?.filter(p=>p.estado==='pendiente').length || 0;
     const proPlan = provs?.filter(p=>p.plan==='pro').length || 0;
-    // Update metric cards
-    const cards = document.querySelectorAll('.metric-val');
-    if(cards[0]) cards[0].textContent = activos;
-    if(cards[1]) cards[1].textContent = totalUsers.toLocaleString('es-AR');
-    if(cards[2]) cards[2].textContent = totalPend;
-    // Update pending badges
+    const gratisActivos = provs?.filter(p=>p.estado==='aprobado'&&p.plan!=='pro').length || 0;
+    const totalBusqs = busqs?.length || 0;
+    const reportesSinResolver = reportes?.filter(r=>r.estado!=='resuelto').length || 0;
+
+    // Métricas
+    document.getElementById('metric-proveedores').textContent = activos;
+    document.getElementById('metric-usuarios').textContent = totalUsers.toLocaleString('es-AR');
+    document.getElementById('metric-pendientes').textContent = totalPend;
+    document.getElementById('metric-pro').textContent = proPlan;
+    document.getElementById('metric-busquedas').textContent = totalBusqs.toLocaleString('es-AR');
+    document.getElementById('metric-reportes').textContent = reportesSinResolver;
+    document.getElementById('trend-pendientes').textContent = totalPend > 0 ? 'Requiere atención' : 'Todo al día ✓';
+
+    // Badge nav
     document.querySelectorAll('.nav-badge').forEach(b=>{
-      if(b.closest('.nav-link')?.textContent.includes('Proveedor')) b.textContent=totalPend;
+      if(b.closest('.nav-link')?.textContent.includes('Proveedor')) b.textContent = totalPend;
     });
+
+    // Donut planes
+    document.getElementById('plan-gratis').textContent = gratisActivos;
+    document.getElementById('plan-pro').textContent = proPlan;
+    document.getElementById('plan-pendientes').textContent = totalPend;
+    const total = activos + totalPend || 1;
+    const arc = Math.round((proPlan / total) * 188);
+    document.getElementById('donut-arc').setAttribute('stroke-dasharray', `${arc} ${188 - arc}`);
+
+    // Chart búsquedas por rubro
+    const rubroCount = {};
+    busqs?.forEach(b=>{ if(b.termino){ const r=b.termino.trim(); rubroCount[r]=(rubroCount[r]||0)+1; }});
+    const topRubros = Object.entries(rubroCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxBusq = topRubros[0]?.[1] || 1;
+    const chartBusq = document.getElementById('chart-busquedas');
+    chartBusq.innerHTML = topRubros.length ? topRubros.map(([r,n])=>
+      `<div class="bar-row"><span class="bar-label">${r}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxBusq*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+    ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin búsquedas registradas aún</div>';
+
+    // Chart provincias
+    const provCount = {};
+    provs?.filter(p=>p.estado==='aprobado').forEach(p=>{ if(p.provincia){ provCount[p.provincia]=(provCount[p.provincia]||0)+1; }});
+    const topProvs = Object.entries(provCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const maxProv = topProvs[0]?.[1] || 1;
+    const chartProv = document.getElementById('chart-provincias');
+    chartProv.innerHTML = topProvs.length ? topProvs.map(([p,n])=>
+      `<div class="bar-row"><span class="bar-label">${p}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxProv*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+    ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin proveedores aprobados aún</div>';
+
+    // Actividad reciente
+    const actividad = [];
+    ultProvs?.forEach(p=>actividad.push({icon:'🏭',color:'blue',texto:`Nuevo proveedor: <strong>${p.nombre}</strong>`,time:p.created_at}));
+    ultUsers?.forEach(u=>actividad.push({icon:'👤',color:'blue',texto:`Nuevo usuario: <strong>${u.nombre||u.email}</strong>`,time:u.created_at}));
+    actividad.sort((a,b)=>new Date(b.time)-new Date(a.time));
+    const actHTML = actividad.length ? actividad.slice(0,8).map(a=>`
+      <div class="activity-item"><div class="a-icon ${a.color}">${a.icon}</div>
+      <div class="a-text">${a.texto}</div>
+      <span class="a-time">${timeAgoAdmin(a.time)}</span></div>`
+    ).join('') : '<div style="padding:8px 0">Sin actividad reciente</div>';
+    document.getElementById('actividad-reciente').innerHTML = actHTML;
+    const actPage = document.getElementById('actividad-page');
+    if(actPage) actPage.innerHTML = actHTML;
+
   } catch(e){ console.log('dashboard error',e); }
 }
 
