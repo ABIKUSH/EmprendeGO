@@ -182,6 +182,35 @@ tr:hover td{background:#fafbff}
 .modal-btn.cancel{background:var(--light);color:var(--navy)}
 .modal-btn.confirm-approve{background:var(--green);color:white}
 .modal-btn.confirm-reject{background:var(--red);color:white}
+/* PROVEEDOR MODAL */
+.prov-modal-overlay{position:fixed;inset:0;background:rgba(13,27,62,.55);z-index:600;display:none;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;backdrop-filter:blur(4px)}
+.prov-modal-overlay.open{display:flex}
+.prov-modal-box{background:white;border-radius:20px;padding:28px;width:100%;max-width:580px;margin:auto;animation:popIn .2s ease}
+.prov-modal-header{display:flex;align-items:center;gap:14px;margin-bottom:20px}
+.prov-modal-avatar{width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--purple));display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:1.1rem;flex-shrink:0}
+.prov-modal-title{font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:800}
+.prov-modal-sub{font-size:.78rem;color:var(--gray)}
+.prov-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.prov-field{display:flex;flex-direction:column;gap:4px}
+.prov-field label{font-size:.72rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}
+.prov-field span{font-size:.88rem;color:var(--navy);font-weight:500;padding:8px 10px;background:var(--light);border-radius:8px}
+.prov-field input,.prov-field select,.prov-field textarea{font-size:.88rem;color:var(--navy);font-weight:500;padding:8px 10px;background:#f0f4ff;border:1.5px solid var(--blue);border-radius:8px;font-family:'DM Sans',sans-serif;width:100%;box-sizing:border-box}
+.prov-field textarea{resize:vertical;min-height:60px}
+.prov-field-full{grid-column:1/-1}
+.prov-productos-title{font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;margin-bottom:10px;color:var(--navy)}
+.prov-producto-item{display:flex;align-items:center;gap:10px;padding:8px;background:var(--light);border-radius:10px;margin-bottom:6px;font-size:.82rem}
+.prov-modal-actions{display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid #eef0f6;padding-top:16px;margin-top:4px}
+/* REPORTES */
+.report-card{background:white;border-radius:16px;padding:20px;margin-bottom:14px;border:1px solid #eef0f6}
+.report-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:10px}
+.report-type{font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.report-type.estafa{background:#fee2e2;color:#dc2626}
+.report-type.spam{background:#fef3c7;color:#d97706}
+.report-type.otro{background:#e0e7ff;color:#4338ca}
+.report-body{font-size:.83rem;color:var(--gray);line-height:1.6;margin-bottom:8px;font-style:italic}
+.report-meta{font-size:.75rem;color:#94a3b8;margin-bottom:12px}
+.report-actions{display:flex;gap:8px;flex-wrap:wrap}
+.report-resuelto{opacity:.5;pointer-events:none}
 </style>
 </head>
 <body>
@@ -473,34 +502,7 @@ tr:hover td{background:#fafbff}
       <div class="page" id="page-reportes">
         <div class="page-title">Reportes & Denuncias</div>
         <div class="page-sub">Moderación y seguridad de la plataforma</div>
-        <div class="report-card">
-          <div class="report-header">
-            <div><strong style="font-size:.95rem">Bazar Express</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b0dac5d1de9edcdfc0d5caf0d7ddd1d9dc9ed3dfdd">[email&#160;protected]</a></span></div>
-            <span class="report-type estafa">🚨 Posible estafa</span>
-          </div>
-          <div class="report-body">"Me pidieron transferencia anticipada de $85.000 y nunca enviaron la mercadería. El número de WhatsApp ahora no responde. El CUIT que pusieron no existe en AFIP."</div>
-          <div class="report-meta">📅 Recibido: Hace 1h · 👁 2 reportes sobre este proveedor</div>
-          <div class="report-actions">
-            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
-            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada al proveedor')">⚠️ Advertir</button>
-            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido y usuario notificado')">🚫 Suspender</button>
-            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
-          </div>
-        </div>
-        <div class="report-card">
-          <div class="report-header">
-            <div><strong style="font-size:.95rem">TechOfertas BA</strong><br><span style="font-size:.75rem;color:var(--gray)">Reportado por: <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="51303f307f213423342b11363c30383d7f323e3c">[email&#160;protected]</a></span></div>
-            <span class="report-type spam">📢 Spam</span>
-          </div>
-          <div class="report-body">"Este proveedor me mandó mensajes no solicitados al WhatsApp con publicidad. Obtuvo mi número sin mi consentimiento."</div>
-          <div class="report-meta">📅 Recibido: Hace 3h · 👁 1 reporte</div>
-          <div class="report-actions">
-            <button class="tbl-btn view" onclick="showToast('Abriendo perfil del proveedor...')">👁 Ver perfil</button>
-            <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️ Advertir</button>
-            <button class="tbl-btn reject" onclick="showToast('Proveedor suspendido')">🚫 Suspender</button>
-            <button class="tbl-btn approve" onclick="showToast('Reporte descartado')">✓ Descartar</button>
-          </div>
-        </div>
+        <div id="reportes-list"><div style="color:var(--gray);text-align:center;padding:40px">Cargando reportes...</div></div>
       </div>
 
       <!-- CONFIGURACIÓN -->
@@ -536,6 +538,28 @@ tr:hover td{background:#fafbff}
     </div><!-- end main-content -->
   </div><!-- end app-body -->
 </div><!-- end admin-app -->
+
+<!-- MODAL PROVEEDOR -->
+<div class="prov-modal-overlay" id="provModal">
+  <div class="prov-modal-box">
+    <div class="prov-modal-header">
+      <div class="prov-modal-avatar" id="prov-avatar">--</div>
+      <div>
+        <div class="prov-modal-title" id="prov-modal-nombre">Cargando...</div>
+        <div class="prov-modal-sub" id="prov-modal-estado"></div>
+      </div>
+      <button onclick="closeProvModal()" style="margin-left:auto;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray)">✕</button>
+    </div>
+    <div class="prov-fields" id="prov-fields-view"></div>
+    <div class="prov-productos-title">Productos cargados</div>
+    <div id="prov-productos-list" style="margin-bottom:16px"></div>
+    <div class="prov-modal-actions">
+      <button class="tbl-btn view" id="btn-editar-prov" onclick="toggleEditProv()">✏️ Editar datos</button>
+      <button class="tbl-btn approve" id="btn-guardar-prov" style="display:none" onclick="guardarProveedor()">💾 Guardar</button>
+      <button class="modal-btn cancel" onclick="closeProvModal()">Cerrar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL CONFIRMACIÓN -->
 <div class="modal-overlay" id="confirmModal">
@@ -578,6 +602,7 @@ async function tryLogin(){
   cargarProveedoresPendientes();
   cargarTodosProveedores();
   cargarUsuarios();
+  cargarReportes();
 }
 
 async function adminLogout(){
@@ -776,8 +801,131 @@ async function cargarUsuarios(){
   } catch(e){ console.log('usuarios error',e); }
 }
 
-// ===== ACCIONES =====
-function verProveedor(id){ showToast('ID: ' + id.substring(0,8) + '...'); }
+// ===== VER / EDITAR PROVEEDOR =====
+let provEditando = null;
+let provEditMode = false;
+
+async function verProveedor(id){
+  provEditando = null; provEditMode = false;
+  document.getElementById('btn-guardar-prov').style.display='none';
+  document.getElementById('btn-editar-prov').style.display='';
+  document.getElementById('prov-modal-nombre').textContent = 'Cargando...';
+  document.getElementById('prov-avatar').textContent = '...';
+  document.getElementById('provModal').classList.add('open');
+
+  const [{data:prov},{data:prods}] = await Promise.all([
+    sb.from('proveedores').select('*').eq('id',id).single(),
+    sb.from('productos').select('nombre,precio,imagen_url').eq('proveedor_id',id).limit(10)
+  ]);
+  if(!prov){ showToast('Error al cargar proveedor'); return; }
+  provEditando = prov;
+
+  document.getElementById('prov-avatar').textContent = prov.nombre?.substring(0,2).toUpperCase()||'??';
+  document.getElementById('prov-modal-nombre').textContent = prov.nombre||'Sin nombre';
+  document.getElementById('prov-modal-estado').textContent = `${prov.estado?.toUpperCase()} · Plan ${prov.plan?.toUpperCase()} · ${prov.rubro||'Sin rubro'}`;
+
+  renderProvFields(prov, false);
+
+  const prodsEl = document.getElementById('prov-productos-list');
+  prodsEl.innerHTML = prods?.length
+    ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${p.imagen_url}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${p.nombre||'Sin nombre'}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${p.precio}</span>`:''}</div>`).join('')
+    : '<div style="color:var(--gray);font-size:.82rem">Sin productos cargados</div>';
+}
+
+function renderProvFields(prov, editable){
+  const f = (label, val, key, type='text', full=false) => `
+    <div class="prov-field${full?' prov-field-full':''}">
+      <label>${label}</label>
+      ${editable && key ? `<input type="${type}" id="pedit-${key}" value="${(val||'').replace(/"/g,'&quot;')}">` : `<span>${val||'—'}</span>`}
+    </div>`;
+  const ta = (label, val, key) => `
+    <div class="prov-field prov-field-full">
+      <label>${label}</label>
+      ${editable && key ? `<textarea id="pedit-${key}">${val||''}</textarea>` : `<span>${val||'—'}</span>`}
+    </div>`;
+  document.getElementById('prov-fields-view').innerHTML =
+    f('Nombre',prov.nombre,'nombre') +
+    f('CUIT',prov.cuit,'cuit') +
+    f('Email',prov.email,'email','email') +
+    f('WhatsApp',prov.whatsapp,'whatsapp') +
+    f('Rubro',prov.rubro,'rubro') +
+    f('Provincia',prov.provincia,'provincia') +
+    f('Plan',prov.plan,null) +
+    f('Estado',prov.estado,null) +
+    ta('Descripción',prov.descripcion,'descripcion');
+}
+
+function toggleEditProv(){
+  provEditMode = !provEditMode;
+  renderProvFields(provEditando, provEditMode);
+  document.getElementById('btn-guardar-prov').style.display = provEditMode ? '' : 'none';
+  document.getElementById('btn-editar-prov').textContent = provEditMode ? '✕ Cancelar' : '✏️ Editar datos';
+}
+
+async function guardarProveedor(){
+  if(!provEditando) return;
+  const get = k => document.getElementById('pedit-'+k)?.value||'';
+  const updates = { nombre:get('nombre'), cuit:get('cuit'), email:get('email'), whatsapp:get('whatsapp'), rubro:get('rubro'), provincia:get('provincia'), descripcion:get('descripcion') };
+  const {error} = await sb.from('proveedores').update(updates).eq('id',provEditando.id);
+  if(error){ showToast('Error al guardar'); return; }
+  showToast('✅ Datos actualizados');
+  provEditando = {...provEditando,...updates};
+  toggleEditProv();
+  cargarTodosProveedores();
+  cargarProveedoresPendientes();
+}
+
+function closeProvModal(){ document.getElementById('provModal').classList.remove('open'); }
+
+// ===== REPORTES =====
+async function cargarReportes(){
+  const el = document.getElementById('reportes-list');
+  const {data, error} = await sb.from('reportes').select('*').order('created_at',{ascending:false});
+  if(error || !data?.length){
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">No hay reportes pendientes ✓</div>';
+    return;
+  }
+  el.innerHTML = data.map(r => {
+    const resuelto = r.estado === 'resuelto';
+    const tipo = r.tipo || 'otro';
+    const tipoLabel = tipo==='estafa'?'🚨 Posible estafa':tipo==='spam'?'📢 Spam':'⚠️ Otro';
+    const tipoClass = tipo==='estafa'?'estafa':tipo==='spam'?'spam':'otro';
+    return `<div class="report-card${resuelto?' report-resuelto':''}">
+      <div class="report-header">
+        <div><strong style="font-size:.95rem">${r.proveedor_nombre||r.proveedor_id||'Proveedor'}</strong><br>
+        <span style="font-size:.75rem;color:var(--gray)">Reportado por: ${r.usuario_email||'anónimo'}</span></div>
+        <span class="report-type ${tipoClass}">${tipoLabel}</span>
+      </div>
+      <div class="report-body">"${r.descripcion||r.mensaje||'Sin descripción'}"</div>
+      <div class="report-meta">📅 ${timeAgoAdmin(r.created_at)}${resuelto?' · ✅ Resuelto':''}</div>
+      ${!resuelto ? `<div class="report-actions">
+        ${r.proveedor_id?`<button class="tbl-btn view" onclick="verProveedor('${r.proveedor_id}')">👁 Ver proveedor</button>`:''}
+        ${r.proveedor_id?`<button class="tbl-btn reject" onclick="suspenderPorReporte('${r.proveedor_id}','${r.id}')">🚫 Suspender</button>`:''}
+        <button class="tbl-btn approve" onclick="resolverReporte('${r.id}')">✓ Resolver</button>
+      </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+async function resolverReporte(id){
+  const {error} = await sb.from('reportes').update({estado:'resuelto'}).eq('id',id);
+  if(error){ showToast('Error'); return; }
+  showToast('✅ Reporte marcado como resuelto');
+  cargarReportes();
+  cargarDashboard();
+}
+
+async function suspenderPorReporte(provId, reporteId){
+  const [r1,r2] = await Promise.all([
+    sb.from('proveedores').update({estado:'suspendido'}).eq('id',provId),
+    sb.from('reportes').update({estado:'resuelto'}).eq('id',reporteId)
+  ]);
+  if(r1.error||r2.error){ showToast('Error'); return; }
+  showToast('🚫 Proveedor suspendido y reporte resuelto');
+  cargarReportes();
+  cargarDashboard();
+  cargarTodosProveedores();
+}
 
 function aprobarProveedor(id, nombre, btn){
   pendingAction = {type:'approve', id, nombre, btn};
@@ -845,6 +993,7 @@ function showPage(name, el){
   if(name==='proveedores'){ cargarProveedoresPendientes(); cargarTodosProveedores(); }
   if(name==='usuarios') cargarUsuarios();
   if(name==='dashboard') cargarDashboard();
+  if(name==='reportes') cargarReportes();
 }
 
 function filterTable(input, tableId){
