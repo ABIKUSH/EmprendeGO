@@ -2367,7 +2367,7 @@ function renderProdCard(p) {
 }
 
 function renderHomeCarousels() {
-  const all = todosProductos || [];
+  const all = productosReales || [];
   const c1 = document.getElementById('prodInicioCarousel1');
   const c2 = document.getElementById('prodInicioCarousel2');
   if (!c1 || !c2) return;
