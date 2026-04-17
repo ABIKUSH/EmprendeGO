@@ -925,6 +925,8 @@ async function checkSession() {
       const name = user.user_metadata?.full_name || user.email.split('@')[0];
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
+      // Guardar/actualizar usuario en la tabla usuarios
+      await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
