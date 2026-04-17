@@ -2354,14 +2354,15 @@ function ordenarMisProds(tipo) {
 
 // ===== HOME CAROUSELS =====
 function renderProdCard(p) {
-  const img = p.imagen_url
-    ? `<img src="${p.imagen_url}" style="width:100%;height:100px;object-fit:cover">`
-    : `<div style="width:100%;height:100px;background:#f0f0f0;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
-  return `<div onclick="abrirDetalleProducto('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0">
+  const img = p.imgUrl
+    ? `<img src="${p.imgUrl}" style="width:100%;height:100px;object-fit:cover" onerror="this.parentElement.innerHTML='<div style=width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem>${p.emoji||'📦'}</div>'">`
+    : `<div style="width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem">${p.emoji||'📦'}</div>`;
+  return `<div onclick="abrirDetalleProd('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     ${img}
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
       <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+      <div style="font-size:.68rem;color:#999;margin-top:3px">${p.provNombre||''}</div>
     </div>
   </div>`;
 }
