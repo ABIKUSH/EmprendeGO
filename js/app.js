@@ -2367,13 +2367,36 @@ function renderProdCard(p) {
   </div>`;
 }
 
+function toggleResenas(header) {
+  const col = document.getElementById('resenas-collapsible');
+  const icon = header.querySelector('.resenas-toggle-icon');
+  if (!col) return;
+  const open = col.style.display !== 'none';
+  col.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▼ Ver reseñas' : '▲ Ocultar reseñas';
+}
+
 function renderHomeCarousels() {
   const all = productosReales || [];
   const c1 = document.getElementById('prodInicioCarousel1');
   const c2 = document.getElementById('prodInicioCarousel2');
   if (!c1 || !c2) return;
-  const first8 = all.slice(0, 8);
-  const second8 = all.slice(8, 16);
+
+  // Diversificar: max 2 productos por proveedor, intercalados
+  const byProv = {};
+  all.forEach(p => { if(!byProv[p.provId]) byProv[p.provId]=[]; if(byProv[p.provId].length<2) byProv[p.provId].push(p); });
+  const diverse = [];
+  const provKeys = Object.keys(byProv);
+  let i = 0;
+  while(diverse.length < 16) {
+    let added = false;
+    for(const k of provKeys) { if(byProv[k][i]) { diverse.push(byProv[k][i]); added=true; } }
+    if(!added) break;
+    i++;
+  }
+
+  const first8 = diverse.slice(0, 8);
+  const second8 = diverse.slice(8, 16);
   c1.innerHTML = first8.length ? first8.map(p => renderProdCard(p)).join('') : '<div style="color:#999;font-size:.85rem;padding:20px">No hay productos aún</div>';
   c2.innerHTML = second8.length ? second8.map(p => renderProdCard(p)).join('') : '';
   if (!second8.length && c2.parentElement) {
