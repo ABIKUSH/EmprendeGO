@@ -270,6 +270,10 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
 .det-cta{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
 .det-btn-wa{background:#25d366;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
 .det-btn-chat{background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
+.det-cta-top{display:flex;flex-direction:column;gap:10px;margin:0 20px 16px}
+.det-btn-wa-top{background:linear-gradient(135deg,#25d366,#128c7e);color:white;border:none;border-radius:16px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(37,211,102,.35)}
+.det-btn-chat-top{background:linear-gradient(135deg,#1847c8,#7c3aed);color:white;border:none;border-radius:16px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(24,71,200,.3)}
+.resenas-toggle-icon{font-size:.78rem;font-weight:700;color:var(--blue);white-space:nowrap}
 
 /* CALCULADORA */
 .calc-box{background:linear-gradient(135deg,#f0fdf8,#eef2ff);border:1.5px solid #a7f3d0;border-radius:14px;padding:16px;margin-bottom:12px}
