@@ -290,15 +290,57 @@ let notificaciones = [];
 let notifLeidas = new Set();
 try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch(e) {}
 
-function initNotificaciones() {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  notificaciones = [
-    { id:'n1', tipo:'new', icon:'🆕', titulo:'Nuevo proveedor: ' + (lista[0]?.nombre || 'TechMayor BA'), texto:'Se acaba de unir a EmprendeGo. ¡Mirá su catálogo!', tiempo:'Hace 5 min', provId: lista[0]?.id },
-    { id:'n2', tipo:'tip', icon:'💡', titulo:'Tip del día', texto:'Los proveedores de Moda en Santa Fe tienen los mejores precios esta semana.', tiempo:'Hace 1 hora' },
-    { id:'n3', tipo:'new', icon:'🆕', titulo:'Nuevo proveedor: ' + (lista[2]?.nombre || 'Modas del Litoral'), texto:'Nuevos modelos de temporada disponibles.', tiempo:'Hace 2 horas', provId: lista[2]?.id },
-    { id:'n4', tipo:'promo', icon:'🔥', titulo:'Oferta limitada', texto:'3 proveedores de Bazar lanzaron precios especiales por fin de mes.', tiempo:'Hace 3 horas' },
-    { id:'n5', tipo:'tip', icon:'💡', titulo:'Consejo', texto:'Usá el comparador para elegir mejor entre proveedores similares.', tiempo:'Ayer' }
-  ];
+const TIPS_DIARIOS = [
+  'Antes de contactar un proveedor, tené listo cuántas unidades querés pedir.',
+  'Usá el comparador para elegir mejor entre proveedores del mismo rubro.',
+  'Los proveedores PRO responden más rápido. Priorizalos si necesitás urgente.',
+  'Preguntale siempre al proveedor si tiene precio especial por volumen.',
+  'Guardá en favoritos los proveedores que te interesan para compararlos después.',
+  'Consultá el pedido mínimo antes de contactar para no perder tiempo.',
+  'Los mejores márgenes suelen estar en rubros con menos competencia local.'
+];
+
+async function initNotificaciones() {
+  try {
+    const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data: nuevos } = await sb.from('proveedores')
+      .select('id, nombre, rubro, created_at')
+      .eq('estado', 'aprobado')
+      .gte('created_at', hace30dias)
+      .order('created_at', { ascending: false })
+      .limit(4);
+
+    notificaciones = [];
+
+    const tipIndex = new Date().getDay();
+    notificaciones.push({
+      id: 'tip-' + tipIndex,
+      tipo: 'tip', icon: '💡',
+      titulo: 'Tip del día',
+      texto: TIPS_DIARIOS[tipIndex],
+      tiempo: 'Hoy'
+    });
+
+    (nuevos || []).forEach(p => {
+      const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
+      const tiempo = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
+      notificaciones.push({
+        id: 'prov-' + p.id,
+        tipo: 'new', icon: '🆕',
+        titulo: 'Nuevo: ' + p.nombre,
+        texto: (p.rubro || 'Proveedor') + ' verificado se sumó a EmprendeGo.',
+        tiempo,
+        provId: String(p.id)
+      });
+    });
+
+    if (!notificaciones.length) {
+      notificaciones.push({ id:'n-empty', tipo:'tip', icon:'🔔', titulo:'Sin novedades', texto:'Cuando haya nuevos proveedores te avisamos acá.', tiempo:'' });
+    }
+  } catch(e) {
+    notificaciones = [{ id:'n-err', tipo:'tip', icon:'💡', titulo:'Tip del día', texto: TIPS_DIARIOS[new Date().getDay()], tiempo:'Hoy' }];
+  }
+
   const tieneNoLeidas = notificaciones.some(n => !notifLeidas.has(n.id));
   document.getElementById('notifDot').classList.toggle('show', tieneNoLeidas);
   const d2 = document.getElementById('notifDot2');
@@ -634,7 +676,7 @@ function abrirWA(num) {
 }
 
 async function cargarProductosDetalle(proveedorId) {
-  const el = document.getElementById('renderDetCarousels(prodsDetalle);');
+  const el = document.getElementById('det-productos-carousels');
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
@@ -948,6 +990,17 @@ function logout() {
 function updateTopbar() {
   const btn = document.getElementById('topbar-login-btn');
   if (btn) btn.textContent = currentUser ? currentUser.name.split(' ')[0] : '→ Ingresar';
+  const greet = document.getElementById('hero-greeting');
+  if (greet) {
+    if (currentUser) {
+      const hora = new Date().getHours();
+      const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
+      greet.textContent = saludo + ', ' + currentUser.name.split(' ')[0] + '! 👋';
+      greet.style.display = 'block';
+    } else {
+      greet.style.display = 'none';
+    }
+  }
 }
 function updatePerfilUI() {
   if (!currentUser) return;
@@ -2433,6 +2486,72 @@ function renderDetCarousels(prodsDetalle) {
   container.innerHTML = html;
 }
 
+// ===== RECIÉN LLEGADOS =====
+async function renderRecienLlegados() {
+  const seccion = document.getElementById('seccion-recien-llegados');
+  const lista = document.getElementById('recien-llegados-list');
+  if (!seccion || !lista) return;
+  try {
+    const hace14dias = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await sb.from('proveedores')
+      .select('id, nombre, rubro, provincia, plan, logo_url, created_at')
+      .eq('estado', 'aprobado')
+      .gte('created_at', hace14dias)
+      .order('created_at', { ascending: false })
+      .limit(3);
+    if (!data || !data.length) return;
+    seccion.style.display = 'block';
+    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED'];
+    lista.innerHTML = data.map((p, i) => {
+      const ini = p.nombre.substring(0, 2).toUpperCase();
+      const bg = bgs[i % bgs.length];
+      const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
+      const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
+      return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
+        ${p.logo_url
+          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+        }
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
+          <div style="font-size:.73rem;color:#6B7A99;margin-top:1px">${p.rubro || 'General'}${p.provincia ? ' · ' + p.provincia : ''}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span style="font-size:.62rem;font-weight:800;background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:20px">${badge}</span>
+          ${p.plan === 'pro' ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:2px 7px;border-radius:20px">PRO</span>' : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+// ===== HERO STATS =====
+async function cargarHeroStats() {
+  try {
+    const [{ data: provs }, { data: prods }] = await Promise.all([
+      sb.from('proveedores').select('id, rubro').eq('estado', 'aprobado'),
+      sb.from('productos').select('id')
+    ]);
+    const numProvs = provs?.length || 0;
+    const numProds = prods?.length || 0;
+    const rubros = new Set((provs || []).map(p => p.rubro).filter(Boolean));
+    const numRubros = rubros.size;
+    const e1 = document.getElementById('hero-stat-provs');
+    const e2 = document.getElementById('hero-stat-prods');
+    const e3 = document.getElementById('hero-stat-rubros');
+    if (e1) e1.textContent = numProvs > 0 ? '+' + numProvs : '0';
+    if (e2) e2.textContent = numProds > 0 ? '+' + numProds : '0';
+    if (e3) e3.textContent = numRubros > 0 ? '+' + numRubros : '0';
+  } catch(e) {
+    const e1 = document.getElementById('hero-stat-provs');
+    const e2 = document.getElementById('hero-stat-prods');
+    const e3 = document.getElementById('hero-stat-rubros');
+    if (e1) e1.textContent = '—';
+    if (e2) e2.textContent = '—';
+    if (e3) e3.textContent = '—';
+  }
+}
+
 // ===== INIT =====
 refreshFavBadge();
 cargarProveedores().then(()=>{
@@ -2440,8 +2559,11 @@ cargarProveedores().then(()=>{
   renderMapaProvincias();
   renderMapaAllProvs();
 });
+
 renderQuestion();
 checkSession();
+cargarHeroStats();
+renderRecienLlegados();
 cargarProductosReales();
 setTimeout(()=>{try{renderProdBuscar(currentCat,'');}catch(e){}},300);
 // ===== MERCADO PAGO - PLAN PRO =====
