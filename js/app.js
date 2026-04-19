@@ -1193,6 +1193,8 @@ async function cargarProductosProveedor() {
     productos = data || [];
   } catch(e) { productos = []; }
   renderProdGrid();
+  const countEl = document.getElementById('dash-prod-count');
+  if (countEl) countEl.textContent = productos.length + (productos.length === 1 ? ' publicado' : ' publicados');
 }
 async function deleteProduct(id) {
   try { await sb.from('productos').delete().eq('id', id); } catch(e) {}
@@ -2369,7 +2371,34 @@ function resetExcelImport() {
 // ===== MIS PRODUCTOS MODAL =====
 function abrirMisProductos() {
   document.getElementById('misProductosModal').classList.add('open');
+  const s = document.getElementById('mis-prod-search');
+  if (s) s.value = '';
   ordenarMisProds('nuevo');
+}
+
+function buscarMisProds(query) {
+  const q = (query || '').toLowerCase().trim();
+  const filtrados = q ? productos.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.categoria||'').toLowerCase().includes(q)) : productos;
+  const el = document.getElementById('misProductosList');
+  if (!el) return;
+  if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
+  el.innerHTML = filtrados.map(p => {
+    const img = p.imagen_url
+      ? `<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
+    return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
+      ${img}
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock'} · ${p.categoria||'General'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'\\&#39;')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function ordenarMisProds(tipo) {
