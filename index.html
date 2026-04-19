@@ -228,6 +228,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <option value="gratis">Solo Gratis</option>
       </select>
     </div>
+    <div class="filtros-row" style="padding-top:0">
+      <select class="filtro-sel" id="fil-orden" onchange="filterProvs()" style="width:100%">
+        <option value="">&#8597; Ordenar por...</option>
+        <option value="rating">⭐ Mejor puntuados</option>
+        <option value="minimo">💰 Menor pedido mínimo</option>
+        <option value="nuevo">🆕 Más recientes</option>
+      </select>
+    </div>
     <div class="prov-list" id="provList"></div>
   </div>
 </div>
