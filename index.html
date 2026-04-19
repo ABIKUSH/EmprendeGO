@@ -83,6 +83,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <div style="position:relative;min-height:320px;background:url('https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80') center/cover;overflow:hidden">
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.7) 100%)"></div>
     <div style="position:relative;z-index:1;padding:20px 22px 24px">
+      <div id="hero-greeting" style="display:none;font-size:.82rem;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:10px;letter-spacing:.01em"></div>
       <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">PROVEEDORES VERIFICADOS · ARGENTINA</div>
       <h1 style="font-family:'Sora',sans-serif;font-size:1.85rem;font-weight:900;line-height:1.15;color:#fff;margin-bottom:16px">Encontrá el proveedor<br>que tu negocio necesita</h1>
       <div style="display:flex;background:white;border-radius:12px;overflow:hidden;align-items:center;margin-bottom:12px">
@@ -95,18 +96,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <!-- Stats flotantes -->
     <div style="position:relative;z-index:1;margin:-8px 16px 0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px;display:flex;box-shadow:0 4px 20px rgba(0,0,0,.1)">
       <div style="flex:1;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">+500</div>
+        <div id="hero-stat-provs" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">…</div>
         <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Proveedores</div>
       </div>
       <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">+2k</div>
+        <div id="hero-stat-prods" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">…</div>
         <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Productos</div>
       </div>
       <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#006039">100%</div>
-        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Verificados</div>
+        <div id="hero-stat-rubros" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#006039">…</div>
+        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Rubros</div>
       </div>
     </div>
   </div>
@@ -141,6 +142,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Alimentos</span>
       </div>
     </div>
+  </div>
+
+  <!-- RECIÉN LLEGADOS -->
+  <div id="seccion-recien-llegados" style="display:none;padding:20px 20px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">🆕 Recién llegados</div>
+      <span onclick="switchBuscarTab('proveedores',document.getElementById('tab-proveedores'));goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+    </div>
+    <div id="recien-llegados-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 
   <!-- PRODUCTOS DESTACADOS -->
