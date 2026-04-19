@@ -1799,31 +1799,74 @@ function renderProdInicio(){
     </div>`).join('');
 }
 
-function renderProdBuscar(filtro,query=''){
-  const el=document.getElementById('prodBuscarGrid');
-  const summary=document.getElementById('buscarSummary');
-  if(!el) return;
-  let lista=getProdLista();
-  const q=(query||'').toLowerCase().trim();
-  if(filtro&&filtro!=='Todas') lista=lista.filter(p=>(p.cat||'').toLowerCase()===filtro.toLowerCase()||(p.cat||'').toLowerCase()===filtro.replace('í','i').toLowerCase());
-  if(q) lista=lista.filter(p=>(p.nombre||'').toLowerCase().includes(q)||(p.cat||'').toLowerCase().includes(q)||(p.provNombre||'').toLowerCase().includes(q));
-  if(summary) summary.textContent=lista.length?`${lista.length} resultado${lista.length===1?'':'s'} en productos`:'Sin resultados en productos';
-  if(!lista.length){el.innerHTML='<div class="empty-state" style="grid-column:1/-1;background:white;border-radius:16px;border:1px solid var(--border)"><div class="ei">🔎</div><p>No encontramos productos con esos filtros.</p></div>';return;}
-  el.innerHTML=lista.map(p=>`
-    <div class="prod-buscar-card" onclick="abrirDetalleProd('${p.id}')">
-      <div class="top" style="background:${p.provColor}18">
-        ${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
-        <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
-      </div>
-      <div class="body">
-        <div class="title">${p.nombre}</div>
-        <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="meta"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
-        <div class="prod-buscar-min">${p.pedido_minimo||'Pedido mínimo: consultar'}</div>
-        <div class="actions">
-          <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${p.id}')">Ver detalle</button>
-          <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${p.provId}')">Proveedor</button>
+function renderProdBuscarCard(p) {
+  const img = p.imgUrl
+    ? `<img src="${p.imgUrl}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#f5f7ff\'>${p.emoji||'📦'}</div>'">`
+    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor||'#EEF2FF'}22">${p.emoji||'📦'}</div>`;
+  return `<div onclick="abrirDetalleProd('${p.id}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
+    ${img}
+    <div style="padding:8px 9px 10px">
+      <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${p.nombre}</div>
+      <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
+      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.provNombre||''}</div>
+    </div>
+  </div>`;
+}
+
+function renderProdBuscar(filtro, query='') {
+  const el = document.getElementById('prodBuscarGrid');
+  const summary = document.getElementById('buscarSummary');
+  if (!el) return;
+  let lista = getProdLista();
+  const q = (query||'').toLowerCase().trim();
+  if (filtro && filtro !== 'Todas') lista = lista.filter(p => (p.cat||'').toLowerCase() === filtro.toLowerCase() || (p.cat||'').toLowerCase() === filtro.replace('í','i').toLowerCase());
+  if (q) lista = lista.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q) || (p.provNombre||'').toLowerCase().includes(q));
+  if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length===1?'':'s'} en productos` : 'Sin resultados en productos';
+  if (!lista.length) {
+    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#999;font-size:.88rem">🔎 No encontramos productos con esos filtros.</div>';
+    el.style.display = 'block';
+    return;
+  }
+
+  // Si hay búsqueda por texto o categoría específica → grid 2 columnas
+  if (q || (filtro && filtro !== 'Todas')) {
+    el.style.display = 'grid';
+    el.innerHTML = lista.map(p => `
+      <div class="prod-buscar-card" onclick="abrirDetalleProd('${p.id}')">
+        <div class="top" style="background:${p.provColor}18">
+          ${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
+          <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
         </div>
+        <div class="body">
+          <div class="title">${p.nombre}</div>
+          <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
+          <div class="meta"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+          <div class="actions">
+            <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${p.id}')">Ver detalle</button>
+            <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${p.provId}')">Proveedor</button>
+          </div>
+        </div>
+      </div>`).join('');
+    return;
+  }
+
+  // Sin filtro → carruseles por rubro
+  el.style.display = 'block';
+  const catEmojis = {'Tecnología':'📱','Tecnologia':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};
+  const porRubro = {};
+  lista.forEach(p => {
+    const rubro = p.cat || 'Otro';
+    if (!porRubro[rubro]) porRubro[rubro] = [];
+    porRubro[rubro].push(p);
+  });
+  el.innerHTML = Object.entries(porRubro).map(([rubro, prods]) => `
+    <div style="margin-bottom:20px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111">${catEmojis[rubro]||'📦'} ${rubro}</div>
+        <span onclick="setChip(document.querySelector('.chip[onclick*=\\'${rubro}\\']')||document.querySelector('.chip'),'${rubro}')" style="font-size:.75rem;font-weight:700;color:#006039;cursor:pointer">Ver todos ></span>
+      </div>
+      <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+        ${prods.map(p => renderProdBuscarCard(p)).join('')}
       </div>
     </div>`).join('');
 }
@@ -2283,10 +2326,13 @@ async function cargarPedidosRecientes() {
 
 async function cambiarEstadoPedido(id, estado) {
   try {
-    await sb.from('pedidos').update({ estado }).eq('id', id);
+    const { error } = await sb.from('pedidos').update({ estado }).eq('id', id);
+    if (error) throw error;
     showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : 'Pedido cancelado');
     cargarPedidosRecientes();
-  } catch(e) { showToast('Error al actualizar'); }
+  } catch(e) {
+    showToast('Error: ' + (e?.message || 'revisá las políticas de Supabase'));
+  }
 }
 
 // ===== UPLOAD AVATARES =====
