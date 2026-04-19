@@ -603,7 +603,7 @@ function renderProvs(list) {
         </div>
         <div class="prov-card-actions">
           ${p.pro
-            ? `<button data-wa="${p.whatsapp||''}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
+            ? `<button data-wa="${p.whatsapp||''}" data-nombre="${(p.nombre||'').replace(/"/g,'')}" data-rubro="${p.rubro||''}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
             : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
@@ -618,7 +618,7 @@ function renderProvs(list) {
     const compb= e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
     if (fb)    { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb)    { e.stopPropagation(); abrirWA(wb.dataset.wa); return; }
+    if (wb)    { e.stopPropagation(); abrirWA(wb.dataset.wa, mensajeWAProv({nombre:wb.dataset.nombre,rubro:wb.dataset.rubro})); return; }
     if (cb)    { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
     if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
     if (card)  abrirDetalle(card.dataset.id);
@@ -640,17 +640,27 @@ function toggleCompararById(id) {
 }
 
 function filterProvs() {
-  const q    = document.getElementById('searchInput')?.value.toLowerCase() || '';
-  const prov = document.getElementById('fil-prov')?.value || '';
-  const plan = document.getElementById('fil-plan')?.value || '';
+  const q     = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  const prov  = document.getElementById('fil-prov')?.value || '';
+  const plan  = document.getElementById('fil-plan')?.value || '';
+  const orden = document.getElementById('fil-orden')?.value || '';
   const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  renderProvs(lista.filter(p => {
+  let result = lista.filter(p => {
     const mc  = currentCat === 'Todas' || p.rubro === currentCat;
     const mq  = !q    || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
     const mp  = !prov || p.provincia === prov;
     const mpl = !plan || (plan === 'pro' ? p.pro : !p.pro);
     return mc && mq && mp && mpl;
-  }));
+  });
+  if (orden === 'rating') {
+    result = result.slice().sort((a, b) => getProvRating(String(b.id)).avg - getProvRating(String(a.id)).avg);
+  } else if (orden === 'minimo') {
+    const num = s => parseInt((s||'').replace(/[^0-9]/g,'')) || 999999;
+    result = result.slice().sort((a, b) => num(a.pedido_minimo) - num(b.pedido_minimo));
+  } else if (orden === 'nuevo') {
+    result = result.slice().sort((a, b) => String(b.id).localeCompare(String(a.id)));
+  }
+  renderProvs(result);
 }
 
 function setChip(el, cat) {
@@ -669,10 +679,23 @@ function filterCat(cat) {
   filterProvs();
 }
 
-function abrirWA(num) {
+function abrirWA(num, msg) {
   const n = (num || '').replace(/[^0-9]/g, '');
-  if (n) window.open('https://wa.me/' + n, '_blank');
-  else showToast('WhatsApp no disponible');
+  if (!n) { showToast('WhatsApp no disponible'); return; }
+  const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
+  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
+}
+
+function mensajeWAProv(prov) {
+  const nombre = prov?.nombre || 'tu negocio';
+  const rubro = prov?.rubro || 'tus productos';
+  return `¡Hola! Vi ${nombre} en EmprendeGO y me interesa conocer los precios mayoristas de ${rubro}. ¿Cuándo podemos hablar?`;
+}
+
+function mensajeWAProd(prod, prov) {
+  const np = prod?.nombre || 'tu producto';
+  const precio = prod?.precio ? ' (vi el precio de $' + Number(prod.precio).toLocaleString('es-AR') + ')' : '';
+  return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
 }
 
 async function cargarProductosDetalle(proveedorId) {
@@ -775,7 +798,7 @@ function abrirDetalle(id) {
 }
 
 function volverDetalle() { goTo(pantallaAnterior); }
-function detWA() { if (provActual && provActual.whatsapp) abrirWA(provActual.whatsapp); else showToast('WhatsApp no disponible'); }
+function detWA() { if (provActual && provActual.whatsapp) abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); else showToast('WhatsApp no disponible'); }
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
 // ===== CALCULADORA =====
@@ -1840,7 +1863,7 @@ function abrirDetalleProd(id){
 }
 function volverDetProd(){goTo(pantallaAnteriorProd);}
 function irAProveedorDesdeProd(){if(productoActual)abrirDetalle(productoActual.provId);}
-function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB.length?proveedoresDB:proveedoresDEMO).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp);else showToast('WhatsApp no disponible');}
+function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB.length?proveedoresDB:proveedoresDEMO).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp,mensajeWAProd(productoActual,prov));else showToast('WhatsApp no disponible');}
 function detChatProd(){if(productoActual)abrirChatDirecto(productoActual.provId);}
 function calcProdDet(){
   const costo=productoActual?productoActual.precio:0;
