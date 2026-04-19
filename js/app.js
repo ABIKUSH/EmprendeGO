@@ -2327,12 +2327,14 @@ async function cargarPedidosRecientes() {
 async function cambiarEstadoPedido(id, estado) {
   showToast('Actualizando...');
   try {
-    const { data, error } = await sb.from('pedidos').update({ estado }).eq('id', id).select();
-    if (error) { showToast('Error Supabase: ' + error.message); return; }
+    const idVal = isNaN(Number(id)) ? id : Number(id);
+    const { data, error } = await sb.from('pedidos').update({ estado }).eq('id', idVal).select();
+    if (error) { showToast('Error: ' + error.message); return; }
+    if (!data || !data.length) { showToast('Sin cambios — revisá permisos'); return; }
     showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : '✕ Pedido cancelado');
     cargarPedidosRecientes();
   } catch(e) {
-    showToast('Error JS: ' + (e?.message || 'desconocido'));
+    showToast('Error: ' + (e?.message || 'desconocido'));
   }
 }
 
