@@ -11,6 +11,7 @@ let chatMsgs = [];
 let buscarTab = 'productos';
 let productoActual = null;
 let pantallaAnteriorProd = 'inicio';
+let provDetalleMostrarTodos = false;
 
 // ===== FAVORITOS =====
 let favs = [];
@@ -732,21 +733,30 @@ async function cargarProductosDetalle(proveedorId) {
         });
       }
     });
-    el.innerHTML = data.map((p, i) => {
+    const limite = provDetalleMostrarTodos ? data.length : Math.min(data.length, 6);
+    const resto = data.length - limite;
+    el.style.cssText = '';
+    const cards = data.slice(0, limite).map((p, i) => {
       const prodId = 'real_' + p.id;
-      const img = p.imagen_url
-        ? `<img src="${p.imagen_url}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
-        : (iconM[p.categoria] || '📦');
-      return `
-      <div onclick="abrirDetalleProd('${prodId}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform .15s;active:transform:scale(.97)">
-        <div style="width:100%;height:80px;background:${bgsColores[i%bgsColores.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.8rem;overflow:hidden;position:relative">${img}</div>
-        <div style="padding:8px 10px 10px">
-          <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:3px;line-height:1.3">${p.nombre}</div>
-          <div style="font-size:.95rem;font-weight:900;color:var(--blue)">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
-          <div style="font-size:.68rem;color:var(--gray);margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Consultar stock'}</div>
+      const emoji = iconM[p.categoria] || '📦';
+      const imgHtml = p.imagen_url
+        ? `<img src="${p.imagen_url}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#f5f7ff\'>${emoji}</div>'">`
+        : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${bgsColores[i%bgsColores.length]}12">${emoji}</div>`;
+      return `<div onclick="abrirDetalleProd('${prodId}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
+        ${imgHtml}
+        <div style="padding:8px 9px 10px">
+          <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${p.nombre}</div>
+          <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:4px">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
+          <div style="font-size:.62rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Consultar'}</div>
         </div>
       </div>`;
     }).join('');
+    el.innerHTML = `
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${resto>0?'12px':'0'}">
+        ${cards}
+      </div>
+      ${resto > 0 ? `<button onclick="provDetalleMostrarTodos=true;cargarProductosDetalle('${proveedorId}')" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${resto} producto${resto>1?'s':''} más →</button>` : ''}
+    `;
   } catch(e) {
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
   }
@@ -758,6 +768,7 @@ function abrirDetalle(id) {
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   provActual = p;
+  provDetalleMostrarTodos = false;
   const active = document.querySelector('.screen.active');
   pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   addToHistorial(p);
@@ -2593,27 +2604,39 @@ function renderDetCarousels(prodsDetalle) {
   const container = document.getElementById('det-productos-carousels');
   if (!container) return;
   if (!prodsDetalle || !prodsDetalle.length) {
-    container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:.85rem">Este proveedor no tiene productos aún.</div>';
+    container.innerHTML = '<div style="text-align:center;padding:20px;color:#999;font-size:.85rem">Este proveedor no tiene productos publicados aún.</div>';
     return;
   }
-  const brands = {};
-  prodsDetalle.forEach(p => {
-    const brand = p.categoria || p.cat || 'General';
-    if (!brands[brand]) brands[brand] = [];
-    brands[brand].push(p);
-  });
-  let html = '';
-  Object.keys(brands).forEach(brand => {
-    const prods = brands[brand];
-    html += `<div style="margin-bottom:16px">
-      <div style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#111;margin-bottom:8px;padding:0 4px">${brand}</div>
-      <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
-        ${prods.slice(0, 20).map(p => renderProdCard(p)).join('')}
+  const visibles = prodsDetalle.slice(0, 6);
+  const resto = prodsDetalle.length - visibles.length;
+  const cards = visibles.map(p => {
+    const img = p.imgUrl
+      ? `<img src="${p.imgUrl}" style="width:100%;height:80px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:80px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem\'>${p.emoji||'📦'}</div>'">`
+      : `<div style="width:100%;height:80px;background:#f5f7ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem">${p.emoji||'📦'}</div>`;
+    return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
+      ${img}
+      <div style="padding:7px 8px 9px">
+        <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.nombre}</div>
+        <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio||0).toLocaleString('es-AR')}</div>
       </div>
     </div>`;
-  });
-  container.innerHTML = html;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${resto > 0 ? '12px' : '0'}">
+      ${cards}
+    </div>
+    ${resto > 0 ? `<button onclick="abrirTodosProductosProv()" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver los ${resto} productos restantes →</button>` : ''}
+  `;
 }
+
+function abrirTodosProductosProv() {
+  const container = document.getElementById('det-productos-carousels');
+  if (!container || !provActual) return;
+  cargarProductosDetalle(provActual.id, true);
+}
+
+
 
 // ===== RECIÉN LLEGADOS =====
 async function renderRecienLlegados() {
