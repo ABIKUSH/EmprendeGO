@@ -925,6 +925,8 @@ async function checkSession() {
       const name = user.user_metadata?.full_name || user.email.split('@')[0];
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
+      // Guardar/actualizar usuario en la tabla usuarios
+      await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
@@ -2352,25 +2354,49 @@ function ordenarMisProds(tipo) {
 
 // ===== HOME CAROUSELS =====
 function renderProdCard(p) {
-  const img = p.imagen_url
-    ? `<img src="${p.imagen_url}" style="width:100%;height:100px;object-fit:cover">`
-    : `<div style="width:100%;height:100px;background:#f0f0f0;display:flex;align-items:center;justify-content:center"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
-  return `<div onclick="abrirDetalleProducto('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0">
+  const img = p.imgUrl
+    ? `<img src="${p.imgUrl}" style="width:100%;height:100px;object-fit:cover" onerror="this.parentElement.innerHTML='<div style=width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem>${p.emoji||'📦'}</div>'">`
+    : `<div style="width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem">${p.emoji||'📦'}</div>`;
+  return `<div onclick="abrirDetalleProd('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     ${img}
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
       <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+      <div style="font-size:.68rem;color:#999;margin-top:3px">${p.provNombre||''}</div>
     </div>
   </div>`;
 }
 
+function toggleResenas(header) {
+  const col = document.getElementById('resenas-collapsible');
+  const icon = header.querySelector('.resenas-toggle-icon');
+  if (!col) return;
+  const open = col.style.display !== 'none';
+  col.style.display = open ? 'none' : 'block';
+  icon.textContent = open ? '▼ Ver reseñas' : '▲ Ocultar reseñas';
+}
+
 function renderHomeCarousels() {
-  const all = todosProductos || [];
+  const all = productosReales || [];
   const c1 = document.getElementById('prodInicioCarousel1');
   const c2 = document.getElementById('prodInicioCarousel2');
   if (!c1 || !c2) return;
-  const first8 = all.slice(0, 8);
-  const second8 = all.slice(8, 16);
+
+  // Diversificar: max 2 productos por proveedor, intercalados
+  const byProv = {};
+  all.forEach(p => { if(!byProv[p.provId]) byProv[p.provId]=[]; if(byProv[p.provId].length<2) byProv[p.provId].push(p); });
+  const diverse = [];
+  const provKeys = Object.keys(byProv);
+  let i = 0;
+  while(diverse.length < 16) {
+    let added = false;
+    for(const k of provKeys) { if(byProv[k][i]) { diverse.push(byProv[k][i]); added=true; } }
+    if(!added) break;
+    i++;
+  }
+
+  const first8 = diverse.slice(0, 8);
+  const second8 = diverse.slice(8, 16);
   c1.innerHTML = first8.length ? first8.map(p => renderProdCard(p)).join('') : '<div style="color:#999;font-size:.85rem;padding:20px">No hay productos aún</div>';
   c2.innerHTML = second8.length ? second8.map(p => renderProdCard(p)).join('') : '';
   if (!second8.length && c2.parentElement) {
