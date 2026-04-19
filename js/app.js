@@ -2278,6 +2278,17 @@ function enviarPedidoPorChat() {
   }, 400);
 }
 
+const ESTADOS_PEDIDO = ['pendiente','confirmado','pago recibido','en preparacion','enviado'];
+const ESTADO_COLOR = {
+  pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444',
+  'pago recibido': '#1847C8', 'en preparacion': '#7C3AED', enviado: '#006039', archivado: '#999'
+};
+const ESTADO_LABEL = {
+  pendiente:'Pendiente', confirmado:'Confirmado', cancelado:'Cancelado',
+  'pago recibido':'Pago recibido', 'en preparacion':'En preparación', enviado:'Enviado', archivado:'Archivado'
+};
+let pedidoActual = null;
+
 async function cargarPedidosRecientes() {
   const el = document.getElementById('dash-pedidos-list');
   if (!el || !currentUser?.proveedorId) return;
@@ -2285,8 +2296,9 @@ async function cargarPedidosRecientes() {
     const { data } = await sb.from('pedidos')
       .select('*')
       .eq('proveedor_id', String(currentUser.proveedorId))
+      .neq('estado', 'archivado')
       .order('created_at', { ascending: false })
-      .limit(5);
+      .limit(10);
     if (!data || !data.length) {
       el.innerHTML = `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
         <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📦</div>
@@ -2295,28 +2307,24 @@ async function cargarPedidosRecientes() {
       </div>`;
       return;
     }
-    const estadoColor = { pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444' };
     el.innerHTML = data.map(p => {
       const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
       const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
       const fecha = new Date(p.created_at);
       const hace = Math.floor((Date.now() - fecha) / 60000);
       const tiempo = hace < 60 ? 'Hace ' + hace + ' min' : hace < 1440 ? 'Hace ' + Math.floor(hace/60) + 'h' : fecha.toLocaleDateString('es-AR');
-      const color = estadoColor[p.estado] || '#999';
-      return `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee">
+      const color = ESTADO_COLOR[p.estado] || '#999';
+      const label = ESTADO_LABEL[p.estado] || p.estado;
+      return `<div onclick="abrirDetallePedido(${JSON.stringify(JSON.stringify(p))})" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer;active:opacity:.8">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <div style="font-size:.82rem;font-weight:800;color:#111">${p.comprador_nombre || 'Comprador'}</div>
-          <span style="font-size:.65rem;font-weight:800;background:${color}22;color:${color};padding:2px 8px;border-radius:20px;text-transform:uppercase">${p.estado}</span>
+          <span style="font-size:.65rem;font-weight:800;background:${color}22;color:${color};padding:2px 8px;border-radius:20px">${label}</span>
         </div>
         <div style="font-size:.75rem;color:#555;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${resumen}</div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:.9rem;font-weight:900;color:#006039">$${Number(p.total).toLocaleString('es-AR')}</div>
-          <div style="font-size:.68rem;color:#999">${tiempo}</div>
+          <div style="font-size:.68rem;color:#1847C8;font-weight:700">${tiempo} · Ver detalle →</div>
         </div>
-        ${p.estado === 'pendiente' ? `<div style="display:flex;gap:6px;margin-top:8px">
-          <button onclick="event.stopPropagation();cambiarEstadoPedido('${p.id}','confirmado')" style="flex:1;background:#E8F2EE;color:#006039;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✓ Confirmar</button>
-          <button onclick="event.stopPropagation();cambiarEstadoPedido('${p.id}','cancelado')" style="flex:1;background:#fff0f0;color:#ef4444;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✕ Cancelar</button>
-        </div>` : ''}
       </div>`;
     }).join('');
   } catch(e) {
@@ -2324,18 +2332,100 @@ async function cargarPedidosRecientes() {
   }
 }
 
-async function cambiarEstadoPedido(id, estado) {
+function abrirDetallePedido(pedidoStr) {
+  const p = typeof pedidoStr === 'string' ? JSON.parse(pedidoStr) : pedidoStr;
+  pedidoActual = p;
+  const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
+  const fecha = new Date(p.created_at).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const color = ESTADO_COLOR[p.estado] || '#999';
+  const label = ESTADO_LABEL[p.estado] || p.estado;
+
+  document.getElementById('pedido-det-titulo').textContent = 'Pedido #' + String(p.id).slice(-4);
+
+  // Progreso
+  const pasos = ESTADOS_PEDIDO;
+  const idxActual = pasos.indexOf(p.estado);
+  document.getElementById('pedido-det-progreso').innerHTML = `
+    <div style="display:flex;align-items:center;gap:0;margin:16px 0 8px">
+      ${pasos.map((s, i) => {
+        const done = i <= idxActual && p.estado !== 'cancelado';
+        const lbl = ESTADO_LABEL[s] || s;
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="width:22px;height:22px;border-radius:50%;background:${done?'#006039':'#eee'};display:flex;align-items:center;justify-content:center;font-size:.65rem;color:${done?'white':'#999'};font-weight:800;position:relative;z-index:1">${done?'✓':(i+1)}</div>
+          <div style="font-size:.55rem;color:${done?'#006039':'#aaa'};font-weight:700;text-align:center;line-height:1.2">${lbl.replace('en preparacion','En prep.')}</div>
+        </div>${i < pasos.length-1 ? `<div style="height:2px;flex:1;background:${i < idxActual && p.estado !== 'cancelado'?'#006039':'#eee'};margin-bottom:14px;margin-top:10px"></div>` : ''}`;
+      }).join('')}
+    </div>
+    ${p.estado === 'cancelado' ? '<div style="background:#fff0f0;color:#ef4444;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:700;text-align:center">Pedido cancelado</div>' : ''}
+  `;
+
+  // Comprador
+  document.getElementById('pedido-det-comprador').innerHTML = `
+    <div style="font-size:.7rem;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Comprador</div>
+    <div style="font-size:.88rem;font-weight:800;color:#111">${p.comprador_nombre || 'Anónimo'}</div>
+    ${p.comprador_email ? `<div style="font-size:.75rem;color:#666;margin-top:2px">${p.comprador_email}</div>` : ''}
+    <div style="font-size:.72rem;color:#999;margin-top:4px">${fecha}</div>
+  `;
+
+  // Items
+  document.getElementById('pedido-det-items').innerHTML = `
+    <div style="font-size:.7rem;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Productos</div>
+    ${items.map(i => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <div style="font-size:.82rem;font-weight:700;color:#111">${i.nombre}</div>
+        <div style="font-size:.72rem;color:#999">x${i.cantidad} · $${Number(i.precio).toLocaleString('es-AR')} c/u</div>
+      </div>
+      <div style="font-size:.88rem;font-weight:900;color:#006039">$${Number(i.subtotal).toLocaleString('es-AR')}</div>
+    </div>`).join('')}
+  `;
+
+  // Total
+  document.getElementById('pedido-det-total').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:.85rem;font-weight:700;color:#006039">Total del pedido</div>
+      <div style="font-size:1.1rem;font-weight:900;color:#006039">$${Number(p.total).toLocaleString('es-AR')}</div>
+    </div>
+  `;
+
+  // Acciones según estado
+  renderAccionesPedido(p);
+  document.getElementById('pedidoDetalleModal').classList.add('open');
+}
+
+function renderAccionesPedido(p) {
+  const el = document.getElementById('pedido-det-acciones');
+  if (!el) return;
+  const siguiente = { pendiente:'confirmado', confirmado:'pago recibido', 'pago recibido':'en preparacion', 'en preparacion':'enviado' };
+  const btnLabel = { confirmado:'✓ Confirmar pedido', 'pago recibido':'💳 Marcar pago recibido', 'en preparacion':'📦 En preparación', enviado:'🚀 Marcar como enviado' };
+  const sigEstado = siguiente[p.estado];
+  el.innerHTML = `
+    ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
+    ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado')" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
+    ${['enviado','cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
+    ${!['enviado','cancelado','archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
+  `;
+}
+
+async function avanzarEstadoPedido(id, estado) {
   showToast('Actualizando...');
   try {
     const idVal = isNaN(Number(id)) ? id : Number(id);
-    const { data, error } = await sb.from('pedidos').update({ estado }).eq('id', idVal).select();
+    const { error } = await sb.from('pedidos').update({ estado }).eq('id', idVal);
     if (error) { showToast('Error: ' + error.message); return; }
-    if (!data || !data.length) { showToast('Sin cambios — revisá permisos'); return; }
-    showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : '✕ Pedido cancelado');
+    pedidoActual = { ...pedidoActual, estado };
+    if (estado === 'archivado') { cerrarDetallePedido(); showToast('Pedido archivado'); }
+    else { renderAccionesPedido(pedidoActual); abrirDetallePedido(pedidoActual); showToast('Estado actualizado ✓'); }
     cargarPedidosRecientes();
-  } catch(e) {
-    showToast('Error: ' + (e?.message || 'desconocido'));
-  }
+  } catch(e) { showToast('Error: ' + (e?.message || 'desconocido')); }
+}
+
+function cerrarDetallePedido() {
+  document.getElementById('pedidoDetalleModal').classList.remove('open');
+  pedidoActual = null;
+}
+
+async function cambiarEstadoPedido(id, estado) {
+  await avanzarEstadoPedido(id, estado);
 }
 
 // ===== UPLOAD AVATARES =====
