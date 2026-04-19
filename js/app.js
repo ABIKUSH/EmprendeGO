@@ -2279,6 +2279,7 @@ function enviarPedidoPorChat() {
 }
 
 const ESTADOS_PEDIDO = ['pendiente','confirmado','pago recibido','en preparacion','enviado'];
+let pedidosCache = [];
 const ESTADO_COLOR = {
   pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444',
   'pago recibido': '#1847C8', 'en preparacion': '#7C3AED', enviado: '#006039', archivado: '#999'
@@ -2299,7 +2300,8 @@ async function cargarPedidosRecientes() {
       .neq('estado', 'archivado')
       .order('created_at', { ascending: false })
       .limit(10);
-    if (!data || !data.length) {
+    pedidosCache = data || [];
+    if (!pedidosCache.length) {
       el.innerHTML = `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
         <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📦</div>
         <div><div style="font-size:.82rem;font-weight:700;color:#111">Todavía no recibiste pedidos</div>
@@ -2307,7 +2309,7 @@ async function cargarPedidosRecientes() {
       </div>`;
       return;
     }
-    el.innerHTML = data.map(p => {
+    el.innerHTML = pedidosCache.map((p, idx) => {
       const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
       const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
       const fecha = new Date(p.created_at);
@@ -2315,7 +2317,7 @@ async function cargarPedidosRecientes() {
       const tiempo = hace < 60 ? 'Hace ' + hace + ' min' : hace < 1440 ? 'Hace ' + Math.floor(hace/60) + 'h' : fecha.toLocaleDateString('es-AR');
       const color = ESTADO_COLOR[p.estado] || '#999';
       const label = ESTADO_LABEL[p.estado] || p.estado;
-      return `<div onclick="abrirDetallePedido(${JSON.stringify(JSON.stringify(p))})" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer;active:opacity:.8">
+      return `<div onclick="abrirDetallePedido(${idx})" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <div style="font-size:.82rem;font-weight:800;color:#111">${p.comprador_nombre || 'Comprador'}</div>
           <span style="font-size:.65rem;font-weight:800;background:${color}22;color:${color};padding:2px 8px;border-radius:20px">${label}</span>
@@ -2332,8 +2334,9 @@ async function cargarPedidosRecientes() {
   }
 }
 
-function abrirDetallePedido(pedidoStr) {
-  const p = typeof pedidoStr === 'string' ? JSON.parse(pedidoStr) : pedidoStr;
+function abrirDetallePedido(idx) {
+  const p = typeof idx === 'number' ? pedidosCache[idx] : idx;
+  if (!p) return;
   pedidoActual = p;
   const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
   const fecha = new Date(p.created_at).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
