@@ -2314,8 +2314,8 @@ async function cargarPedidosRecientes() {
           <div style="font-size:.68rem;color:#999">${tiempo}</div>
         </div>
         ${p.estado === 'pendiente' ? `<div style="display:flex;gap:6px;margin-top:8px">
-          <button onclick="cambiarEstadoPedido('${p.id}','confirmado')" style="flex:1;background:#E8F2EE;color:#006039;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✓ Confirmar</button>
-          <button onclick="cambiarEstadoPedido('${p.id}','cancelado')" style="flex:1;background:#fff0f0;color:#ef4444;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✕ Cancelar</button>
+          <button onclick="event.stopPropagation();cambiarEstadoPedido('${p.id}','confirmado')" style="flex:1;background:#E8F2EE;color:#006039;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✓ Confirmar</button>
+          <button onclick="event.stopPropagation();cambiarEstadoPedido('${p.id}','cancelado')" style="flex:1;background:#fff0f0;color:#ef4444;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✕ Cancelar</button>
         </div>` : ''}
       </div>`;
     }).join('');
@@ -2325,13 +2325,14 @@ async function cargarPedidosRecientes() {
 }
 
 async function cambiarEstadoPedido(id, estado) {
+  showToast('Actualizando...');
   try {
-    const { error } = await sb.from('pedidos').update({ estado }).eq('id', id);
-    if (error) throw error;
-    showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : 'Pedido cancelado');
+    const { data, error } = await sb.from('pedidos').update({ estado }).eq('id', id).select();
+    if (error) { showToast('Error Supabase: ' + error.message); return; }
+    showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : '✕ Pedido cancelado');
     cargarPedidosRecientes();
   } catch(e) {
-    showToast('Error: ' + (e?.message || 'revisá las políticas de Supabase'));
+    showToast('Error JS: ' + (e?.message || 'desconocido'));
   }
 }
 
