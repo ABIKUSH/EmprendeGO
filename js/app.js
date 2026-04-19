@@ -441,7 +441,7 @@ function renderComparadorModal() {
     thead += `<th><div class="comp-header-cell">
       <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
       <div class="comp-header-name">${p.nombre}</div>
-      ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:2px 7px;border-radius:10px">PRO</span>' : ''}
+      ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
     </div></th>`;
   });
   thead += '</tr></thead>';
@@ -563,7 +563,7 @@ function renderProvCardMini(p, i) {
       <div style="font-size:.73rem;color:var(--gray)">${p.rubro}${p.provincia ? ' · ' + p.provincia : ''}</div>
       ${count > 0 ? `<div style="font-size:.7rem;color:var(--yellow);margin-top:2px;font-weight:700">${avg.toFixed(1)} ★ · ${count} reseña${count!==1?'s':''}</div>` : ''}
     </div>
-    ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:3px 8px;border-radius:10px;flex-shrink:0">PRO</span>' : ''}
+    ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:3px 8px;border-radius:10px;flex-shrink:0;letter-spacing:.04em">PRO</span>' : ''}
   </div>`;
 }
 
@@ -598,7 +598,7 @@ function renderProvs(list) {
         <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${p.desc || ''}</p>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF2FF;color:#1847C8">${p.rubro || 'General'}</span>
-          ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white">PRO</span>' : ''}
+          ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
@@ -1043,6 +1043,7 @@ function updatePerfilUI() {
     cargarProductosProveedor();
     cargarStatsDashboard();
     cargarLogoProveedor();
+    cargarPedidosRecientes();
   } else {
     document.getElementById('perfil-user').style.display = 'block';
     document.getElementById('perfil-proveedor').style.display = 'none';
@@ -2181,24 +2182,100 @@ function generarMensajePedido() {
   return msg;
 }
 
+async function guardarPedido() {
+  try {
+    const item0 = carrito[0];
+    const total = carrito.reduce((s, i) => s + (i.producto.precio * i.cantidad), 0);
+    const items = JSON.stringify(carrito.map(i => ({
+      nombre: i.producto.nombre,
+      precio: i.producto.precio,
+      cantidad: i.cantidad,
+      subtotal: i.producto.precio * i.cantidad
+    })));
+    await sb.from('pedidos').insert({
+      proveedor_id: String(item0.provId),
+      comprador_nombre: currentUser?.name || 'Anónimo',
+      comprador_email: currentUser?.email || '',
+      items,
+      total,
+      estado: 'pendiente'
+    });
+  } catch(e) {}
+}
+
 function enviarPedidoPorWA() {
   const item0 = carrito[0];
   if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
   const num = item0.provWA.replace(/[^0-9]/g, '');
   const msg = generarMensajePedido();
+  guardarPedido();
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   closeCarrito();
 }
 
 function enviarPedidoPorChat() {
   const item0 = carrito[0];
+  guardarPedido();
   closeCarrito();
-  // Abrir chat con el mensaje del pedido pre-cargado
   abrirChatDirecto(item0.provId);
   setTimeout(() => {
     const inp = document.getElementById('chat-inp');
     if (inp) inp.value = generarMensajePedido();
   }, 400);
+}
+
+async function cargarPedidosRecientes() {
+  const el = document.getElementById('dash-pedidos-list');
+  if (!el || !currentUser?.proveedorId) return;
+  try {
+    const { data } = await sb.from('pedidos')
+      .select('*')
+      .eq('proveedor_id', String(currentUser.proveedorId))
+      .order('created_at', { ascending: false })
+      .limit(5);
+    if (!data || !data.length) {
+      el.innerHTML = `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
+        <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📦</div>
+        <div><div style="font-size:.82rem;font-weight:700;color:#111">Todavía no recibiste pedidos</div>
+        <div style="font-size:.72rem;color:#999">Los pedidos del carrito aparecen acá</div></div>
+      </div>`;
+      return;
+    }
+    const estadoColor = { pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444' };
+    el.innerHTML = data.map(p => {
+      const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
+      const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
+      const fecha = new Date(p.created_at);
+      const hace = Math.floor((Date.now() - fecha) / 60000);
+      const tiempo = hace < 60 ? 'Hace ' + hace + ' min' : hace < 1440 ? 'Hace ' + Math.floor(hace/60) + 'h' : fecha.toLocaleDateString('es-AR');
+      const color = estadoColor[p.estado] || '#999';
+      return `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-size:.82rem;font-weight:800;color:#111">${p.comprador_nombre || 'Comprador'}</div>
+          <span style="font-size:.65rem;font-weight:800;background:${color}22;color:${color};padding:2px 8px;border-radius:20px;text-transform:uppercase">${p.estado}</span>
+        </div>
+        <div style="font-size:.75rem;color:#555;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${resumen}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-size:.9rem;font-weight:900;color:#006039">$${Number(p.total).toLocaleString('es-AR')}</div>
+          <div style="font-size:.68rem;color:#999">${tiempo}</div>
+        </div>
+        ${p.estado === 'pendiente' ? `<div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="cambiarEstadoPedido('${p.id}','confirmado')" style="flex:1;background:#E8F2EE;color:#006039;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✓ Confirmar</button>
+          <button onclick="cambiarEstadoPedido('${p.id}','cancelado')" style="flex:1;background:#fff0f0;color:#ef4444;border:none;border-radius:8px;padding:7px;font-size:.72rem;font-weight:700;cursor:pointer">✕ Cancelar</button>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:#999;font-size:.82rem">Error al cargar pedidos</div>';
+  }
+}
+
+async function cambiarEstadoPedido(id, estado) {
+  try {
+    await sb.from('pedidos').update({ estado }).eq('id', id);
+    showToast(estado === 'confirmado' ? '✓ Pedido confirmado' : 'Pedido cancelado');
+    cargarPedidosRecientes();
+  } catch(e) { showToast('Error al actualizar'); }
 }
 
 // ===== UPLOAD AVATARES =====
@@ -2570,7 +2647,7 @@ async function renderRecienLlegados() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <span style="font-size:.62rem;font-weight:800;background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:20px">${badge}</span>
-          ${p.plan === 'pro' ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(90deg,#1847C8,#7C3AED);color:white;padding:2px 7px;border-radius:20px">PRO</span>' : ''}
+          ${p.plan === 'pro' ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
         </div>
       </div>`;
     }).join('');
