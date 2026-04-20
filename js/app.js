@@ -568,6 +568,40 @@ function renderProvCardMini(p, i) {
   </div>`;
 }
 
+// ===== SKELETON LOADERS =====
+function skelProv(n=4) {
+  return Array.from({length:n}).map(()=>`
+    <div style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;padding:14px">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        <div class="skel" style="width:44px;height:44px;border-radius:11px;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="skel" style="height:13px;width:55%;margin-bottom:7px"></div>
+          <div class="skel" style="height:10px;width:38%"></div>
+        </div>
+      </div>
+      <div class="skel" style="height:10px;width:92%;margin-bottom:5px"></div>
+      <div class="skel" style="height:10px;width:74%"></div>
+    </div>`).join('');
+}
+function skelCarousel(n=5) {
+  return Array.from({length:n}).map(()=>`
+    <div style="flex-shrink:0;width:140px;background:white;border-radius:14px;overflow:hidden;border:1px solid #eee">
+      <div class="skel" style="width:140px;height:120px;border-radius:0"></div>
+      <div style="padding:9px">
+        <div class="skel" style="height:11px;width:80%;margin-bottom:6px"></div>
+        <div class="skel" style="height:13px;width:50%"></div>
+      </div>
+    </div>`).join('');
+}
+function skelProvHoriz(n=5) {
+  return Array.from({length:n}).map(()=>`
+    <div style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:9px">
+      <div class="skel" style="width:48px;height:48px;border-radius:12px"></div>
+      <div class="skel" style="height:11px;width:80%"></div>
+      <div class="skel" style="height:9px;width:55%"></div>
+    </div>`).join('');
+}
+
 // ===== RENDER PROVEEDORES =====
 function renderProvs(list) {
   const el = document.getElementById('provList');
@@ -2952,6 +2986,18 @@ cargarProveedores().then(()=>{
   renderMapaAllProvs();
   renderProvDestacados();
 });
+
+// Skeletons inmediatos mientras cargan los datos
+(function initSkeletons(){
+  const pl = document.getElementById('provList');
+  if (pl) pl.innerHTML = skelProv(4);
+  const c1 = document.getElementById('prodInicioCarousel1');
+  if (c1) c1.innerHTML = skelCarousel(5);
+  const c2 = document.getElementById('prodInicioCarousel2');
+  if (c2) c2.innerHTML = skelCarousel(5);
+  const pd = document.getElementById('prov-dest-list');
+  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display='block'; }
+})();
 
 renderQuestion();
 checkSession();
