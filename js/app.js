@@ -1013,9 +1013,15 @@ async function checkSession() {
     }
   } catch(e) {}
 }
-function handleLogin(user) { currentUser = user; updatePerfilUI(); updateTopbar(); }
+function handleLogin(user) {
+  currentUser = user;
+  if (user.type === 'user') cargarHistorialLocal(user.email);
+  updatePerfilUI();
+  updateTopbar();
+}
 function logout() {
   currentUser = null; historial = [];
+  try { localStorage.removeItem('eg_historial'); } catch(e) {}
   document.getElementById('perfil-login').style.display = 'block';
   document.getElementById('perfil-user').style.display = 'none';
   document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1091,25 +1097,57 @@ async function cargarStatsDashboard() {
   } catch(e) {}
 }
 // ===== HISTORIAL =====
+function guardarHistorialLocal() {
+  try { localStorage.setItem('eg_historial', JSON.stringify(historial)); } catch(e) {}
+}
+function cargarHistorialLocal(userId) {
+  try {
+    const raw = localStorage.getItem('eg_historial');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) historial = parsed;
+  } catch(e) {}
+}
+
 async function addToHistorial(proveedor) {
   if (!currentUser || currentUser.type !== 'user') return;
   historial = historial.filter(h => h.id !== proveedor.id);
   historial.unshift({...proveedor, visitedAt: new Date()});
   if (historial.length > 10) historial = historial.slice(0,10);
+  guardarHistorialLocal();
 }
+
 async function cargarHistorial() {
   const el = document.getElementById('historialList');
   if (!historial.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>';
   } else {
-    el.innerHTML = historial.map(p => `
-      <div class="hist-item" onclick="abrirDetalle('${p.id}')">
-        <div class="hist-logo">${(p.inicial||p.nombre.substring(0,2)).toUpperCase()}</div>
-        <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
-        <span class="hist-time">${timeAgo(p.visitedAt)}</span>
-      </div>`).join('');
+    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E','#C2410C'];
+    const grupos = {};
+    historial.forEach(p => {
+      const d = new Date(p.visitedAt);
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const ayer = new Date(hoy); ayer.setDate(ayer.getDate()-1);
+      let label = d >= hoy ? 'Hoy' : d >= ayer ? 'Ayer' : 'Anteriores';
+      if (!grupos[label]) grupos[label] = [];
+      grupos[label].push(p);
+    });
+    el.innerHTML = Object.entries(grupos).map(([label, items]) => `
+      <div style="font-size:.7rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">${label}</div>
+      ${items.map((p,i) => {
+        const ini = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
+        const bg = bgs[Number(p.id||i)%bgs.length];
+        return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
+          ${p.logo_url
+            ? `<div class="hist-logo" style="background:none;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+            : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
+          }
+          <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
+          <span class="hist-time">${timeAgo(p.visitedAt)}</span>
+        </div>`;
+      }).join('')}
+    `).join('');
   }
-  // Cargar conversaciones reales desde Supabase
   await cargarMisConversaciones();
 }
 
