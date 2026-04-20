@@ -1,4 +1,4 @@
-const CACHE = 'emprendego-v1';
+const CACHE = 'emprendego-v2';
 const STATIC = [
   '/',
   '/index.html',
