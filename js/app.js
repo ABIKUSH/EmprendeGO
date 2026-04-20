@@ -606,7 +606,12 @@ function skelProvHoriz(n=5) {
 function renderProvs(list) {
   const el = document.getElementById('provList');
   if (!list || !list.length) {
-    el.innerHTML = '<p style="color:var(--gray);text-align:center;padding:30px 0">No se encontraron proveedores</p>';
+    el.innerHTML = `<div style="text-align:center;padding:48px 24px">
+      <div style="font-size:3rem;margin-bottom:14px">🔍</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">No encontramos proveedores</div>
+      <div style="font-size:.84rem;color:#6B7A99;line-height:1.6;margin-bottom:20px">Probá buscando con otro rubro, provincia o sin filtros.</div>
+      <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
+    </div>`;
     return;
   }
   const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
@@ -2978,6 +2983,56 @@ async function cargarHeroStats() {
   }
 }
 
+// ===== ONBOARDING =====
+let obSlide = 0;
+const OB_SLIDES = 3;
+
+function initOnboarding() {
+  try { if (localStorage.getItem('eg_onboarding_done')) return; } catch(e) {}
+  const overlay = document.getElementById('onboarding-overlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+  renderObDots();
+}
+function renderObDots() {
+  const el = document.getElementById('ob-dots');
+  if (!el) return;
+  el.innerHTML = Array.from({length: OB_SLIDES}).map((_, i) =>
+    `<div style="width:${i===obSlide?20:8}px;height:8px;border-radius:4px;background:${i===obSlide?'#006039':'#E5E5E5'};transition:all .25s"></div>`
+  ).join('');
+}
+function nextSlideOnboarding() {
+  const slides = document.querySelectorAll('.ob-slide');
+  if (obSlide < OB_SLIDES - 1) {
+    slides[obSlide].style.display = 'none';
+    obSlide++;
+    slides[obSlide].style.display = 'block';
+    renderObDots();
+    if (obSlide === OB_SLIDES - 1) {
+      document.getElementById('ob-next').textContent = '¡Empezar! 🚀';
+      document.getElementById('ob-skip').style.display = 'none';
+    }
+  } else {
+    cerrarOnboarding();
+  }
+}
+function cerrarOnboarding() {
+  const overlay = document.getElementById('onboarding-overlay');
+  if (overlay) overlay.style.display = 'none';
+  try { localStorage.setItem('eg_onboarding_done', '1'); } catch(e) {}
+}
+
+// ===== COMPARTIR PROVEEDOR =====
+function compartirProveedor() {
+  if (!provActual) return;
+  const texto = `¡Mirá este proveedor en EmprendeGO!\n\n*${provActual.nombre}*\n${provActual.rubro || ''}${provActual.provincia ? ' · ' + provActual.provincia : ''}\n\n${provActual.desc || ''}\n\n👉 emprendego.vercel.app`;
+  if (navigator.share) {
+    navigator.share({ title: provActual.nombre, text: texto, url: 'https://emprendego.vercel.app' }).catch(() => {});
+  } else {
+    try { navigator.clipboard.writeText(texto); showToast('¡Link copiado! Compartilo por WhatsApp 📋'); } catch(e) { showToast('Copiá este link: emprendego.vercel.app'); }
+  }
+}
+
 // ===== INIT =====
 refreshFavBadge();
 cargarProveedores().then(()=>{
@@ -2986,6 +3041,8 @@ cargarProveedores().then(()=>{
   renderMapaAllProvs();
   renderProvDestacados();
 });
+
+initOnboarding();
 
 // Skeletons inmediatos mientras cargan los datos
 (function initSkeletons(){
