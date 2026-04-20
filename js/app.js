@@ -3042,6 +3042,26 @@ cargarProveedores().then(()=>{
   renderProvDestacados();
 });
 
+// ===== CARRUSEL TESTIMONIOS =====
+(function initTestimonios() {
+  const slides = document.querySelectorAll('.testim-slide');
+  const dots   = document.querySelectorAll('.testim-dot');
+  if (!slides.length) return;
+  let cur = 0;
+  function goTo(n) {
+    slides[cur].style.display = 'none';
+    dots[cur].style.width = '8px';
+    dots[cur].style.background = 'rgba(255,255,255,.3)';
+    cur = n % slides.length;
+    slides[cur].style.display = 'flex';
+    slides[cur].style.opacity = '0';
+    dots[cur].style.width = '20px';
+    dots[cur].style.background = 'rgba(255,255,255,.8)';
+    setTimeout(() => { slides[cur].style.transition = 'opacity .4s'; slides[cur].style.opacity = '1'; }, 10);
+  }
+  setInterval(() => goTo(cur + 1), 3500);
+})();
+
 initOnboarding();
 
 // Skeletons inmediatos mientras cargan los datos
