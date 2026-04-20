@@ -226,30 +226,27 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 
-  <!-- POR QUÉ EMPRENDEGO -->
+  <!-- CÓMO FUNCIONA -->
   <div style="padding:24px 20px 0">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">¿Por qué EmprendeGO?</div>
-    <div style="display:flex;flex-direction:column;gap:10px">
-      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
-        <div style="width:42px;height:42px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">✅</div>
-        <div>
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Proveedores verificados</div>
-          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Cada proveedor pasa por revisión manual. Sin estafas.</div>
-        </div>
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
+    <div style="font-size:.8rem;color:#999;margin-bottom:16px">Tres pasos para encontrar tu proveedor ideal</div>
+    <div style="display:flex;gap:0;position:relative">
+      <!-- línea conectora -->
+      <div style="position:absolute;top:20px;left:20px;right:20px;height:2px;background:linear-gradient(90deg,#006039,#4ade80);z-index:0"></div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
+        <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)">🔍</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Buscá</div>
+        <div style="font-size:.71rem;color:#999;line-height:1.4">Por rubro o provincia</div>
       </div>
-      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
-        <div style="width:42px;height:42px;border-radius:12px;background:#FFF7E6;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">⚡</div>
-        <div>
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Contacto directo por WhatsApp</div>
-          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Sin intermediarios. Hablás directo con el proveedor.</div>
-        </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
+        <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)">💬</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Contactá</div>
+        <div style="font-size:.71rem;color:#999;line-height:1.4">Directo por WhatsApp</div>
       </div>
-      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
-        <div style="width:42px;height:42px;border-radius:12px;background:#F0F0FF;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🇦🇷</div>
-        <div>
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">100% Argentina</div>
-          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Proveedores de todas las provincias. Envíos locales.</div>
-        </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
+        <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)">🚀</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Hacé crecer</div>
+        <div style="font-size:.71rem;color:#999;line-height:1.4">Tu negocio</div>
       </div>
     </div>
   </div>
@@ -393,6 +390,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button class="det-back" onclick="volverDetalle()">&#8592; Volver</button>
       <div style="display:flex;gap:8px">
         <button class="fav-btn" id="det-fav-btn" onclick="toggleFavActual()">&#9825;</button>
+        <button onclick="compartirProveedor()" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer">🔗 Compartir</button>
         <button id="det-comp-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer" onclick="toggleComparar()">&#9878; Comparar</button>
       </div>
     </div>
@@ -1206,6 +1204,46 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <div id="notifList"></div>
 </div>
 
+<!-- FAB SOPORTE WHATSAPP -->
+<a id="soporte-fab" href="https://wa.me/5491100000000?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO" target="_blank" style="position:fixed;bottom:96px;right:16px;background:#25D366;color:white;border-radius:50px;padding:11px 16px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(37,211,102,.45);z-index:300;display:flex;align-items:center;gap:7px;text-decoration:none;transition:transform .2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.508 5.845L.057 23.882a.5.5 0 0 0 .611.611l6.037-1.451A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.859 9.859 0 0 1-5.031-1.378l-.361-.214-3.735.898.914-3.734-.235-.374A9.856 9.856 0 0 1 2.118 12C2.118 6.533 6.533 2.118 12 2.118c5.468 0 9.882 4.415 9.882 9.882 0 5.468-4.414 9.882-9.882 9.882z"/></svg>
+  Soporte
+</a>
+
+<!-- ONBOARDING MODAL -->
+<div id="onboarding-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:flex-end;justify-content:center">
+  <div style="background:white;border-radius:28px 28px 0 0;width:100%;max-width:430px;padding:32px 24px 40px;position:relative">
+    <!-- Slide indicators -->
+    <div id="ob-dots" style="display:flex;justify-content:center;gap:6px;margin-bottom:28px"></div>
+    <!-- Slides -->
+    <div id="ob-slides">
+      <!-- slide 0 -->
+      <div class="ob-slide">
+        <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">🛒</div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Bienvenido a<br>EmprendeGO</div>
+        <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">El marketplace B2B más completo de Argentina. Conectamos emprendedores con proveedores mayoristas verificados.</div>
+      </div>
+      <!-- slide 1 -->
+      <div class="ob-slide" style="display:none">
+        <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">🔍</div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Encontrá tu<br>proveedor ideal</div>
+        <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">Buscá entre cientos de proveedores verificados por rubro, provincia y precio. Todos revisados por nuestro equipo.</div>
+      </div>
+      <!-- slide 2 -->
+      <div class="ob-slide" style="display:none">
+        <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">💬</div>
+        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Contacto directo,<br>sin comisiones</div>
+        <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">Hablás directo con el proveedor por WhatsApp. Sin intermediarios, sin comisiones. El mejor precio para tu negocio.</div>
+      </div>
+    </div>
+    <!-- Botones -->
+    <div style="display:flex;gap:10px;margin-top:32px">
+      <button id="ob-skip" onclick="cerrarOnboarding()" style="flex:1;background:#f5f5f5;color:#999;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Saltar</button>
+      <button id="ob-next" onclick="nextSlideOnboarding()" style="flex:2;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;cursor:pointer">Siguiente →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- ===== TÉRMINOS Y CONDICIONES ===== -->
@@ -1267,3 +1305,25 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
+{
+  "name": "EmprendeGO",
+  "short_name": "EmprendeGO",
+  "description": "Marketplace B2B de proveedores mayoristas de Argentina",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#006039",
+  "theme_color": "#006039",
+  "orientation": "portrait",
+  "lang": "es-AR",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["business", "shopping"]
+}
