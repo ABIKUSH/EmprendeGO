@@ -139,10 +139,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         Encontrá el<br><span style="color:#4ade80">proveedor</span><br>que tu negocio<br>necesita.
       </h1>
       <!-- Barra de búsqueda -->
-      <div style="display:flex;background:white;border-radius:14px;overflow:hidden;align-items:stretch;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)">
-        <div style="padding:0 13px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+      <div style="display:flex;background:white;border-radius:14px;align-items:center;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)">
+        <div style="padding:0 12px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <input type="text" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:14px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent;min-width:0" onfocus="goTo('buscar')">
-        <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:0 22px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;letter-spacing:.01em">Buscar</button>
+        <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 22px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;border-radius:0 14px 14px 0;align-self:stretch">Buscar</button>
       </div>
       <!-- Publicar negocio ghost button -->
       <button onclick="goTo('registro')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
@@ -679,7 +679,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:9px;text-align:center">Ver beneficios →</div>
         </div>
         <div style="text-align:center;margin-top:4px">
-          <span onclick="goTo('terminos')" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">Términos y Condiciones</span>
+          <div onclick="goTo('terminos')" style="display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid #E5E5E5;border-radius:12px;padding:13px 16px;cursor:pointer;margin-top:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:1.1rem">📄</span>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;color:#333">Términos y Condiciones</span>
+            </div>
+            <span style="color:#999;font-size:.9rem">›</span>
+          </div>
         </div>
         <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
       </div>
