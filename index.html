@@ -139,10 +139,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         Encontrá el<br><span style="color:#4ade80">proveedor</span><br>que tu negocio<br>necesita.
       </h1>
       <!-- Barra de búsqueda -->
-      <div style="display:flex;background:white;border-radius:14px;align-items:center;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35);overflow:hidden">
+      <div style="display:flex;background:white;border-radius:14px;overflow:hidden;align-items:stretch;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)">
         <div style="padding:0 13px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <input type="text" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:14px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent;min-width:0" onfocus="goTo('buscar')">
-        <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;border-radius:0 14px 14px 0;height:100%;align-self:stretch">Buscar</button>
+        <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:0 22px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;letter-spacing:.01em">Buscar</button>
       </div>
       <!-- Publicar negocio ghost button -->
       <button onclick="goTo('registro')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
@@ -678,6 +678,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div style="color:rgba(255,255,255,.75);font-size:.8rem;line-height:1.5;margin-bottom:12px">WhatsApp directo, badge Verificado, productos ilimitados, estadísticas y mucho más.</div>
           <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:9px;text-align:center">Ver beneficios →</div>
         </div>
+        <div style="text-align:center;margin-top:4px">
+          <span onclick="goTo('terminos')" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">Términos y Condiciones</span>
+        </div>
         <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
       </div>
     </div>
@@ -839,7 +842,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           </a>
         </div>
       </div>
-      <button class="logout-btn" onclick="logout()" style="margin-top:12px">Cerrar sesión</button>
+      <div style="text-align:center;margin-top:8px">
+        <span onclick="goTo('terminos')" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">Términos y Condiciones</span>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="margin-top:10px">Cerrar sesión</button>
     </div>
 
     <div class="tab-content" id="tab-perfil-info" style="display:none">
@@ -1195,6 +1201,57 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- ===== TÉRMINOS Y CONDICIONES ===== -->
+<div class="screen" id="screen-terminos">
+  <div class="topbar">
+    <button onclick="history.back();goTo(pantallaAnterior||'perfil')" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 14px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;color:var(--blue)">← Volver</button>
+    <span class="topbar-logo">Términos</span>
+    <div style="width:70px"></div>
+  </div>
+  <div style="padding:24px 22px 48px;max-width:100%">
+    <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;margin-bottom:6px">Términos y Condiciones</h2>
+    <p style="font-size:.75rem;color:#999;margin-bottom:28px">Última actualización: abril 2025</p>
+
+    <div style="display:flex;flex-direction:column;gap:22px;font-size:.86rem;line-height:1.7;color:#333">
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">1. ¿Qué es EmprendeGO?</div>
+        <p>EmprendeGO es una plataforma digital que conecta emprendedores con proveedores mayoristas de Argentina. No somos parte de ninguna transacción comercial entre usuarios y proveedores.</p>
+      </div>
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">2. Responsabilidad de los proveedores</div>
+        <p>Cada proveedor es responsable exclusivo de la información que publica, incluyendo precios, disponibilidad, condiciones de venta y calidad de productos. EmprendeGO realiza una revisión inicial pero no garantiza la exactitud permanente de dicha información.</p>
+      </div>
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">3. Limitación de responsabilidad</div>
+        <p>EmprendeGO no es responsable por disputas, pérdidas económicas, incumplimientos o cualquier daño derivado de transacciones realizadas entre emprendedores y proveedores. El contacto y la negociación son directos entre las partes.</p>
+      </div>
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Uso aceptable</div>
+        <p>Queda prohibido usar EmprendeGO para publicar información falsa, spam, contenido ilegal o cualquier actividad que perjudique a otros usuarios. EmprendeGO se reserva el derecho de suspender cuentas sin previo aviso.</p>
+      </div>
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">5. Datos personales</div>
+        <p>Los datos que ingresás (nombre, email) se usan exclusivamente para identificarte dentro de la plataforma. No los vendemos ni compartimos con terceros. Podés solicitar la eliminación de tu cuenta escribiendo a soporte@emprendego.com.</p>
+      </div>
+
+      <div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">6. Modificaciones</div>
+        <p>EmprendeGO puede actualizar estos términos en cualquier momento. Los cambios se notificarán dentro de la app. El uso continuado implica la aceptación de los nuevos términos.</p>
+      </div>
+
+      <div style="background:#E8F2EE;border-radius:14px;padding:16px 18px">
+        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">¿Tenés dudas?</div>
+        <p style="font-size:.82rem;color:#006039;line-height:1.5">Escribinos a <strong>soporte@emprendego.com</strong> y te respondemos en menos de 48 horas.</p>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="js/app.js"></script>
 <script>
