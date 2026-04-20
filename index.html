@@ -80,66 +80,132 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </div>
 
   <!-- HERO CON IMAGEN DE FONDO -->
-  <div style="position:relative;min-height:320px;background:url('https://images.unsplash.com/photo-1553413077-190dd305871c?w=800&q=80') center/cover;overflow:hidden">
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.7) 100%)"></div>
-    <div style="position:relative;z-index:1;padding:20px 22px 24px">
-      <div id="hero-greeting" style="display:none;font-size:.82rem;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:10px;letter-spacing:.01em"></div>
-      <div style="font-size:.72rem;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px">PROVEEDORES VERIFICADOS · ARGENTINA</div>
-      <h1 style="font-family:'Sora',sans-serif;font-size:1.85rem;font-weight:900;line-height:1.15;color:#fff;margin-bottom:16px">Encontrá el proveedor<br>que tu negocio necesita</h1>
-      <div style="display:flex;background:white;border-radius:12px;overflow:hidden;align-items:center;margin-bottom:12px">
-        <div style="padding:0 12px;display:flex;align-items:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <input type="text" placeholder="Buscar por rubro o provincia..." style="flex:1;border:none;outline:none;padding:13px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent" onfocus="goTo('buscar')">
-        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:13px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap">Buscar</div>
+  <div style="position:relative;background:url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80') center/cover;overflow:hidden">
+    <div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,10,5,.82) 0%,rgba(0,50,25,.72) 60%,rgba(0,30,15,.65) 100%)"></div>
+    <div style="position:relative;z-index:1;padding:24px 22px 20px">
+      <!-- Greeting personalizado -->
+      <div id="hero-greeting" style="display:none;font-size:.8rem;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:14px;letter-spacing:.01em"></div>
+      <!-- Badge verificado -->
+      <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.3);color:#4ade80;font-size:.71rem;font-weight:700;padding:5px 13px;border-radius:20px;margin-bottom:22px;letter-spacing:.04em">
+        <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;flex-shrink:0"></span>
+        PROVEEDORES VERIFICADOS · ARGENTINA
       </div>
-      <button onclick="goTo('registro')" style="background:rgba(255,255,255,.15);color:white;border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;width:100%;backdrop-filter:blur(4px)">Publicar mi negocio</button>
+      <!-- Título grande con palabra destacada -->
+      <h1 style="font-family:'Sora',sans-serif;font-size:2.4rem;font-weight:900;line-height:1.1;color:#fff;margin-bottom:22px">
+        Encontrá el<br><span style="color:#4ade80">proveedor</span><br>que tu negocio<br>necesita.
+      </h1>
+      <!-- Barra de búsqueda -->
+      <div style="display:flex;background:white;border-radius:14px;overflow:hidden;align-items:center;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)">
+        <div style="padding:0 13px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <input type="text" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:14px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent;min-width:0" onfocus="goTo('buscar')">
+        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 18px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Buscar</div>
+      </div>
+      <!-- Publicar negocio ghost button -->
+      <button onclick="goTo('registro')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
     </div>
+
+    <!-- Social proof flotante -->
+    <div style="position:relative;z-index:1;margin:18px 18px 20px;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#006039,#4ade80);display:flex;align-items:center;justify-content:center;color:white;font-family:'Sora',sans-serif;font-weight:900;font-size:.82rem;flex-shrink:0">MG</div>
+      <div style="flex:1;min-width:0">
+        <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Encontré mi proveedor en 2 días. Ahorro 30% en costos."</div>
+        <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">María G. · Boutique, Buenos Aires</div>
+      </div>
+      <div style="color:#F59E0B;font-size:.78rem;flex-shrink:0;line-height:1">★★★★★</div>
+    </div>
+
     <!-- Stats flotantes -->
-    <div style="position:relative;z-index:1;margin:-8px 16px 0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px;display:flex;box-shadow:0 4px 20px rgba(0,0,0,.1)">
+    <div style="position:relative;z-index:1;margin:0 16px 0;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px;display:flex;box-shadow:0 4px 24px rgba(0,0,0,.18)">
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-provs" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">…</div>
-        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Proveedores</div>
+        <div id="hero-stat-provs" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#1A1A1A">…</div>
+        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Proveedores</div>
       </div>
       <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-prods" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#1A1A1A">…</div>
-        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Productos</div>
+        <div id="hero-stat-prods" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#1A1A1A">…</div>
+        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Productos</div>
       </div>
       <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-rubros" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#006039">…</div>
-        <div style="font-size:.65rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:2px">Rubros</div>
+        <div id="hero-stat-rubros" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#006039">…</div>
+        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Rubros</div>
+      </div>
+    </div>
+    <!-- Espaciado debajo de stats -->
+    <div style="height:20px"></div>
+  </div>
+
+  <!-- CATEGORÍAS CON IMÁGENES -->
+  <div style="padding:26px 20px 0">
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">Explorá por categoría</div>
+    <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+      <div onclick="filterCat('Tecnología')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">💻</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Tecnología</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Moda')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">👗</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Moda</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Hogar')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">🏠</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Hogar</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Bazar')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">🛒</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Bazar</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Alimentos')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1506617420156-8e4536971650?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">🥗</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Alimentos</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- CATEGORÍAS CON IMÁGENES -->
+  <!-- POR QUÉ EMPRENDEGO -->
   <div style="padding:24px 20px 0">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Categorías Destacadas</div>
-    <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px">
-      <div onclick="filterCat('Tecnología')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
-        <img src="https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
-        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Tecnología</span>
+    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">¿Por qué EmprendeGO?</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
+        <div style="width:42px;height:42px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">✅</div>
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Proveedores verificados</div>
+          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Cada proveedor pasa por revisión manual. Sin estafas.</div>
+        </div>
       </div>
-      <div onclick="filterCat('Moda')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
-        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
-        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Moda</span>
+      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
+        <div style="width:42px;height:42px;border-radius:12px;background:#FFF7E6;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">⚡</div>
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Contacto directo por WhatsApp</div>
+          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Sin intermediarios. Hablás directo con el proveedor.</div>
+        </div>
       </div>
-      <div onclick="filterCat('Hogar')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
-        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
-        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Hogar</span>
-      </div>
-      <div onclick="filterCat('Bazar')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
-        <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
-        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Bazar</span>
-      </div>
-      <div onclick="filterCat('Alimentos')" style="min-width:100px;height:110px;border-radius:12px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0">
-        <img src="https://images.unsplash.com/photo-1506617420156-8e4536971650?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.65),transparent)"></div>
-        <span style="position:absolute;bottom:10px;left:10px;color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700">Alimentos</span>
+      <div style="background:white;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;border:1px solid #E5E5E5">
+        <div style="width:42px;height:42px;border-radius:12px;background:#F0F0FF;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">🇦🇷</div>
+        <div>
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">100% Argentina</div>
+          <div style="font-size:.77rem;color:#6B7A99;line-height:1.4">Proveedores de todas las provincias. Envíos locales.</div>
+        </div>
       </div>
     </div>
   </div>
