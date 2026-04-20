@@ -2427,6 +2427,34 @@ function cerrarDetallePedido() {
   pedidoActual = null;
 }
 
+async function verPedidosArchivados() {
+  const el = document.getElementById('dash-pedidos-list');
+  if (!el || !currentUser?.proveedorId) return;
+  const { data } = await sb.from('pedidos')
+    .select('*')
+    .eq('proveedor_id', String(currentUser.proveedorId))
+    .eq('estado', 'archivado')
+    .order('created_at', { ascending: false });
+  pedidosCache = data || [];
+  if (!pedidosCache.length) { showToast('No tenés pedidos archivados'); return; }
+  el.innerHTML = `<div style="font-size:.75rem;color:#999;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between">
+    <span>🗂 Pedidos archivados</span>
+    <span onclick="cargarPedidosRecientes()" style="color:#006039;cursor:pointer">← Ver activos</span>
+  </div>` + pedidosCache.map((p, idx) => {
+    const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
+    const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
+    const fecha = new Date(p.created_at).toLocaleDateString('es-AR');
+    return `<div onclick="abrirDetallePedido(${idx})" style="background:#f8f8f8;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer;opacity:.8">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-size:.82rem;font-weight:800;color:#555">${p.comprador_nombre || 'Comprador'}</div>
+        <span style="font-size:.65rem;color:#999;font-weight:700">${fecha}</span>
+      </div>
+      <div style="font-size:.72rem;color:#999;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${resumen}</div>
+      <div style="font-size:.88rem;font-weight:900;color:#999">$${Number(p.total).toLocaleString('es-AR')}</div>
+    </div>`;
+  }).join('');
+}
+
 async function cambiarEstadoPedido(id, estado) {
   await avanzarEstadoPedido(id, estado);
 }
@@ -2780,6 +2808,38 @@ function abrirTodosProductosProv() {
 
 
 
+// ===== PROVEEDORES DESTACADOS =====
+function renderProvDestacados() {
+  const seccion = document.getElementById('seccion-prov-dest');
+  const lista = document.getElementById('prov-dest-list');
+  if (!seccion || !lista) return;
+  const all = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  if (!all.length) return;
+  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E','#C2410C'];
+  const top = all
+    .map(p => ({ ...p, avgR: getProvRating(String(p.id)).avg }))
+    .sort((a, b) => b.avgR - a.avgR || (b.pro ? 1 : 0) - (a.pro ? 1 : 0))
+    .slice(0, 8);
+  lista.innerHTML = top.map((p, i) => {
+    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+    const bg = bgs[i % bgs.length];
+    const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
+    return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+      ${p.logo_url
+        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+      }
+      <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${p.nombre}</div>
+      <div style="font-size:.68rem;color:#6B7A99;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${p.rubro || ''}</div>
+      <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
+        ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 6px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
+        ${p.avgR > 0 ? `<span style="font-size:.68rem;font-weight:700;color:#F59E0B">${avgR} ★</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  seccion.style.display = 'block';
+}
+
 // ===== RECIÉN LLEGADOS =====
 async function renderRecienLlegados() {
   const seccion = document.getElementById('seccion-recien-llegados');
@@ -2852,6 +2912,7 @@ cargarProveedores().then(()=>{
   initNotificaciones();
   renderMapaProvincias();
   renderMapaAllProvs();
+  renderProvDestacados();
 });
 
 renderQuestion();
