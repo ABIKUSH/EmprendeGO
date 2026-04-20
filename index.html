@@ -3,7 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>EmprendeGo</title>
+<title>EmprendeGO — Proveedores mayoristas de Argentina</title>
+
+<!-- FAVICON (generado por Canvas para máxima compatibilidad) -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<script>
+(function(){
+  try {
+    var c=document.createElement('canvas');c.width=64;c.height=64;
+    var x=c.getContext('2d');
+    var r=14;
+    x.beginPath();x.moveTo(r,0);x.lineTo(64-r,0);x.quadraticCurveTo(64,0,64,r);
+    x.lineTo(64,64-r);x.quadraticCurveTo(64,64,64-r,64);
+    x.lineTo(r,64);x.quadraticCurveTo(0,64,0,64-r);
+    x.lineTo(0,r);x.quadraticCurveTo(0,0,r,0);x.closePath();
+    var g=x.createLinearGradient(0,0,64,64);g.addColorStop(0,'#004D2E');g.addColorStop(1,'#00A651');
+    x.fillStyle=g;x.fill();
+    x.fillStyle='white';x.font='bold 26px Arial Black,Arial,sans-serif';
+    x.textAlign='center';x.textBaseline='middle';x.fillText('EG',32,34);
+    var lnk=document.createElement('link');lnk.rel='icon';lnk.href=c.toDataURL('image/png');
+    document.head.appendChild(lnk);
+  }catch(e){}
+})();
+</script>
+
+<!-- META SEO + WHATSAPP / OG -->
+<meta name="description" content="EmprendeGO — Encontrá proveedores mayoristas verificados de Argentina. Conectá directo por WhatsApp. Gratis para emprendedores.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="EmprendeGO">
+<meta property="og:title" content="EmprendeGO — Proveedores mayoristas de Argentina">
+<meta property="og:description" content="Proveedores verificados de todas las provincias. Contacto directo por WhatsApp. El marketplace B2B para emprendedores argentinos.">
+<meta property="og:image" content="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80">
+<meta property="og:url" content="https://emprendego.vercel.app">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EmprendeGO — Proveedores mayoristas de Argentina">
+<meta name="twitter:description" content="El marketplace B2B para emprendedores argentinos.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80">
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#006039">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="EmprendeGO">
+
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -95,10 +139,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         Encontrá el<br><span style="color:#4ade80">proveedor</span><br>que tu negocio<br>necesita.
       </h1>
       <!-- Barra de búsqueda -->
-      <div style="display:flex;background:white;border-radius:14px;overflow:hidden;align-items:center;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35)">
+      <div style="display:flex;background:white;border-radius:14px;align-items:center;margin-bottom:14px;box-shadow:0 6px 24px rgba(0,0,0,.35);overflow:hidden">
         <div style="padding:0 13px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
         <input type="text" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:14px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent;min-width:0" onfocus="goTo('buscar')">
-        <div onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 18px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Buscar</div>
+        <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 20px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;border-radius:0 14px 14px 0;height:100%;align-self:stretch">Buscar</button>
       </div>
       <!-- Publicar negocio ghost button -->
       <button onclick="goTo('registro')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
@@ -1153,5 +1197,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <div class="toast" id="toast"></div>
 
 <script src="js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+</script>
 </body>
 </html>
