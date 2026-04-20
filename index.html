@@ -144,6 +144,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
   </div>
 
+  <!-- PROVEEDORES DESTACADOS -->
+  <div id="seccion-prov-dest" style="display:none;padding:20px 20px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">⭐ Proveedores destacados</div>
+      <span onclick="switchBuscarTab('proveedores',document.getElementById('tab-proveedores'));goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+    </div>
+    <div id="prov-dest-list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch"></div>
+  </div>
+
   <!-- RECIÉN LLEGADOS -->
   <div id="seccion-recien-llegados" style="display:none;padding:20px 20px 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -659,7 +668,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div style="padding:16px 20px 0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#111">Pedidos recientes</div>
-        <span style="font-size:.78rem;font-weight:700;color:#006039;cursor:pointer">Ver todos</span>
+        <span onclick="verPedidosArchivados()" style="font-size:.78rem;font-weight:700;color:#999;cursor:pointer">🗂 Archivados</span>
       </div>
       <div id="dash-pedidos-list" style="display:flex;flex-direction:column;gap:8px">
         <div style="text-align:center;padding:16px;color:#999;font-size:.82rem">Cargando pedidos...</div>
