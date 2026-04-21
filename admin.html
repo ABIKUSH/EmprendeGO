@@ -752,20 +752,30 @@ async function cargarTodosProveedores(){
       tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados aún</td></tr>';
       return;
     }
-    tbody.innerHTML = data.map(p=>`
+    tbody.innerHTML = data.map(p=>{
+      const planHasta = p.plan_hasta ? new Date(p.plan_hasta+'T03:00:00Z') : null;
+      const planVenceStr = planHasta ? planHasta.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+      const nombreSafe = (p.nombre||'').replace(/'/g,"\\'");
+      return `
       <tr data-status="approved ${p.plan}">
         <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
         <td>${p.cuit||'—'}</td>
         <td>${p.rubro||'—'}</td>
-        <td><span class="status-badge ${p.plan==='pro'?'pro':'free'}">${p.plan==='pro'?'⭐ PRO':'Gratis'}</span></td>
+        <td>
+          <span class="status-badge ${p.plan==='pro'?'pro':'free'}">${p.plan==='pro'?'⭐ PRO':'Gratis'}</span>
+          ${planVenceStr ? `<div style="font-size:.7rem;color:var(--gray);margin-top:3px">hasta ${planVenceStr}</div>` : ''}
+        </td>
         <td>—</td>
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
+          ${p.plan==='pro'
+            ? `<button class="tbl-btn warn" onclick="quitarPlanPro('${p.id}','${nombreSafe}')">⭐ Quitar</button>`
+            : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" onclick="darPlanPro('${p.id}','${nombreSafe}')">⭐ Dar Pro</button>`}
           <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
           <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
         </div></td>
-      </tr>`).join('');
+      </tr>`;}).join('');
   } catch(e){ console.log('proveedores error',e); }
 }
 
@@ -826,6 +836,22 @@ async function verProveedor(id){
 
   renderProvFields(prov, false);
 
+  // Pro management bar inside modal
+  let proBar = document.getElementById('prov-pro-bar');
+  if (!proBar) {
+    proBar = document.createElement('div');
+    proBar.id = 'prov-pro-bar';
+    proBar.style.cssText = 'margin:12px 0;padding:12px 16px;background:#f8fafc;border-radius:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid #e2e8f0';
+    document.getElementById('prov-fields-view').after(proBar);
+  }
+  const planHastaDate = prov.plan_hasta ? new Date(prov.plan_hasta+'T03:00:00Z') : null;
+  const planVence = planHastaDate ? planHastaDate.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+  proBar.innerHTML = `<span style="font-size:.8rem;font-weight:700;color:${prov.plan==='pro'?'#16a34a':'#64748b'}">
+    ${prov.plan==='pro' ? '⭐ Plan PRO' + (planVence ? ' · vence ' + planVence : '') : 'Plan Gratis'}
+  </span>` + (prov.plan==='pro'
+    ? `<button onclick="quitarPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">Quitar Pro</button>`
+    : `<button onclick="darPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">⭐ Dar Plan Pro</button>`);
+
   const prodsEl = document.getElementById('prov-productos-list');
   prodsEl.innerHTML = prods?.length
     ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${p.imagen_url}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${p.nombre||'Sin nombre'}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${p.precio}</span>`:''}</div>`).join('')
@@ -850,7 +876,7 @@ function renderProvFields(prov, editable){
     f('WhatsApp',prov.whatsapp,'whatsapp') +
     f('Rubro',prov.rubro,'rubro') +
     f('Provincia',prov.provincia,'provincia') +
-    f('Plan',prov.plan,null) +
+    f('Plan', prov.plan + (prov.plan_hasta ? ' (hasta ' + new Date(prov.plan_hasta+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) + ')' : ''), null) +
     f('Estado',prov.estado,null) +
     ta('Descripción',prov.descripcion,'descripcion');
 }
@@ -876,6 +902,24 @@ async function guardarProveedor(){
 }
 
 function closeProvModal(){ document.getElementById('provModal').classList.remove('open'); }
+
+// ===== ADMIN: DAR / QUITAR PLAN PRO =====
+async function darPlanPro(id, nombre) {
+  if (!confirm(`¿Dar Plan Pro a "${nombre}"?\nVence el 31/05/2025.`)) return;
+  const hoy = new Date().toISOString().slice(0,10);
+  const {error} = await sb.from('proveedores').update({plan:'pro', plan_desde:hoy, plan_hasta:'2025-05-31'}).eq('id',id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('⭐ Plan Pro activado para ' + nombre);
+  cargarTodosProveedores();
+}
+
+async function quitarPlanPro(id, nombre) {
+  if (!confirm(`¿Quitar Plan Pro a "${nombre}"?`)) return;
+  const {error} = await sb.from('proveedores').update({plan:'free', plan_desde:null, plan_hasta:null}).eq('id',id);
+  if (error) { showToast('Error: ' + error.message); return; }
+  showToast('Plan Pro removido de ' + nombre);
+  cargarTodosProveedores();
+}
 
 // ===== REPORTES =====
 async function cargarReportes(){

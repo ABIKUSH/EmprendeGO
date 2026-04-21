@@ -19,6 +19,10 @@ function haptic(type) {
   }, 1800);
 })();
 
+// ===== PLAN PRO - PROMO DEADLINE =====
+const PROMO_DEADLINE = new Date('2025-06-01T03:00:00Z'); // = 2025-06-01 00:00 ART (UTC-3)
+function esPromoActiva() { return new Date() < PROMO_DEADLINE; }
+
 // ===== CONTADOR ANIMADO =====
 function animarContador(el, target, prefix) {
   if (!el || target === 0) { if(el) el.textContent = '0'; return; }
@@ -1134,7 +1138,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url').eq('email', email.toLowerCase().trim());
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         handleLogin({name:prov.nombre||name,email,picture,type:'proveedor',proveedorId:prov.id,provData:prov});
@@ -1199,6 +1203,18 @@ function updatePerfilUI() {
     cargarLogoProveedor();
     cargarPedidosRecientes();
     calcularCompletitudPerfil();
+    renderBannerProDashboard();
+    const badge = document.getElementById('dash-pro-badge-el');
+    if (badge && currentUser.provData) {
+      const pd2 = currentUser.provData;
+      const planHasta = pd2.plan_hasta ? new Date(pd2.plan_hasta + 'T03:00:00Z') : null;
+      if (pd2.plan === 'pro' && planHasta && planHasta > new Date()) {
+        badge.textContent = '⭐ PRO · hasta ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
   } else {
     document.getElementById('perfil-user').style.display = 'block';
     document.getElementById('perfil-proveedor').style.display = 'none';
@@ -3319,31 +3335,60 @@ cargarHeroStats();
 renderRecienLlegados();
 cargarProductosReales();
 setTimeout(()=>{try{renderProdBuscar(currentCat,'');}catch(e){}},300);
-// ===== MERCADO PAGO - PLAN PRO =====
+// ===== PLAN PRO - FUNCIONES =====
 async function iniciarPagoPro() {
   if (!currentUser || !currentUser.proveedorId) {
     showToast('Primero tenés que estar logueado como proveedor');
     return;
   }
-  showToast('Redirigiendo a Mercado Pago...');
+  if (esPromoActiva()) {
+    await activarPlanProGratis(null);
+    return;
+  }
+  const msg = encodeURIComponent('Hola, quiero contratar el Plan Pro de EmprendeGO ($20.000/mes). Mi email es ' + currentUser.email);
+  window.open('https://wa.me/5491164457134?text=' + msg, '_blank');
+}
+
+async function activarPlanProGratis(btn) {
+  if (!currentUser?.proveedorId) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Activando...'; }
   try {
-    const res = await fetch('/api/crear-pago', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: currentUser.email,
-        proveedorId: currentUser.proveedorId
-      })
-    });
-    const data = await res.json();
-    if (data.sandbox_init_point) {
-      window.location.href = data.sandbox_init_point;
-    } else if (data.init_point) {
-      window.location.href = data.init_point;
-    } else {
-      showToast('Error al crear el pago. Intentá de nuevo.');
+    const hoy = new Date().toISOString().slice(0, 10);
+    const { error } = await sb.from('proveedores').update({
+      plan: 'pro',
+      plan_desde: hoy,
+      plan_hasta: '2025-05-31'
+    }).eq('id', currentUser.proveedorId);
+    if (error) throw error;
+    if (currentUser.provData) {
+      currentUser.provData.plan = 'pro';
+      currentUser.provData.plan_desde = hoy;
+      currentUser.provData.plan_hasta = '2025-05-31';
     }
+    renderBannerProDashboard();
+    const badge = document.getElementById('dash-pro-badge-el');
+    if (badge) { badge.textContent = '⭐ PRO · hasta 31 de mayo'; badge.style.display = 'inline-flex'; }
+    showToast('🎉 ¡Plan Pro activado gratis hasta el 31/05!');
   } catch(e) {
-    showToast('Error de conexión. Intentá de nuevo.');
+    showToast('Error al activar. Intentá de nuevo.');
+    if (btn) { btn.disabled = false; btn.textContent = 'Activar Plan Pro GRATIS →'; }
+  }
+}
+
+function renderBannerProDashboard() {
+  const container = document.getElementById('pro-dashboard-banner');
+  if (!container) return;
+  const pd = currentUser?.provData;
+  if (!pd) { container.innerHTML = ''; return; }
+  const planHasta = pd.plan_hasta ? new Date(pd.plan_hasta + 'T03:00:00Z') : null;
+  const planActivo = pd.plan === 'pro' && planHasta && planHasta > new Date();
+
+  if (planActivo) {
+    const fechaStr = planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+    container.innerHTML = '<div style="background:linear-gradient(135deg,#065F46,#059669);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#A7F3D0;margin-bottom:6px">⭐ Plan Pro Activo</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Tu cuenta está potenciada</div><div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.5">Vence el ' + fechaStr + '</div></div>';
+  } else if (esPromoActiva()) {
+    container.innerHTML = '<div style="background:linear-gradient(135deg,#064E3B,#065F46);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(74,222,128,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ OFERTA LIMITADA</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Probá el Plan Pro GRATIS</div><div style="font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Sin tarjeta · Hasta el 31 de mayo · WhatsApp directo · Prioridad en búsquedas</div><button onclick="activarPlanProGratis(this)" style="background:#4ade80;color:#064E3B;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer;width:100%">Activar Plan Pro GRATIS →</button></div>';
+  } else {
+    container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ Plan Pro</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><div onclick="event.stopPropagation();iniciarPagoPro()" style="background:#006039;color:white;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;display:inline-block;cursor:pointer">Activar Pro · $20.000/mes</div></div>';
   }
 }
