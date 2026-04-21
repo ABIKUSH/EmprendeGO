@@ -1,3 +1,28 @@
+// ===== SCROLL ANIMATIONS =====
+(function initReveal() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  function observeAll() {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-scale').forEach(el => {
+      if (!el.classList.contains('visible')) observer.observe(el);
+    });
+  }
+
+  // Observar al cargar
+  document.addEventListener('DOMContentLoaded', observeAll);
+  // Re-observar cuando cambia de pantalla
+  document.addEventListener('screenChanged', observeAll);
+  // También cada vez que se muestra inicio
+  setTimeout(observeAll, 300);
+})();
+
 // ===== ESTADO GLOBAL =====
 let currentUser = null;
 let historial = [];
@@ -1666,6 +1691,15 @@ function goTo(s) {
   if (s==='favoritos') renderFavs();
   if (s==='mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
   window.scrollTo(0,0);
+  // Disparar animaciones de scroll en la nueva pantalla
+  setTimeout(() => {
+    document.querySelectorAll('.reveal, .reveal-left, .reveal-scale').forEach(el => {
+      if (!el.classList.contains('visible')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.95) el.classList.add('visible');
+      }
+    });
+  }, 60);
 }
 function switchTab(tab, el) {
   document.querySelectorAll('.dash-tab').forEach(t=>t.classList.remove('active'));
