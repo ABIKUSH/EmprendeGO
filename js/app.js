@@ -1171,6 +1171,7 @@ function updatePerfilUI() {
     cargarStatsDashboard();
     cargarLogoProveedor();
     cargarPedidosRecientes();
+    calcularCompletitudPerfil();
   } else {
     document.getElementById('perfil-user').style.display = 'block';
     document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1186,6 +1187,56 @@ function updatePerfilUI() {
     cargarHistorial();
   }
 }
+// ===== COMPLETITUD DEL PERFIL =====
+function calcularCompletitudPerfil() {
+  if (!currentUser?.provData) return;
+  const pd = currentUser.provData;
+  const checks = [
+    { ok: !!(pd.nombre && pd.nombre.length > 2),         tip: 'nombre del negocio' },
+    { ok: !!(pd.descripcion && pd.descripcion.length > 10), tip: 'descripción' },
+    { ok: !!(pd.whatsapp && pd.whatsapp.length > 6),     tip: 'WhatsApp' },
+    { ok: !!(pd.rubro && pd.rubro !== 'General'),         tip: 'rubro' },
+    { ok: !!(pd.provincia && pd.provincia.length > 1),   tip: 'provincia' },
+    { ok: !!(pd.logo_url && pd.logo_url.length > 5),     tip: 'foto/logo' },
+    { ok: !!(pd.instagram && pd.instagram.length > 1),   tip: 'Instagram' },
+    { ok: !!(pd.pedido_minimo && pd.pedido_minimo !== 'Sin minimo'), tip: 'pedido mínimo' },
+  ];
+  const completados = checks.filter(c => c.ok).length;
+  const pct = Math.round((completados / checks.length) * 100);
+  const faltantes = checks.filter(c => !c.ok).map(c => c.tip);
+
+  const bar = document.getElementById('perfil-pct-bar');
+  const label = document.getElementById('perfil-pct-label');
+  const tip = document.getElementById('perfil-pct-tip');
+  const wrap = document.getElementById('perfil-completitud-wrap');
+
+  if (bar) setTimeout(() => { bar.style.width = pct + '%'; }, 100);
+  if (label) {
+    label.textContent = pct + '%';
+    label.style.color = pct >= 80 ? '#16A34A' : pct >= 50 ? '#F59E0B' : '#EF4444';
+  }
+  if (tip) {
+    if (pct === 100) {
+      tip.textContent = '🎉 ¡Perfil completo! Aparecés mejor en las búsquedas.';
+      tip.style.color = '#16A34A';
+    } else {
+      tip.textContent = `Te falta: ${faltantes.slice(0, 3).join(', ')}${faltantes.length > 3 ? ' y más' : ''}.`;
+    }
+  }
+  // Ocultar si está completo
+  if (wrap && pct === 100) wrap.style.display = 'none';
+}
+
+// ===== EDITAR PERFIL RÁPIDO =====
+function abrirEditarPerfil() {
+  const tab = document.getElementById('tab-perfil-info');
+  if (!tab) return;
+  tab.style.display = tab.style.display === 'none' ? 'block' : 'none';
+  if (tab.style.display === 'block') {
+    tab.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 // ===== STATS DASHBOARD =====
 async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
