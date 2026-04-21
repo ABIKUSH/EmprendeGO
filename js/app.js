@@ -1538,45 +1538,59 @@ async function importarDesdeML() {
   if (!url) { showToast('Pegá el link de MercadoLibre'); return; }
 
   const itemId = extraerMLId(url);
-  if (!itemId) { showToast('Link inválido. Copiá la URL completa de ML'); return; }
+  if (!itemId) { showToast('Link inválido. Copiá la URL completa del producto'); return; }
 
   const btn = document.getElementById('ml-import-btn-text');
   btn.textContent = '⏳ Buscando producto...';
 
   try {
-    // Usamos nuestra propia función Vercel — sin problemas de CORS
-    const r = await fetch('/api/ml?id=' + itemId, { signal: AbortSignal.timeout(8000) });
-    if (!r.ok) throw new Error('Error en la función');
-    const data = await r.json();
-    if (!data || !data.title) throw new Error('Sin datos');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const r = await fetch('/api/ml?id=' + itemId, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
+    if (!r.ok) {
+      const errData = await r.json().catch(() => ({}));
+      throw new Error(errData.error || 'Error del servidor');
+    }
+    const data = await r.json();
+    if (!data || !data.title) throw new Error('No se encontró el producto');
+
+    const foto = data.thumbnail || data.pictures?.[0]?.url || '';
 
     mlProductoImportado = {
-      nombre:   data.title,
-      precio:   data.price,
-      foto:     data.thumbnail?.replace('-I.jpg', '-O.jpg') || data.pictures?.[0]?.url || '',
-      desc:     data.subtitle || '',
-      cat:      'General'
+      nombre: data.title,
+      precio: data.price || 0,
+      foto,
+      desc:   data.subtitle || '',
+      cat:    'General'
     };
 
     // Mostrar preview
     document.getElementById('ml-preview-name').textContent  = data.title;
-    document.getElementById('ml-preview-price').textContent = '$' + Number(data.price).toLocaleString('es-AR');
-    const imgEl = document.getElementById('ml-preview-img');
-    imgEl.src = mlProductoImportado.foto;
-    imgEl.onerror = () => { imgEl.style.display = 'none'; };
+    document.getElementById('ml-preview-price').textContent = data.price
+      ? '$' + Number(data.price).toLocaleString('es-AR')
+      : 'Precio a confirmar';
 
-    // Pre-llenar precio editable
-    document.getElementById('ml-precio-edit').value = data.price;
+    const imgEl = document.getElementById('ml-preview-img');
+    imgEl.style.display = foto ? 'block' : 'none';
+    if (foto) {
+      imgEl.src = foto;
+      imgEl.onerror = () => { imgEl.style.display = 'none'; };
+    }
+
+    // Pre-llenar precio editable (vacío si no se encontró)
+    document.getElementById('ml-precio-edit').value = data.price || '';
 
     document.getElementById('ml-preview').style.display  = 'block';
     document.getElementById('ml-save-btn').style.display = 'block';
     btn.textContent = '🔍 Traer datos del producto';
-    showToast('✓ Producto encontrado!');
+    showToast('✓ Producto encontrado');
 
   } catch(e) {
     btn.textContent = '🔍 Traer datos del producto';
-    showToast('No se pudo importar. Verificá el link.');
+    const msg = e.name === 'AbortError' ? 'Tiempo de espera agotado. Intentá de nuevo.' : 'No se pudo importar. Verificá el link.';
+    showToast(msg);
   }
 }
 
