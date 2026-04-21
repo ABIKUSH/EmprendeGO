@@ -886,7 +886,7 @@ function abrirDetalle(id) {
   const detLogoEl = document.getElementById('det-logo');
   const detIni = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
   if (p.logo_url) {
-    detLogoEl.innerHTML = `<img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:14px">`;
+    detLogoEl.innerHTML = `<img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
     detLogoEl.textContent = detIni;
   }
