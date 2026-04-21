@@ -266,28 +266,13 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
 .filtro-sel{border:1.5px solid var(--border);border-radius:20px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:.8rem;color:var(--navy);outline:none;background:white;cursor:pointer;flex-shrink:0}
 
 /* DETALLE PROVEEDOR */
-.det-hero{background:linear-gradient(155deg,#0D1B3E 0%,#1847C8 70%,#2D5BE3 100%);padding:20px 20px 24px}
-.det-top-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-.det-back{background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 14px;color:white;font-size:.82rem;font-weight:700;cursor:pointer}
-.det-logo{width:80px;height:80px;border-radius:18px;background:linear-gradient(135deg,#006039,#00A651);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:1.6rem;color:white;margin-bottom:10px;overflow:hidden;position:relative}
+.det-logo{width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#006039,#00A651);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:1.8rem;color:white;overflow:hidden;position:relative;border:3px solid #E8F2EE;flex-shrink:0}
 .det-logo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-.det-nombre{font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:white;margin-bottom:3px}
-.det-rubro{color:rgba(255,255,255,.7);font-size:.83rem;margin-bottom:10px}
-.det-badges-row{display:flex;gap:7px;flex-wrap:wrap}
-.det-body{padding:18px 20px 0;background:var(--light)}
-.det-desc-box{background:white;border-radius:14px;padding:15px;margin-bottom:12px;font-size:.86rem;color:var(--gray);line-height:1.7}
-.det-info-card{background:white;border-radius:14px;padding:15px;margin-bottom:12px}
-.det-info-title{font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:11px}
-.det-info-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f4f7ff;font-size:.86rem}
+.det-body{padding:12px 16px 0;background:#F5F7FA}
+.det-info-row{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid #F5F5F5;font-size:.86rem}
 .det-info-row:last-child{border-bottom:none}
-.det-info-key{color:var(--gray);font-size:.76rem;flex:1}
-.det-info-val{color:var(--navy);font-weight:600}
-.det-cta{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-.det-btn-wa{background:#25d366;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
-.det-btn-chat{background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:700;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:8px}
-.det-cta-top{display:flex;flex-direction:column;gap:10px;margin:0 20px 16px}
-.det-btn-wa-top{background:linear-gradient(135deg,#25d366,#128c7e);color:white;border:none;border-radius:16px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(37,211,102,.35)}
-.det-btn-chat-top{background:linear-gradient(135deg,#1847c8,#7c3aed);color:white;border:none;border-radius:16px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;width:100%;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 16px rgba(24,71,200,.3)}
+.det-info-key{color:#888;font-size:.8rem;flex:1}
+.det-info-val{color:#1A1A1A;font-weight:700;font-size:.85rem}
 .resenas-toggle-icon{font-size:.78rem;font-weight:700;color:var(--blue);white-space:nowrap}
 
 /* CALCULADORA */
