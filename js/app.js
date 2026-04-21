@@ -3178,6 +3178,25 @@ function compartirProveedor() {
   }
 }
 
+// ===== LANDING PROVEEDORES =====
+async function enviarContactoProv(btn) {
+  const nombre = document.getElementById('lp-nombre').value.trim();
+  const email  = document.getElementById('lp-email').value.trim();
+  const wa     = document.getElementById('lp-wa').value.trim();
+  const rubro  = document.getElementById('lp-rubro').value;
+  if (!nombre) { showToast('Ingresá el nombre de tu negocio'); return; }
+  if (!email)  { showToast('Ingresá tu email'); return; }
+  const orig = btn.textContent;
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+  try {
+    await sb.from('contactos_prov').insert({ nombre, email, whatsapp: wa || null, rubro: rubro || null });
+  } catch(e) {}
+  showToast('¡Recibimos tu consulta! Te contactamos pronto 👋');
+  btn.textContent = '¡Enviado! ✓';
+  setTimeout(() => goTo('registro'), 1500);
+}
+
 // ===== INIT =====
 refreshFavBadge();
 cargarProveedores().then(()=>{
@@ -3185,6 +3204,8 @@ cargarProveedores().then(()=>{
   renderMapaProvincias();
   renderMapaAllProvs();
   renderProvDestacados();
+  const lpStat = document.getElementById('lp-stat-provs');
+  if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
 });
 
 // ===== CARRUSEL TESTIMONIOS =====

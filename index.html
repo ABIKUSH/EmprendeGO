@@ -180,7 +180,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <button onclick="goTo('buscar')" style="background:#006039;color:white;padding:14px 22px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;border-radius:0 14px 14px 0;align-self:stretch">Buscar</button>
       </div>
       <!-- Publicar negocio ghost button -->
-      <button onclick="goTo('registro')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
+      <button onclick="goTo('landing-prov')" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.22);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px);letter-spacing:.01em">📦 Publicar mi negocio</button>
     </div>
 
     <!-- Social proof carrusel -->
@@ -352,7 +352,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   </div>
 
   <!-- PUBLICAR NEGOCIO -->
-  <div style="margin:12px 20px 28px;background:white;border:1.5px solid #E5E5E5;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goTo('registro')">
+  <div style="margin:12px 20px 28px;background:white;border:1.5px solid #E5E5E5;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goTo('landing-prov')">
     <div style="width:44px;height:44px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div>
     <div style="flex:1">
       <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Sos mayorista?</div>
@@ -599,6 +599,176 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button class="add-carrito-btn" onclick="agregarAlCarrito()">🛒 Agregar al pedido</button>
       <button class="det-btn-wa" id="prod-det-wa-btn" style="display:none" onclick="detWAProd()">&#128172; Contactar por WhatsApp</button>
       <button class="det-btn-chat" onclick="detChatProd()" style="width:100%;padding:15px;border-radius:14px;background:#F0F7F4;color:#006039;border:2px solid #006039;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.13)">&#128172; Enviar mensaje</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== LANDING PROVEEDORES ===== -->
+<div class="screen" id="screen-landing-prov">
+  <div class="topbar">
+    <button onclick="goTo('inicio')" style="background:#E8F2EE;border:none;border-radius:10px;padding:8px 14px;font-size:.85rem;font-weight:700;cursor:pointer;color:#006039">← Volver</button>
+    <span class="topbar-logo">Para Proveedores</span>
+    <div style="width:70px"></div>
+  </div>
+
+  <!-- HERO -->
+  <div style="background:linear-gradient(160deg,#001a0d 0%,#003d22 55%,#002918 100%);padding:28px 22px 32px;position:relative;overflow:hidden">
+    <div style="position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:rgba(74,222,128,.07);pointer-events:none"></div>
+    <div style="position:absolute;left:-40px;bottom:-40px;width:160px;height:160px;border-radius:50%;background:rgba(74,222,128,.05);pointer-events:none"></div>
+    <div style="position:relative;z-index:1;display:inline-flex;align-items:center;gap:7px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ade80;font-size:.71rem;font-weight:700;padding:5px 13px;border-radius:20px;margin-bottom:18px;letter-spacing:.04em">
+      <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 1.5s infinite"></span>
+      MAYORISTAS · ARGENTINA
+    </div>
+    <h1 style="position:relative;z-index:1;font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:white;line-height:1.15;margin-bottom:12px">Sumá tu negocio.<br><span style="color:#4ade80">Llegá a miles</span><br>de compradores.</h1>
+    <p style="position:relative;z-index:1;color:rgba(255,255,255,.7);font-size:.88rem;line-height:1.6;margin-bottom:22px">Publicá tu catálogo, recibí consultas y hacé crecer tu cartera de clientes mayoristas.</p>
+    <div style="position:relative;z-index:1;display:flex;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:14px;padding:14px 0;margin-bottom:22px">
+      <div style="flex:1;text-align:center">
+        <div id="lp-stat-provs" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">—</div>
+        <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Proveedores</div>
+      </div>
+      <div style="width:1px;background:rgba(255,255,255,.15)"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">Gratis</div>
+        <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Para empezar</div>
+      </div>
+      <div style="width:1px;background:rgba(255,255,255,.15)"></div>
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">24hs</div>
+        <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Aprobación</div>
+      </div>
+    </div>
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px">
+      <button onclick="goTo('registro')" style="background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;cursor:pointer;width:100%">Publicar mi negocio gratis →</button>
+      <button onclick="document.getElementById('lp-form').scrollIntoView({behavior:'smooth'})" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.25);border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px)">Quiero que me contacten</button>
+    </div>
+  </div>
+
+  <!-- BENEFICIOS -->
+  <div class="reveal" style="padding:28px 20px 0">
+    <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">¿Por qué publicar en EmprendeGo?</div>
+    <div style="font-size:.8rem;color:#999;margin-bottom:18px">Todo lo que necesitás para vender al por mayor</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
+        <div style="font-size:1.5rem;margin-bottom:8px">👥</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Miles de clientes</div>
+        <div style="font-size:.72rem;color:#777;line-height:1.4">Emprendedores activos buscando proveedores como vos</div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
+        <div style="font-size:1.5rem;margin-bottom:8px">✅</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Perfil verificado</div>
+        <div style="font-size:.72rem;color:#777;line-height:1.4">Badge oficial que genera confianza en tus compradores</div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
+        <div style="font-size:1.5rem;margin-bottom:8px">📦</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Catálogo digital</div>
+        <div style="font-size:.72rem;color:#777;line-height:1.4">Publicá productos con fotos, precios y stock actualizado</div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
+        <div style="font-size:1.5rem;margin-bottom:8px">💬</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Chat directo</div>
+        <div style="font-size:.72rem;color:#777;line-height:1.4">Recibí consultas en tiempo real sin intermediarios</div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
+        <div style="font-size:1.5rem;margin-bottom:8px">📊</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Estadísticas</div>
+        <div style="font-size:.72rem;color:#777;line-height:1.4">Visitas, contactos recibidos y métricas de tu perfil</div>
+      </div>
+      <div style="background:#E8F2EE;border-radius:16px;padding:16px;border:1.5px solid #D1FAE5">
+        <div style="font-size:1.5rem;margin-bottom:8px">🆓</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#006039;margin-bottom:4px">Empezá gratis</div>
+        <div style="font-size:.72rem;color:#006039;opacity:.8;line-height:1.4">Sin costo. Upgrade al Plan Pro cuando quieras</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CÓMO FUNCIONA -->
+  <div class="reveal" style="padding:28px 20px 0">
+    <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
+    <div style="font-size:.8rem;color:#999;margin-bottom:22px">Simple y rápido, en 4 pasos</div>
+    <div style="display:flex;flex-direction:column">
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">1</div>
+          <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
+        </div>
+        <div style="padding-top:8px;padding-bottom:24px">
+          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Registrate gratis</div>
+          <div style="font-size:.78rem;color:#777;line-height:1.5">Completá el formulario con los datos de tu negocio y rubro.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">2</div>
+          <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
+        </div>
+        <div style="padding-top:8px;padding-bottom:24px">
+          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Verificamos tu CUIT</div>
+          <div style="font-size:.78rem;color:#777;line-height:1.5">Validamos que tu negocio sea real. Respuesta en 24-48hs hábiles.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">3</div>
+          <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
+        </div>
+        <div style="padding-top:8px;padding-bottom:24px">
+          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Publicás tu perfil</div>
+          <div style="font-size:.78rem;color:#777;line-height:1.5">Tu negocio aparece en el directorio. Subí tu catálogo de productos.</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🚀</div>
+        <div style="padding-top:8px">
+          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">¡Empezás a vender!</div>
+          <div style="font-size:.78rem;color:#777;line-height:1.5">Recibís consultas, armás tu cartera y hacés crecer tu negocio.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULARIO DE CONTACTO -->
+  <div class="reveal" id="lp-form" style="padding:28px 20px 0">
+    <div style="background:#1A1A1A;border-radius:20px;padding:24px">
+      <div style="font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4ade80;margin-bottom:8px">¿Tenés dudas?</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">Dejá tu contacto</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:20px;line-height:1.5">Te contactamos para ayudarte a publicar tu negocio.</div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div>
+          <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">Nombre del negocio *</div>
+          <input id="lp-nombre" type="text" placeholder="Ej: Distribuidora del Sur" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none" onfocus="this.style.borderColor='rgba(74,222,128,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div>
+          <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">Email *</div>
+          <input id="lp-email" type="email" placeholder="tu@negocio.com" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none" onfocus="this.style.borderColor='rgba(74,222,128,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div>
+          <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">WhatsApp</div>
+          <input id="lp-wa" type="tel" placeholder="+54 9 11 1234-5678" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none" onfocus="this.style.borderColor='rgba(74,222,128,.5)'" onblur="this.style.borderColor='rgba(255,255,255,.1)'">
+        </div>
+        <div>
+          <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">Rubro</div>
+          <select id="lp-rubro" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none;-webkit-appearance:none;appearance:none">
+            <option value="" style="background:#222">Seleccioná tu rubro</option>
+            <option value="Tecnología" style="background:#222">Tecnología</option>
+            <option value="Moda" style="background:#222">Moda</option>
+            <option value="Hogar" style="background:#222">Hogar</option>
+            <option value="Bazar" style="background:#222">Bazar</option>
+            <option value="Alimentos" style="background:#222">Alimentos</option>
+            <option value="Otro" style="background:#222">Otro</option>
+          </select>
+        </div>
+      </div>
+      <button onclick="enviarContactoProv(this)" style="width:100%;margin-top:18px;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer">Quiero que me contacten →</button>
+    </div>
+  </div>
+
+  <!-- FOOTER CTA -->
+  <div class="reveal" style="padding:24px 20px 32px">
+    <div style="background:linear-gradient(135deg,#006039,#004D2E);border-radius:20px;padding:24px;text-align:center">
+      <div style="font-size:2rem;margin-bottom:10px">🏭</div>
+      <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">¿Listo para publicar?</div>
+      <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:18px;line-height:1.5">Completá el registro en menos de 5 minutos.</div>
+      <button onclick="goTo('registro')" style="background:white;color:#006039;border:none;border-radius:12px;padding:14px 24px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer;width:100%">Registrarme ahora →</button>
     </div>
   </div>
 </div>
