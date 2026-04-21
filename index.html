@@ -467,42 +467,54 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== DETALLE PROVEEDOR ===== -->
 <div class="screen" id="screen-detalle">
-  <div class="det-hero">
-    <div class="det-top-row">
-      <button class="det-back" onclick="volverDetalle()">&#8592; Volver</button>
-      <div style="display:flex;gap:8px">
-        <button class="fav-btn" id="det-fav-btn" onclick="toggleFavActual()">&#9825;</button>
-        <button onclick="compartirProveedor()" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer">🔗 Compartir</button>
-        <button id="det-comp-btn" style="background:rgba(255,255,255,.15);border:none;border-radius:10px;padding:7px 12px;color:white;font-size:.75rem;font-weight:700;cursor:pointer" onclick="toggleComparar()">&#9878; Comparar</button>
-      </div>
-    </div>
-    <div class="det-logo" id="det-logo">EG</div>
-    <div class="det-nombre" id="det-nombre">Proveedor</div>
-    <div class="det-rubro" id="det-rubro">Rubro</div>
-    <div class="det-badges-row">
-      <span class="badge pro" id="det-pro-badge" style="display:none">PRO</span>
-      <span class="badge green">&#10003; Verificado</span>
+
+  <!-- TOPBAR SIMPLE -->
+  <div style="background:white;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #F0F0F0;position:sticky;top:0;z-index:100">
+    <button onclick="volverDetalle()" style="background:#F5F5F5;border:none;border-radius:10px;padding:8px 14px;font-size:.85rem;font-weight:700;cursor:pointer;color:#1A1A1A">← Volver</button>
+    <div style="display:flex;gap:8px">
+      <button id="det-fav-btn" onclick="toggleFavActual()" style="background:#FFF0F5;border:none;border-radius:10px;width:36px;height:36px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center">♡</button>
+      <button onclick="compartirProveedor()" style="background:#F5F5F5;border:none;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:700;cursor:pointer;color:#1A1A1A">🔗 Compartir</button>
+      <button id="det-comp-btn" onclick="toggleComparar()" style="background:#F5F5F5;border:none;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:700;cursor:pointer;color:#1A1A1A">⚖ Comparar</button>
     </div>
   </div>
-  <div class="det-body">
-    <div class="det-desc-box" id="det-desc">Sin descripcion.</div>
 
-    <!-- BOTONES DE CONTACTO — arriba y llamativos -->
-    <div class="det-cta-top">
-      <button class="det-btn-wa-top" id="det-wa-btn" style="display:none" onclick="detWA()">
-        <span style="font-size:1.2rem">💬</span> Contactar por WhatsApp
-      </button>
-      <button class="det-btn-chat-top" onclick="detChat()">
-        <span style="font-size:1.2rem">✉️</span> Enviar mensaje
-      </button>
+  <!-- PERFIL HUMANO -->
+  <div style="background:white;padding:24px 20px 20px;text-align:center;border-bottom:8px solid #F5F7FA">
+    <!-- Foto circular grande -->
+    <div class="det-logo" id="det-logo" style="width:90px;height:90px;border-radius:50%;margin:0 auto 14px;font-size:1.8rem;border:3px solid #E8F2EE"></div>
+
+    <div id="det-nombre" style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A;margin-bottom:5px">Proveedor</div>
+    <div id="det-rubro" style="font-size:.85rem;color:#888;margin-bottom:12px">Rubro</div>
+
+    <!-- Badges -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+      <span class="badge pro" id="det-pro-badge" style="display:none">⭐ PRO</span>
+      <span style="background:#ECFDF5;color:#006039;font-size:.75rem;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid #D1FAE5">✓ Verificado</span>
     </div>
 
-    <div class="det-info-card">
-      <div class="det-info-title">Informacion del negocio</div>
-      <div class="det-info-row"><span>📦</span><span class="det-info-key">Pedido minimo</span><span class="det-info-val" id="det-minimo">-</span></div>
-      <div class="det-info-row"><span>🚚</span><span class="det-info-key">Envios</span><span class="det-info-val" id="det-envios">-</span></div>
+    <!-- Descripcion -->
+    <div id="det-desc" style="font-size:.87rem;color:#555;line-height:1.6;margin-top:16px;text-align:left;background:#F9FAFB;border-radius:12px;padding:14px 16px">Sin descripcion.</div>
+
+    <!-- Botones de contacto -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+      <button id="det-wa-btn" onclick="detWA()" style="display:none;background:#25D366;color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(37,211,102,.3)">
+        <span style="font-size:1.2rem">💬</span> Contactar por WhatsApp
+      </button>
+      <button onclick="detChat()" style="background:#F0F7F4;color:#006039;border:2px solid #D1FAE5;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span style="font-size:1.1rem">✉️</span> Enviar mensaje interno
+      </button>
+    </div>
+  </div>
+
+  <div class="det-body">
+
+    <!-- INFO DEL NEGOCIO -->
+    <div style="background:white;border-radius:16px;margin-bottom:12px;overflow:hidden">
+      <div style="padding:14px 16px;border-bottom:1px solid #F0F0F0;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;letter-spacing:.05em;text-transform:uppercase">Info del negocio</div>
+      <div class="det-info-row"><span>📦</span><span class="det-info-key">Pedido mínimo</span><span class="det-info-val" id="det-minimo">-</span></div>
+      <div class="det-info-row"><span>🚚</span><span class="det-info-key">Envíos</span><span class="det-info-val" id="det-envios">-</span></div>
       <div class="det-info-row"><span>📍</span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
-      <div class="det-info-row"><span>📷</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
+      <div class="det-info-row" style="border-bottom:none"><span>📷</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
     </div>
 
     <!-- RESEÑAS COLAPSADAS -->
