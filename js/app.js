@@ -1524,11 +1524,11 @@ let mlProductoImportado = null;
 let mlImportadosCount = 0;
 
 function extraerMLId(url) {
-  // 1. Prioridad: item_id en query params (?pdp_filters=item_id:MLA1576860927)
+  // 1. item_id in query params (?pdp_filters=item_id:MLA1576860927)
   const qMatch = url.match(/item_id[=:](MLA\d+)/i);
-  if (qMatch) return qMatch[1].replace('MLA','');
-  // 2. MLA directo en la URL
-  const directMatch = url.match(/MLA-(\d{7,12})/i) || url.match(/MLA(\d{8,12})/i);
+  if (qMatch) return qMatch[1].replace(/MLA/i, '');
+  // 2. MLA with or without dash: MLA-1234567890 or MLA1234567890
+  const directMatch = url.match(/MLA-?(\d+)/i);
   if (directMatch) return directMatch[1];
   return null;
 }
@@ -1807,10 +1807,13 @@ function goTo(s) {
   haptic('light');
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.dsb-item').forEach(n => n.classList.remove('active'));
   const scr = document.getElementById('screen-'+s);
   if (scr) scr.classList.add('active');
   const nav = document.getElementById('nav-'+s);
   if (nav) nav.classList.add('active');
+  const dsb = document.getElementById('dsb-'+s);
+  if (dsb) dsb.classList.add('active');
   if (s==='perfil' && currentUser) updatePerfilUI();
   if (s==='perfil' && currentUser?.type==='user') cargarHistorial();
   if (s==='favoritos') renderFavs();
@@ -2811,6 +2814,21 @@ async function guardarCambiosPerfil() {
 // ===== EXCEL IMPORT =====
 let excelData = null;
 let excelHeaders = [];
+
+function descargarTemplateExcel() {
+  if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['nombre', 'descripcion', 'precio', 'stock', 'categoria'],
+    ['Remera básica algodón', 'Remera unisex 100% algodón, talles S al XL', '2500', '100', 'Moda'],
+    ['Zapatillas deportivas', 'Talle 36 al 44, varios colores', '8500', '50', 'Moda'],
+    ['Auriculares inalámbricos', 'Bluetooth 5.0, batería 20hs', '4200', '30', 'Tecnología'],
+  ]);
+  ws['!cols'] = [{wch:28},{wch:35},{wch:10},{wch:8},{wch:14}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+  XLSX.writeFile(wb, 'template_productos_emprendego.xlsx');
+  showToast('✓ Template descargado');
+}
 
 function leerExcelImport(input) {
   const file = input.files[0];

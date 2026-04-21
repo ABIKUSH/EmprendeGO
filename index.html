@@ -73,6 +73,21 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 </head>
 <body>
 
+<!-- ===== SIDEBAR DESKTOP ===== -->
+<div id="desktop-sidebar">
+  <div class="dsb-logo">EmprendeGo</div>
+  <div class="dsb-divider"></div>
+  <div class="dsb-section-label">Explorar</div>
+  <div class="dsb-item active" id="dsb-inicio" onclick="goTo('inicio')"><span class="dsb-icon">🏠</span> Inicio</div>
+  <div class="dsb-item" id="dsb-buscar" onclick="goTo('buscar')"><span class="dsb-icon">🔍</span> Buscar</div>
+  <div class="dsb-item" id="dsb-favoritos" onclick="goTo('favoritos')"><span class="dsb-icon">❤️</span> Favoritos</div>
+  <div class="dsb-item" id="dsb-mapa" onclick="goTo('mapa')"><span class="dsb-icon">📍</span> Mapa</div>
+  <div class="dsb-divider"></div>
+  <div class="dsb-section-label">Cuenta</div>
+  <div class="dsb-item" id="dsb-perfil" onclick="goTo('perfil')"><span class="dsb-icon">👤</span> Mi Perfil</div>
+  <div class="dsb-item" id="dsb-planes" onclick="goTo('planes')"><span class="dsb-icon">⭐</span> Planes</div>
+</div>
+
 <!-- ===== BOTÓN VOLVER ARRIBA ===== -->
 <button id="btn-top" onclick="window.scrollTo({top:0,behavior:'smooth'});haptic('light')" style="position:fixed;bottom:90px;right:18px;width:42px;height:42px;border-radius:50%;background:#006039;color:white;border:none;font-size:1.2rem;cursor:pointer;box-shadow:0 4px 16px rgba(0,96,57,.35);z-index:800;display:none;align-items:center;justify-content:center;transition:opacity .3s,transform .3s">↑</button>
 
@@ -1358,10 +1373,37 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
       <!-- TAB: EXCEL IMPORT -->
       <div id="add-tab-excel" style="display:none">
-        <div style="background:#E8F2EE;border:1.5px solid #c3ddd3;border-radius:14px;padding:14px;margin-bottom:16px">
+        <div style="background:#E8F2EE;border:1.5px solid #c3ddd3;border-radius:14px;padding:14px;margin-bottom:12px">
           <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">Importar desde Excel</div>
           <div style="font-size:.78rem;color:#333;line-height:1.5">Subí tu lista de precios en Excel o CSV. Vos elegís qué columna corresponde a cada dato.</div>
         </div>
+
+        <!-- Template descargable -->
+        <button onclick="descargarTemplateExcel()" style="width:100%;background:#F0F9F5;color:#006039;border:1.5px solid #c3ddd3;border-radius:10px;padding:10px 14px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">
+          📥 Descargar template de ejemplo
+        </button>
+
+        <!-- Ejemplo visual -->
+        <div style="background:white;border:1.5px solid #e0e7ff;border-radius:12px;overflow:hidden;margin-bottom:14px">
+          <div style="background:#f0f4ff;padding:7px 12px;font-size:.72rem;font-weight:800;color:var(--navy)">📋 Así tiene que verse tu archivo:</div>
+          <div style="overflow-x:auto">
+            <table style="width:100%;border-collapse:collapse;font-size:.68rem">
+              <thead><tr style="background:#e8eeff">
+                <th style="padding:5px 9px;text-align:left;font-weight:800;color:#1847C8;border-bottom:1px solid #e0e7ff">nombre</th>
+                <th style="padding:5px 9px;text-align:left;font-weight:800;color:#1847C8;border-bottom:1px solid #e0e7ff">descripcion</th>
+                <th style="padding:5px 9px;text-align:left;font-weight:800;color:#1847C8;border-bottom:1px solid #e0e7ff">precio</th>
+                <th style="padding:5px 9px;text-align:left;font-weight:800;color:#1847C8;border-bottom:1px solid #e0e7ff">stock</th>
+                <th style="padding:5px 9px;text-align:left;font-weight:800;color:#1847C8;border-bottom:1px solid #e0e7ff">categoria</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:5px 9px;border-bottom:1px solid #f4f7ff">Remera básica</td><td style="padding:5px 9px;color:#777;border-bottom:1px solid #f4f7ff">100% algodón</td><td style="padding:5px 9px;font-weight:700;color:#006039;border-bottom:1px solid #f4f7ff">2500</td><td style="padding:5px 9px;border-bottom:1px solid #f4f7ff">100</td><td style="padding:5px 9px;border-bottom:1px solid #f4f7ff">Moda</td></tr>
+                <tr><td style="padding:5px 9px;color:#999">Auriculares BT</td><td style="padding:5px 9px;color:#bbb">Bluetooth 5.0</td><td style="padding:5px 9px;font-weight:700;color:#999">4200</td><td style="padding:5px 9px;color:#999">30</td><td style="padding:5px 9px;color:#999">Tecnología</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:7px 12px;font-size:.68rem;color:#888">💡 La primera fila son los encabezados. Las columnas pueden estar en cualquier orden.</div>
+        </div>
+
         <div style="margin-bottom:16px">
           <div id="excel-upload-zone" style="width:100%;min-height:100px;background:#fafafa;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #ccc;padding:20px" onclick="document.getElementById('excel-file-input').click()">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="1.5" style="margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
