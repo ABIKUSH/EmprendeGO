@@ -875,8 +875,29 @@ async function cargarProductosDetalle(proveedorId) {
 // ===== DETALLE PROVEEDOR =====
 function abrirDetalle(id) {
   const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
-  const p = lista.find(x => String(x.id) === String(id));
-  if (!p) return;
+  let p = lista.find(x => String(x.id) === String(id));
+  if (!p) {
+    // El proveedor no está en proveedoresDB (ej: no aprobado aún). Lo construimos
+    // con los datos del JOIN que ya tenemos embebidos en productosReales.
+    const prod = productosReales.find(x => String(x.provId) === String(id));
+    if (prod) {
+      p = {
+        id: String(id),
+        nombre: prod.provNombre || 'Proveedor',
+        rubro: prod.provRubro || 'General',
+        desc: '',
+        pro: prod.esPro || false,
+        inicial: (prod.provNombre || 'PR').substring(0, 2).toUpperCase(),
+        whatsapp: prod.whatsapp || '',
+        provincia: '',
+        pedido_minimo: 'Consultar',
+        envios: 'Consultar',
+        instagram: '',
+        logo_url: ''
+      };
+    }
+  }
+  if (!p) { showToast('Proveedor no disponible'); return; }
   provActual = p;
   provDetalleMostrarTodos = false;
   const active = document.querySelector('.screen.active');
@@ -2094,7 +2115,7 @@ function applySearchInput(){
 
 function abrirDetalleProd(id){
   const p=getProdLista().find(x=>String(x.id)===String(id));
-  if(!p) return;
+  if(!p){ showToast('Producto no disponible'); return; }
   productoActual=p;
   const active=document.querySelector('.screen.active');
   pantallaAnteriorProd=active?active.id.replace('screen-',''):'inicio';
