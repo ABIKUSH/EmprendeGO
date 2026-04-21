@@ -1,3 +1,58 @@
+// ===== VIBRACIÓN HÁPTICA =====
+function haptic(type) {
+  if (!navigator.vibrate) return;
+  if (type === 'light') navigator.vibrate(10);
+  else if (type === 'medium') navigator.vibrate(25);
+  else if (type === 'success') navigator.vibrate([15, 50, 15]);
+  else if (type === 'error') navigator.vibrate([30, 40, 30]);
+  else navigator.vibrate(15);
+}
+
+// ===== SPLASH SCREEN =====
+(function initSplash() {
+  const splash = document.getElementById('splash');
+  if (!splash) return;
+  // Ocultar después de 1.8 segundos
+  setTimeout(() => {
+    splash.classList.add('hide');
+    setTimeout(() => { splash.style.display = 'none'; }, 520);
+  }, 1800);
+})();
+
+// ===== CONTADOR ANIMADO =====
+function animarContador(el, target, prefix) {
+  if (!el || target === 0) { if(el) el.textContent = '0'; return; }
+  const duration = 1200;
+  const start = performance.now();
+  function update(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Easing ease-out
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(eased * target);
+    el.textContent = (prefix || '') + current;
+    if (progress < 1) requestAnimationFrame(update);
+  }
+  requestAnimationFrame(update);
+}
+
+// ===== BOTÓN VOLVER ARRIBA =====
+(function initBtnTop() {
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('btn-top');
+    if (!btn) return;
+    if (window.scrollY > 300) {
+      btn.style.display = 'flex';
+      btn.style.opacity = '1';
+      btn.style.transform = 'scale(1)';
+    } else {
+      btn.style.opacity = '0';
+      btn.style.transform = 'scale(.8)';
+      setTimeout(() => { if (window.scrollY <= 300) btn.style.display = 'none'; }, 300);
+    }
+  }, { passive: true });
+})();
+
 // ===== SCROLL ANIMATIONS =====
 function checkReveal() {
   const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-scale');
@@ -48,8 +103,8 @@ function toggleFav(id) {
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   const idx = favs.findIndex(f => String(f.id) === String(id));
-  if (idx >= 0) { favs.splice(idx, 1); showToast('Eliminado de favoritos'); }
-  else { favs.push(p); showToast('¡Guardado en favoritos!'); }
+  if (idx >= 0) { favs.splice(idx, 1); showToast('Eliminado de favoritos'); haptic('light'); }
+  else { favs.push(p); showToast('¡Guardado en favoritos!'); haptic('success'); }
   guardarFavs();
   renderFavs();
 }
@@ -735,6 +790,7 @@ function filterCat(cat) {
 }
 
 function abrirWA(num, msg) {
+  haptic('success');
   const n = (num || '').replace(/[^0-9]/g, '');
   if (!n) { showToast('WhatsApp no disponible'); return; }
   const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
@@ -1670,6 +1726,7 @@ let imgUrl = null;
 
 // ===== NAV =====
 function goTo(s) {
+  haptic('light');
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   const scr = document.getElementById('screen-'+s);
@@ -2986,9 +3043,9 @@ async function cargarHeroStats() {
     const e1 = document.getElementById('hero-stat-provs');
     const e2 = document.getElementById('hero-stat-prods');
     const e3 = document.getElementById('hero-stat-rubros');
-    if (e1) e1.textContent = numProvs > 0 ? '+' + numProvs : '0';
-    if (e2) e2.textContent = numProds > 0 ? '+' + numProds : '0';
-    if (e3) e3.textContent = numRubros > 0 ? '+' + numRubros : '0';
+    if (e1) animarContador(e1, numProvs, '+');
+    if (e2) animarContador(e2, numProds, '+');
+    if (e3) animarContador(e3, numRubros, '+');
   } catch(e) {
     const e1 = document.getElementById('hero-stat-provs');
     const e2 = document.getElementById('hero-stat-prods');
