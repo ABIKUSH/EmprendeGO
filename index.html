@@ -637,9 +637,19 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Aprobación</div>
       </div>
     </div>
-    <div style="position:relative;z-index:1;display:flex;flex-direction:column;gap:10px">
-      <button onclick="goTo('registro')" style="background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;cursor:pointer;width:100%">Publicar mi negocio gratis →</button>
-      <button onclick="document.getElementById('lp-form').scrollIntoView({behavior:'smooth'})" style="background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);border:1.5px solid rgba(255,255,255,.25);border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;width:100%;backdrop-filter:blur(8px)">Quiero que me contacten</button>
+    <div style="position:relative;z-index:1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px 20px;margin-bottom:0">
+      <!-- Badge oferta -->
+      <div style="display:inline-flex;align-items:center;gap:6px;background:#F59E0B;color:#1A1A1A;font-size:.65rem;font-weight:800;padding:4px 12px;border-radius:20px;margin-bottom:14px;letter-spacing:.03em;text-transform:uppercase">
+        🔥 Oferta de lanzamiento · Solo hasta el 31 de Mayo
+      </div>
+      <!-- Precios -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+        <span style="font-family:'DM Sans',sans-serif;font-size:1rem;color:rgba(255,255,255,.4);text-decoration:line-through">$20.000/mes</span>
+        <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:#4ade80;line-height:1">GRATIS</div>
+      </div>
+      <div style="font-size:.75rem;color:rgba(255,255,255,.45);margin-bottom:18px">Sin tarjeta. Sin compromiso. Publicás en 24hs.</div>
+      <!-- CTA -->
+      <button onclick="goTo('registro')" style="width:100%;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;cursor:pointer">Quiero mi lugar gratis →</button>
     </div>
   </div>
 
