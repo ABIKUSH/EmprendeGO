@@ -1134,7 +1134,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email').eq('email', email.toLowerCase().trim());
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         handleLogin({name:prov.nombre||name,email,picture,type:'proveedor',proveedorId:prov.id,provData:prov});
@@ -1187,6 +1187,12 @@ function updatePerfilUI() {
       if (rl) rl.textContent = (pd.rubro||'Rubro') + ' · ' + (pd.provincia||'Argentina');
       const en = document.getElementById('edit-nombre'); if(en) en.value = pd.nombre||'';
       const ed = document.getElementById('edit-desc'); if(ed) ed.value = pd.descripcion||'';
+      const ewa = document.getElementById('edit-wa'); if(ewa) ewa.value = pd.whatsapp||'';
+      const eig = document.getElementById('edit-instagram'); if(eig) eig.value = pd.instagram||'';
+      if (pd.logo_url) {
+        const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = pd.logo_url; prev.style.display = 'block'; }
+        const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+      }
     }
     cargarProductosProveedor();
     cargarStatsDashboard();
@@ -2734,10 +2740,14 @@ async function subirLogoProveedor(input) {
   if (img) { img.src = url; img.style.display = 'block'; }
   const initials = document.getElementById('dash-avatar-initials');
   if (initials) initials.style.display = 'none';
-  // Guardar en Supabase
+  // Guardar en Supabase y sincronizar estado local
   try {
     if (currentUser?.proveedorId) {
       await sb.from('proveedores').update({ logo_url: url }).eq('id', currentUser.proveedorId);
+      if (currentUser.provData) currentUser.provData.logo_url = url;
+      const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = url; prev.style.display = 'block'; }
+      const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+      calcularCompletitudPerfil();
     }
   } catch(e) {}
   showToast('✓ Logo actualizado');
@@ -2765,8 +2775,37 @@ async function cargarLogoProveedor() {
       if (img) { img.src = data.logo_url; img.style.display = 'block'; }
       const initials = document.getElementById('dash-avatar-initials');
       if (initials) initials.style.display = 'none';
+      if (currentUser.provData) currentUser.provData.logo_url = data.logo_url;
+      const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = data.logo_url; prev.style.display = 'block'; }
+      const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+      calcularCompletitudPerfil();
     }
   } catch(e) {}
+}
+
+async function guardarCambiosPerfil() {
+  if (!currentUser?.proveedorId) return;
+  const nombre = (document.getElementById('edit-nombre')?.value || '').trim();
+  const desc = (document.getElementById('edit-desc')?.value || '').trim();
+  const wa = (document.getElementById('edit-wa')?.value || '').trim();
+  const ig = (document.getElementById('edit-instagram')?.value || '').trim();
+  if (!nombre) { showToast('El nombre no puede estar vacío'); return; }
+  showToast('Guardando...');
+  try {
+    const { error } = await sb.from('proveedores').update({ nombre, descripcion: desc, whatsapp: wa, instagram: ig }).eq('id', currentUser.proveedorId);
+    if (error) throw error;
+    if (currentUser.provData) {
+      currentUser.provData.nombre = nombre;
+      currentUser.provData.descripcion = desc;
+      currentUser.provData.whatsapp = wa;
+      currentUser.provData.instagram = ig;
+    }
+    currentUser.name = nombre;
+    updateTopbar();
+    const dn = document.getElementById('dash-nombre'); if(dn) dn.textContent = nombre;
+    calcularCompletitudPerfil();
+    showToast('✓ Cambios guardados');
+  } catch(e) { showToast('Error al guardar'); }
 }
 
 // ===== EXCEL IMPORT =====
