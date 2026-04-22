@@ -1,3 +1,19 @@
+// ===== SIDEBAR COLAPSABLE (desktop) =====
+(function initSidebar() {
+  if (window.innerWidth < 768) return;
+  if (localStorage.getItem('eg_sidebar_collapsed') === '1') {
+    document.getElementById('desktop-sidebar')?.classList.add('collapsed');
+    document.body.classList.add('sidebar-collapsed');
+  }
+})();
+function toggleSidebar() {
+  const el = document.getElementById('desktop-sidebar');
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  document.body.classList.toggle('sidebar-collapsed', collapsed);
+  localStorage.setItem('eg_sidebar_collapsed', collapsed ? '1' : '0');
+}
+
 // ===== VIBRACIÓN HÁPTICA =====
 function haptic(type) {
   if (!navigator.vibrate) return;

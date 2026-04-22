@@ -75,17 +75,20 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== SIDEBAR DESKTOP ===== -->
 <div id="desktop-sidebar">
-  <div class="dsb-logo">EmprendeGo</div>
+  <div class="dsb-header">
+    <div class="dsb-logo">EmprendeGo</div>
+    <button id="dsb-toggle" onclick="toggleSidebar()" title="Colapsar menú">☰</button>
+  </div>
   <div class="dsb-divider"></div>
   <div class="dsb-section-label">Explorar</div>
-  <div class="dsb-item active" id="dsb-inicio" onclick="goTo('inicio')"><span class="dsb-icon">🏠</span> Inicio</div>
-  <div class="dsb-item" id="dsb-buscar" onclick="goTo('buscar')"><span class="dsb-icon">🔍</span> Buscar</div>
-  <div class="dsb-item" id="dsb-favoritos" onclick="goTo('favoritos')"><span class="dsb-icon">❤️</span> Favoritos</div>
-  <div class="dsb-item" id="dsb-mapa" onclick="goTo('mapa')"><span class="dsb-icon">📍</span> Mapa</div>
+  <div class="dsb-item active" id="dsb-inicio" onclick="goTo('inicio')"><span class="dsb-icon">🏠</span><span class="dsb-label"> Inicio</span></div>
+  <div class="dsb-item" id="dsb-buscar" onclick="goTo('buscar')"><span class="dsb-icon">🔍</span><span class="dsb-label"> Buscar</span></div>
+  <div class="dsb-item" id="dsb-favoritos" onclick="goTo('favoritos')"><span class="dsb-icon">❤️</span><span class="dsb-label"> Favoritos</span></div>
+  <div class="dsb-item" id="dsb-mapa" onclick="goTo('mapa')"><span class="dsb-icon">📍</span><span class="dsb-label"> Mapa</span></div>
   <div class="dsb-divider"></div>
   <div class="dsb-section-label">Cuenta</div>
-  <div class="dsb-item" id="dsb-perfil" onclick="goTo('perfil')"><span class="dsb-icon">👤</span> Mi Perfil</div>
-  <div class="dsb-item" id="dsb-planes" onclick="goTo('planes')"><span class="dsb-icon">⭐</span> Planes</div>
+  <div class="dsb-item" id="dsb-perfil" onclick="goTo('perfil')"><span class="dsb-icon">👤</span><span class="dsb-label"> Mi Perfil</span></div>
+  <div class="dsb-item" id="dsb-planes" onclick="goTo('planes')"><span class="dsb-icon">⭐</span><span class="dsb-label"> Planes</span></div>
 </div>
 
 <!-- ===== BOTÓN VOLVER ARRIBA ===== -->
@@ -1008,18 +1011,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       </div>
 
       <!-- ===== STATS REALES ===== -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white" id="stat-visitas">0</div>
-          <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Visitas</div>
+      <div id="dash-stats-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
+          <div class="dash-stat-num" id="stat-visitas" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Visitas</div>
         </div>
-        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white" id="stat-leads">0</div>
-          <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Contactos</div>
+        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
+          <div class="dash-stat-num" id="stat-leads" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Contactos</div>
         </div>
-        <div style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white" id="dash-msgs-count">0</div>
-          <div style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Mensajes</div>
+        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
+          <div class="dash-stat-num" id="dash-msgs-count" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Mensajes</div>
         </div>
       </div>
     </div>
@@ -1039,22 +1042,22 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <!-- ===== ACCIONES RÁPIDAS ===== -->
     <div style="padding:0 16px 0">
       <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Acciones rápidas</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="openAddProduct();haptic('light')" style="background:#006039;color:white;border:none;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
-          <span style="font-size:1.3rem">➕</span>
+      <div id="dash-quick-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="dash-action-btn" onclick="openAddProduct();haptic('light')" style="background:#006039;color:white;border:none;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+          <span class="dash-action-icon" style="font-size:1.3rem">➕</span>
           <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800">Agregar</div><div style="font-size:.7rem;opacity:.75">producto</div></div>
         </button>
-        <button onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;position:relative">
-          <span style="font-size:1.3rem">💬</span>
+        <button class="dash-action-btn" onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left;position:relative">
+          <span class="dash-action-icon" style="font-size:1.3rem">💬</span>
           <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
           <span id="dash-msgs-new" style="position:absolute;top:8px;right:8px;background:#F43F8E;color:white;font-size:.55rem;font-weight:800;padding:2px 6px;border-radius:8px;display:none">NEW</span>
         </button>
-        <button onclick="abrirMisProductos();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
-          <span style="font-size:1.3rem">📦</span>
+        <button class="dash-action-btn" onclick="abrirMisProductos();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+          <span class="dash-action-icon" style="font-size:1.3rem">📦</span>
           <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800">Productos</div><div style="font-size:.7rem;color:#999" id="dash-prod-count">0 publicados</div></div>
         </button>
-        <button onclick="abrirEditarPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
-          <span style="font-size:1.3rem">✏️</span>
+        <button class="dash-action-btn" onclick="abrirEditarPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+          <span class="dash-action-icon" style="font-size:1.3rem">✏️</span>
           <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800">Editar</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
         </button>
       </div>

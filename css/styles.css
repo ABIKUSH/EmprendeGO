@@ -497,14 +497,18 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
 .pro-lock-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:10px;padding:9px 16px;font-family:'Fraunces',serif;font-size:.8rem;font-weight:700;cursor:pointer}
 
 /* ===== DESKTOP SIDEBAR ===== */
-#desktop-sidebar{display:none;position:fixed;left:0;top:0;height:100vh;width:240px;background:white;border-right:1px solid var(--border);flex-direction:column;padding:20px 14px 24px;z-index:300;overflow-y:auto;gap:2px}
-.dsb-logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.15rem;color:#006039;padding:8px 12px;margin-bottom:10px;letter-spacing:-.02em}
+#desktop-sidebar{display:none;position:fixed;left:0;top:0;height:100vh;width:240px;background:white;border-right:1px solid var(--border);flex-direction:column;padding:20px 14px 24px;z-index:300;overflow-y:auto;gap:2px;transition:width .3s cubic-bezier(.22,1,.36,1)}
+.dsb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 2px}
+.dsb-logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.15rem;color:#006039;padding:4px 10px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;transition:opacity .2s}
+#dsb-toggle{background:none;border:none;font-size:1.1rem;cursor:pointer;color:#888;padding:6px 8px;border-radius:8px;flex-shrink:0;line-height:1;transition:background .15s}
+#dsb-toggle:hover{background:var(--blue-light);color:var(--blue)}
 .dsb-divider{height:1px;background:var(--border);margin:8px 0}
 .dsb-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--navy);cursor:pointer;transition:background .15s,color .15s;user-select:none}
 .dsb-item:hover{background:var(--blue-light);color:var(--blue)}
 .dsb-item.active{background:#006039;color:white}
 .dsb-icon{font-size:1.05rem;width:22px;text-align:center;flex-shrink:0}
-.dsb-section-label{font-size:.68rem;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.07em;padding:8px 14px 4px}
+.dsb-label{transition:opacity .2s}
+.dsb-section-label{font-size:.68rem;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.07em;padding:8px 14px 4px;white-space:nowrap;overflow:hidden;transition:opacity .2s}
 
 /* ===== RESPONSIVE DESKTOP (≥ 768px) ===== */
 @media (min-width:768px){
@@ -565,6 +569,48 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
   #provChatModal{left:540px!important;background:white!important}
   #provChatModal>.modal{max-width:100%!important;width:100%!important;border-radius:0!important;max-height:100vh!important;height:100vh!important;margin:0!important;box-shadow:none!important;border-left:1px solid var(--border)}
   #provChatModal .modal-handle{display:none!important}
+
+  /* ===== SIDEBAR COLAPSABLE ===== */
+  #desktop-sidebar.collapsed{width:60px;padding-left:8px;padding-right:8px}
+  #desktop-sidebar.collapsed .dsb-logo{opacity:0;pointer-events:none;width:0;padding:0;overflow:hidden}
+  #desktop-sidebar.collapsed .dsb-label{opacity:0;width:0;overflow:hidden;display:inline-block}
+  #desktop-sidebar.collapsed .dsb-section-label{opacity:0;height:0;padding:0;margin:0;overflow:hidden}
+  #desktop-sidebar.collapsed .dsb-item{justify-content:center;padding:11px 0;gap:0}
+  #desktop-sidebar.collapsed .dsb-divider{margin:6px 0}
+  body.sidebar-collapsed .screen{margin-left:60px!important}
+  body.sidebar-collapsed .toast{left:calc(30px + 50%)!important}
+  body.sidebar-collapsed .notif-panel{left:60px!important}
+  body.sidebar-collapsed .comparador-fab{left:76px!important}
+  body.sidebar-collapsed .carrito-fab{left:76px!important}
+  body.sidebar-collapsed #provMsgListModal{left:60px!important}
+  body.sidebar-collapsed #provChatModal{left:360px!important}
+
+  /* ===== DASHBOARD DESKTOP REFINADO ===== */
+
+  /* Fondo cálido */
+  #perfil-proveedor{background:#fafaf8}
+
+  /* Header: avatar 56px, nombre Fraunces, rubro color cálido */
+  .dash-avatar{width:56px!important;height:56px!important;border-radius:16px!important;border:2px solid rgba(0,96,57,.35)!important}
+  #dash-nombre{font-family:'Fraunces',serif!important;font-size:1.25rem!important;font-weight:700!important;letter-spacing:-.02em!important}
+  #dash-rubro-label{color:rgba(255,255,255,.6)!important;font-size:.8rem!important}
+
+  /* Stats: número grande Fraunces, label DM Sans uppercase */
+  .dash-stat-card{background:white!important;border:1px solid #e8e5e0!important;box-shadow:0 1px 3px rgba(0,0,0,.08)!important}
+  .dash-stat-num{font-family:'Fraunces',serif!important;font-size:2rem!important;font-weight:700!important;color:#111!important}
+  .dash-stat-label{font-family:'DM Sans',sans-serif!important;color:#888!important;font-size:.6rem!important;font-weight:700!important;letter-spacing:.08em!important}
+
+  /* Completitud */
+  #perfil-completitud-wrap{border:1px solid #e8e5e0!important;box-shadow:0 1px 3px rgba(0,0,0,.06)!important}
+
+  /* Acciones: grid 4 columnas, botón vertical (ícono arriba + texto abajo) */
+  #dash-quick-actions{grid-template-columns:repeat(4,1fr)!important;gap:10px!important}
+  .dash-action-btn{flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:6px!important;padding:18px 10px!important;text-align:center!important;border-radius:14px!important;border:1px solid #e8e5e0!important;box-shadow:0 1px 3px rgba(0,0,0,.07)!important}
+  .dash-action-btn:not(:first-child){background:white!important;border:1px solid #e8e5e0!important}
+  .dash-action-icon{font-size:1.7rem!important;width:auto!important}
+
+  /* Pedidos: separadores finos, sin card pesada */
+  #dash-pedidos-list{gap:0!important}
 }
 
 /* ===== POLISH ===== */
