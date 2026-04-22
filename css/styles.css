@@ -566,3 +566,45 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
   #provChatModal>.modal{max-width:100%!important;width:100%!important;border-radius:0!important;max-height:100vh!important;height:100vh!important;margin:0!important;box-shadow:none!important;border-left:1px solid var(--border)}
   #provChatModal .modal-handle{display:none!important}
 }
+
+/* ===== POLISH ===== */
+
+/* 1. Eliminar outline/ring feo al presionar */
+button:focus,
+button:focus-visible,
+a:focus,
+a:focus-visible,
+[onclick]:focus,
+[tabindex]:focus,
+select:focus { outline: none; }
+
+/* 2. Scale al presionar — elementos que no lo tenían */
+.chip:active,
+.nav-item:active,
+.prov-tile:active,
+.opt-btn:active,
+.plan-btn:active,
+.plan-card:active,
+.google-btn:active,
+.conv-item:active,
+.notif-item:active,
+.dsb-item:active,
+.search-tab:active,
+.filtro-sel:active,
+.chat-send:active,
+.comparador-fab:active,
+.carrito-fab:active,
+.btn-secondary:active,
+.logout-btn:active,
+.tbl-btn:active,
+.modal-btn:active { transform: scale(.97); transition: transform .1s ease; }
+
+/* 3. Toast: entrada desde abajo con curva suave */
+.toast {
+  transform: translateX(-50%) translateY(48px);
+  transition: opacity .3s cubic-bezier(.22,1,.36,1), transform .38s cubic-bezier(.22,1,.36,1);
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
