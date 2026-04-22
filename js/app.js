@@ -103,7 +103,7 @@ function refreshFavBadge() {
 }
 function esFav(id) { return favs.some(f => String(f.id) === String(id)); }
 function toggleFav(id) {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   const idx = favs.findIndex(f => String(f.id) === String(id));
@@ -173,23 +173,13 @@ async function cargarProveedores() {
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || ''
       }));
-    } else { proveedoresDB = proveedoresDEMO; }
-  } catch(e) { proveedoresDB = proveedoresDEMO; }
+    } else { proveedoresDB = []; }
+  } catch(e) { proveedoresDB = []; }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
 }
 
-const proveedoresDEMO = [
-  {id:'1',nombre:'TechMayor BA',rubro:'Tecnologia',desc:'Mayorista de accesorios y electronica. Precios desde $500. Envio a todo el pais.',pro:true,inicial:'TM',provincia:'Buenos Aires',whatsapp:'5491112345678',pedido_minimo:'Desde $10.000',envios:'Si, a todo el pais',instagram:'@techmayor_ba'},
-  {id:'2',nombre:'HomeDeco Sur',rubro:'Hogar',desc:'Articulos de decoracion y hogar al por mayor. Minimo 10 unidades.',pro:false,inicial:'HD',provincia:'Buenos Aires',pedido_minimo:'10 unidades',envios:'Solo zona local',instagram:''},
-  {id:'3',nombre:'Modas del Litoral',rubro:'Moda',desc:'Ropa de mujer y accesorios. Colecciones actualizadas cada temporada.',pro:true,inicial:'ML',provincia:'Santa Fe',whatsapp:'5493412345678',pedido_minimo:'Desde $5.000',envios:'Si, a todo el pais',instagram:'@modaslitoral'},
-  {id:'4',nombre:'Bazar Mayorista GBA',rubro:'Bazar',desc:'Todo para el bazar: utensilios, limpieza, papeleria. Bajo precio.',pro:false,inicial:'BM',provincia:'Buenos Aires',pedido_minimo:'Sin minimo',envios:'GBA y CABA',instagram:''},
-  {id:'5',nombre:'AlimVerde SRL',rubro:'Alimentos',desc:'Productos naturales y organicos al por mayor. Certificados.',pro:true,inicial:'AV',provincia:'Cordoba',whatsapp:'5493514444444',pedido_minimo:'Desde $20.000',envios:'Si, a todo el pais',instagram:''},
-  {id:'6',nombre:'CelularPro Dist.',rubro:'Tecnologia',desc:'Distribucion de celulares y repuestos. Garantia de fabrica.',pro:true,inicial:'CP',provincia:'CABA',whatsapp:'5491187654321',pedido_minimo:'Desde $50.000',envios:'Si, a todo el pais',instagram:''},
-  {id:'7',nombre:'RopaKids Mayoreo',rubro:'Moda',desc:'Ropa infantil al por mayor. Talles 0 a 14. Stock permanente.',pro:false,inicial:'RK',provincia:'Buenos Aires',pedido_minimo:'Desde $8.000',envios:'GBA',instagram:''},
-  {id:'8',nombre:'CasaFacil Dist.',rubro:'Hogar',desc:'Muebles flat-pack y articulos de cocina. Entrega en 48hs.',pro:false,inicial:'CF',provincia:'Cordoba',pedido_minimo:'Desde $15.000',envios:'Cordoba',instagram:''}
-];
 
 // ===== RESEÑAS (Supabase real) =====
 // Cache en memoria para no pedir siempre lo mismo
@@ -563,7 +553,7 @@ const provinciaEmojis = {
 };
 
 function getProvsPorProvincia() {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   const mapa = {};
   lista.forEach(p => {
     const prov = p.provincia || 'Otra';
@@ -597,7 +587,7 @@ function renderMapaProvincias() {
 function renderMapaAllProvs() {
   const el = document.getElementById('mapaAllList');
   if (!el) return;
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   el.innerHTML = lista.slice(0,6).map((p,i) => renderProvCardMini(p,i)).join('');
   el.onclick = function(e) {
     const card = e.target.closest('[data-id]');
@@ -740,7 +730,7 @@ function renderProvs(list) {
 }
 
 function toggleCompararById(id) {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   const idx = comparadorList.findIndex(x => String(x.id) === String(id));
@@ -758,7 +748,7 @@ function filterProvs() {
   const prov  = document.getElementById('fil-prov')?.value || '';
   const plan  = document.getElementById('fil-plan')?.value || '';
   const orden = document.getElementById('fil-orden')?.value || '';
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   let result = lista.filter(p => {
     const mc  = currentCat === 'Todas' || p.rubro === currentCat;
     const mq  = !q    || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
@@ -878,7 +868,7 @@ async function cargarProductosDetalle(proveedorId) {
 
 // ===== DETALLE PROVEEDOR =====
 function abrirDetalle(id) {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   let p = lista.find(x => String(x.id) === String(id));
   if (!p) {
     // El proveedor no está en proveedoresDB (ej: no aprobado aún). Lo construimos
@@ -965,7 +955,7 @@ function calcGanancia() {
 
 // ===== CHAT =====
 async function abrirChatDirecto(id) {
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   provActual = p;
@@ -1373,7 +1363,7 @@ async function cargarMisConversaciones() {
 
     // Paso 2: traer nombre del proveedor por separado (sin join, por diferencia de tipos)
     const provNombres = {};
-    const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+    const lista = proveedoresDB;
     provIds.forEach(pid => {
       const prov = lista.find(p => String(p.id) === String(pid));
       provNombres[pid] = prov ? prov.nombre : 'Proveedor';
@@ -1886,8 +1876,10 @@ async function showRegSuccess() {
   const envios=document.querySelectorAll('#reg-step3 select')[0]?.value;
   const minimo=document.querySelectorAll('#reg-step3 select')[1]?.value;
   if(!envios){showToast('Selecciona si haces envios');return;} if(!minimo){showToast('Selecciona el pedido minimo');return;}
+  const btn = document.querySelector('#reg-step3 .submit-btn');
+  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
   try {
-    await sb.from('proveedores').insert({
+    const {error} = await sb.from('proveedores').insert({
       nombre:document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value||'',
       cuit:document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'',
       email:(document.querySelector('#reg-step1 input[type="email"]')?.value||'').toLowerCase().trim(),
@@ -1895,9 +1887,14 @@ async function showRegSuccess() {
       rubro:document.querySelector('#reg-step2 select')?.value||'',
       provincia:document.querySelector('#reg-step1 select')?.value||'',
       descripcion:document.querySelector('#reg-step2 textarea')?.value||'',
-      envios,pedido_minimo:minimo,plan:'gratis',estado:'pendiente'
+      envios,pedido_minimo:minimo,plan:'free',estado:'pendiente'
     });
-  } catch(e) {}
+    if(error) throw error;
+  } catch(e) {
+    if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+    showToast('Error al enviar: ' + (e.message||'intentá de nuevo'));
+    return;
+  }
   ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   document.getElementById('reg-success').style.display='block';
   window.scrollTo(0,0);
@@ -2172,14 +2169,14 @@ function abrirDetalleProd(id){
   const vc=document.getElementById('pdcalc-venta'),cc=document.getElementById('pdcalc-cant');
   if(vc)vc.value=''; if(cc)cc.value='';
   const rc=document.getElementById('pdcalc-result'); if(rc)rc.style.display='none';
-  const prov=(proveedoresDB.length?proveedoresDB:proveedoresDEMO).find(x=>String(x.id)===String(p.provId));
+  const prov=(proveedoresDB).find(x=>String(x.id)===String(p.provId));
   const waBtn=document.getElementById('prod-det-wa-btn');
   if(waBtn)waBtn.style.display=(prov&&prov.pro&&prov.whatsapp)?'flex':'none';
   goTo('detalle-producto');
 }
 function volverDetProd(){goTo(pantallaAnteriorProd);}
 function irAProveedorDesdeProd(){if(productoActual)abrirDetalle(productoActual.provId);}
-function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB.length?proveedoresDB:proveedoresDEMO).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp,mensajeWAProd(productoActual,prov));else showToast('WhatsApp no disponible');}
+function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp,mensajeWAProd(productoActual,prov));else showToast('WhatsApp no disponible');}
 function detChatProd(){if(productoActual)abrirChatDirecto(productoActual.provId);}
 function calcProdDet(){
   const costo=productoActual?productoActual.precio:0;
@@ -2363,7 +2360,7 @@ function agregarAlCarrito() {
   }
 
   // Buscar proveedor real para obtener WA real
-  const lista = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const lista = proveedoresDB;
   const prov = lista.find(x => String(x.id) === String(productoActual.provId));
 
   const existente = carrito.find(i => i.producto.id === productoActual.id);
@@ -3122,7 +3119,7 @@ function renderProvDestacados() {
   const seccion = document.getElementById('seccion-prov-dest');
   const lista = document.getElementById('prov-dest-list');
   if (!seccion || !lista) return;
-  const all = proveedoresDB.length ? proveedoresDB : proveedoresDEMO;
+  const all = proveedoresDB;
   if (!all.length) return;
   const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E','#C2410C'];
   const top = all
