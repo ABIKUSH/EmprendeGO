@@ -1877,24 +1877,58 @@ async function showRegSuccess() {
   const minimo=document.querySelectorAll('#reg-step3 select')[1]?.value;
   if(!envios){showToast('Selecciona si haces envios');return;} if(!minimo){showToast('Selecciona el pedido minimo');return;}
   const btn = document.querySelector('#reg-step3 .submit-btn');
-  if(btn){btn.disabled=true;btn.textContent='Enviando...';}
+  if(btn){btn.disabled=true;btn.textContent='Verificando...';}
+
+  const email=(document.querySelector('#reg-step1 input[type="email"]')?.value||'').toLowerCase().trim();
+  const datos = {
+    nombre:document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value||'',
+    cuit:document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'',
+    email,
+    whatsapp:document.querySelector('#reg-step1 input[type="tel"]')?.value||'',
+    rubro:document.querySelector('#reg-step2 select')?.value||'',
+    provincia:document.querySelector('#reg-step1 select')?.value||'',
+    descripcion:document.querySelector('#reg-step2 textarea')?.value||'',
+    envios, pedido_minimo:minimo
+  };
+
   try {
-    const {error} = await sb.from('proveedores').insert({
-      nombre:document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value||'',
-      cuit:document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'',
-      email:(document.querySelector('#reg-step1 input[type="email"]')?.value||'').toLowerCase().trim(),
-      whatsapp:document.querySelector('#reg-step1 input[type="tel"]')?.value||'',
-      rubro:document.querySelector('#reg-step2 select')?.value||'',
-      provincia:document.querySelector('#reg-step1 select')?.value||'',
-      descripcion:document.querySelector('#reg-step2 textarea')?.value||'',
-      envios,pedido_minimo:minimo,plan:'free',estado:'pendiente'
-    });
+    // Verificar si ya existe un registro con ese email
+    const {data:existente} = await sb.from('proveedores').select('id,estado').eq('email',email).maybeSingle();
+
+    if (existente) {
+      if (existente.estado === 'pendiente') {
+        if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+        showToast('Tu solicitud ya está siendo revisada. Te avisamos en 24-48hs por WhatsApp.');
+        return;
+      }
+      if (existente.estado === 'aprobado') {
+        if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+        showToast('¡Ya tenés cuenta aprobada! Iniciá sesión para acceder a tu dashboard.');
+        return;
+      }
+      if (existente.estado === 'rechazado') {
+        // Reenviar: actualizar el registro existente
+        if(btn) btn.textContent='Enviando...';
+        const {error} = await sb.from('proveedores').update({...datos, estado:'pendiente', plan:'free'}).eq('id', existente.id);
+        if(error) throw error;
+        // Éxito: mostrar pantalla de confirmación
+        ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+        document.getElementById('reg-success').style.display='block';
+        window.scrollTo(0,0);
+        return;
+      }
+    }
+
+    // No existe: insertar nuevo
+    if(btn) btn.textContent='Enviando...';
+    const {error} = await sb.from('proveedores').insert({...datos, plan:'free', estado:'pendiente'});
     if(error) throw error;
   } catch(e) {
     if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
     showToast('Error al enviar: ' + (e.message||'intentá de nuevo'));
     return;
   }
+
   ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   document.getElementById('reg-success').style.display='block';
   window.scrollTo(0,0);
