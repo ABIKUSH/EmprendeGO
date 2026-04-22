@@ -1378,6 +1378,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             <button id="foto-remove-btn" onclick="event.stopPropagation();removeFoto()" style="display:none;position:absolute;top:8px;right:8px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:4px 8px;font-size:.72rem;cursor:pointer">✕ Quitar</button>
           </div>
           <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
+          <p style="font-size:.72rem;color:#999;margin-top:6px;line-height:1.4">📷 Tamaño recomendado: 800x800px · Máximo 2MB · JPG o PNG</p>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda iPhone 15 Pro"></div>
@@ -1547,6 +1548,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <button id="edit-foto-remove-btn" onclick="event.stopPropagation();removeEditFoto()" style="display:none;position:absolute;top:6px;right:6px;background:rgba(0,0,0,.5);color:white;border:none;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer">✕</button>
   </div>
   <input type="file" id="edit-foto-input" accept="image/*" style="display:none" onchange="previewEditFoto(this)">
+  <p style="font-size:.72rem;color:#999;margin-top:6px;line-height:1.4">📷 Tamaño recomendado: 800x800px · Máximo 2MB · JPG o PNG</p>
 </div>
         <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios ✓</button>
       </div>
