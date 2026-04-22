@@ -286,6 +286,30 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <div class="reveal" style="padding:26px 20px 0">
     <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">Explorá por categoría</div>
     <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
+      <div onclick="filterCat('Indumentaria')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">👗</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Indumentaria</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Hogar y Deco')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">🏠</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Hogar y Deco</span>
+        </div>
+      </div>
+      <div onclick="filterCat('Belleza y Salud')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
+          <div style="font-size:1.2rem;margin-bottom:2px">💄</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Belleza y Salud</span>
+        </div>
+      </div>
       <div onclick="filterCat('Tecnología')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
@@ -294,36 +318,20 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Tecnología</span>
         </div>
       </div>
-      <div onclick="filterCat('Moda')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+      <div onclick="filterCat('Bolsos y Marroquinería')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <div style="font-size:1.2rem;margin-bottom:2px">👗</div>
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Moda</span>
+          <div style="font-size:1.2rem;margin-bottom:2px">👜</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Bolsos</span>
         </div>
       </div>
-      <div onclick="filterCat('Hogar')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+      <div onclick="filterCat('Otros')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <div style="font-size:1.2rem;margin-bottom:2px">🏠</div>
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Hogar</span>
-        </div>
-      </div>
-      <div onclick="filterCat('Bazar')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <div style="font-size:1.2rem;margin-bottom:2px">🛒</div>
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Bazar</span>
-        </div>
-      </div>
-      <div onclick="filterCat('Alimentos')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1506617420156-8e4536971650?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
-        <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <div style="font-size:1.2rem;margin-bottom:2px">🥗</div>
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Alimentos</span>
+          <div style="font-size:1.2rem;margin-bottom:2px">📦</div>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Otros</span>
         </div>
       </div>
     </div>
@@ -389,11 +397,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()"></div>
   <div class="chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
-    <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
-    <div class="chip" onclick="setChip(this,'Hogar')">Hogar</div>
-    <div class="chip" onclick="setChip(this,'Moda')">Moda</div>
-    <div class="chip" onclick="setChip(this,'Bazar')">Bazar</div>
-    <div class="chip" onclick="setChip(this,'Alimentos')">Alimentos</div>
+    <div class="chip" onclick="setChip(this,'Indumentaria')">👗 Indumentaria</div>
+    <div class="chip" onclick="setChip(this,'Hogar y Deco')">🏠 Hogar y Deco</div>
+    <div class="chip" onclick="setChip(this,'Belleza y Salud')">💄 Belleza y Salud</div>
+    <div class="chip" onclick="setChip(this,'Tecnología')">💻 Tecnología</div>
+    <div class="chip" onclick="setChip(this,'Bolsos y Marroquinería')">👜 Bolsos</div>
+    <div class="chip" onclick="setChip(this,'Otros')">📦 Otros</div>
   </div>
   <div class="search-tabs">
     <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
@@ -442,6 +451,45 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <option value="">&#11088; Todos los planes</option>
         <option value="pro">Solo PRO</option>
         <option value="gratis">Solo Gratis</option>
+      </select>
+    </div>
+    <div class="filtros-row" style="padding-top:0">
+      <select class="filtro-sel" id="fil-rubro" onchange="filterProvs()" style="width:100%">
+        <option value="">🏷️ Todos los rubros</option>
+        <optgroup label="👗 Indumentaria">
+          <option value="Ropa de mujer">Ropa de mujer</option>
+          <option value="Ropa de hombre">Ropa de hombre</option>
+          <option value="Ropa de bebé y niños">Ropa de bebé y niños</option>
+          <option value="Talles especiales">Talles especiales</option>
+          <option value="Ropa deportiva">Ropa deportiva</option>
+          <option value="Accesorios de moda">Accesorios de moda</option>
+        </optgroup>
+        <optgroup label="🏠 Hogar y Deco">
+          <option value="Blanquería">Blanquería</option>
+          <option value="Muebles y decoración">Muebles y decoración</option>
+          <option value="Artículos de cocina">Artículos de cocina</option>
+          <option value="Limpieza y hogar">Limpieza y hogar</option>
+        </optgroup>
+        <optgroup label="💄 Belleza y Salud">
+          <option value="Perfumería y cosméticos">Perfumería y cosméticos</option>
+          <option value="Cuidado personal">Cuidado personal</option>
+          <option value="Suplementos y nutrición">Suplementos y nutrición</option>
+        </optgroup>
+        <optgroup label="💻 Tecnología">
+          <option value="Tecnología y electrónica">Tecnología y electrónica</option>
+          <option value="Accesorios de celular">Accesorios de celular</option>
+        </optgroup>
+        <optgroup label="👜 Bolsos y Marroquinería">
+          <option value="Carteras y mochilas">Carteras y mochilas</option>
+          <option value="Calzado">Calzado</option>
+        </optgroup>
+        <optgroup label="📦 Otros">
+          <option value="Telas e insumos textiles">Telas e insumos textiles</option>
+          <option value="Juguetes y juegos">Juguetes y juegos</option>
+          <option value="Librería y papelería">Librería y papelería</option>
+          <option value="Alimentos y bebidas">Alimentos y bebidas</option>
+          <option value="Otros">Otros</option>
+        </optgroup>
       </select>
     </div>
     <div class="filtros-row" style="padding-top:0">
@@ -777,12 +825,40 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">Rubro</div>
           <select id="lp-rubro" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none;-webkit-appearance:none;appearance:none">
             <option value="" style="background:#222">Seleccioná tu rubro</option>
-            <option value="Tecnología" style="background:#222">Tecnología</option>
-            <option value="Moda" style="background:#222">Moda</option>
-            <option value="Hogar" style="background:#222">Hogar</option>
-            <option value="Bazar" style="background:#222">Bazar</option>
-            <option value="Alimentos" style="background:#222">Alimentos</option>
-            <option value="Otro" style="background:#222">Otro</option>
+            <optgroup label="👗 Indumentaria" style="background:#222">
+              <option value="Ropa de mujer" style="background:#222">Ropa de mujer</option>
+              <option value="Ropa de hombre" style="background:#222">Ropa de hombre</option>
+              <option value="Ropa de bebé y niños" style="background:#222">Ropa de bebé y niños</option>
+              <option value="Talles especiales" style="background:#222">Talles especiales</option>
+              <option value="Ropa deportiva" style="background:#222">Ropa deportiva</option>
+              <option value="Accesorios de moda" style="background:#222">Accesorios de moda</option>
+            </optgroup>
+            <optgroup label="🏠 Hogar y Deco" style="background:#222">
+              <option value="Blanquería" style="background:#222">Blanquería</option>
+              <option value="Muebles y decoración" style="background:#222">Muebles y decoración</option>
+              <option value="Artículos de cocina" style="background:#222">Artículos de cocina</option>
+              <option value="Limpieza y hogar" style="background:#222">Limpieza y hogar</option>
+            </optgroup>
+            <optgroup label="💄 Belleza y Salud" style="background:#222">
+              <option value="Perfumería y cosméticos" style="background:#222">Perfumería y cosméticos</option>
+              <option value="Cuidado personal" style="background:#222">Cuidado personal</option>
+              <option value="Suplementos y nutrición" style="background:#222">Suplementos y nutrición</option>
+            </optgroup>
+            <optgroup label="💻 Tecnología" style="background:#222">
+              <option value="Tecnología y electrónica" style="background:#222">Tecnología y electrónica</option>
+              <option value="Accesorios de celular" style="background:#222">Accesorios de celular</option>
+            </optgroup>
+            <optgroup label="👜 Bolsos y Marroquinería" style="background:#222">
+              <option value="Carteras y mochilas" style="background:#222">Carteras y mochilas</option>
+              <option value="Calzado" style="background:#222">Calzado</option>
+            </optgroup>
+            <optgroup label="📦 Otros" style="background:#222">
+              <option value="Telas e insumos textiles" style="background:#222">Telas e insumos textiles</option>
+              <option value="Juguetes y juegos" style="background:#222">Juguetes y juegos</option>
+              <option value="Librería y papelería" style="background:#222">Librería y papelería</option>
+              <option value="Alimentos y bebidas" style="background:#222">Alimentos y bebidas</option>
+              <option value="Otros" style="background:#222">Otros</option>
+            </optgroup>
           </select>
         </div>
       </div>
@@ -837,7 +913,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
         <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"></div>
-        <div class="form-group"><label>Rubro *</label><select><option value="">Seleccioná</option><option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option><option>Otro</option></select></div>
+        <div class="form-group"><label>Rubro * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(hasta 3)</span></label><div id="reg-rubros-picker" class="rubros-picker"></div></div>
         <div class="form-group"><label>Instagram o red social</label><input type="text" placeholder="@minegocio"></div>
         <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
       </div>
@@ -1114,6 +1190,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="form-group"><label>Descripción</label><textarea id="edit-desc"></textarea></div>
         <div class="form-group"><label>WhatsApp</label><input type="tel" id="edit-wa" placeholder="+54 9 11 1234-5678"></div>
         <div class="form-group"><label>Instagram</label><input type="text" id="edit-instagram" placeholder="@minegocio"></div>
+        <div class="form-group"><label>Rubros <span style="font-size:.75rem;color:var(--gray);font-weight:400">(hasta 3)</span></label><div id="edit-rubros-picker" class="rubros-picker"></div></div>
         <button class="submit-btn" id="btn-guardar-perfil" onclick="guardarCambiosPerfil()">Guardar cambios</button>
       </div>
     </div>

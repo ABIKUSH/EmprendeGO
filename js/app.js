@@ -24,6 +24,65 @@ function haptic(type) {
   else navigator.vibrate(15);
 }
 
+// ===== RUBROS / CATEGORÍAS =====
+const RUBROS = {
+  'Indumentaria':          ['Ropa de mujer','Ropa de hombre','Ropa de bebé y niños','Talles especiales','Ropa deportiva','Accesorios de moda'],
+  'Hogar y Deco':          ['Blanquería','Muebles y decoración','Artículos de cocina','Limpieza y hogar'],
+  'Belleza y Salud':       ['Perfumería y cosméticos','Cuidado personal','Suplementos y nutrición'],
+  'Tecnología':            ['Tecnología y electrónica','Accesorios de celular'],
+  'Bolsos y Marroquinería':['Carteras y mochilas','Calzado'],
+  'Otros':                 ['Telas e insumos textiles','Juguetes y juegos','Librería y papelería','Alimentos y bebidas','Otros']
+};
+const RUBROS_ICONS = {'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦'};
+const RUBRO_LEGACY = {'Moda':'Indumentaria','Hogar':'Hogar y Deco','Tecnologia':'Tecnología','Bazar':'Otros','Alimentos':'Otros','Otro':'Otros'};
+
+function matchesCat(rubroStr, cat) {
+  if (!rubroStr || cat === 'Todas') return true;
+  const rubros = rubroStr.split(',').map(r => r.trim()).filter(Boolean);
+  const subcats = RUBROS[cat] || [];
+  return rubros.some(r => r === cat || subcats.includes(r) || RUBRO_LEGACY[r] === cat);
+}
+
+function onRubroChange(cb, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const MAX = 3;
+  const count = el.querySelectorAll('input[type="checkbox"]:checked').length;
+  const counter = el.querySelector('.rubros-counter');
+  if (counter) { counter.textContent = count + '/' + MAX + ' seleccionados'; counter.style.color = count >= MAX ? '#006039' : '#888'; }
+  el.querySelectorAll('input[type="checkbox"]').forEach(c => { if (!c.checked) c.disabled = count >= MAX; });
+  const lbl = cb.closest('label');
+  if (lbl) { lbl.style.background = cb.checked ? '#E8F5EE' : '#f5f5f5'; lbl.style.borderColor = cb.checked ? '#006039' : 'transparent'; }
+}
+
+function renderRubrosPicker(containerId, preselected = []) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const MAX = 3;
+  el.innerHTML = `<div class="rubros-counter" style="font-size:.75rem;font-weight:700;color:#888;margin-bottom:12px;text-align:right">0/${MAX} seleccionados</div>` +
+    Object.entries(RUBROS).map(([cat, subs]) => `
+      <div style="margin-bottom:14px">
+        <div style="font-size:.7rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">${RUBROS_ICONS[cat]||'📦'} ${cat}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${subs.map(s => {
+            const pre = preselected.includes(s);
+            return `<label style="display:inline-flex;align-items:center;gap:5px;background:${pre?'#E8F5EE':'#f5f5f5'};border-radius:20px;padding:5px 12px;font-size:.8rem;cursor:pointer;border:1.5px solid ${pre?'#006039':'transparent'};transition:all .15s"><input type="checkbox" value="${s}" style="accent-color:#006039" onchange="onRubroChange(this,'${containerId}')"${pre?' checked':''}> ${s}</label>`;
+          }).join('')}
+        </div>
+      </div>`).join('');
+  if (preselected.length) {
+    const counter = el.querySelector('.rubros-counter');
+    if (counter) { counter.textContent = preselected.length + '/' + MAX + ' seleccionados'; counter.style.color = preselected.length >= MAX ? '#006039' : '#888'; }
+    if (preselected.length >= MAX) el.querySelectorAll('input[type="checkbox"]').forEach(c => { if (!c.checked) c.disabled = true; });
+  }
+}
+
+function getRubrosSeleccionados(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return [];
+  return [...el.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+}
+
 // ===== SPLASH SCREEN =====
 (function initSplash() {
   const splash = document.getElementById('splash');
@@ -764,13 +823,15 @@ function filterProvs() {
   const prov  = document.getElementById('fil-prov')?.value || '';
   const plan  = document.getElementById('fil-plan')?.value || '';
   const orden = document.getElementById('fil-orden')?.value || '';
+  const rubroFil = document.getElementById('fil-rubro')?.value || '';
   const lista = proveedoresDB;
   let result = lista.filter(p => {
-    const mc  = currentCat === 'Todas' || p.rubro === currentCat;
+    const mc  = matchesCat(p.rubro, currentCat);
     const mq  = !q    || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
     const mp  = !prov || p.provincia === prov;
     const mpl = !plan || (plan === 'pro' ? p.pro : !p.pro);
-    return mc && mq && mp && mpl;
+    const mrb = !rubroFil || (p.rubro||'').includes(rubroFil);
+    return mc && mq && mp && mpl && mrb;
   });
   if (orden === 'rating') {
     result = result.slice().sort((a, b) => getProvRating(String(b.id)).avg - getProvRating(String(a.id)).avg);
@@ -1282,6 +1343,8 @@ function abrirEditarPerfil() {
   if (!tab) return;
   tab.style.display = tab.style.display === 'none' ? 'block' : 'none';
   if (tab.style.display === 'block') {
+    const preselected = (currentUser?.provData?.rubro||'').split(',').map(r=>r.trim()).filter(Boolean);
+    renderRubrosPicker('edit-rubros-picker', preselected);
     tab.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
@@ -1446,7 +1509,7 @@ function timeAgo(date) {
 }
 
 // ===== CATALOGO PROVEEDOR =====
-const iconMap = {'Tecnologia':'💻','Tecnología':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍫'};
+const iconMap = {'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦','Tecnologia':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍫'};
 function renderProdGrid() {
   const el = document.getElementById('prodGrid');
   if (!el) return;
@@ -1875,12 +1938,13 @@ function showRegStep(step) {
     const p=document.querySelector('#reg-step1 select')?.value;
     if(!n){showToast('Ingresa tu nombre');return;} if(!e){showToast('Ingresa tu email');return;} if(!w){showToast('Ingresa tu WhatsApp');return;} if(!p){showToast('Selecciona tu provincia');return;}
   }
+  if (step===2) { renderRubrosPicker('reg-rubros-picker'); }
   if (step===3) {
     const r=document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
     const c=document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
-    const ru=document.querySelector('#reg-step2 select')?.value;
+    const ru=getRubrosSeleccionados('reg-rubros-picker');
     const d=document.querySelector('#reg-step2 textarea')?.value?.trim();
-    if(!r){showToast('Ingresa la razon social');return;} if(!c){showToast('Ingresa el CUIT');return;} if(!ru){showToast('Selecciona el rubro');return;} if(!d){showToast('Ingresa una descripcion');return;}
+    if(!r){showToast('Ingresa la razon social');return;} if(!c){showToast('Ingresa el CUIT');return;} if(!ru.length){showToast('Seleccioná al menos un rubro');return;} if(!d){showToast('Ingresa una descripcion');return;}
   }
   ['reg-intro','reg-step1','reg-step2','reg-step3','reg-success'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
   const map={0:'reg-intro',1:'reg-step1',2:'reg-step2',3:'reg-step3'};
@@ -1901,7 +1965,7 @@ async function showRegSuccess() {
     cuit:document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'',
     email,
     whatsapp:document.querySelector('#reg-step1 input[type="tel"]')?.value||'',
-    rubro:document.querySelector('#reg-step2 select')?.value||'',
+    rubro:getRubrosSeleccionados('reg-rubros-picker').join(', '),
     provincia:document.querySelector('#reg-step1 select')?.value||'',
     descripcion:document.querySelector('#reg-step2 textarea')?.value||'',
     envios, pedido_minimo:minimo
@@ -2061,9 +2125,9 @@ async function showResult() {
 // ===== PRODUCTOS =====
 const productosDemo=[];
 let productosReales=[];
-const catColors={'Tecnologia':'#1847C8','Tecnología':'#1847C8','Moda':'#FF6B00','Hogar':'#00A651','Bazar':'#7C3AED','Alimentos':'#F59E0B'};
+const catColors={'Indumentaria':'#FF6B00','Hogar y Deco':'#00A651','Belleza y Salud':'#E91E8C','Tecnología':'#1847C8','Bolsos y Marroquinería':'#7C3AED','Otros':'#F59E0B','Tecnologia':'#1847C8','Moda':'#FF6B00','Hogar':'#00A651','Bazar':'#7C3AED','Alimentos':'#F59E0B'};
 
-function getEmojiCat(cat){const map={'Tecnologia':'📱','Tecnología':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};return map[cat]||'📦';}
+function getEmojiCat(cat){const map={'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦','Tecnologia':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫'};return map[cat]||'📦';}
 function getProdLista(){return productosReales;}
 
 async function cargarProductosReales() {
@@ -2869,16 +2933,18 @@ async function guardarCambiosPerfil() {
   const desc = (document.getElementById('edit-desc')?.value || '').trim();
   const wa = (document.getElementById('edit-wa')?.value || '').trim();
   const ig = (document.getElementById('edit-instagram')?.value || '').trim();
+  const rubro = getRubrosSeleccionados('edit-rubros-picker').join(', ') || (currentUser.provData?.rubro || '');
   if (!nombre) { showToast('El nombre no puede estar vacío'); return; }
   showToast('Guardando...');
   try {
-    const { error } = await sb.from('proveedores').update({ nombre, descripcion: desc, whatsapp: wa, instagram: ig }).eq('id', currentUser.proveedorId);
+    const { error } = await sb.from('proveedores').update({ nombre, descripcion: desc, whatsapp: wa, instagram: ig, rubro }).eq('id', currentUser.proveedorId);
     if (error) throw error;
     if (currentUser.provData) {
       currentUser.provData.nombre = nombre;
       currentUser.provData.descripcion = desc;
       currentUser.provData.whatsapp = wa;
       currentUser.provData.instagram = ig;
+      currentUser.provData.rubro = rubro;
     }
     currentUser.name = nombre;
     updateTopbar();
