@@ -47,33 +47,85 @@ function onRubroChange(cb, containerId) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const MAX = 3;
-  const count = el.querySelectorAll('input[type="checkbox"]:checked').length;
+  const isWhole = cb.dataset.type === 'whole';
+  const cat = cb.dataset.cat;
+  const group = el.querySelector(`.rubros-picker-group[data-cat="${cat}"]`);
+
+  if (isWhole && cb.checked) {
+    // Uncheck + disable all subcategories in this group
+    group?.querySelectorAll('input[data-type="sub"]').forEach(c => {
+      c.checked = false; c.disabled = true;
+      c.closest('label').className = 'sub-disabled';
+    });
+  } else if (isWhole && !cb.checked) {
+    // Re-enable subcategories in this group
+    group?.querySelectorAll('input[data-type="sub"]').forEach(c => {
+      c.disabled = false; c.closest('label').className = '';
+    });
+  } else if (!isWhole && cb.checked) {
+    // If a subcategory is picked, deselect the whole-cat for this group
+    const wholeInput = group?.querySelector('input[data-type="whole"]');
+    if (wholeInput?.checked) {
+      wholeInput.checked = false;
+      wholeInput.closest('label').classList.remove('checked');
+      group.querySelectorAll('input[data-type="sub"]').forEach(c => {
+        c.disabled = false; c.closest('label').classList.remove('sub-disabled');
+      });
+    }
+  }
+
+  cb.closest('label')?.classList.toggle('checked', cb.checked);
+
+  const count = el.querySelectorAll('input:checked').length;
   const counter = el.querySelector('.rubros-counter');
   if (counter) { counter.textContent = count + '/' + MAX + ' seleccionados'; counter.style.color = count >= MAX ? '#006039' : '#888'; }
-  el.querySelectorAll('input[type="checkbox"]').forEach(c => { if (!c.checked) c.disabled = count >= MAX; });
-  const lbl = cb.closest('label');
-  if (lbl) { lbl.style.background = cb.checked ? '#E8F5EE' : '#f5f5f5'; lbl.style.borderColor = cb.checked ? '#006039' : 'transparent'; }
+
+  // Apply global max, respecting per-group whole-cat disabled state
+  el.querySelectorAll('input[type="checkbox"]').forEach(c => {
+    if (c.checked) { c.disabled = false; return; }
+    const wholeForCat = el.querySelector(`input[data-type="whole"][data-cat="${c.dataset.cat}"]:checked`);
+    c.disabled = (c.dataset.type === 'sub' && wholeForCat) || count >= MAX;
+  });
 }
 
 function renderRubrosPicker(containerId, preselected = []) {
   const el = document.getElementById(containerId);
   if (!el) return;
   const MAX = 3;
-  el.innerHTML = `<div class="rubros-counter" style="font-size:.75rem;font-weight:700;color:#888;margin-bottom:12px;text-align:right">0/${MAX} seleccionados</div>` +
-    Object.entries(RUBROS).map(([cat, subs]) => `
-      <div style="margin-bottom:14px">
-        <div style="font-size:.7rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">${RUBROS_ICONS[cat]||'📦'} ${cat}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
+  const catNames = Object.keys(RUBROS);
+
+  el.innerHTML = `<span class="rubros-counter">0/${MAX} seleccionados</span>` +
+    Object.entries(RUBROS).map(([cat, subs]) => {
+      const wholeChecked = preselected.includes(cat) && !subs.some(s => preselected.includes(s));
+      return `<div class="rubros-picker-group" data-cat="${cat}">
+        <div class="rubros-picker-cat-title">${RUBROS_ICONS[cat]||'📦'} ${cat}</div>
+        <div class="rubros-picker-options">
+          <label class="rubros-whole-cat${wholeChecked?' checked':''}">
+            <input type="checkbox" data-type="whole" data-cat="${cat}" value="${cat}"
+              onchange="onRubroChange(this,'${containerId}')"${wholeChecked?' checked':''}> Toda la categoría
+          </label>
           ${subs.map(s => {
-            const pre = preselected.includes(s);
-            return `<label style="display:inline-flex;align-items:center;gap:5px;background:${pre?'#E8F5EE':'#f5f5f5'};border-radius:20px;padding:5px 12px;font-size:.8rem;cursor:pointer;border:1.5px solid ${pre?'#006039':'transparent'};transition:all .15s"><input type="checkbox" value="${s}" style="accent-color:#006039" onchange="onRubroChange(this,'${containerId}')"${pre?' checked':''}> ${s}</label>`;
+            const pre = !wholeChecked && preselected.includes(s);
+            const cls = wholeChecked ? 'sub-disabled' : (pre ? 'checked' : '');
+            return `<label${cls?` class="${cls}"`:''}>
+              <input type="checkbox" data-type="sub" data-cat="${cat}" value="${s}"
+                onchange="onRubroChange(this,'${containerId}')"${pre?' checked':''}${wholeChecked?' disabled':''}> ${s}</label>`;
           }).join('')}
         </div>
-      </div>`).join('');
-  if (preselected.length) {
-    const counter = el.querySelector('.rubros-counter');
-    if (counter) { counter.textContent = preselected.length + '/' + MAX + ' seleccionados'; counter.style.color = preselected.length >= MAX ? '#006039' : '#888'; }
-    if (preselected.length >= MAX) el.querySelectorAll('input[type="checkbox"]').forEach(c => { if (!c.checked) c.disabled = true; });
+      </div>`;
+    }).join('');
+
+  const count = el.querySelectorAll('input:checked').length;
+  const counter = el.querySelector('.rubros-counter');
+  if (counter && count) {
+    counter.textContent = count + '/' + MAX + ' seleccionados';
+    counter.style.color = count >= MAX ? '#006039' : '#888';
+    if (count >= MAX) {
+      el.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(c => {
+        const wholeForCat = el.querySelector(`input[data-type="whole"][data-cat="${c.dataset.cat}"]:checked`);
+        if (!(c.dataset.type === 'sub' && wholeForCat)) c.disabled = true;
+      });
+    }
   }
 }
 
