@@ -1388,7 +1388,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           </div>
           <div class="form-group"><label>Categoría</label>
             <select id="new-prod-cat">
-              <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+              <optgroup label="👗 Indumentaria">
+                <option>Ropa de mujer</option><option>Ropa de hombre</option><option>Ropa de bebé y niños</option><option>Talles especiales</option><option>Ropa deportiva</option><option>Accesorios de moda</option>
+              </optgroup>
+              <optgroup label="🏠 Hogar y Deco">
+                <option>Blanquería</option><option>Muebles y decoración</option><option>Artículos de cocina</option><option>Limpieza y hogar</option>
+              </optgroup>
+              <optgroup label="💄 Belleza y Salud">
+                <option>Perfumería y cosméticos</option><option>Cuidado personal</option><option>Suplementos y nutrición</option>
+              </optgroup>
+              <optgroup label="💻 Tecnología">
+                <option>Tecnología y electrónica</option><option>Accesorios de celular</option>
+              </optgroup>
+              <optgroup label="👜 Bolsos y Marroquinería">
+                <option>Carteras y mochilas</option><option>Calzado</option>
+              </optgroup>
+              <optgroup label="📦 Otros">
+                <option>Telas e insumos textiles</option><option>Juguetes y juegos</option><option>Librería y papelería</option><option>Alimentos y bebidas</option><option>Otros</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group"><label>Descripción (opcional)</label><textarea id="new-prod-desc" placeholder="Breve descripción del producto..." style="min-height:60px"></textarea></div>
@@ -1536,7 +1553,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="form-group"><label>Nombre *</label><input type="text" id="edit-prod-name"></div>
         <div class="form-group"><label>Precio mayorista *</label><input type="number" id="edit-prod-price"></div>
         <div class="form-group"><label>Stock</label><input type="number" id="edit-prod-stock"></div>
-        <div class="form-group"><label>Categoria</label><select id="edit-prod-cat"><option>Tecnologia</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option></select></div>
+        <div class="form-group"><label>Categoría</label><select id="edit-prod-cat">
+          <optgroup label="👗 Indumentaria">
+            <option>Ropa de mujer</option><option>Ropa de hombre</option><option>Ropa de bebé y niños</option><option>Talles especiales</option><option>Ropa deportiva</option><option>Accesorios de moda</option>
+          </optgroup>
+          <optgroup label="🏠 Hogar y Deco">
+            <option>Blanquería</option><option>Muebles y decoración</option><option>Artículos de cocina</option><option>Limpieza y hogar</option>
+          </optgroup>
+          <optgroup label="💄 Belleza y Salud">
+            <option>Perfumería y cosméticos</option><option>Cuidado personal</option><option>Suplementos y nutrición</option>
+          </optgroup>
+          <optgroup label="💻 Tecnología">
+            <option>Tecnología y electrónica</option><option>Accesorios de celular</option>
+          </optgroup>
+          <optgroup label="👜 Bolsos y Marroquinería">
+            <option>Carteras y mochilas</option><option>Calzado</option>
+          </optgroup>
+          <optgroup label="📦 Otros">
+            <option>Telas e insumos textiles</option><option>Juguetes y juegos</option><option>Librería y papelería</option><option>Alimentos y bebidas</option><option>Otros</option>
+          </optgroup>
+        </select></div>
        <div style="margin-bottom:12px">
   <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">Foto del producto</label>
   <div id="edit-foto-preview" style="width:100%;height:120px;background:var(--blue-light);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #c7d4f8;position:relative;overflow:hidden" onclick="document.getElementById('edit-foto-input').click()">
