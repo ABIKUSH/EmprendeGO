@@ -168,7 +168,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <span>Ser proveedor</span>
     </div>
     <div class="drawer-divider"></div>
-    <div class="drawer-item" onclick="closeDrawer();window.open('https://wa.me/5491100000000','_blank')">
+    <div class="drawer-item" onclick="closeDrawer();window.open('https://wa.me/5491164457134?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO','_blank')">
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Soporte</span>
     </div>
@@ -414,15 +414,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <span onclick="switchBuscarTab('proveedores',document.getElementById('tab-proveedores'));goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
     </div>
     <div id="prov-dest-list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch"></div>
-  </div>
-
-  <!-- RECIÉN LLEGADOS -->
-  <div id="seccion-recien-llegados" class="reveal" style="display:none;padding:20px 20px 0">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">🆕 Recién llegados</div>
-      <span onclick="switchBuscarTab('proveedores',document.getElementById('tab-proveedores'));goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
-    </div>
-    <div id="recien-llegados-list" style="display:flex;flex-direction:column;gap:8px"></div>
   </div>
 
   <!-- PRODUCTOS DESTACADOS -->
