@@ -1165,11 +1165,19 @@ async function cargarMensajesUsuario() {
 
   try {
     // Fetch all messages where this user is the sender
-    const { data, error } = await sb
-      .from('mensajes')
-      .select('*')
-      .or(`usuario_email.eq.${currentUser.email},de_nombre.eq.${currentUser.name}`)
-      .order('created_at', { ascending: false });
+    // Use two separate queries and merge to avoid .or() quoting issues
+    const [r1, r2] = await Promise.all([
+      sb.from('mensajes').select('*').eq('usuario_email', currentUser.email).order('created_at', { ascending: false }),
+      sb.from('mensajes').select('*').eq('de_nombre', currentUser.name).order('created_at', { ascending: false })
+    ]);
+    const seen = new Set();
+    const combined = [...(r1.data || []), ...(r2.data || [])].filter(m => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id); return true;
+    });
+    combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const data = combined;
+    const error = r1.error && r2.error ? r1.error : null;
 
     if (error) throw error;
 
@@ -1213,7 +1221,7 @@ async function cargarMensajesUsuario() {
       const preview = (lastMsg.texto || '').replace(/\n/g,' ').substring(0,55) + ((lastMsg.texto||'').length > 55 ? '…' : '');
       const tiempo = timeAgo(new Date(lastMsg.created_at));
       const esRecibido = lastMsg.de_tipo === 'proveedor';
-      return `<div class="conv-item" onclick="abrirChatDirecto(${c.provId})" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
+      return `<div class="conv-item" onclick="abrirChatDirecto('${c.provId}')" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
         <div style="width:46px;height:46px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#006039;flex-shrink:0">${ini}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:.9rem;color:#111;margin-bottom:2px">${nombre}</div>
