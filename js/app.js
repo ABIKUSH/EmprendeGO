@@ -1138,6 +1138,92 @@ async function abrirChatDirecto(id) {
   iniciarChatPolling(p.id);
 }
 function volverChat() { detenerChatPolling(); goTo(pantallaAnterior); }
+
+// ===== MENSAJES USUARIO (buyer) =====
+async function cargarMensajesUsuario() {
+  const el = document.getElementById('mensajes-list');
+  if (!el) return;
+
+  if (!currentUser) {
+    el.innerHTML = `
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:2.5rem;margin-bottom:14px">💬</div>
+        <div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:#111;margin-bottom:6px">Iniciá sesión para ver tus mensajes</div>
+        <div style="font-size:.83rem;color:#888;margin-bottom:24px">Accedé con Google para ver tus conversaciones con proveedores</div>
+        <button onclick="goTo('perfil')" style="background:#006039;color:white;border:none;border-radius:12px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer">Iniciar sesión</button>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;font-size:.85rem">Cargando...</div>';
+
+  try {
+    // Fetch all messages where this user is the sender
+    const { data, error } = await sb
+      .from('mensajes')
+      .select('*')
+      .or(`usuario_email.eq.${currentUser.email},de_nombre.eq.${currentUser.name}`)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      el.innerHTML = `
+        <div style="text-align:center;padding:60px 20px">
+          <div style="font-size:2.5rem;margin-bottom:14px">💬</div>
+          <div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:#111;margin-bottom:6px">Todavía no hablaste con ningún proveedor</div>
+          <div style="font-size:.83rem;color:#888;margin-bottom:24px;line-height:1.5">Encontrá uno y escribile directo</div>
+          <button onclick="goTo('buscar')" style="background:#006039;color:white;border:none;border-radius:12px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer">Buscar proveedores</button>
+        </div>`;
+      return;
+    }
+
+    // Group by proveedor_id, keep latest message per provider
+    const convMap = {};
+    data.forEach(m => {
+      const pid = String(m.proveedor_id);
+      if (!convMap[pid]) convMap[pid] = { provId: pid, lastMsg: m };
+    });
+
+    // Get provider names from proveedoresDB (already loaded) or fetch
+    const convs = Object.values(convMap);
+    const provIds = convs.map(c => c.provId);
+    let provsInfo = {};
+    proveedoresDB.forEach(p => { if (provIds.includes(String(p.id))) provsInfo[String(p.id)] = p; });
+
+    // Fetch any missing providers
+    const missing = provIds.filter(id => !provsInfo[id]);
+    if (missing.length) {
+      const { data: provData } = await sb.from('proveedores').select('id,nombre,rubro,logo_url').in('id', missing);
+      if (provData) provData.forEach(p => { provsInfo[String(p.id)] = p; });
+    }
+
+    el.innerHTML = convs.map(c => {
+      const prov = provsInfo[c.provId];
+      const nombre = prov?.nombre || 'Proveedor';
+      const rubro = prov?.rubro || '';
+      const ini = nombre.substring(0,2).toUpperCase();
+      const lastMsg = c.lastMsg;
+      const preview = (lastMsg.texto || '').replace(/\n/g,' ').substring(0,55) + ((lastMsg.texto||'').length > 55 ? '…' : '');
+      const tiempo = timeAgo(new Date(lastMsg.created_at));
+      const esRecibido = lastMsg.de_tipo === 'proveedor';
+      return `<div class="conv-item" onclick="abrirChatDirecto(${c.provId})" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
+        <div style="width:46px;height:46px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#006039;flex-shrink:0">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:.9rem;color:#111;margin-bottom:2px">${nombre}</div>
+          <div style="font-size:.75rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esRecibido?'→ ':''} ${preview}</div>
+        </div>
+        <div style="flex-shrink:0;text-align:right">
+          <div style="font-size:.7rem;color:#bbb">${tiempo}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:.85rem">Error al cargar mensajes.</div>';
+  }
+}
+
 function getHora() { return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
 function renderChat() {
   const el = document.getElementById('chat-msgs');
@@ -2006,6 +2092,7 @@ function goTo(s) {
   if (s==='perfil' && currentUser?.type==='user') cargarHistorial();
   if (s==='favoritos') renderFavs();
   if (s==='mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
+  if (s==='mensajes') cargarMensajesUsuario();
   window.scrollTo(0,0);
   setTimeout(checkReveal, 100);
 }
