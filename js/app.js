@@ -1090,54 +1090,56 @@ function calcGanancia() {
 
 // ===== CHAT =====
 async function abrirChatDirecto(id) {
-  const lista = proveedoresDB;
-  const p = lista.find(x => String(x.id) === String(id));
-  if (!p) return;
+  // Resolve provider — try local cache first, then fetch from Supabase
+  let p = proveedoresDB.find(x => String(x.id) === String(id));
+  if (!p) {
+    try {
+      const { data } = await sb.from('proveedores').select('*').eq('id', id).maybeSingle();
+      if (data) { p = data; proveedoresDB.push(data); }
+    } catch(e) {}
+  }
+  if (!p) { showToast('Proveedor no disponible'); return; }
+
   provActual = p;
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
 
-  // Mensaje inicial de bienvenida (solo si no hay historial)
-  chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
+  // Show loading state while fetching history
+  chatMsgs = [];
   renderChat();
   goTo('chat');
 
-  // Cargar historial real desde Supabase
+  // Load full message history from Supabase
   try {
     const { data } = await sb.from('mensajes')
       .select('*')
       .eq('proveedor_id', p.id)
       .order('created_at', { ascending: true });
+
     if (data && data.length) {
-      // Filtrar solo mensajes del proveedor + mensajes del usuario actual
-      // Mostrar todos los mensajes: los del usuario (de_nombre) + los del proveedor (de_tipo)
       const misMsgs = data.filter(m =>
         m.de_tipo === 'proveedor' ||
         m.de_nombre === currentUser?.name ||
         m.usuario_email === currentUser?.email
       );
-      if (misMsgs.length) {
-        chatMsgs = misMsgs.map(m => ({
-          tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
-          texto:  m.texto,
-          hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
-          dbId:   m.id,
-          nombre: m.de_tipo === 'proveedor' ? p.nombre : null
-        }));
-        renderChat();
-      } else if (data.length) {
-        // Fallback: mostrar todos si no podemos filtrar
-        chatMsgs = data.map(m => ({
-          tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
-          texto:  m.texto,
-          hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
-          dbId:   m.id,
-          nombre: m.de_tipo === 'proveedor' ? p.nombre : null
-        }));
-        renderChat();
-      }
+      const source = misMsgs.length ? misMsgs : data;
+      chatMsgs = source.map(m => ({
+        tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+        texto:  m.texto,
+        hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
+        dbId:   m.id,
+        nombre: m.de_tipo === 'proveedor' ? p.nombre : null
+      }));
+      renderChat();
+    } else {
+      // No history yet — show welcome message
+      chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
+      renderChat();
     }
-  } catch(e) {}
+  } catch(e) {
+    chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
+    renderChat();
+  }
 
   iniciarChatPolling(p.id);
 }
