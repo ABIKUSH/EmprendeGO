@@ -206,12 +206,20 @@ let productos = [];
 let proveedoresDB = [];
 let currentCat = 'Todas';
 let currentResult = '';
-let pantallaAnterior = 'buscar';
+let pantallaAnterior = 'buscar'; // kept for legacy callers — mirrors navStack
 let provActual = null;
 let chatMsgs = [];
 let buscarTab = 'productos';
 let productoActual = null;
-let pantallaAnteriorProd = 'inicio';
+let pantallaAnteriorProd = 'inicio'; // kept for legacy callers — mirrors navStack
+const navStack = []; // navigation history stack
+
+function goBack(fallback) {
+  const dest = navStack.length > 1 ? navStack[navStack.length - 2] : (fallback || 'inicio');
+  // Pop current screen off stack before navigating so goTo pushes correctly
+  if (navStack.length > 1) navStack.splice(navStack.length - 2, 1);
+  goTo(dest);
+}
 let provDetalleMostrarTodos = false;
 
 // ===== FAVORITOS =====
@@ -1023,8 +1031,6 @@ function abrirDetalle(id) {
   if (!p) { showToast('Proveedor no disponible'); return; }
   provActual = p;
   provDetalleMostrarTodos = false;
-  const active = document.querySelector('.screen.active');
-  pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   addToHistorial(p);
 
   const detLogoEl = document.getElementById('det-logo');
@@ -1062,7 +1068,7 @@ function abrirDetalle(id) {
   goTo('detalle');
 }
 
-function volverDetalle() { goTo(pantallaAnterior); }
+function volverDetalle() { goBack('buscar'); }
 function detWA() { if (provActual && provActual.whatsapp) abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); else showToast('WhatsApp no disponible'); }
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
@@ -1088,8 +1094,6 @@ async function abrirChatDirecto(id) {
   const p = lista.find(x => String(x.id) === String(id));
   if (!p) return;
   provActual = p;
-  const active = document.querySelector('.screen.active');
-  pantallaAnterior = active ? active.id.replace('screen-', '') : 'buscar';
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
 
@@ -1137,7 +1141,7 @@ async function abrirChatDirecto(id) {
 
   iniciarChatPolling(p.id);
 }
-function volverChat() { detenerChatPolling(); goTo(pantallaAnterior); }
+function volverChat() { detenerChatPolling(); goBack('buscar'); }
 
 // ===== MENSAJES USUARIO (buyer) =====
 async function cargarMensajesUsuario() {
@@ -2076,6 +2080,16 @@ let imgUrl = null;
 // ===== NAV =====
 function goTo(s) {
   haptic('light');
+  // Push to navigation stack (avoid consecutive duplicates)
+  if (navStack[navStack.length - 1] !== s) {
+    navStack.push(s);
+    if (navStack.length > 30) navStack.shift(); // cap
+  }
+  // Keep legacy variables in sync for any remaining callers
+  if (navStack.length >= 2) {
+    pantallaAnterior = navStack[navStack.length - 2];
+    pantallaAnteriorProd = navStack[navStack.length - 2];
+  }
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.dsb-item').forEach(n => n.classList.remove('active'));
@@ -2443,8 +2457,6 @@ function abrirDetalleProd(id){
   const p=getProdLista().find(x=>String(x.id)===String(id));
   if(!p){ showToast('Producto no disponible'); return; }
   productoActual=p;
-  const active=document.querySelector('.screen.active');
-  pantallaAnteriorProd=active?active.id.replace('screen-',''):'inicio';
   document.getElementById('prod-det-emoji').innerHTML=`${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
     <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId))?'❤️':'♡'}</button>`;
@@ -2464,7 +2476,7 @@ function abrirDetalleProd(id){
   if(waBtn)waBtn.style.display=(prov&&prov.pro&&prov.whatsapp)?'flex':'none';
   goTo('detalle-producto');
 }
-function volverDetProd(){goTo(pantallaAnteriorProd);}
+function volverDetProd(){ goBack('inicio'); }
 function irAProveedorDesdeProd(){if(productoActual)abrirDetalle(productoActual.provId);}
 function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp,mensajeWAProd(productoActual,prov));else showToast('WhatsApp no disponible');}
 function detChatProd(){if(productoActual)abrirChatDirecto(productoActual.provId);}
