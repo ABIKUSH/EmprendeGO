@@ -1090,6 +1090,12 @@ function calcGanancia() {
 
 // ===== CHAT =====
 async function abrirChatDirecto(id) {
+  if (!currentUser) {
+    showToast('Iniciá sesión para hablar con este proveedor');
+    goTo('perfil');
+    return;
+  }
+
   // Resolve provider — try local cache first, then fetch from Supabase
   let p = proveedoresDB.find(x => String(x.id) === String(id));
   if (!p) {
@@ -1104,26 +1110,20 @@ async function abrirChatDirecto(id) {
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
 
-  // Show loading state while fetching history
   chatMsgs = [];
   renderChat();
   goTo('chat');
 
-  // Load full message history from Supabase
+  // Cargar historial filtrado por usuario_email + proveedor_id
   try {
     const { data } = await sb.from('mensajes')
       .select('*')
       .eq('proveedor_id', p.id)
+      .eq('usuario_email', currentUser.email)
       .order('created_at', { ascending: true });
 
     if (data && data.length) {
-      const misMsgs = data.filter(m =>
-        m.de_tipo === 'proveedor' ||
-        m.de_nombre === currentUser?.name ||
-        m.usuario_email === currentUser?.email
-      );
-      const source = misMsgs.length ? misMsgs : data;
-      chatMsgs = source.map(m => ({
+      chatMsgs = data.map(m => ({
         tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
         texto:  m.texto,
         hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
@@ -1132,7 +1132,6 @@ async function abrirChatDirecto(id) {
       }));
       renderChat();
     } else {
-      // No history yet — show welcome message
       chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
       renderChat();
     }
@@ -1243,38 +1242,27 @@ let chatPollingInterval = null;
 function iniciarChatPolling(provId) {
   if (chatPollingInterval) clearInterval(chatPollingInterval);
   chatPollingInterval = setInterval(async () => {
-    if (!provActual) return;
+    if (!provActual || !currentUser) return;
     try {
       const { data } = await sb.from('mensajes')
         .select('*')
         .eq('proveedor_id', provId)
-        .eq('de_tipo', 'proveedor')
+        .eq('usuario_email', currentUser.email)
         .order('created_at', { ascending: true });
       if (!data || !data.length) return;
-      // Ver si hay mensajes nuevos del proveedor
-      const hayNuevos = data.some(m => {
-        const yaEsta = chatMsgs.some(cm => cm.dbId === m.id);
-        return !yaEsta;
-      });
+      const hayNuevos = data.some(m => !chatMsgs.some(cm => cm.dbId === m.id));
       if (hayNuevos) {
-        // Recargar todos los mensajes de la conversación
-        const { data: todos } = await sb.from('mensajes')
-          .select('*')
-          .eq('proveedor_id', provId)
-          .order('created_at', { ascending: true });
-        if (todos) {
-          chatMsgs = todos.map(m => ({
-            tipo: m.de_tipo === 'proveedor' ? 'recv' : 'sent',
-            texto: m.texto,
-            hora: timeAgo(new Date(m.created_at)),
-            dbId: m.id,
-            nombre: m.de_tipo === 'proveedor' ? (provActual?.nombre || 'Proveedor') : null
-          }));
-          renderChat();
-        }
+        chatMsgs = data.map(m => ({
+          tipo: m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+          texto: m.texto,
+          hora: timeAgo(new Date(m.created_at)),
+          dbId: m.id,
+          nombre: m.de_tipo === 'proveedor' ? (provActual?.nombre || 'Proveedor') : null
+        }));
+        renderChat();
       }
     } catch(e) {}
-  }, 8000); // cada 8 segundos
+  }, 8000);
 }
 
 function detenerChatPolling() {
@@ -1282,6 +1270,12 @@ function detenerChatPolling() {
 }
 
 async function sendMsg() {
+  if (!currentUser) {
+    showToast('Iniciá sesión para enviar mensajes');
+    goTo('perfil');
+    return;
+  }
+
   const inp = document.getElementById('chat-inp');
   const txt = inp.value.trim();
   if (!txt) return;
@@ -1295,8 +1289,8 @@ async function sendMsg() {
       await sb.from('mensajes').insert({
         proveedor_id: provActual.id,
         de_tipo: 'usuario',
-        de_nombre: currentUser ? currentUser.name : 'Anónimo',
-        usuario_email: currentUser ? currentUser.email : null,
+        de_nombre: currentUser.name,
+        usuario_email: currentUser.email,
         texto: txt,
         leido: false
       });
