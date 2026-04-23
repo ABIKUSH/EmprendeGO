@@ -1281,6 +1281,40 @@ function logout() {
   document.getElementById('perfil-proveedor').style.display = 'none';
   updateTopbar(); showToast('Sesion cerrada');
 }
+function openDrawer() {
+  document.getElementById('mobile-drawer')?.classList.add('open');
+  document.getElementById('drawer-overlay')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  updateDrawerUser();
+}
+function closeDrawer() {
+  document.getElementById('mobile-drawer')?.classList.remove('open');
+  document.getElementById('drawer-overlay')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+function drawerNavTo(screen) {
+  closeDrawer();
+  goTo(screen);
+}
+function updateDrawerUser() {
+  const nameEl = document.getElementById('drawer-user-name');
+  const subEl = document.getElementById('drawer-user-sub');
+  const avatarEl = document.getElementById('drawer-avatar');
+  const loginLabel = document.getElementById('drawer-login-label');
+  if (currentUser) {
+    if (nameEl) nameEl.textContent = currentUser.name.split(' ')[0];
+    if (subEl) subEl.textContent = currentUser.type === 'proveedor' ? 'Proveedor' : 'Comprador';
+    if (loginLabel) loginLabel.textContent = 'Mi perfil';
+    if (avatarEl && currentUser.avatar) {
+      avatarEl.innerHTML = `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    }
+  } else {
+    if (nameEl) nameEl.textContent = 'Invitado';
+    if (subEl) subEl.textContent = 'Tocá para iniciar sesión';
+    if (loginLabel) loginLabel.textContent = 'Iniciar sesión';
+  }
+}
+
 function updateTopbar() {
   const btn = document.getElementById('topbar-login-btn');
   if (btn) btn.textContent = currentUser ? currentUser.name.split(' ')[0] : '→ Ingresar';
@@ -1959,12 +1993,15 @@ function goTo(s) {
   document.querySelectorAll('.screen').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.dsb-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.drawer-item').forEach(n => n.classList.remove('active'));
   const scr = document.getElementById('screen-'+s);
   if (scr) scr.classList.add('active');
   const nav = document.getElementById('nav-'+s);
   if (nav) nav.classList.add('active');
   const dsb = document.getElementById('dsb-'+s);
   if (dsb) dsb.classList.add('active');
+  const dnav = document.getElementById('dnav-'+s);
+  if (dnav) dnav.classList.add('active');
   if (s==='perfil' && currentUser) updatePerfilUI();
   if (s==='perfil' && currentUser?.type==='user') cargarHistorial();
   if (s==='favoritos') renderFavs();

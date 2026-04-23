@@ -122,6 +122,73 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   <div class="nav-item" id="nav-perfil" onclick="goTo('perfil')"><span class="nav-icon">&#128100;</span><span class="nav-label">Perfil</span></div>
 </nav>
 
+<!-- ===== MOBILE DRAWER ===== -->
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="mobile-drawer">
+  <!-- Header del drawer -->
+  <div class="drawer-header" onclick="drawerNavTo(currentUser ? 'perfil' : 'perfil')">
+    <div class="drawer-avatar" id="drawer-avatar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </div>
+    <div>
+      <div class="drawer-user-name" id="drawer-user-name">Invitado</div>
+      <div class="drawer-user-sub" id="drawer-user-sub">Tocá para iniciar sesión</div>
+    </div>
+  </div>
+
+  <!-- Ítems del menú -->
+  <nav class="drawer-nav">
+    <div class="drawer-item" id="dnav-perfil" onclick="drawerNavTo('perfil')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span id="drawer-login-label">Iniciar sesión</span>
+    </div>
+    <div class="drawer-item" id="dnav-inicio" onclick="drawerNavTo('inicio')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Inicio</span>
+    </div>
+    <div class="drawer-item" id="dnav-buscar" onclick="drawerNavTo('buscar')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span>Buscar proveedores</span>
+    </div>
+    <div class="drawer-item" id="dnav-favoritos" onclick="drawerNavTo('favoritos')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span>Favoritos</span>
+    </div>
+    <div class="drawer-item" id="dnav-mapa" onclick="drawerNavTo('mapa')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span>Mapa</span>
+    </div>
+    <div class="drawer-item" id="dnav-chat" onclick="drawerNavTo('chat')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Mensajes</span>
+    </div>
+    <div class="drawer-divider"></div>
+    <div class="drawer-item" id="dnav-registro" onclick="drawerNavTo('registro')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      <span>Ser proveedor</span>
+    </div>
+    <div class="drawer-divider"></div>
+    <div class="drawer-item" onclick="closeDrawer();window.open('https://wa.me/5491100000000','_blank')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Soporte</span>
+    </div>
+    <div class="drawer-item" onclick="drawerNavTo('terminos')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Preguntas frecuentes</span>
+    </div>
+    <div class="drawer-item" onclick="drawerNavTo('terminos')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Términos y condiciones</span>
+    </div>
+  </nav>
+
+  <!-- Footer del drawer -->
+  <div class="drawer-footer">
+    <div class="drawer-footer-logo">EmprendeGo</div>
+    <div class="drawer-footer-version">v1.0</div>
+  </div>
+</div>
+
 <!-- FAB COMPARADOR -->
 <button class="comparador-fab" id="comparadorFab" onclick="openComparador()">
   <span>&#9878; Comparar</span>
@@ -169,6 +236,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <!-- ===== INICIO ===== -->
 <div class="screen active" id="screen-inicio">
   <div class="topbar">
+    <button class="hamburger-btn" onclick="openDrawer()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
     <span class="topbar-logo">EmprendeGo</span>
     <div class="topbar-right">
       <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()">&#128276;<span class="notif-dot" id="notifDot"></span></button>
@@ -390,7 +460,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== BUSCAR ===== -->
 <div class="screen" id="screen-buscar">
-  <div class="topbar"><span class="topbar-logo">Buscar</span>
+  <div class="topbar">
+    <button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+    <span class="topbar-logo">Buscar</span>
     <button class="notif-bell" onclick="toggleNotifPanel()">&#128276;<span class="notif-dot" id="notifDot2"></span></button>
   </div>
   <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales.</p></div>
@@ -506,13 +578,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== FAVORITOS ===== -->
 <div class="screen" id="screen-favoritos">
-  <div class="topbar"><span class="topbar-logo">Mis Favoritos</span></div>
+  <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Mis Favoritos</span></div>
   <div id="favs-list" style="padding:8px 20px 0"></div>
 </div>
 
 <!-- ===== MAPA ===== -->
 <div class="screen" id="screen-mapa">
-  <div class="topbar"><span class="topbar-logo">Mapa de Proveedores</span></div>
+  <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Mapa de Proveedores</span></div>
   <div class="mapa-container">
     <div class="mapa-title">&#128205; Proveedores por provincia</div>
     <div class="mapa-sub">Tocá una provincia para ver sus proveedores</div>
@@ -879,7 +951,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== REGISTRO ===== -->
 <div class="screen" id="screen-registro">
-  <div class="topbar"><span class="topbar-logo">Ser Proveedor</span></div>
+  <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Ser Proveedor</span></div>
   <div style="padding:0 20px 32px">
     <div id="reg-intro" style="padding-top:24px">
       <div style="background:linear-gradient(135deg,var(--navy),#1a2d6b);border-radius:20px;padding:24px;margin-bottom:20px;text-align:center">
@@ -941,7 +1013,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 <!-- ===== PLANES ===== -->
 <div class="screen" id="screen-planes">
-  <div class="topbar"><span class="topbar-logo">Planes</span></div>
+  <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Planes</span></div>
   <div style="background:linear-gradient(135deg,#006039,#004D2E);padding:28px 24px;text-align:center">
     <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white;margin-bottom:6px">Hacé crecer tu negocio</h2>
     <p style="color:rgba(255,255,255,.6);font-size:.88rem;line-height:1.5">Elegí el plan que mejor se adapte a tu emprendimiento.</p>
@@ -996,7 +1068,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <!-- ===== PERFIL ===== -->
 <div class="screen" id="screen-perfil">
   <div id="perfil-login">
-    <div class="topbar"><span class="topbar-logo">Mi Perfil</span></div>
+    <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Mi Perfil</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center;gap:16px">
       <div style="width:80px;height:80px;background:var(--blue-light);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem">👤</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800">Ingresá a tu cuenta</h2>
