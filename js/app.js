@@ -1164,20 +1164,10 @@ async function cargarMensajesUsuario() {
   el.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;font-size:.85rem">Cargando...</div>';
 
   try {
-    // Fetch all messages where this user is the sender
-    // Use two separate queries and merge to avoid .or() quoting issues
-    const [r1, r2] = await Promise.all([
-      sb.from('mensajes').select('*').eq('usuario_email', currentUser.email).order('created_at', { ascending: false }),
-      sb.from('mensajes').select('*').eq('de_nombre', currentUser.name).order('created_at', { ascending: false })
-    ]);
-    const seen = new Set();
-    const combined = [...(r1.data || []), ...(r2.data || [])].filter(m => {
-      if (seen.has(m.id)) return false;
-      seen.add(m.id); return true;
-    });
-    combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const data = combined;
-    const error = r1.error && r2.error ? r1.error : null;
+    const { data, error } = await sb.from('mensajes')
+      .select('*')
+      .eq('usuario_email', currentUser.email)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
