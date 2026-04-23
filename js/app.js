@@ -1592,7 +1592,7 @@ async function cargarHistorial() {
             : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
           }
           <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
-          <span class="hist-time">${timeAgo(p.visitedAt)}</span>
+          <span class="hist-time">${timeAgo(new Date(p.visitedAt))}</span>
         </div>`;
       }).join('')}
     `).join('');
