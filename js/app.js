@@ -45,7 +45,12 @@ const RUBRO_LEGACY = {
 function matchesCat(rubroStr, cat) {
   if (!rubroStr || cat === 'Todas') return true;
   const rubros = rubroStr.split(',').map(r => r.trim()).filter(Boolean);
-  return rubros.some(r => r === cat || RUBRO_LEGACY[r] === cat);
+  const catNorm = RUBRO_LEGACY[cat] || cat;
+  return rubros.some(r => {
+    if (r === cat) return true;
+    const rNorm = RUBRO_LEGACY[r] || r;
+    return rNorm === cat || rNorm === catNorm;
+  });
 }
 
 function renderRubrosPicker(containerId, preselected = []) {
@@ -905,7 +910,7 @@ async function cargarProductosDetalle(proveedorId, mostrarTodos) {
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
-    const esPro = provActual?.pro === true;
+    const esPro = provActual?.plan === 'pro';
     const limitePublico = esPro ? undefined : 30;
     let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', {ascending:false});
     if (limitePublico) q = q.limit(limitePublico);
@@ -934,7 +939,7 @@ async function cargarProductosDetalle(proveedorId, mostrarTodos) {
           provColor: bgsColores[i % bgsColores.length],
           imgUrl: p.imagen_url || '',
           whatsapp: provActual?.whatsapp || '',
-          esPro: provActual?.pro || false
+          esPro: provActual?.plan === 'pro'
         });
       }
     });
@@ -1299,7 +1304,8 @@ async function checkSession() {
           const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
           if (hasta < new Date()) {
             await sb.from('proveedores').update({ plan: 'free', plan_desde: null, plan_hasta: null }).eq('id', prov.id);
-            prov.plan = 'free'; prov.plan_desde = null; prov.plan_hasta = null;
+            prov.plan = 'free'; prov.plan_desde = null;
+            // plan_hasta kept intentionally so verificarExpiracionPlan can detect the expired date
           }
         }
         handleLogin({name:prov.nombre||name,email,picture,type:'proveedor',proveedorId:prov.id,provData:prov});
@@ -1318,13 +1324,17 @@ function handleLogin(user) {
 }
 
 function verificarExpiracionPlan(prov) {
-  if (!prov || prov.plan !== 'free') return;
+  if (!prov) return;
   const banner = document.getElementById('pro-expiry-banner');
   if (!banner) return;
+  if (!prov.plan_hasta) return; // nunca fue Pro o fue removido manualmente — no mostrar alerta
+  const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
+  if (hasta >= new Date()) return; // plan todavía activo
+  const fechaStr = hasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
   banner.style.display = 'block';
   banner.innerHTML = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
-    <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció</div>
-    <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Renová para seguir mostrando todos tus productos. Con el plan gratuito solo se muestran tus 30 productos más recientes.</div>
+    <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció el ${fechaStr}</div>
+    <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Renová para seguir mostrando todos tus productos. Con el plan gratuito solo se muestran los 30 más recientes.</div>
     <button onclick="goTo('planes')" style="margin-top:10px;background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar Plan Pro →</button>
   </div>`;
 }
