@@ -55,6 +55,7 @@ export default async function handler(req, res) {
           unit_price: 20000
         }],
         payer: { email },
+        external_reference: String(provId),
         metadata: { proveedor_id: provId, email },
         back_urls: {
           success: `${BASE_URL}/?pago=ok`,

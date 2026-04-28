@@ -56,19 +56,37 @@ export default async function handler(req, res) {
       const payment = await paymentRes.json();
 
       if (payment.status === 'approved') {
-        const proveedorId = payment.metadata?.proveedor_id;
+        const proveedorId = payment.metadata?.proveedor_id || payment.external_reference;
 
         if (proveedorId) {
+          const now = new Date();
+          const toDate = d => d.toISOString().slice(0, 10);
+
+          // Si ya era Pro con fecha activa, sumar 30 días al vencimiento actual
+          const { data: prov } = await supabase
+            .from('proveedores')
+            .select('plan_hasta')
+            .eq('id', proveedorId)
+            .maybeSingle();
+
+          const currentHasta = prov?.plan_hasta ? new Date(prov.plan_hasta) : null;
+          const base = (currentHasta && currentHasta > now) ? currentHasta : now;
+          const nuevaFechaHasta = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+
           const { error } = await supabase
             .from('proveedores')
             .update({
               plan: 'pro',
-              plan_desde: new Date().toISOString(),
-              plan_hasta: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              plan_desde: toDate(now),
+              plan_hasta: toDate(nuevaFechaHasta)
             })
             .eq('id', proveedorId);
 
-          if (error) console.error('Webhook MP: error actualizando plan en Supabase', error);
+          if (error) {
+            console.error('Webhook MP: error actualizando plan en Supabase', error);
+          } else {
+            console.log(`[webhook-mp] pago aprobado id=${payment.id} proveedor=${proveedorId} plan_hasta=${toDate(nuevaFechaHasta)}`);
+          }
         }
       }
     }

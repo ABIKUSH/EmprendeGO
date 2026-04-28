@@ -24,10 +24,48 @@ function haptic(type) {
   else navigator.vibrate(15);
 }
 
+// ===== PROVINCIAS =====
+const PROVINCIAS = ['Buenos Aires','CABA','Catamarca','Chaco','Chubut','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán'];
+
 // ===== RUBROS / CATEGORÍAS =====
 const RUBROS_LISTA = ['Tecnología','Hogar','Moda','Bazar','Alimentos','Salud','Deportes','Automotor','Construcción','Servicios','Otro'];
 const RUBROS_ICONS = {'Tecnología':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍽','Salud':'💊','Deportes':'⚽','Automotor':'🚗','Construcción':'🏗','Servicios':'🛠','Otro':'📦'};
 const MAX_RUBROS = 7;
+
+// Subcategorías → rubrosprincipales (para búsqueda flexible)
+const SUBCATEGORIA_MAP = {
+  'ropa de mujer':['Moda'],'ropa de hombre':['Moda'],'ropa de bebe':['Moda'],
+  'ropa de bebe y ninos':['Moda'],'ropa infantil':['Moda'],'ropa deportiva':['Moda','Deportes'],
+  'talles especiales':['Moda'],'accesorios de moda':['Moda'],'carteras':['Moda'],
+  'calzado':['Moda'],'mochilas':['Moda'],'marroquineria':['Moda'],'textil':['Moda'],
+  'indumentaria':['Moda'],'vestimenta':['Moda'],
+  'blanqueria':['Hogar'],'muebles':['Hogar'],'decoracion':['Hogar'],'deco':['Hogar'],
+  'articulos de cocina':['Hogar'],'limpieza':['Hogar'],'hogar y deco':['Hogar'],
+  'perfumeria':['Salud'],'cosmeticos':['Salud'],'cuidado personal':['Salud'],
+  'suplementos':['Salud'],'nutricion':['Salud'],'belleza':['Salud'],
+  'electronica':['Tecnología'],'celulares':['Tecnología'],'accesorios de celular':['Tecnología'],
+  'computadoras':['Tecnología'],'gadgets':['Tecnología'],
+  'alimentos y bebidas':['Alimentos'],'comida':['Alimentos'],'bebidas':['Alimentos'],
+  'juguetes':['Otro'],'libreria':['Otro'],'papeleria':['Otro']
+};
+
+function quitarAcentos(s) {
+  return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function matchesQuery(p, q) {
+  if (!q) return true;
+  const qn = quitarAcentos(q.toLowerCase());
+  if (quitarAcentos(p.nombre.toLowerCase()).includes(qn)) return true;
+  if (quitarAcentos((p.rubro || '').toLowerCase()).includes(qn)) return true;
+  if (p.descripcion && quitarAcentos(p.descripcion.toLowerCase()).includes(qn)) return true;
+  for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
+    if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
+      if (rubros.some(r => matchesCat(p.rubro, r))) return true;
+    }
+  }
+  return false;
+}
 
 const RUBRO_LEGACY = {
   'Indumentaria':'Moda','Hogar y Deco':'Hogar','Belleza y Salud':'Salud',
@@ -851,10 +889,10 @@ function filterProvs() {
   const lista = proveedoresDB;
   let result = lista.filter(p => {
     const mc  = matchesCat(p.rubro, currentCat);
-    const mq  = !q    || p.nombre.toLowerCase().includes(q) || (p.rubro||'').toLowerCase().includes(q);
-    const mp  = !prov || p.provincia === prov;
-    const mpl = !plan || (plan === 'pro' ? p.pro : !p.pro);
-    const mrb = !rubroFil || (p.rubro||'').includes(rubroFil);
+    const mq  = matchesQuery(p, q);
+    const mp  = !prov || quitarAcentos(p.provincia || '') === quitarAcentos(prov);
+    const mpl = !plan || (plan === 'pro' ? p.plan === 'pro' : p.plan !== 'pro');
+    const mrb = !rubroFil || matchesCat(p.rubro, rubroFil);
     return mc && mq && mp && mpl && mrb;
   });
   if (orden === 'rating') {
@@ -2165,9 +2203,8 @@ async function showRegSuccess() {
   };
 
   try {
-    // Verificar si ya existe un registro con ese email
+    // Verificar si ya existe por email
     const {data:existente} = await sb.from('proveedores').select('id,estado').eq('email',email).maybeSingle();
-
     if (existente) {
       if (existente.estado === 'pendiente') {
         if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
@@ -2179,16 +2216,35 @@ async function showRegSuccess() {
         showToast('¡Ya tenés cuenta aprobada! Iniciá sesión para acceder a tu dashboard.');
         return;
       }
-      if (existente.estado === 'rechazado') {
-        // Reenviar: actualizar el registro existente
+      if (existente.estado === 'rechazado' || existente.estado === 'suspendido') {
         if(btn) btn.textContent='Enviando...';
         const {error} = await sb.from('proveedores').update({...datos, estado:'pendiente', plan:'free'}).eq('id', existente.id);
         if(error) throw error;
-        // Éxito: mostrar pantalla de confirmación
         ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
         document.getElementById('reg-success').style.display='block';
         window.scrollTo(0,0);
         return;
+      }
+    }
+
+    // Verificar si ya existe por CUIT (otro email)
+    if (datos.cuit) {
+      const {data:existenteCuit} = await sb.from('proveedores').select('id,estado,email').eq('cuit',datos.cuit).maybeSingle();
+      if (existenteCuit && existenteCuit.email !== email) {
+        if (existenteCuit.estado === 'aprobado' || existenteCuit.estado === 'pendiente') {
+          if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+          showToast('Ya existe una cuenta con ese CUIT. Iniciá sesión con el email registrado.');
+          return;
+        }
+        if (existenteCuit.estado === 'suspendido' || existenteCuit.estado === 'rechazado') {
+          if(btn) btn.textContent='Enviando...';
+          const {error} = await sb.from('proveedores').update({...datos, email, estado:'pendiente', plan:'free'}).eq('id', existenteCuit.id);
+          if(error) throw error;
+          ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
+          document.getElementById('reg-success').style.display='block';
+          window.scrollTo(0,0);
+          return;
+        }
       }
     }
 
@@ -3637,17 +3693,32 @@ renderRecienLlegados();
 cargarProductosReales();
 setTimeout(()=>{try{renderProdBuscar(currentCat,'');}catch(e){}},300);
 // ===== PLAN PRO - FUNCIONES =====
-async function iniciarPagoPro() {
+async function iniciarPagoPro(btnEl) {
   if (!currentUser || !currentUser.proveedorId) {
     showToast('Primero tenés que estar logueado como proveedor');
     return;
   }
-  if (esPromoActiva()) {
-    await activarPlanProGratis(null);
-    return;
+  if (esPromoActiva()) { await activarPlanProGratis(null); return; }
+  const btn = btnEl || null;
+  const txtOrig = btn?.textContent;
+  if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
+  try {
+    const res = await fetch('/api/crear-pago', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: currentUser.email, proveedorId: currentUser.proveedorId })
+    });
+    const data = await res.json();
+    if (!res.ok || !data.init_point) {
+      showToast('Error al iniciar el pago. Intentá de nuevo.');
+      if (btn) { btn.disabled = false; btn.textContent = txtOrig; }
+      return;
+    }
+    window.location.href = data.init_point;
+  } catch(e) {
+    showToast('Error al conectar con el servidor de pago.');
+    if (btn) { btn.disabled = false; btn.textContent = txtOrig; }
   }
-  const msg = encodeURIComponent('Hola, quiero contratar el Plan Pro de EmprendeGO ($20.000/mes). Mi email es ' + currentUser.email);
-  window.open('https://wa.me/5491164457134?text=' + msg, '_blank');
 }
 
 
@@ -3665,6 +3736,6 @@ function renderBannerProDashboard() {
   } else if (esPromoActiva()) {
     container.innerHTML = '<div style="background:linear-gradient(135deg,#064E3B,#065F46);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(74,222,128,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ OFERTA LIMITADA</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Probá el Plan Pro GRATIS</div><div style="font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Sin tarjeta · Hasta el 31 de mayo · WhatsApp directo · Prioridad en búsquedas</div><button onclick="activarPlanProGratis(this)" style="background:#4ade80;color:#064E3B;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer;width:100%">Activar Plan Pro GRATIS →</button></div>';
   } else {
-    container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ Plan Pro</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><div onclick="event.stopPropagation();iniciarPagoPro()" style="background:#006039;color:white;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;display:inline-block;cursor:pointer">Activar Pro · $20.000/mes</div></div>';
+    container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ Plan Pro</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><button onclick="event.stopPropagation();iniciarPagoPro(this)" style="background:#006039;color:white;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer">Activar Pro · $20.000/mes</button></div>';
   }
 }
