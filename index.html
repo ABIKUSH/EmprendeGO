@@ -1232,6 +1232,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <!-- ===== BANNER PRO (renderizado dinámicamente por renderBannerProDashboard()) ===== -->
     <div style="padding:16px 16px 0">
       <div id="pro-dashboard-banner"></div>
+      <div id="pro-expiry-banner" style="display:none"></div>
     </div>
 
     <!-- ===== AYUDA ===== -->
@@ -1296,6 +1297,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <button onclick="ordenarMisProds('viejo')" id="sort-viejo" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #eee;background:white;font-size:.75rem;font-weight:700;color:#111;cursor:pointer">Más viejo</button>
     </div>
     <div class="modal-body" style="padding:12px 20px 24px">
+      <div id="prod-limit-nota" style="display:none;font-size:.78rem;color:#64748b;text-align:center;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:10px;border:1px solid #e2e8f0"></div>
       <div id="misProductosList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
   </div>

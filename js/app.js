@@ -25,114 +25,75 @@ function haptic(type) {
 }
 
 // ===== RUBROS / CATEGORÍAS =====
-const RUBROS = {
-  'Indumentaria':          ['Ropa de mujer','Ropa de hombre','Ropa de bebé y niños','Talles especiales','Ropa deportiva','Accesorios de moda'],
-  'Hogar y Deco':          ['Blanquería','Muebles y decoración','Artículos de cocina','Limpieza y hogar'],
-  'Belleza y Salud':       ['Perfumería y cosméticos','Cuidado personal','Suplementos y nutrición'],
-  'Tecnología':            ['Tecnología y electrónica','Accesorios de celular'],
-  'Bolsos y Marroquinería':['Carteras y mochilas','Calzado'],
-  'Otros':                 ['Telas e insumos textiles','Juguetes y juegos','Librería y papelería','Alimentos y bebidas','Otros']
+const RUBROS_LISTA = ['Tecnología','Hogar','Moda','Bazar','Alimentos','Salud','Deportes','Automotor','Construcción','Servicios','Otro'];
+const RUBROS_ICONS = {'Tecnología':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍽','Salud':'💊','Deportes':'⚽','Automotor':'🚗','Construcción':'🏗','Servicios':'🛠','Otro':'📦'};
+const MAX_RUBROS = 7;
+
+const RUBRO_LEGACY = {
+  'Indumentaria':'Moda','Hogar y Deco':'Hogar','Belleza y Salud':'Salud',
+  'Bolsos y Marroquinería':'Moda','Ropa de mujer':'Moda','Ropa de hombre':'Moda',
+  'Ropa de bebé y niños':'Moda','Talles especiales':'Moda','Ropa deportiva':'Deportes',
+  'Accesorios de moda':'Moda','Blanquería':'Hogar','Muebles y decoración':'Hogar',
+  'Artículos de cocina':'Hogar','Limpieza y hogar':'Hogar','Perfumería y cosméticos':'Salud',
+  'Cuidado personal':'Salud','Suplementos y nutrición':'Salud','Tecnología y electrónica':'Tecnología',
+  'Accesorios de celular':'Tecnología','Carteras y mochilas':'Moda','Calzado':'Moda',
+  'Telas e insumos textiles':'Moda','Juguetes y juegos':'Otro','Librería y papelería':'Otro',
+  'Alimentos y bebidas':'Alimentos','Otros':'Otro','Moda':'Moda','Hogar':'Hogar',
+  'Tecnologia':'Tecnología','Bazar':'Bazar','Alimentos':'Alimentos','Otro':'Otro'
 };
-const RUBROS_ICONS = {'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦'};
-const RUBRO_LEGACY = {'Moda':'Indumentaria','Hogar':'Hogar y Deco','Tecnologia':'Tecnología','Bazar':'Otros','Alimentos':'Otros','Otro':'Otros'};
 
 function matchesCat(rubroStr, cat) {
   if (!rubroStr || cat === 'Todas') return true;
   const rubros = rubroStr.split(',').map(r => r.trim()).filter(Boolean);
-  const subcats = RUBROS[cat] || [];
-  return rubros.some(r => r === cat || subcats.includes(r) || RUBRO_LEGACY[r] === cat);
-}
-
-function onRubroChange(cb, containerId) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  const MAX = 3;
-  const isWhole = cb.dataset.type === 'whole';
-  const cat = cb.dataset.cat;
-  const group = el.querySelector(`.rubros-picker-group[data-cat="${cat}"]`);
-
-  if (isWhole && cb.checked) {
-    // Uncheck + disable all subcategories in this group
-    group?.querySelectorAll('input[data-type="sub"]').forEach(c => {
-      c.checked = false; c.disabled = true;
-      c.closest('label').className = 'sub-disabled';
-    });
-  } else if (isWhole && !cb.checked) {
-    // Re-enable subcategories in this group
-    group?.querySelectorAll('input[data-type="sub"]').forEach(c => {
-      c.disabled = false; c.closest('label').className = '';
-    });
-  } else if (!isWhole && cb.checked) {
-    // If a subcategory is picked, deselect the whole-cat for this group
-    const wholeInput = group?.querySelector('input[data-type="whole"]');
-    if (wholeInput?.checked) {
-      wholeInput.checked = false;
-      wholeInput.closest('label').classList.remove('checked');
-      group.querySelectorAll('input[data-type="sub"]').forEach(c => {
-        c.disabled = false; c.closest('label').classList.remove('sub-disabled');
-      });
-    }
-  }
-
-  cb.closest('label')?.classList.toggle('checked', cb.checked);
-
-  const count = el.querySelectorAll('input:checked').length;
-  const counter = el.querySelector('.rubros-counter');
-  if (counter) { counter.textContent = count + '/' + MAX + ' seleccionados'; counter.style.color = count >= MAX ? '#006039' : '#888'; }
-
-  // Apply global max, respecting per-group whole-cat disabled state
-  el.querySelectorAll('input[type="checkbox"]').forEach(c => {
-    if (c.checked) { c.disabled = false; return; }
-    const wholeForCat = el.querySelector(`input[data-type="whole"][data-cat="${c.dataset.cat}"]:checked`);
-    c.disabled = (c.dataset.type === 'sub' && wholeForCat) || count >= MAX;
-  });
+  return rubros.some(r => r === cat || RUBRO_LEGACY[r] === cat);
 }
 
 function renderRubrosPicker(containerId, preselected = []) {
   const el = document.getElementById(containerId);
   if (!el) return;
-  const MAX = 3;
-  const catNames = Object.keys(RUBROS);
+  const normPre = preselected.map(r => RUBRO_LEGACY[r] || r);
+  el.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px" id="${containerId}-chips">
+      ${RUBROS_LISTA.map(r => {
+        const sel = normPre.includes(r);
+        return `<button type="button" data-rubro="${r}"
+          onclick="toggleRubroChip(this,'${containerId}')"
+          style="border:1.5px solid ${sel?'#006039':'#ddd'};background:${sel?'#e6faf4':'white'};color:${sel?'#006039':'#555'};border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:${sel?'700':'500'};cursor:pointer;font-family:inherit;transition:all .15s">
+          ${RUBROS_ICONS[r]||'📦'} ${r}
+        </button>`;
+      }).join('')}
+    </div>
+    <div style="font-size:.75rem;color:#888" id="${containerId}-counter">${normPre.length}/${MAX_RUBROS} seleccionados</div>`;
+}
 
-  el.innerHTML = `<span class="rubros-counter">0/${MAX} seleccionados</span>` +
-    Object.entries(RUBROS).map(([cat, subs]) => {
-      const wholeChecked = preselected.includes(cat) && !subs.some(s => preselected.includes(s));
-      return `<div class="rubros-picker-group" data-cat="${cat}">
-        <div class="rubros-picker-cat-title">${RUBROS_ICONS[cat]||'📦'} ${cat}</div>
-        <div class="rubros-picker-options">
-          <label class="rubros-whole-cat${wholeChecked?' checked':''}">
-            <input type="checkbox" data-type="whole" data-cat="${cat}" value="${cat}"
-              onchange="onRubroChange(this,'${containerId}')"${wholeChecked?' checked':''}> Toda la categoría
-          </label>
-          ${subs.map(s => {
-            const pre = !wholeChecked && preselected.includes(s);
-            const cls = wholeChecked ? 'sub-disabled' : (pre ? 'checked' : '');
-            return `<label${cls?` class="${cls}"`:''}>
-              <input type="checkbox" data-type="sub" data-cat="${cat}" value="${s}"
-                onchange="onRubroChange(this,'${containerId}')"${pre?' checked':''}${wholeChecked?' disabled':''}> ${s}</label>`;
-          }).join('')}
-        </div>
-      </div>`;
-    }).join('');
-
-  const count = el.querySelectorAll('input:checked').length;
-  const counter = el.querySelector('.rubros-counter');
-  if (counter && count) {
-    counter.textContent = count + '/' + MAX + ' seleccionados';
-    counter.style.color = count >= MAX ? '#006039' : '#888';
-    if (count >= MAX) {
-      el.querySelectorAll('input[type="checkbox"]:not(:checked)').forEach(c => {
-        const wholeForCat = el.querySelector(`input[data-type="whole"][data-cat="${c.dataset.cat}"]:checked`);
-        if (!(c.dataset.type === 'sub' && wholeForCat)) c.disabled = true;
-      });
-    }
+function toggleRubroChip(btn, containerId) {
+  const el = document.getElementById(containerId);
+  const r = btn.dataset.rubro;
+  const selected = btn.style.background !== 'white';
+  if (!selected) {
+    const count = el.querySelectorAll('button[data-rubro]').length - [...el.querySelectorAll('button[data-rubro]')].filter(b => b.style.background === 'white').length;
+    if (count >= MAX_RUBROS) { showToast('Máximo ' + MAX_RUBROS + ' rubros'); return; }
+    btn.style.border = '1.5px solid #006039';
+    btn.style.background = '#e6faf4';
+    btn.style.color = '#006039';
+    btn.style.fontWeight = '700';
+  } else {
+    btn.style.border = '1.5px solid #ddd';
+    btn.style.background = 'white';
+    btn.style.color = '#555';
+    btn.style.fontWeight = '500';
   }
+  const count2 = [...el.querySelectorAll('button[data-rubro]')].filter(b => b.style.background !== 'white').length;
+  const counter = document.getElementById(containerId + '-counter');
+  if (counter) counter.textContent = count2 + '/' + MAX_RUBROS + ' seleccionados';
 }
 
 function getRubrosSeleccionados(containerId) {
   const el = document.getElementById(containerId);
   if (!el) return [];
-  return [...el.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
+  return [...el.querySelectorAll('button[data-rubro]')]
+    .filter(b => b.style.background !== 'white')
+    .map(b => b.dataset.rubro);
 }
 
 // ===== SPLASH SCREEN =====
@@ -944,7 +905,11 @@ async function cargarProductosDetalle(proveedorId, mostrarTodos) {
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
-    const { data, error } = await sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', {ascending:false});
+    const esPro = provActual?.pro === true;
+    const limitePublico = esPro ? undefined : 30;
+    let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', {ascending:false});
+    if (limitePublico) q = q.limit(limitePublico);
+    const { data, error } = await q;
     if (error || !data || !data.length) {
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
       return;
@@ -991,11 +956,19 @@ async function cargarProductosDetalle(proveedorId, mostrarTodos) {
         </div>
       </div>`;
     }).join('');
+    let notaLimite = '';
+    if (!esPro && data.length === limitePublico) {
+      const { count: totalReal } = await sb.from('productos').select('*', {count:'exact',head:true}).eq('proveedor_id', proveedorId);
+      if (totalReal && totalReal > limitePublico) {
+        notaLimite = `<div style="text-align:center;padding:10px;font-size:.75rem;color:var(--gray);background:#f8fafc;border-radius:10px;margin-top:8px">Mostrando 30 de ${totalReal} productos. Este proveedor tiene más en su catálogo completo.</div>`;
+      }
+    }
     el.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${resto>0?'12px':'0'}">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto>0||notaLimite)?'12px':'0'}">
         ${cards}
       </div>
       ${resto > 0 ? `<button onclick="provDetalleMostrarTodos=true;cargarProductosDetalle('${proveedorId}')" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${resto} producto${resto>1?'s':''} más →</button>` : ''}
+      ${notaLimite}
     `;
   } catch(e) {
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
@@ -1039,8 +1012,12 @@ function abrirDetalle(id) {
   } else {
     detLogoEl.textContent = detIni;
   }
-  document.getElementById('det-nombre').textContent   = p.nombre;
-  document.getElementById('det-rubro').textContent    = (p.rubro || 'General') + (p.provincia ? ' · ' + p.provincia : '');
+  document.getElementById('det-nombre').textContent = p.nombre;
+  const rubrosArr = (p.rubro || 'General').split(',').map(r => r.trim()).filter(Boolean);
+  const rubrosHtml = rubrosArr.map(r =>
+    `<span style="display:inline-block;background:#f0f4ff;color:#1847C8;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700;margin:2px 2px">${escHtml(r)}</span>`
+  ).join('');
+  document.getElementById('det-rubro').innerHTML = rubrosHtml + (p.provincia ? `<span style="display:inline-block;color:var(--gray);font-size:.72rem;margin:2px 4px">· ${escHtml(p.provincia)}</span>` : '');
   document.getElementById('det-desc').textContent     = p.desc || p.descripcion || 'Sin descripcion.';
   document.getElementById('det-minimo').textContent   = p.pedido_minimo || 'Sin minimo';
   document.getElementById('det-envios').textContent   = p.envios || 'Consultar';
@@ -1318,7 +1295,15 @@ async function checkSession() {
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
+        if (prov.plan === 'pro' && prov.plan_hasta) {
+          const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
+          if (hasta < new Date()) {
+            await sb.from('proveedores').update({ plan: 'free', plan_desde: null, plan_hasta: null }).eq('id', prov.id);
+            prov.plan = 'free'; prov.plan_desde = null; prov.plan_hasta = null;
+          }
+        }
         handleLogin({name:prov.nombre||name,email,picture,type:'proveedor',proveedorId:prov.id,provData:prov});
+        verificarExpiracionPlan(prov);
       } else {
         handleLogin({name,email,picture,type:'user'});
       }
@@ -1330,6 +1315,30 @@ function handleLogin(user) {
   if (user.type === 'user') cargarHistorialLocal(user.email);
   updatePerfilUI();
   updateTopbar();
+}
+
+function verificarExpiracionPlan(prov) {
+  if (!prov || prov.plan !== 'free') return;
+  const banner = document.getElementById('pro-expiry-banner');
+  if (!banner) return;
+  banner.style.display = 'block';
+  banner.innerHTML = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
+    <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció</div>
+    <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Renová para seguir mostrando todos tus productos. Con el plan gratuito solo se muestran tus 30 productos más recientes.</div>
+    <button onclick="goTo('planes')" style="margin-top:10px;background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar Plan Pro →</button>
+  </div>`;
+}
+
+function mostrarAvisoPlanProximo(fechaVence) {
+  const banner = document.getElementById('pro-expiry-banner');
+  if (!banner) return;
+  const fechaStr = fechaVence.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  banner.style.display = 'block';
+  banner.innerHTML = `<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
+    <div style="font-size:.82rem;font-weight:800;color:#b45309;margin-bottom:4px">⚡ Tu Plan Pro vence el ${fechaStr}</div>
+    <div style="font-size:.78rem;color:#92400e;line-height:1.5">Renová para no perder visibilidad.</div>
+    <button onclick="goTo('planes')" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
+  </div>`;
 }
 function logout() {
   currentUser = null; historial = [];
@@ -1422,6 +1431,8 @@ function updatePerfilUI() {
       if (pd2.plan === 'pro' && planHasta && planHasta > new Date()) {
         badge.textContent = '⭐ PRO · hasta ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
         badge.style.display = 'inline-flex';
+        const diasRestantes = Math.ceil((planHasta - new Date()) / 86400000);
+        if (diasRestantes <= 7) mostrarAvisoPlanProximo(planHasta);
       } else {
         badge.style.display = 'none';
       }
@@ -1679,8 +1690,22 @@ function renderProdGrid() {
 async function cargarProductosProveedor() {
   if (!currentUser || !currentUser.proveedorId) { productos = []; renderProdGrid(); return; }
   try {
+    const esPro = currentUser.provData?.plan === 'pro';
     const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at',{ascending:false});
     productos = data || [];
+    if (!esPro && productos.length > 0) {
+      const total = productos.length;
+      const notaEl = document.getElementById('prod-limit-nota');
+      if (notaEl) {
+        if (total > 30) {
+          notaEl.style.display = 'block';
+          notaEl.textContent = `Mostrando 30 de ${total} productos. Pasá a Pro para mostrar todos.`;
+        } else {
+          notaEl.style.display = 'none';
+        }
+      }
+      productos = productos.slice(0, 30);
+    }
   } catch(e) { productos = []; }
   renderProdGrid();
   const countEl = document.getElementById('dash-prod-count');

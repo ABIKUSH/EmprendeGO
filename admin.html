@@ -900,15 +900,23 @@ async function guardarProveedor(){
 function closeProvModal(){ document.getElementById('provModal').classList.remove('open'); }
 
 // ===== ADMIN: DAR / QUITAR PLAN PRO =====
-async function darPlanPro(id, nombre) {
+function darPlanPro(id, nombre) {
   const hoy = new Date();
-  const vence = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const venceStr = vence.toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-  if (!confirm(`¿Dar Plan Pro a "${nombre}"?\nVence el ${venceStr}.`)) return;
-  const {error} = await sb.from('proveedores').update({plan:'pro', plan_desde:hoy.toISOString().slice(0,10), plan_hasta:vence.toISOString().slice(0,10)}).eq('id',id);
-  if (error) { showToast('Error: ' + error.message); return; }
-  showToast('⭐ Plan Pro activado para ' + nombre);
-  cargarTodosProveedores();
+  const defaultDate = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0,10);
+  document.getElementById('pro-modal-title').textContent = `Activar Pro — ${nombre}`;
+  const dateInput = document.getElementById('pro-date-input');
+  dateInput.min = hoy.toISOString().slice(0,10);
+  dateInput.value = defaultDate;
+  document.getElementById('pro-modal-confirm').onclick = async () => {
+    const hasta = dateInput.value;
+    if (!hasta) { showToast('Seleccioná una fecha'); return; }
+    document.getElementById('proPlanModal').style.display = 'none';
+    const {error} = await sb.from('proveedores').update({plan:'pro', plan_desde:hoy.toISOString().slice(0,10), plan_hasta:hasta}).eq('id',id);
+    if (error) { showToast('Error: ' + error.message); return; }
+    showToast('⭐ Plan Pro activado para ' + nombre);
+    cargarTodosProveedores();
+  };
+  document.getElementById('proPlanModal').style.display = 'flex';
 }
 
 async function quitarPlanPro(id, nombre) {
@@ -1150,5 +1158,18 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove('show'),2500);
 }
 </script>
+
+<!-- MODAL FECHA PRO -->
+<div id="proPlanModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:28px 24px;width:320px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <h3 id="pro-modal-title" style="margin:0 0 16px;font-size:1rem;color:#111"></h3>
+    <label style="font-size:.82rem;font-weight:600;color:#374151;display:block;margin-bottom:6px">Fecha de vencimiento</label>
+    <input type="date" id="pro-date-input" style="width:100%;padding:10px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.9rem;box-sizing:border-box">
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button onclick="document.getElementById('proPlanModal').style.display='none'" style="flex:1;padding:10px;border:1.5px solid #d1d5db;border-radius:8px;background:white;font-size:.85rem;font-weight:600;cursor:pointer;color:#374151">Cancelar</button>
+      <button id="pro-modal-confirm" style="flex:1;padding:10px;border:none;border-radius:8px;background:#16a34a;color:white;font-size:.85rem;font-weight:700;cursor:pointer">⭐ Activar Pro</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
