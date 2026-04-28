@@ -146,9 +146,18 @@ function getRubrosSeleccionados(containerId) {
   }, 1800);
 })();
 
+// ===== ESCAPE XSS =====
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ===== PLAN PRO - PROMO DEADLINE =====
-const PROMO_DEADLINE = new Date('2025-06-01T03:00:00Z'); // = 2025-06-01 00:00 ART (UTC-3)
-function esPromoActiva() { return new Date() < PROMO_DEADLINE; }
+function esPromoActiva() { return false; }
 
 // ===== CONTADOR ANIMADO =====
 function animarContador(el, target, prefix) {
@@ -407,12 +416,12 @@ async function renderRatingSummary(provId) {
         return `<div class="resena-card">
           <div class="resena-header">
             <div>
-              <div class="resena-autor">${r.autor}</div>
+              <div class="resena-autor">${escHtml(r.autor)}</div>
               <div style="display:flex;gap:2px;margin-top:2px">${renderStarsHTML(r.rating,'xs')}</div>
             </div>
-            <div class="resena-fecha">${fechaStr}</div>
+            <div class="resena-fecha">${escHtml(fechaStr)}</div>
           </div>
-          <div class="resena-texto">${r.texto}</div>
+          <div class="resena-texto">${escHtml(r.texto)}</div>
         </div>`;
       }).join('');
     }
@@ -490,16 +499,6 @@ let notificaciones = [];
 let notifLeidas = new Set();
 try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch(e) {}
 
-const TIPS_DIARIOS = [
-  'Antes de contactar un proveedor, tené listo cuántas unidades querés pedir.',
-  'Usá el comparador para elegir mejor entre proveedores del mismo rubro.',
-  'Los proveedores PRO responden más rápido. Priorizalos si necesitás urgente.',
-  'Preguntale siempre al proveedor si tiene precio especial por volumen.',
-  'Guardá en favoritos los proveedores que te interesan para compararlos después.',
-  'Consultá el pedido mínimo antes de contactar para no perder tiempo.',
-  'Los mejores márgenes suelen estar en rubros con menos competencia local.'
-];
-
 async function initNotificaciones() {
   try {
     const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -508,18 +507,9 @@ async function initNotificaciones() {
       .eq('estado', 'aprobado')
       .gte('created_at', hace30dias)
       .order('created_at', { ascending: false })
-      .limit(4);
+      .limit(8);
 
     notificaciones = [];
-
-    const tipIndex = new Date().getDay();
-    notificaciones.push({
-      id: 'tip-' + tipIndex,
-      tipo: 'tip', icon: '💡',
-      titulo: 'Tip del día',
-      texto: TIPS_DIARIOS[tipIndex],
-      tiempo: 'Hoy'
-    });
 
     (nuevos || []).forEach(p => {
       const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
@@ -538,7 +528,7 @@ async function initNotificaciones() {
       notificaciones.push({ id:'n-empty', tipo:'tip', icon:'🔔', titulo:'Sin novedades', texto:'Cuando haya nuevos proveedores te avisamos acá.', tiempo:'' });
     }
   } catch(e) {
-    notificaciones = [{ id:'n-err', tipo:'tip', icon:'💡', titulo:'Tip del día', texto: TIPS_DIARIOS[new Date().getDay()], tiempo:'Hoy' }];
+    notificaciones = [];
   }
 
   const tieneNoLeidas = notificaciones.some(n => !notifLeidas.has(n.id));
@@ -578,6 +568,14 @@ function toggleNotifPanel() {
 function closeNotifPanel() {
   document.getElementById('notifPanel').style.display = 'none';
   document.getElementById('notifPanelBg').style.display = 'none';
+}
+function limpiarNotificaciones() {
+  notificaciones.forEach(n => notifLeidas.add(n.id));
+  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch(e) {}
+  document.getElementById('notifDot').classList.remove('show');
+  const d2 = document.getElementById('notifDot2');
+  if (d2) d2.classList.remove('show');
+  renderNotifPanel();
 }
 
 // ===== COMPARADOR =====
@@ -824,25 +822,25 @@ function renderProvs(list) {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
         }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || 'General'}${p.provincia ? ' · ' + p.provincia : ''}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avg.toFixed(1)} ★</div>` : ''}
       </div>
       <div style="padding:0 14px 13px">
-        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${p.desc || ''}</p>
+        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${escHtml(p.desc || '')}</p>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-          <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF2FF;color:#1847C8">${p.rubro || 'General'}</span>
+          <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF2FF;color:#1847C8">${escHtml(p.rubro || 'General')}</span>
           ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
           ${p.pro
-            ? `<button data-wa="${p.whatsapp||''}" data-nombre="${(p.nombre||'').replace(/"/g,'')}" data-rubro="${p.rubro||''}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
+            ? `<button data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${escHtml(p.nombre||'')}" data-rubro="${escHtml(p.rubro||'')}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
             : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
@@ -940,7 +938,8 @@ function mensajeWAProd(prod, prov) {
   return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
 }
 
-async function cargarProductosDetalle(proveedorId) {
+async function cargarProductosDetalle(proveedorId, mostrarTodos) {
+  if (mostrarTodos) provDetalleMostrarTodos = true;
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
@@ -981,14 +980,14 @@ async function cargarProductosDetalle(proveedorId) {
       const prodId = 'real_' + p.id;
       const emoji = iconM[p.categoria] || '📦';
       const imgHtml = p.imagen_url
-        ? `<img src="${p.imagen_url}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#f5f7ff\'>${emoji}</div>'">`
+        ? `<img src="${escHtml(p.imagen_url)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
         : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${bgsColores[i%bgsColores.length]}12">${emoji}</div>`;
-      return `<div onclick="abrirDetalleProd('${prodId}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
+      return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
         ${imgHtml}
         <div style="padding:8px 9px 10px">
-          <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${p.nombre}</div>
+          <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
           <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:4px">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
-          <div style="font-size:.62rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Consultar'}</div>
+          <div style="font-size:.62rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Consultar'}</div>
         </div>
       </div>`;
     }).join('');
@@ -1210,14 +1209,14 @@ async function cargarMensajesUsuario() {
       const preview = (lastMsg.texto || '').replace(/\n/g,' ').substring(0,55) + ((lastMsg.texto||'').length > 55 ? '…' : '');
       const tiempo = timeAgo(new Date(lastMsg.created_at));
       const esRecibido = lastMsg.de_tipo === 'proveedor';
-      return `<div class="conv-item" onclick="abrirChatDirecto('${c.provId}')" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
-        <div style="width:46px;height:46px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#006039;flex-shrink:0">${ini}</div>
+      return `<div class="conv-item" onclick="abrirChatDirecto('${escHtml(c.provId)}')" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
+        <div style="width:46px;height:46px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#006039;flex-shrink:0">${escHtml(ini)}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:.9rem;color:#111;margin-bottom:2px">${nombre}</div>
-          <div style="font-size:.75rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esRecibido?'→ ':''} ${preview}</div>
+          <div style="font-weight:700;font-size:.9rem;color:#111;margin-bottom:2px">${escHtml(nombre)}</div>
+          <div style="font-size:.75rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esRecibido?'→ ':''} ${escHtml(preview)}</div>
         </div>
         <div style="flex-shrink:0;text-align:right">
-          <div style="font-size:.7rem;color:#bbb">${tiempo}</div>
+          <div style="font-size:.7rem;color:#bbb">${escHtml(tiempo)}</div>
         </div>
       </div>`;
     }).join('');
@@ -1232,8 +1231,8 @@ function renderChat() {
   const el = document.getElementById('chat-msgs');
   if (!el) return;
   el.innerHTML = chatMsgs.map(m => {
-    const nombre = m.tipo === 'recv' && m.nombre ? '<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">' + m.nombre + '</div>' : '';
-    return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + (m.texto||'').replace(/\n/g,'<br>') + '<div class="chat-msg-time">' + m.hora + '</div></div></div>';
+    const nombre = m.tipo === 'recv' && m.nombre ? '<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">' + escHtml(m.nombre) + '</div>' : '';
+    return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + escHtml(m.texto||'').replace(/\n/g,'<br>') + '<div class="chat-msg-time">' + escHtml(m.hora) + '</div></div></div>';
   }).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -1297,31 +1296,6 @@ async function sendMsg() {
     } catch(e) {}
   }
 
-  // Respuesta automática inteligente (hasta que el proveedor tenga panel de chat real)
-  const t = txt.toLowerCase();
-  let resp = '✅ Recibimos tu mensaje. Te respondemos a la brevedad por este chat o por WhatsApp.';
-  if (t.includes('precio')||t.includes('cuanto')||t.includes('costo')) {
-    resp = '💰 Los precios dependen del volumen. ¿Cuántas unidades necesitás? Te paso la lista.';
-  } else if (t.includes('envio')||t.includes('manda')||t.includes('despacho')) {
-    resp = '🚚 Sí, enviamos a todo el país por Andreani y OCA. El costo de envío lo acordamos al confirmar el pedido.';
-  } else if (t.includes('minimo')||t.includes('cantidad')) {
-    resp = '📦 El pedido mínimo lo podés ver en nuestro perfil. Podés combinar productos para llegar al mínimo.';
-  } else if (t.includes('hola')||t.includes('buenas')||t.includes('buen dia')) {
-    resp = '👋 ¡Hola! Bienvenido/a. ¿En qué te puedo ayudar hoy?';
-  } else if (t.includes('gracias')||t.includes('ok')||t.includes('dale')) {
-    resp = '😊 ¡De nada! Cualquier consulta no dudes en escribirme.';
-  } else if (t.includes('pedido')||t.includes('comprar')||t.includes('quiero')) {
-    resp = '🛒 ¡Genial! Contame qué productos te interesan y en qué cantidad para prepararte una cotización.';
-  } else if (t.includes('whatsapp')||t.includes('llamar')||t.includes('telefono')) {
-    resp = provActual?.pro && provActual?.whatsapp 
-      ? `📲 Podés escribirnos directo al WhatsApp desde nuestro perfil.`
-      : '📲 Por este chat podemos coordinar todo. ¿Qué necesitás?';
-  }
-
-  setTimeout(() => {
-    chatMsgs.push({tipo:'recv',texto:resp,hora:getHora()});
-    renderChat();
-  }, 1000);
 }
 
 // ===== AUTH =====
@@ -1602,7 +1576,7 @@ async function cargarMisConversaciones() {
     const { data: misEnvios } = await sb.from('mensajes')
       .select('proveedor_id')
       .eq('de_tipo', 'usuario')
-      .eq('de_nombre', currentUser.name);
+      .eq('usuario_email', currentUser.email);
 
     const provIds = [...new Set((misEnvios||[]).map(m => m.proveedor_id).filter(Boolean))];
     if (!provIds.length) {
@@ -1658,13 +1632,13 @@ async function cargarMisConversaciones() {
 
     const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
     el.innerHTML = convs.map((c, i) => {
-      const ini = c.provNombre.substring(0,2).toUpperCase();
-      const preview = (c.ultimoMsg||'').split(String.fromCharCode(10)).join(' ').substring(0,45) + ((c.ultimoMsg||'').length > 45 ? '...' : '');
-      return `<div class="hist-item" onclick="abrirChatDirecto('${c.provId}')" style="position:relative">` +
+      const ini = escHtml(c.provNombre.substring(0,2).toUpperCase());
+      const preview = escHtml((c.ultimoMsg||'').split(String.fromCharCode(10)).join(' ').substring(0,45) + ((c.ultimoMsg||'').length > 45 ? '...' : ''));
+      return `<div class="hist-item" onclick="abrirChatDirecto('${escHtml(String(c.provId))}')" style="position:relative">` +
         `<div class="hist-logo" style="background:${bgs[i%bgs.length]};color:white">${ini}</div>` +
-        `<div class="hist-info"><strong>${c.provNombre}</strong><span>${preview}</span></div>` +
+        `<div class="hist-info"><strong>${escHtml(c.provNombre)}</strong><span>${preview}</span></div>` +
         `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">` +
-        `<span class="hist-time">${timeAgo(new Date(c.ultimaFecha))}</span>` +
+        `<span class="hist-time">${escHtml(timeAgo(new Date(c.ultimaFecha)))}</span>` +
         (c.noLeidos > 0 ? `<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
         '</div></div>';
     }).join('');
@@ -1685,19 +1659,19 @@ function renderProdGrid() {
   if (!el) return;
   if (!productos.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:8px">📦</div><p style="font-size:.88rem">No tenés productos aún.</p></div>'; return; }
   el.innerHTML = productos.map(p => {
-    const img = p.imagen_url 
-      ? `<img src="${p.imagen_url}" style="width:56px;height:56px;object-fit:cover;border-radius:10px">`
+    const img = p.imagen_url
+      ? `<img src="${escHtml(p.imagen_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px">`
       : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:white;border-radius:12px;padding:12px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px;margin-bottom:8px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.85rem;font-weight:700;color:#111;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.85rem;font-weight:700;color:#111;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
         <div style="font-size:.95rem;font-weight:900;color:#006039">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock definido'} · ${p.categoria||'General'}</div>
+        <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock definido'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
   }).join('');
@@ -2307,7 +2281,6 @@ async function showResult() {
 }
 
 // ===== PRODUCTOS =====
-const productosDemo=[];
 let productosReales=[];
 const catColors={'Indumentaria':'#FF6B00','Hogar y Deco':'#00A651','Belleza y Salud':'#E91E8C','Tecnología':'#1847C8','Bolsos y Marroquinería':'#7C3AED','Otros':'#F59E0B','Tecnologia':'#1847C8','Moda':'#FF6B00','Hogar':'#00A651','Bazar':'#7C3AED','Alimentos':'#F59E0B'};
 
@@ -2342,29 +2315,30 @@ function renderProdInicio(){
   const lista=getProdLista().slice(0,6);
   if(!lista.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Los primeros productos apareceran pronto.</div>';return;}
   el.innerHTML=lista.map(p=>`
-    <div class="prod-inicio-card" onclick="abrirDetalleProd('${p.id}')">
+    <div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
       <div class="prod-inicio-img" style="background:${p.provColor}18">
-        ${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
-        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+        ${p.imgUrl?`<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
+        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${escHtml(p.cat)}</span>
       </div>
       <div class="prod-inicio-body">
-        <div class="prod-inicio-name">${p.nombre}</div>
+        <div class="prod-inicio-name">${escHtml(p.nombre)}</div>
         <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
       </div>
     </div>`).join('');
 }
 
 function renderProdBuscarCard(p) {
+  const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${p.imgUrl}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:#f5f7ff\'>${p.emoji||'📦'}</div>'">`
-    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor||'#EEF2FF'}22">${p.emoji||'📦'}</div>`;
-  return `<div onclick="abrirDetalleProd('${p.id}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
+    ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
+    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor||'#EEF2FF'}22">${emoji}</div>`;
+  return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
     ${img}
     <div style="padding:8px 9px 10px">
-      <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${p.nombre}</div>
+      <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
       <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
-      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.provNombre||''}</div>
+      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provNombre||'')}</div>
     </div>
   </div>`;
 }
@@ -2388,18 +2362,18 @@ function renderProdBuscar(filtro, query='') {
   if (q || (filtro && filtro !== 'Todas')) {
     el.style.display = 'grid';
     el.innerHTML = lista.map(p => `
-      <div class="prod-buscar-card" onclick="abrirDetalleProd('${p.id}')">
+      <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
         <div class="top" style="background:${p.provColor}18">
-          ${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
-          <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${p.cat}</span>
+          ${p.imgUrl?`<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
+          <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${escHtml(p.cat)}</span>
         </div>
         <div class="body">
-          <div class="title">${p.nombre}</div>
+          <div class="title">${escHtml(p.nombre)}</div>
           <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-          <div class="meta"><div class="prod-inicio-prov-dot"></div>${p.provNombre}</div>
+          <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
           <div class="actions">
-            <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${p.id}')">Ver detalle</button>
-            <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${p.provId}')">Proveedor</button>
+            <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${escHtml(p.id)}')">Ver detalle</button>
+            <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${escHtml(p.provId)}')">Proveedor</button>
           </div>
         </div>
       </div>`).join('');
@@ -2491,7 +2465,6 @@ function calcProdDet(){
 
 // ===== CHAT REAL PROVEEDOR =====
 let convActual = null; // { de_nombre, msgs }
-let provChatAnterior = 'perfil';
 
 async function cargarConversaciones() {
   if (!currentUser || !currentUser.proveedorId) return;
@@ -2600,10 +2573,10 @@ function renderProvChat() {
     const esProveedor = m.de_tipo === 'proveedor';
     const tipo = esProveedor ? 'sent' : 'recv';
     const hora = m.created_at ? timeAgo(new Date(m.created_at)) : 'Ahora';
-    const nombre = !esProveedor ? `<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">${m.de_nombre || 'Emprendedor'}</div>` : '';
+    const nombre = !esProveedor ? `<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">${escHtml(m.de_nombre || 'Emprendedor')}</div>` : '';
     return `<div style="display:flex;flex-direction:column;align-items:${esProveedor ? 'flex-end' : 'flex-start'}">
       ${nombre}
-      <div class="chat-msg ${tipo}">${(m.texto||'').replace(/\n/g,'<br>')}<div class="chat-msg-time">${hora}</div></div>
+      <div class="chat-msg ${tipo}">${escHtml(m.texto||'').replace(/\n/g,'<br>')}<div class="chat-msg-time">${escHtml(hora)}</div></div>
     </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
@@ -3009,9 +2982,6 @@ async function verPedidosArchivados() {
   }).join('');
 }
 
-async function cambiarEstadoPedido(id, estado) {
-  await avanzarEstadoPedido(id, estado);
-}
 
 // ===== UPLOAD AVATARES =====
 async function subirAvatar(file, carpeta) {
@@ -3269,18 +3239,18 @@ function buscarMisProds(query) {
   if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
   el.innerHTML = filtrados.map(p => {
     const img = p.imagen_url
-      ? `<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
         <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock'} · ${p.categoria||'General'}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'\\&#39;')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
   }).join('');
@@ -3302,18 +3272,18 @@ function ordenarMisProds(tipo) {
   if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">No tenés productos aún.</div>'; return; }
   el.innerHTML = sorted.map(p => {
     const img = p.imagen_url
-      ? `<img src="${p.imagen_url}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
         <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+p.stock : 'Sin stock'} · ${p.categoria||'General'}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${p.id}','${(p.nombre||'').replace(/'/g,'\\&#39;')}',${p.precio||0},'${p.stock||0}','${p.categoria||p.cat||''}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="deleteProduct('${p.id}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
   }).join('');
@@ -3321,15 +3291,16 @@ function ordenarMisProds(tipo) {
 
 // ===== HOME CAROUSELS =====
 function renderProdCard(p) {
+  const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${p.imgUrl}" style="width:100%;height:100px;object-fit:cover" onerror="this.parentElement.innerHTML='<div style=width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem>${p.emoji||'📦'}</div>'">`
-    : `<div style="width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem">${p.emoji||'📦'}</div>`;
-  return `<div onclick="abrirDetalleProd('${p.id}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+    ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100px;object-fit:cover" onerror="this.style.display='none'">`
+    : `<div style="width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem">${emoji}</div>`;
+  return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     ${img}
     <div style="padding:8px 10px">
-      <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
+      <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
       <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-      <div style="font-size:.68rem;color:#999;margin-top:3px">${p.provNombre||''}</div>
+      <div style="font-size:.68rem;color:#999;margin-top:3px">${escHtml(p.provNombre||'')}</div>
     </div>
   </div>`;
 }
@@ -3430,11 +3401,11 @@ function renderProvDestacados() {
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
-        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-        : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
-      <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${p.nombre}</div>
-      <div style="font-size:.68rem;color:#6B7A99;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${p.rubro || ''}</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
+      <div style="font-size:.68rem;color:#6B7A99;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${escHtml(p.rubro || '')}</div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
         ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 6px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
         ${p.avgR > 0 ? `<span style="font-size:.68rem;font-weight:700;color:#F59E0B">${avgR} ★</span>` : ''}
@@ -3644,31 +3615,6 @@ async function iniciarPagoPro() {
   window.open('https://wa.me/5491164457134?text=' + msg, '_blank');
 }
 
-async function activarPlanProGratis(btn) {
-  if (!currentUser?.proveedorId) return;
-  if (btn) { btn.disabled = true; btn.textContent = 'Activando...'; }
-  try {
-    const hoy = new Date().toISOString().slice(0, 10);
-    const { error } = await sb.from('proveedores').update({
-      plan: 'pro',
-      plan_desde: hoy,
-      plan_hasta: '2025-05-31'
-    }).eq('id', currentUser.proveedorId);
-    if (error) throw error;
-    if (currentUser.provData) {
-      currentUser.provData.plan = 'pro';
-      currentUser.provData.plan_desde = hoy;
-      currentUser.provData.plan_hasta = '2025-05-31';
-    }
-    renderBannerProDashboard();
-    const badge = document.getElementById('dash-pro-badge-el');
-    if (badge) { badge.textContent = '⭐ PRO · hasta 31 de mayo'; badge.style.display = 'inline-flex'; }
-    showToast('🎉 ¡Plan Pro activado gratis hasta el 31/05!');
-  } catch(e) {
-    showToast('Error al activar. Intentá de nuevo.');
-    if (btn) { btn.disabled = false; btn.textContent = 'Activar Plan Pro GRATIS →'; }
-  }
-}
 
 function renderBannerProDashboard() {
   const container = document.getElementById('pro-dashboard-banner');

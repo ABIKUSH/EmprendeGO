@@ -1676,7 +1676,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 <div id="notifPanel" class="notif-panel" style="display:none">
   <div class="notif-panel-header">
     <div class="notif-panel-title">🔔 Notificaciones</div>
-    <button class="notif-close-btn" onclick="closeNotifPanel()">✕</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="limpiarNotificaciones()" style="background:none;border:1px solid #e0e7ff;font-size:.75rem;color:var(--gray);cursor:pointer;font-family:inherit;font-weight:600;padding:4px 8px;border-radius:6px">Limpiar todo</button>
+      <button class="notif-close-btn" onclick="closeNotifPanel()">✕</button>
+    </div>
   </div>
   <div id="notifList"></div>
 </div>

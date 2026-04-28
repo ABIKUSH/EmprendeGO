@@ -1,6 +1,24 @@
+const ALLOWED_ORIGINS = [
+  'https://emprendego.com.ar',
+  'https://www.emprendego.com.ar',
+  'https://emprende-go.vercel.app'
+];
+
+function setCors(req, res) {
+  const origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  // Cache para reducir llamadas repetidas al mismo producto
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=600');
+}
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Cache-Control', 'no-store');
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'Falta el ID' });
@@ -89,7 +107,6 @@ async function scrapeProductPage(id) {
   const imgSet = new Set();
   if (thumbnail) imgSet.add(thumbnail);
   for (const m of html.matchAll(/https:\/\/http2\.mlstatic\.com\/D_NQ_NP_[^"\\, ]+\.(?:jpg|webp|png)/g)) {
-    // Skip 2X upscale variants (unnecessarily large)
     if (!m[0].includes('_2X_') && !m[0].includes('-2X-')) imgSet.add(m[0]);
   }
 
