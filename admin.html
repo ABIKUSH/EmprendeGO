@@ -291,8 +291,10 @@ tr:hover td{background:#fafbff}
           <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val" id="metric-usuarios">—</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up" id="trend-usuarios"></div></div>
           <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" id="metric-pendientes" style="color:var(--orange)">—</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" id="trend-pendientes" style="color:var(--orange)"></div></div>
           <div class="metric-card"><div class="metric-icon">⭐</div><div class="metric-val" id="metric-pro">—</div><div class="metric-label">Proveedores Pro</div><div class="metric-trend up" id="trend-pro"></div></div>
-          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val" id="metric-busquedas">—</div><div class="metric-label">Búsquedas totales</div><div class="metric-trend up"></div></div>
-          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" id="metric-reportes" style="color:var(--red)">—</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down">Requiere revisión</div></div>
+          <div class="metric-card"><div class="metric-icon">📦</div><div class="metric-val" id="metric-productos">—</div><div class="metric-label">Total productos</div></div>
+          <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-val" id="metric-mensajes">—</div><div class="metric-label">Mensajes totales</div></div>
+          <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val" id="metric-busquedas">—</div><div class="metric-label">Búsquedas totales</div></div>
+          <div class="metric-card"><div class="metric-icon">🚨</div><div class="metric-val" id="metric-reportes" style="color:var(--red)">—</div><div class="metric-label">Reportes sin resolver</div><div class="metric-trend down" id="trend-reportes"></div></div>
         </div>
         <div class="chart-row">
           <div class="chart-card">
@@ -541,7 +543,7 @@ tr:hover td{background:#fafbff}
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-const ADMIN_EMAILS = ['abikushjafif2004@icloud.com'];
+const ADMIN_EMAILS = ['abikushjafif2004@icloud.com', 'abrahamjafifjob@gmail.com'];
 
 let pendingAction = null;
 
@@ -607,11 +609,17 @@ function setDashDate(){
 // ===== SUPABASE: DASHBOARD METRICS =====
 async function cargarDashboard(){
   try {
-    const [{data:provs},{data:users},{data:busqs},{data:reportes},{data:ultProvs},{data:ultUsers}] = await Promise.all([
+    const [
+      {data:provs}, {data:users}, {data:busqs}, {data:reportes},
+      {count:totalProductos}, {count:totalMensajes},
+      {data:ultProvs}, {data:ultUsers}
+    ] = await Promise.all([
       sb.from('proveedores').select('id,plan,estado,rubro,provincia,nombre,created_at').order('created_at',{ascending:false}),
       sb.from('usuarios').select('id,nombre,email,created_at').order('created_at',{ascending:false}),
       sb.from('busquedas').select('termino'),
       sb.from('reportes').select('id,estado'),
+      sb.from('productos').select('*', {count:'exact',head:true}),
+      sb.from('mensajes').select('*', {count:'exact',head:true}),
       sb.from('proveedores').select('nombre,created_at').order('created_at',{ascending:false}).limit(5),
       sb.from('usuarios').select('nombre,email,created_at').order('created_at',{ascending:false}).limit(5)
     ]);
@@ -629,9 +637,13 @@ async function cargarDashboard(){
     document.getElementById('metric-usuarios').textContent = totalUsers.toLocaleString('es-AR');
     document.getElementById('metric-pendientes').textContent = totalPend;
     document.getElementById('metric-pro').textContent = proPlan;
+    document.getElementById('metric-productos').textContent = (totalProductos || 0).toLocaleString('es-AR');
+    document.getElementById('metric-mensajes').textContent = (totalMensajes || 0).toLocaleString('es-AR');
     document.getElementById('metric-busquedas').textContent = totalBusqs.toLocaleString('es-AR');
     document.getElementById('metric-reportes').textContent = reportesSinResolver;
     document.getElementById('trend-pendientes').textContent = totalPend > 0 ? 'Requiere atención' : 'Todo al día ✓';
+    const trendRep = document.getElementById('trend-reportes');
+    if(trendRep) trendRep.textContent = reportesSinResolver > 0 ? 'Requiere revisión' : '';
 
     // Badge nav
     const badgeProv = document.getElementById('nav-badge-prov');
