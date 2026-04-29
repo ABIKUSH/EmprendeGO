@@ -362,11 +362,12 @@ tr:hover td{background:#fafbff}
             <div class="table-title">Todos los proveedores</div>
             <div class="table-actions">
               <input class="search-mini" placeholder="Buscar..." oninput="filterTable(this,'prov-table')">
-              <select class="filter-select" onchange="filterByStatus(this,'prov-table')">
+              <select class="filter-select" id="prov-plan-filter" onchange="filtrarPorPlanStatus(this.value)">
                 <option value="">Todos</option>
-                <option value="approved">Aprobados</option>
-                <option value="pro">Plan Pro</option>
-                <option value="gratis">Plan Gratis</option>
+                <option value="proactivo">⭐ Pro activo</option>
+                <option value="porvencer">⚡ Por vencer</option>
+                <option value="vencido">✗ Vencido</option>
+                <option value="gratis">Gratis</option>
               </select>
             </div>
           </div>
@@ -732,6 +733,16 @@ async function cargarProveedoresPendientes(){
 }
 
 // ===== SUPABASE: TODOS LOS PROVEEDORES =====
+function calcPlanStatus(p) {
+  if (p.plan !== 'pro') return 'gratis';
+  if (!p.plan_hasta) return 'proactivo';
+  const hasta = new Date(p.plan_hasta + 'T03:00:00Z');
+  const hoy = new Date();
+  if (hasta < hoy) return 'vencido';
+  const dias = Math.ceil((hasta - hoy) / 86400000);
+  return dias <= 7 ? 'porvencer' : 'proactivo';
+}
+
 async function cargarTodosProveedores(){
   const tbody = document.getElementById('prov-table');
   try {
@@ -745,19 +756,35 @@ async function cargarTodosProveedores(){
       tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados aún</td></tr>';
       return;
     }
-    tbody.innerHTML = data.map(p=>{
-      const planHasta = p.plan_hasta ? new Date(p.plan_hasta+'T03:00:00Z') : null;
-      const planVenceStr = planHasta ? planHasta.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+
+    const hoy = new Date();
+    const sortOrder = {vencido:0, porvencer:1, proactivo:2, gratis:3};
+    const sorted = data
+      .map(p => ({...p, _ps: calcPlanStatus(p)}))
+      .sort((a,b) => (sortOrder[a._ps]||9) - (sortOrder[b._ps]||9));
+
+    tbody.innerHTML = sorted.map(p => {
+      const ps = p._ps;
+      const planHasta = p.plan_hasta ? new Date(p.plan_hasta + 'T03:00:00Z') : null;
       const nombreSafe = (p.nombre||'').replace(/'/g,"\\'");
+      let planBadge;
+      if (ps === 'proactivo') {
+        const fechaStr = planHasta ? planHasta.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
+        planBadge = `<span class="status-badge" style="background:#dcfce7;color:#16a34a;white-space:nowrap">⭐ Pro${fechaStr?' hasta '+fechaStr:''}</span>`;
+      } else if (ps === 'porvencer') {
+        const dias = Math.ceil((planHasta - hoy) / 86400000);
+        planBadge = `<span class="status-badge" style="background:#fef3c7;color:#d97706;white-space:nowrap">⚡ Vence en ${dias} día${dias===1?'':'s'}</span>`;
+      } else if (ps === 'vencido') {
+        planBadge = `<span class="status-badge" style="background:#fee2e2;color:#dc2626">✗ Venció</span>`;
+      } else {
+        planBadge = `<span class="status-badge free">Gratis</span>`;
+      }
       return `
-      <tr data-status="approved ${p.plan}">
+      <tr data-plan-status="${ps}">
         <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
         <td>${p.cuit||'—'}</td>
         <td>${p.rubro||'—'}</td>
-        <td>
-          <span class="status-badge ${p.plan==='pro'?'pro':'free'}">${p.plan==='pro'?'⭐ PRO':'Gratis'}</span>
-          ${planVenceStr ? `<div style="font-size:.7rem;color:var(--gray);margin-top:3px">hasta ${planVenceStr}</div>` : ''}
-        </td>
+        <td>${planBadge}</td>
         <td>—</td>
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
@@ -769,7 +796,13 @@ async function cargarTodosProveedores(){
           <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
           <button class="tbl-btn reject" style="background:#fee2e2" onclick="eliminarProveedor('${p.id}','${nombreSafe}')">🗑</button>
         </div></td>
-      </tr>`;}).join('');
+      </tr>`;
+    }).join('');
+
+    // re-apply active filter after reload
+    const filterEl = document.getElementById('prov-plan-filter');
+    if (filterEl && filterEl.value) filtrarPorPlanStatus(filterEl.value);
+
   } catch(e){ console.log('proveedores error',e); }
 }
 
@@ -1150,6 +1183,13 @@ function filterByStatus(sel, tableId){
   document.querySelectorAll('#'+tableId+' tr').forEach(row=>{
     if(!val){ row.style.display=''; return; }
     row.style.display = row.dataset.status?.includes(val) ? '' : 'none';
+  });
+}
+
+function filtrarPorPlanStatus(val){
+  document.querySelectorAll('#prov-table tr').forEach(row=>{
+    if(!val){ row.style.display=''; return; }
+    row.style.display = row.dataset.planStatus === val ? '' : 'none';
   });
 }
 
