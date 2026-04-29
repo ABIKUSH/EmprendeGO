@@ -37,7 +37,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'proveedorId inválido' });
   }
 
-  console.log('[crear-pago] MP_ACCESS_TOKEN configurado:', !!process.env.MP_ACCESS_TOKEN);
+  console.log('[crear-pago] TOKEN:', !!process.env.MP_ACCESS_TOKEN);
+  console.log('[crear-pago] proveedorId:', provId, 'email:', email);
 
   try {
     const response = await fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -68,6 +69,10 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log('[crear-pago] PREFERENCE RESPONSE status:', response.status);
+    console.log('[crear-pago] PREFERENCE RESPONSE body:', JSON.stringify(data));
+    console.log('[crear-pago] init_point:', data.init_point);
+    console.log('[crear-pago] sandbox_init_point:', data.sandbox_init_point);
 
     if (!response.ok) {
       return res.status(500).json({ error: 'Error de Mercado Pago', detail: data });
@@ -77,6 +82,7 @@ export default async function handler(req, res) {
       init_point: data.init_point
     });
   } catch (err) {
+    console.log('[crear-pago] ERROR:', err.message, err.status, err.cause);
     return res.status(500).json({ error: 'Error interno', detail: err.message });
   }
 }
