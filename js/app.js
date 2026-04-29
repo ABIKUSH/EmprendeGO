@@ -1365,15 +1365,14 @@ function verificarExpiracionPlan(prov) {
   if (!prov) return;
   const banner = document.getElementById('pro-expiry-banner');
   if (!banner) return;
-  if (!prov.plan_hasta) return; // nunca fue Pro o fue removido manualmente — no mostrar alerta
+  if (!prov.plan_hasta) return; // nunca fue Pro o removido manualmente — no mostrar
   const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
   if (hasta >= new Date()) return; // plan todavía activo
-  const fechaStr = hasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
   banner.style.display = 'block';
   banner.innerHTML = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
-    <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció el ${fechaStr}</div>
-    <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Renová para seguir mostrando todos tus productos. Con el plan gratuito solo se muestran los 30 más recientes.</div>
-    <button onclick="goTo('planes')" style="margin-top:10px;background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar Plan Pro →</button>
+    <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció</div>
+    <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Solo se muestran 30 de tus productos.</div>
+    <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Pagar ahora →</button>
   </div>`;
 }
 
@@ -1384,8 +1383,8 @@ function mostrarAvisoPlanProximo(fechaVence) {
   banner.style.display = 'block';
   banner.innerHTML = `<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
     <div style="font-size:.82rem;font-weight:800;color:#b45309;margin-bottom:4px">⚡ Tu Plan Pro vence el ${fechaStr}</div>
-    <div style="font-size:.78rem;color:#92400e;line-height:1.5">Renová para no perder visibilidad.</div>
-    <button onclick="goTo('planes')" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
+    <div style="font-size:.78rem;color:#92400e;line-height:1.5">¡Renová ahora para no perder visibilidad!</div>
+    <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
   </div>`;
 }
 function logout() {
