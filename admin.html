@@ -366,7 +366,7 @@ tr:hover td{background:#fafbff}
                 <option value="">Todos</option>
                 <option value="approved">Aprobados</option>
                 <option value="pro">Plan Pro</option>
-                <option value="free">Plan Gratis</option>
+                <option value="gratis">Plan Gratis</option>
               </select>
             </div>
           </div>
@@ -921,7 +921,7 @@ function darPlanPro(id, nombre) {
 
 async function quitarPlanPro(id, nombre) {
   if (!confirm(`¿Quitar Plan Pro a "${nombre}"?`)) return;
-  const {error} = await sb.from('proveedores').update({plan:'free', plan_desde:null, plan_hasta:null}).eq('id',id);
+  const {error} = await sb.from('proveedores').update({plan:'gratis', plan_desde:null, plan_hasta:null}).eq('id',id);
   if (error) { showToast('Error: ' + error.message); return; }
   showToast('Plan Pro removido de ' + nombre);
   cargarTodosProveedores();

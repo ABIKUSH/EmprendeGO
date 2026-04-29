@@ -47,10 +47,12 @@ export default async function handler(req, res) {
       );
       const payment = await paymentRes.json();
       console.log(`[webhook-mp] pago id=${paymentId} status=${payment.status}`);
+      console.log(`[webhook-mp] external_reference recibido: ${payment.external_reference}`);
+      console.log(`[webhook-mp] metadata.proveedor_id: ${payment.metadata?.proveedor_id}`);
 
       if (payment.status === 'approved') {
         const proveedorId = payment.metadata?.proveedor_id || payment.external_reference;
-        console.log(`[webhook-mp] proveedorId=${proveedorId}`);
+        console.log(`[webhook-mp] proveedorId resuelto: ${proveedorId}`);
 
         if (proveedorId) {
           const toDate = d => new Date(d).toISOString().slice(0, 10);

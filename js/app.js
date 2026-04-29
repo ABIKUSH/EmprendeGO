@@ -1341,8 +1341,8 @@ async function checkSession() {
         if (prov.plan === 'pro' && prov.plan_hasta) {
           const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
           if (hasta < new Date()) {
-            await sb.from('proveedores').update({ plan: 'free', plan_desde: null, plan_hasta: null }).eq('id', prov.id);
-            prov.plan = 'free'; prov.plan_desde = null;
+            await sb.from('proveedores').update({ plan: 'gratis', plan_desde: null, plan_hasta: null }).eq('id', prov.id);
+            prov.plan = 'gratis'; prov.plan_desde = null;
             // plan_hasta kept intentionally so verificarExpiracionPlan can detect the expired date
           }
         }
@@ -2218,7 +2218,7 @@ async function showRegSuccess() {
       }
       if (existente.estado === 'rechazado' || existente.estado === 'suspendido') {
         if(btn) btn.textContent='Enviando...';
-        const {error} = await sb.from('proveedores').update({...datos, estado:'pendiente', plan:'free'}).eq('id', existente.id);
+        const {error} = await sb.from('proveedores').update({...datos, estado:'pendiente', plan:'gratis'}).eq('id', existente.id);
         if(error) throw error;
         ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
         document.getElementById('reg-success').style.display='block';
@@ -2238,7 +2238,7 @@ async function showRegSuccess() {
         }
         if (existenteCuit.estado === 'suspendido' || existenteCuit.estado === 'rechazado') {
           if(btn) btn.textContent='Enviando...';
-          const {error} = await sb.from('proveedores').update({...datos, email, estado:'pendiente', plan:'free'}).eq('id', existenteCuit.id);
+          const {error} = await sb.from('proveedores').update({...datos, email, estado:'pendiente', plan:'gratis'}).eq('id', existenteCuit.id);
           if(error) throw error;
           ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
           document.getElementById('reg-success').style.display='block';
@@ -2250,7 +2250,7 @@ async function showRegSuccess() {
 
     // No existe: insertar nuevo
     if(btn) btn.textContent='Enviando...';
-    const {error} = await sb.from('proveedores').insert({...datos, plan:'free', estado:'pendiente'});
+    const {error} = await sb.from('proveedores').insert({...datos, plan:'gratis', estado:'pendiente'});
     if(error) throw error;
   } catch(e) {
     if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
