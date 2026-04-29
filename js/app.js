@@ -1063,11 +1063,11 @@ async function cargarProductosDetalle(proveedorId, mostrarTodos) {
           provColor: bgsColores[i % bgsColores.length],
           imgUrl: p.imagen_url || '',
           whatsapp: provActual?.whatsapp || '',
-          esPro: provActual?.plan === 'pro'
+         esPro: provActual?.plan?.toLowerCase() === 'pro'
         });
       }
     });
-    const limite = provDetalleMostrarTodos ? data.length : Math.min(data.length, 6);
+    const limite = provDetalleMostrarTodos ? data.length : Math.min(data.length, 40);
     const resto = data.length - limite;
     el.style.cssText = '';
     const cards = data.slice(0, limite).map((p, i) => {
