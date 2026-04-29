@@ -1,42 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 
-const SB_URL = process.env.SUPABASE_URL || 'https://seubtijmyoahnyspvidq.supabase.co';
-const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
-
-function sbHeaders() {
-  return {
-    'apikey': SB_KEY,
-    'Authorization': `Bearer ${SB_KEY}`,
-    'Content-Type': 'application/json',
-    'Prefer': 'return=minimal'
-  };
-}
-
-async function sbSelect(table, filters, select = '*') {
-  const params = new URLSearchParams({ select });
-  for (const [col, val] of Object.entries(filters)) params.set(col, `eq.${val}`);
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
-    headers: { ...sbHeaders(), 'Prefer': 'return=representation' }
-  });
-  if (!res.ok) throw new Error(`Supabase GET ${table}: ${res.status}`);
-  const rows = await res.json();
-  return Array.isArray(rows) ? rows[0] ?? null : null;
-}
-
-async function sbUpdate(table, filters, body) {
-  const params = new URLSearchParams();
-  for (const [col, val] of Object.entries(filters)) params.set(col, `eq.${val}`);
-  const res = await fetch(`${SB_URL}/rest/v1/${table}?${params}`, {
-    method: 'PATCH',
-    headers: sbHeaders(),
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) {
-    const detail = await res.text();
-    throw new Error(`Supabase PATCH ${table}: ${res.status} ${detail}`);
-  }
-}
-
 function verificarFirmaMP(req) {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) return false;
@@ -67,7 +30,7 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
 
   if (!verificarFirmaMP(req)) {
-    console.warn('Webhook MP: firma inválida o secreto no configurado');
+    console.warn('[webhook-mp] firma inválida o secreto no configurado');
     return res.status(401).send('Unauthorized');
   }
 
@@ -83,34 +46,63 @@ export default async function handler(req, res) {
         { headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` } }
       );
       const payment = await paymentRes.json();
+      console.log(`[webhook-mp] pago id=${paymentId} status=${payment.status}`);
 
       if (payment.status === 'approved') {
         const proveedorId = payment.metadata?.proveedor_id || payment.external_reference;
+        console.log(`[webhook-mp] proveedorId=${proveedorId}`);
 
         if (proveedorId) {
+          const toDate = d => new Date(d).toISOString().slice(0, 10);
           const now = new Date();
-          const toDate = d => d.toISOString().slice(0, 10);
 
-          // Si ya era Pro con fecha activa, sumar 30 días al vencimiento actual
-          const prov = await sbSelect('proveedores', { id: proveedorId }, 'plan_hasta');
-          const currentHasta = prov?.plan_hasta ? new Date(prov.plan_hasta) : null;
+          // Leer plan_hasta actual para sumar 30 días si ya era Pro activo
+          const getRes = await fetch(
+            `${process.env.SUPABASE_URL}/rest/v1/proveedores?id=eq.${proveedorId}&select=plan_hasta`,
+            {
+              headers: {
+                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+              }
+            }
+          );
+          const rows = await getRes.json();
+          const currentHasta = rows?.[0]?.plan_hasta ? new Date(rows[0].plan_hasta) : null;
           const base = (currentHasta && currentHasta > now) ? currentHasta : now;
-          const nuevaFechaHasta = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
+          const fechaVencimiento = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-          await sbUpdate('proveedores', { id: proveedorId }, {
-            plan: 'pro',
-            plan_desde: toDate(now),
-            plan_hasta: toDate(nuevaFechaHasta)
-          });
+          console.log(`[webhook-mp] plan_hasta actual=${currentHasta?.toISOString() ?? 'null'} → nuevo=${toDate(fechaVencimiento)}`);
 
-          console.log(`[webhook-mp] pago aprobado id=${payment.id} proveedor=${proveedorId} plan_hasta=${toDate(nuevaFechaHasta)}`);
+          const patchRes = await fetch(
+            `${process.env.SUPABASE_URL}/rest/v1/proveedores?id=eq.${proveedorId}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                plan: 'pro',
+                plan_desde: toDate(now),
+                plan_hasta: toDate(fechaVencimiento)
+              })
+            }
+          );
+
+          if (!patchRes.ok) {
+            const errText = await patchRes.text();
+            console.error(`[webhook-mp] error PATCH Supabase: ${patchRes.status} ${errText}`);
+          } else {
+            console.log(`[webhook-mp] proveedor ${proveedorId} actualizado a Pro hasta ${toDate(fechaVencimiento)}`);
+          }
         }
       }
     }
 
     return res.status(200).send('OK');
   } catch (err) {
-    console.error('Webhook MP: error inesperado', err);
+    console.error('[webhook-mp] error inesperado:', err.message, err.cause);
     return res.status(200).send('OK');
   }
 }
