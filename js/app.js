@@ -58,6 +58,7 @@ function matchesQuery(p, q) {
   const qn = quitarAcentos(q.toLowerCase());
   if (quitarAcentos(p.nombre.toLowerCase()).includes(qn)) return true;
   if (quitarAcentos((p.rubro || '').toLowerCase()).includes(qn)) return true;
+  if (p.provincia && quitarAcentos(p.provincia.toLowerCase()).includes(qn)) return true;
   if (p.descripcion && quitarAcentos(p.descripcion.toLowerCase()).includes(qn)) return true;
   for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
     if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
@@ -209,7 +210,14 @@ function checkReveal() {
 // Escuchar scroll en toda la página
 window.addEventListener('scroll', checkReveal, { passive: true });
 // También al cargar
-document.addEventListener('DOMContentLoaded', () => setTimeout(checkReveal, 200));
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(checkReveal, 200);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
+      hideSearchDropdown();
+    }
+  });
+});
 setTimeout(checkReveal, 500);
 
 // ===== ESTADO GLOBAL =====
@@ -234,6 +242,9 @@ function goBack(fallback) {
   goTo(dest);
 }
 let provDetalleMostrarTodos = false;
+let _searchDebounceTimer = null;
+const BUSQ_RECIENTES_KEY = 'eg_busq_recientes';
+const MAX_BUSQ_RECIENTES = 5;
 
 // ===== FAVORITOS =====
 let favs = [];
@@ -807,10 +818,17 @@ function skelProvHoriz(n=5) {
 function renderProvs(list) {
   const el = document.getElementById('provList');
   if (!list || !list.length) {
-    el.innerHTML = `<div style="text-align:center;padding:48px 24px">
+    const q = (document.getElementById('searchInput')?.value || '').trim();
+    const msg = q.length >= 2
+      ? `No encontramos proveedores para "<strong>${escHtml(q)}</strong>". Probá con otro término.`
+      : 'No encontramos proveedores con esos filtros.';
+    const cats = RUBROS_LISTA.slice(0, 6).map(r =>
+      `<button onclick="filterCat('${r}')" style="background:white;border:1.5px solid #E2E8F8;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;white-space:nowrap">${escHtml(r)}</button>`
+    ).join('');
+    el.innerHTML = `<div style="text-align:center;padding:40px 24px">
       <div style="font-size:3rem;margin-bottom:14px">🔍</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">No encontramos proveedores</div>
-      <div style="font-size:.84rem;color:#6B7A99;line-height:1.6;margin-bottom:20px">Probá buscando con otro rubro, provincia o sin filtros.</div>
+      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px">${cats}</div>
       <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
     </div>`;
     return;
@@ -2507,8 +2525,121 @@ function switchBuscarTab(tab,el){
   }
 }
 function applySearchInput(){
-  if(buscarTab==='productos') renderProdBuscar(currentCat,document.getElementById('searchInput')?.value||'');
+  const val = document.getElementById('searchInput')?.value || '';
+  showSearchDropdown(val);
+  clearTimeout(_searchDebounceTimer);
+  _searchDebounceTimer = setTimeout(() => {
+    if (buscarTab === 'productos') renderProdBuscar(currentCat, val);
+    else filterProvs();
+  }, 200);
+}
+
+function onSearchFocus() {
+  const val = document.getElementById('searchInput')?.value || '';
+  showSearchDropdown(val);
+}
+
+function onSearchKeydown(e) {
+  if (e.key === 'Enter') {
+    const val = (document.getElementById('searchInput')?.value || '').trim();
+    if (val.length >= 2) guardarBusqReciente(val);
+    hideSearchDropdown();
+  } else if (e.key === 'Escape') {
+    hideSearchDropdown();
+  }
+}
+
+function showSearchDropdown(val) {
+  const dd = document.getElementById('search-dropdown');
+  if (!dd) return;
+  const trimmed = val.trim();
+
+  if (!trimmed) {
+    const recientes = getBusqRecientes();
+    if (!recientes.length) { dd.style.display = 'none'; return; }
+    dd.style.display = 'block';
+    dd.innerHTML =
+      `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px 8px">
+        <span style="font-size:.72rem;font-weight:800;color:#6B7A99;text-transform:uppercase;letter-spacing:.06em">Búsquedas recientes</span>
+        <button onclick="limpiarBusqRecientes()" style="font-size:.75rem;color:#6B7A99;background:none;border:none;cursor:pointer;padding:0">Limpiar</button>
+      </div>` +
+      recientes.map(r =>
+        `<div onclick="seleccionarSugerencia(this.dataset.texto)" data-texto="${escHtml(r)}"
+          style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #F0F4FF;font-size:.85rem;color:#1A1A1A">
+          <span style="color:#9CA3AF">🕐</span>${escHtml(r)}
+        </div>`
+      ).join('');
+    return;
+  }
+
+  if (trimmed.length < 2) {
+    dd.style.display = 'block';
+    dd.innerHTML = '<div style="padding:12px 14px;font-size:.82rem;color:#6B7A99">Seguí escribiendo...</div>';
+    return;
+  }
+
+  const qn = quitarAcentos(trimmed.toLowerCase());
+  const sugs = proveedoresDB.filter(p =>
+    p.estado === 'aprobado' && (
+      quitarAcentos((p.nombre||'').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.rubro||'').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.provincia||'').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.descripcion||'').toLowerCase()).includes(qn)
+    )
+  ).slice(0, 5);
+
+  if (!sugs.length) { dd.style.display = 'none'; return; }
+  dd.style.display = 'block';
+  dd.innerHTML = sugs.map(p =>
+    `<div onclick="seleccionarProveedor('${p.id}')"
+      style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #F0F4FF">
+      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#1847C8;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0,2).toUpperCase())}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.85rem;font-weight:700;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+        <div style="font-size:.72rem;color:#6B7A99">${escHtml(p.rubro||'')}${p.provincia?' · '+escHtml(p.provincia):''}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function hideSearchDropdown() {
+  const dd = document.getElementById('search-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+function seleccionarSugerencia(texto) {
+  const inp = document.getElementById('searchInput');
+  if (inp) inp.value = texto;
+  hideSearchDropdown();
+  if (texto.length >= 2) guardarBusqReciente(texto);
+  const tabEl = document.getElementById('tab-proveedores');
+  if (buscarTab !== 'proveedores' && tabEl) switchBuscarTab('proveedores', tabEl);
   else filterProvs();
+}
+
+function seleccionarProveedor(id) {
+  hideSearchDropdown();
+  const p = proveedoresDB.find(x => String(x.id) === String(id));
+  if (p?.nombre) guardarBusqReciente(p.nombre);
+  abrirDetalle(id);
+}
+
+function getBusqRecientes() {
+  try { return JSON.parse(localStorage.getItem(BUSQ_RECIENTES_KEY) || '[]'); } catch { return []; }
+}
+
+function guardarBusqReciente(texto) {
+  if (!texto || texto.trim().length < 2) return;
+  const t = texto.trim();
+  let r = getBusqRecientes().filter(x => x.toLowerCase() !== t.toLowerCase());
+  r.unshift(t);
+  if (r.length > MAX_BUSQ_RECIENTES) r = r.slice(0, MAX_BUSQ_RECIENTES);
+  try { localStorage.setItem(BUSQ_RECIENTES_KEY, JSON.stringify(r)); } catch(e) {}
+}
+
+function limpiarBusqRecientes() {
+  try { localStorage.removeItem(BUSQ_RECIENTES_KEY); } catch(e) {}
+  hideSearchDropdown();
 }
 
 function abrirDetalleProd(id){

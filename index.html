@@ -457,7 +457,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <button class="notif-bell" onclick="toggleNotifPanel()">&#128276;<span class="notif-dot" id="notifDot2"></span></button>
   </div>
   <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales.</p></div>
-  <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()"></div>
+  <div style="position:relative">
+    <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()" onfocus="onSearchFocus()" onkeydown="onSearchKeydown(event)" autocomplete="off"></div>
+    <div id="search-dropdown" style="display:none;position:absolute;top:100%;left:20px;right:20px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:300;overflow:hidden;border:1px solid #E2E8F8;margin-top:2px"></div>
+  </div>
   <div class="chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
     <div class="chip" onclick="setChip(this,'Indumentaria')">👗 Indumentaria</div>
