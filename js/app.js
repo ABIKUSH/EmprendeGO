@@ -34,23 +34,91 @@ const MAX_RUBROS = 7;
 
 // Subcategorías → rubrosprincipales (para búsqueda flexible)
 const SUBCATEGORIA_MAP = {
-  'ropa de mujer':['Moda'],'ropa de hombre':['Moda'],'ropa de bebe':['Moda'],
-  'ropa de bebe y ninos':['Moda'],'ropa infantil':['Moda'],'ropa deportiva':['Moda','Deportes'],
-  'talles especiales':['Moda'],'accesorios de moda':['Moda'],'carteras':['Moda'],
-  'calzado':['Moda'],'mochilas':['Moda'],'marroquineria':['Moda'],'textil':['Moda'],
-  'indumentaria':['Moda'],'vestimenta':['Moda'],
-  'blanqueria':['Hogar'],'muebles':['Hogar'],'decoracion':['Hogar'],'deco':['Hogar'],
-  'articulos de cocina':['Hogar'],'limpieza':['Hogar'],'hogar y deco':['Hogar'],
-  'perfumeria':['Salud'],'cosmeticos':['Salud'],'cuidado personal':['Salud'],
-  'suplementos':['Salud'],'nutricion':['Salud'],'belleza':['Salud'],
+  'ropa de mujer':['Moda','Indumentaria'],'ropa de hombre':['Moda','Indumentaria'],'ropa de bebe':['Moda','Indumentaria'],
+  'ropa de bebe y ninos':['Moda','Indumentaria'],'ropa infantil':['Moda','Indumentaria'],'ropa deportiva':['Moda','Indumentaria','Deportes'],
+  'talles especiales':['Moda','Indumentaria'],'accesorios de moda':['Moda','Indumentaria'],'carteras':['Moda','Indumentaria'],
+  'calzado':['Moda','Indumentaria'],'mochilas':['Moda','Indumentaria'],'marroquineria':['Moda','Indumentaria'],'textil':['Moda','Textiles'],
+  'indumentaria':['Moda','Indumentaria'],'vestimenta':['Moda','Indumentaria'],
+  'sabanas':['Textiles'],'sabana':['Textiles'],'frazada':['Textiles'],'blanqueria':['Textiles','Hogar'],
+  'acolchado':['Textiles'],'toalla':['Textiles'],'mantel':['Textiles'],'tela':['Textiles'],
+  'muebles':['Hogar','Hogar y Deco'],'decoracion':['Hogar','Hogar y Deco'],'deco':['Hogar','Hogar y Deco'],
+  'articulos de cocina':['Hogar','Hogar y Deco'],'limpieza':['Hogar','Hogar y Deco'],'hogar y deco':['Hogar','Hogar y Deco'],
+  'perfumeria':['Salud','Belleza y Salud'],'cosmeticos':['Salud','Belleza y Salud'],'cuidado personal':['Salud','Belleza y Salud'],
+  'suplementos':['Salud','Belleza y Salud'],'nutricion':['Salud','Belleza y Salud'],'belleza':['Salud','Belleza y Salud'],
   'electronica':['Tecnología'],'celulares':['Tecnología'],'accesorios de celular':['Tecnología'],
   'computadoras':['Tecnología'],'gadgets':['Tecnología'],
   'alimentos y bebidas':['Alimentos'],'comida':['Alimentos'],'bebidas':['Alimentos'],
-  'juguetes':['Otro'],'libreria':['Otro'],'papeleria':['Otro']
+  'juguetes':['Otro','Otros'],'libreria':['Otro','Bazar'],'papeleria':['Otro','Bazar']
 };
+
+const CAT_PRINCIPAL = ['Hogar y Deco','Indumentaria','Textiles','Belleza y Salud','Tecnología','Bazar','Alimentos','Deportes','Automotor','Otros'];
+
+const CAT_SUBCATS = {
+  'Hogar y Deco':   ['Muebles','Decoración','Cocina','Limpieza','Iluminación'],
+  'Textiles':       ['Sábanas','Blanquería','Frazadas','Acolchados','Toallas','Manteles','Telas'],
+  'Indumentaria':   ['Ropa mujer','Ropa hombre','Ropa bebé','Deportiva','Accesorios de moda'],
+  'Belleza y Salud':['Perfumería','Cuidado personal','Suplementos'],
+  'Tecnología':     ['Electrónica','Accesorios celular','Computación'],
+  'Bazar':          ['Descartables','Papelería','Mayoreo general'],
+  'Alimentos':      ['Secos','Bebidas','Snacks'],
+  'Deportes':       ['Indumentaria deportiva','Equipamiento'],
+  'Automotor':      ['Accesorios','Repuestos'],
+  'Otros':          ['General'],
+};
+
+const EXCEL_COL_PATTERNS = {
+  nombre:     ['nombre','titulo','title','producto','articulo','item','name','denominacion'],
+  precio:     ['precio','price','costo','pvp','valor','importe','monto','cost','precio mayorista'],
+  stock:      ['stock','cantidad','cant','qty','disponible','inventario','inventory','existencias'],
+  descripcion:['descripcion','description','detalle','desc','descripcion larga'],
+  categoria:  ['categoria','category','rubro','tipo','categorias','cat','grupo'],
+};
+
+const EXCEL_CAT_MAP_RULES = [
+  { patterns:['sabana','frazada','blanqueria','blanquería','acolchado','toalla','mantel','textil','tela'], cat:'Textiles' },
+  { patterns:['mueble','decorac','cocina','limpieza','iluminac','hogar','deco'], cat:'Hogar y Deco' },
+  { patterns:['ropa','moda','indumentaria','calzado','remera','pantalon','camisa','vestido','jean','liquidac'], cat:'Indumentaria' },
+  { patterns:['perfum','cosmetic','belleza','salud','cuidado','suplement'], cat:'Belleza y Salud' },
+  { patterns:['tecnolog','electr','celular','comput','tablet','notebook'], cat:'Tecnología' },
+  { patterns:['bazar','descartable','papeler','mayoreo'], cat:'Bazar' },
+  { patterns:['aliment','bebida','snack','comida','dulce'], cat:'Alimentos' },
+  { patterns:['deport','gym','fitness'], cat:'Deportes' },
+  { patterns:['auto','moto','repuest','vehicul'], cat:'Automotor' },
+];
 
 function quitarAcentos(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function mapExcelCat(raw) {
+  if (!raw) return null;
+  const n = quitarAcentos(raw.toLowerCase());
+  for (const { patterns, cat } of EXCEL_CAT_MAP_RULES) {
+    if (patterns.some(p => n.includes(quitarAcentos(p)))) return cat;
+  }
+  return null;
+}
+
+function autoDetectCols(headers) {
+  const result = {};
+  for (const [field, patterns] of Object.entries(EXCEL_COL_PATTERNS)) {
+    const found = headers.find(h =>
+      patterns.some(p => quitarAcentos(h.toLowerCase()).includes(quitarAcentos(p)))
+    );
+    if (found) result[field] = found;
+  }
+  return result;
+}
+
+function actualizarSubcats(principalId, subId, subGroupId) {
+  const cat = document.getElementById(principalId)?.value;
+  const subEl = document.getElementById(subId);
+  const subGroup = document.getElementById(subGroupId);
+  if (!subEl) return;
+  const subs = CAT_SUBCATS[cat] || [];
+  if (!cat || !subs.length) { if (subGroup) subGroup.style.display = 'none'; return; }
+  subEl.innerHTML = '<option value="">General</option>' + subs.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (subGroup) subGroup.style.display = 'block';
 }
 
 function matchesQuery(p, q) {
@@ -1746,7 +1814,7 @@ function renderProdGrid() {
         <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock definido'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -2046,7 +2114,9 @@ async function addProduct() {
   const name  = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
   const stock = document.getElementById('new-prod-stock').value;
-  const cat   = document.getElementById('new-prod-cat').value;
+  const catPrincipal = document.getElementById('new-prod-cat-principal')?.value || 'Otros';
+  const catSub = document.getElementById('new-prod-cat-sub')?.value || '';
+  const desc = document.getElementById('new-prod-desc')?.value?.trim() || null;
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
 
   const btn = document.getElementById('add-btn-text');
@@ -2065,7 +2135,11 @@ async function addProduct() {
   const newProd = {
     nombre: name, precio: parseFloat(price),
     stock: stock ? parseInt(stock) : null,
-    categoria: cat, imagen_url: imgUrl,
+    descripcion: desc,
+    categoria: catSub || catPrincipal,
+    categoria_principal: catPrincipal,
+    subcategoria: catSub || null,
+    imagen_url: imgUrl,
     proveedor_id: currentUser?.proveedorId || null
   };
   try {
@@ -2079,13 +2153,26 @@ async function addProduct() {
   showToast('✓ Producto guardado');
   if (btn) btn.textContent = 'Agregar al catálogo ✓';
 }
-function editarProducto(id,nombre,precio,stock,cat) {
+function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
   document.getElementById('edit-prod-id').value = id;
   document.getElementById('edit-prod-name').value = nombre;
   document.getElementById('edit-prod-price').value = precio;
   document.getElementById('edit-prod-stock').value = stock;
-  const sel = document.getElementById('edit-prod-cat');
-  if (sel) { for(let i=0;i<sel.options.length;i++) { if(sel.options[i].text===cat||sel.options[i].value===cat){sel.selectedIndex=i;break;} } }
+  const principalEl = document.getElementById('edit-prod-cat-principal');
+  if (principalEl) {
+    const matched = catPrincipal
+      || CAT_PRINCIPAL.find(c => c.toLowerCase() === (cat||'').toLowerCase())
+      || mapExcelCat(cat)
+      || 'Otros';
+    principalEl.value = matched;
+    actualizarSubcats('edit-prod-cat-principal','edit-prod-cat-sub','edit-prod-subcat-group');
+    const subEl = document.getElementById('edit-prod-cat-sub');
+    if (subEl && cat && cat !== matched) {
+      Array.from(subEl.options).forEach((opt, i) => {
+        if (opt.value === cat || opt.text === cat) subEl.selectedIndex = i;
+      });
+    }
+  }
   document.getElementById('editProdModal').classList.add('open'); document.body.style.overflow='hidden';
 }
 function closeEditProduct() { document.getElementById('editProdModal').classList.remove('open'); document.body.style.overflow=''; }
@@ -2122,15 +2209,23 @@ async function guardarEdicionProducto() {
   const name = document.getElementById('edit-prod-name').value.trim();
   const price = document.getElementById('edit-prod-price').value;
   const stock = document.getElementById('edit-prod-stock').value;
-  const cat = document.getElementById('edit-prod-cat').value;
-  if (!name||!price) { showToast('Completa nombre y precio'); return; }
-let imgUrl = null;
+  const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otros';
+  const catSub = document.getElementById('edit-prod-cat-sub')?.value || '';
+  if (!name||!price) { showToast('Completá nombre y precio'); return; }
+  let imgUrl = null;
   if (editFotoFile && currentUser?.proveedorId) {
     try { imgUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch(e) {}
-  }  try {
-    await sb.from('productos').update({nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat,imagen_url:imgUrl||undefined}).eq('id',id);
+  }
+  try {
+    await sb.from('productos').update({
+      nombre:name, precio:parseFloat(price), stock:stock?parseInt(stock):null,
+      categoria: catSub || catPrincipal,
+      categoria_principal: catPrincipal,
+      subcategoria: catSub || null,
+      imagen_url: imgUrl || undefined
+    }).eq('id',id);
     const idx = productos.findIndex(p=>String(p.id)===String(id));
-    if(idx>=0) productos[idx]={...productos[idx],nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:cat};
+    if(idx>=0) productos[idx]={...productos[idx],nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:catSub||catPrincipal,categoria_principal:catPrincipal};
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
   } catch(e) { showToast('Error al guardar'); }
 }
@@ -2390,9 +2485,9 @@ async function showResult() {
 
 // ===== PRODUCTOS =====
 let productosReales=[];
-const catColors={'Indumentaria':'#FF6B00','Hogar y Deco':'#00A651','Belleza y Salud':'#E91E8C','Tecnología':'#1847C8','Bolsos y Marroquinería':'#7C3AED','Otros':'#F59E0B','Tecnologia':'#1847C8','Moda':'#FF6B00','Hogar':'#00A651','Bazar':'#7C3AED','Alimentos':'#F59E0B'};
+const catColors={'Hogar y Deco':'#00A651','Indumentaria':'#FF6B00','Textiles':'#8B5CF6','Belleza y Salud':'#E91E8C','Tecnología':'#1847C8','Bazar':'#7C3AED','Alimentos':'#F59E0B','Deportes':'#EF4444','Automotor':'#6B7280','Otros':'#9CA3AF','Moda':'#FF6B00','Hogar':'#00A651','Salud':'#E91E8C','Blanquería':'#8B5CF6','Sábanas':'#8B5CF6','Frazadas':'#8B5CF6','Tecnologia':'#1847C8'};
 
-function getEmojiCat(cat){const map={'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦','Tecnologia':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫'};return map[cat]||'📦';}
+function getEmojiCat(cat){const map={'Hogar y Deco':'🏠','Indumentaria':'👗','Textiles':'🛏️','Belleza y Salud':'💄','Tecnología':'💻','Bazar':'🛒','Alimentos':'🍫','Deportes':'⚽','Automotor':'🚗','Otros':'📦','Moda':'👗','Hogar':'🏠','Salud':'💄','Blanquería':'🛏️','Sábanas':'🛏️','Frazadas':'🛏️','Tecnologia':'📱'};return map[cat]||'📦';}
 function getProdLista(){return productosReales;}
 
 async function cargarProductosReales() {
@@ -2403,7 +2498,7 @@ async function cargarProductosReales() {
       productosReales=data.map((p,i)=>({
         id:'real_'+p.id,idReal:p.id,nombre:p.nombre,precio:p.precio||0,
         pedido_minimo:p.stock?'Stock: '+p.stock+' unidades':'Consultar',
-        cat:p.categoria||'General',emoji:getEmojiCat(p.categoria),
+        cat:p.categoria_principal||p.categoria||'General',emoji:getEmojiCat(p.categoria_principal||p.categoria),catPrincipal:p.categoria_principal||null,descripcion:p.descripcion||null,
         provId:String(p.proveedor_id),
         provNombre:p.proveedores?.nombre||'Proveedor',
         provRubro:(p.proveedores?.rubro||'')+(p.proveedores?.provincia?' · '+p.proveedores.provincia:''),
@@ -2457,7 +2552,15 @@ function renderProdBuscar(filtro, query='') {
   if (!el) return;
   let lista = getProdLista();
   const q = (query||'').toLowerCase().trim();
-  if (filtro && filtro !== 'Todas') lista = lista.filter(p => (p.cat||'').toLowerCase() === filtro.toLowerCase() || (p.cat||'').toLowerCase() === filtro.replace('í','i').toLowerCase());
+  if (filtro && filtro !== 'Todas') lista = lista.filter(p => {
+    const cat = p.cat || ''; const catP = p.catPrincipal || cat;
+    if (catP.toLowerCase() === filtro.toLowerCase()) return true;
+    if (cat.toLowerCase() === filtro.toLowerCase()) return true;
+    if (filtro === 'Textiles') { const tt=['sabana','frazada','blanqueria','acolchado','toalla','mantel','textil','tela']; return tt.some(t=>quitarAcentos(cat.toLowerCase()).includes(t)); }
+    if (filtro === 'Hogar y Deco') return cat.toLowerCase().includes('hogar') || cat.toLowerCase().includes('deco') || cat.toLowerCase().includes('mueble') || cat.toLowerCase().includes('cocina');
+    if (filtro === 'Belleza y Salud') return cat.toLowerCase().includes('belleza') || cat.toLowerCase().includes('salud') || cat.toLowerCase().includes('cosmet') || cat.toLowerCase().includes('perfum');
+    return false;
+  });
   if (q) lista = lista.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q) || (p.provNombre||'').toLowerCase().includes(q));
   if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length===1?'':'s'} en productos` : 'Sin resultados en productos';
   if (!lista.length) {
@@ -3330,6 +3433,8 @@ async function guardarCambiosPerfil() {
 // ===== EXCEL IMPORT =====
 let excelData = null;
 let excelHeaders = [];
+let excelColMap = {};
+let excelCatMapping = {};
 
 function descargarTemplateExcel() {
   if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
@@ -3349,9 +3454,7 @@ function descargarTemplateExcel() {
 function leerExcelImport(input) {
   const file = input.files[0];
   if (!file) return;
-  const nameEl = document.getElementById('excel-file-name');
-  nameEl.style.display = 'block';
-  nameEl.textContent = '📄 ' + file.name;
+  if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
@@ -3362,25 +3465,10 @@ function leerExcelImport(input) {
       if (!jsonData.length) { showToast('El archivo está vacío'); return; }
       excelData = jsonData;
       excelHeaders = Object.keys(jsonData[0]);
-      const selects = ['excel-map-nombre', 'excel-map-precio', 'excel-map-stock', 'excel-map-cat'];
-      const defaults = [['nombre','producto','articulo','descripcion','item','title'],
-                        ['precio','price','valor','costo','importe','monto'],
-                        ['stock','cantidad','cant','qty','disponible','inventario'],
-                        ['categoria','rubro','cat','tipo','category']];
-      selects.forEach((selId, idx) => {
-        const sel = document.getElementById(selId);
-        sel.innerHTML = idx < 2 ? '<option value="">— Seleccioná columna —</option>' : '<option value="">— No importar —</option>';
-        excelHeaders.forEach(h => {
-          const opt = document.createElement('option');
-          opt.value = h; opt.textContent = h;
-          const match = defaults[idx].some(d => h.toLowerCase().includes(d));
-          if (match) opt.selected = true;
-          sel.appendChild(opt);
-        });
-      });
-      document.getElementById('excel-mapping-section').style.display = 'block';
-      document.getElementById('excel-preview-count').textContent = 'Se detectaron ' + jsonData.length + ' filas en tu archivo';
+      excelColMap = autoDetectCols(excelHeaders);
+      excelCatMapping = {};
       document.getElementById('excel-result').style.display = 'none';
+      renderExcelStep2();
     } catch(err) {
       showToast('Error al leer el archivo. Verificá que sea un Excel válido.');
     }
@@ -3388,32 +3476,157 @@ function leerExcelImport(input) {
   reader.readAsArrayBuffer(file);
 }
 
+function renderExcelStep2() {
+  document.getElementById('excel-step1').style.display = 'none';
+  const wizard = document.getElementById('excel-wizard');
+  wizard.style.display = 'block';
+
+  const preview = excelData.slice(0, 3);
+  const previewCols = Object.keys(preview[0] || {}).slice(0, 5);
+  const previewHTML = preview.length ? `
+    <div style="overflow-x:auto;border:1px solid #e0e7ff;border-radius:10px;margin:10px 0 14px">
+      <table style="width:100%;border-collapse:collapse;font-size:.68rem">
+        <thead><tr>${previewCols.map(h => `<th style="padding:6px 10px;background:#f0f4ff;border-bottom:1px solid #e0e7ff;text-align:left;font-weight:800;color:#1847C8;white-space:nowrap">${escHtml(String(h))}</th>`).join('')}</tr></thead>
+        <tbody>${preview.map(row => `<tr>${previewCols.map(h => `<td style="padding:6px 10px;border-bottom:1px solid #f4f7ff;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(String(row[h]||''))}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>` : '';
+
+  const detected = [];
+  if (excelColMap.nombre) detected.push('Nombre → <strong>' + escHtml(excelColMap.nombre) + '</strong>');
+  if (excelColMap.precio) detected.push('Precio → <strong>' + escHtml(excelColMap.precio) + '</strong>');
+
+  const colOpts = (field, label, required) => {
+    const cur = excelColMap[field] || '';
+    return `<div class="form-group">
+      <label>${label}${required ? ' *' : ' <span style="font-weight:400;color:#999">(opcional)</span>'}</label>
+      <select style="width:100%;border:1.5px solid #e0e7ff;border-radius:10px;padding:9px 12px;font-family:\'DM Sans\',sans-serif;font-size:.85rem"
+        onchange="excelColMap['${field}'] = this.value">
+        <option value="">${required ? '— Seleccioná columna —' : '— No importar —'}</option>
+        ${excelHeaders.map(h => `<option value="${escHtml(h)}" ${h === cur ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
+      </select>
+    </div>`;
+  };
+
+  wizard.innerHTML = `
+    <div style="font-size:.82rem;font-weight:800;color:#006039;margin-bottom:6px">📄 ${excelData.length} filas detectadas</div>
+    ${previewHTML}
+    ${detected.length ? `<div style="background:#e8f5ee;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:.78rem;color:#006039">✓ Detectamos: ${detected.join(' · ')}</div>` : ''}
+    <div style="font-size:.82rem;font-weight:700;color:#374151;margin-bottom:10px">Confirmá las columnas:</div>
+    ${colOpts('nombre','Nombre del producto',true)}
+    ${colOpts('precio','Precio',true)}
+    ${colOpts('stock','Stock',false)}
+    ${colOpts('descripcion','Descripción',false)}
+    ${colOpts('categoria','Categoría del Excel',false)}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="excelBack(2)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button onclick="confirmarColumnasExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Continuar →</button>
+    </div>`;
+}
+
+function confirmarColumnasExcel() {
+  if (!excelColMap.nombre || !excelColMap.precio) { showToast('Seleccioná al menos Nombre y Precio'); return; }
+  const wizard = document.getElementById('excel-wizard');
+  const hasCatCol = !!excelColMap.categoria;
+  const total = excelData.length;
+  const catOpts = CAT_PRINCIPAL.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  let catContent;
+  if (hasCatCol) {
+    const uniqueCats = [...new Set(excelData.map(r => String(r[excelColMap.categoria] || '').trim()).filter(Boolean))];
+    uniqueCats.forEach(rawCat => {
+      const s = mapExcelCat(rawCat);
+      if (s) excelCatMapping[rawCat] = s;
+    });
+    catContent = `
+      <div style="font-size:.82rem;font-weight:700;color:#374151;margin-bottom:12px">Mapeá las categorías de tu Excel:</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        ${uniqueCats.map(rawCat => `
+          <div style="display:flex;align-items:center;gap:10px;background:#f8fafc;border-radius:8px;padding:8px 10px">
+            <span style="font-size:.8rem;flex:1;color:#374151;font-weight:600">${escHtml(rawCat)}</span>
+            <span style="color:#9CA3AF;font-size:.9rem">→</span>
+            <select onchange="excelCatMapping[${JSON.stringify(rawCat)}] = this.value"
+              style="flex:1;border:1.5px solid #e0e7ff;border-radius:8px;padding:6px 8px;font-size:.78rem;max-width:140px">
+              <option value="">Seleccioná...</option>
+              ${CAT_PRINCIPAL.map(c => `<option value="${c}" ${(excelCatMapping[rawCat]||'') === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>
+          </div>`).join('')}
+      </div>`;
+  } else {
+    catContent = `
+      <div style="font-size:.82rem;font-weight:700;color:#374151;margin-bottom:10px">¿A qué categoría pertenecen todos estos productos?</div>
+      <select id="excel-cat-global" style="width:100%;border:1.5px solid #e0e7ff;border-radius:10px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:.88rem">
+        <option value="">Seleccioná una categoría...</option>
+        ${catOpts}
+      </select>`;
+  }
+
+  wizard.innerHTML = `
+    ${catContent}
+    <div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.8rem;color:#374151">
+      Listo para importar <strong>${total} producto${total===1?'':'s'}</strong>.
+    </div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="excelBack(3)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button id="excel-import-btn" onclick="importarDesdeExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">
+        <span id="excel-import-btn-text">Importar ${total} productos →</span>
+      </button>
+    </div>`;
+}
+
+function excelBack(fromStep) {
+  const wizard = document.getElementById('excel-wizard');
+  if (fromStep === 2) {
+    wizard.style.display = 'none';
+    document.getElementById('excel-step1').style.display = 'block';
+  } else if (fromStep === 3) {
+    renderExcelStep2();
+  }
+}
+
 async function importarDesdeExcel() {
-  const colNombre = document.getElementById('excel-map-nombre').value;
-  const colPrecio = document.getElementById('excel-map-precio').value;
-  const colStock = document.getElementById('excel-map-stock').value;
-  const colCat = document.getElementById('excel-map-cat').value;
-  if (!colNombre || !colPrecio) { showToast('Seleccioná al menos Nombre y Precio'); return; }
-  if (!excelData || !excelData.length) { showToast('No hay datos para importar'); return; }
-  const btn = document.getElementById('excel-import-btn-text');
-  btn.textContent = 'Importando...';
+  if (!excelData || !excelData.length || !excelColMap.nombre || !excelColMap.precio) {
+    showToast('Datos incompletos. Volvé y revisá las columnas.'); return;
+  }
+  const hasCatCol = !!excelColMap.categoria;
+  let globalCat = null;
+  if (!hasCatCol) {
+    globalCat = document.getElementById('excel-cat-global')?.value;
+    if (!globalCat) { showToast('Seleccioná una categoría para los productos'); return; }
+  }
+  const btn = document.getElementById('excel-import-btn');
+  const btnText = document.getElementById('excel-import-btn-text');
+  if (btn) btn.disabled = true;
+  if (btnText) btnText.textContent = 'Importando...';
   const prods = [];
   let errores = 0;
   excelData.forEach(row => {
-    const nombre = String(row[colNombre] || '').trim();
-    const precioRaw = String(row[colPrecio] || '').replace(/[^0-9.,]/g, '').replace(',', '.');
+    const nombre = String(row[excelColMap.nombre] || '').trim();
+    const precioRaw = String(row[excelColMap.precio] || '').replace(/[^0-9.,]/g, '').replace(',', '.');
     const precio = parseFloat(precioRaw);
     if (!nombre || !precio || isNaN(precio)) { errores++; return; }
-    const prod = {
-      nombre,
-      precio,
-      stock: colStock ? (parseInt(row[colStock]) || null) : null,
-      categoria: colCat ? (String(row[colCat] || 'General').trim()) : 'General',
+    let categoria_principal;
+    if (hasCatCol) {
+      const rawCat = String(row[excelColMap.categoria] || '').trim();
+      categoria_principal = excelCatMapping[rawCat] || mapExcelCat(rawCat) || 'Otros';
+    } else {
+      categoria_principal = globalCat;
+    }
+    const desc = excelColMap.descripcion ? String(row[excelColMap.descripcion] || '').trim() || null : null;
+    prods.push({
+      nombre, precio,
+      stock: excelColMap.stock ? (parseInt(row[excelColMap.stock]) || null) : null,
+      descripcion: desc,
+      categoria: categoria_principal,
+      categoria_principal,
       proveedor_id: currentUser?.proveedorId || null
-    };
-    prods.push(prod);
+    });
   });
-  if (!prods.length) { showToast('No se encontraron productos válidos'); btn.textContent = 'Importar productos'; return; }
+  if (!prods.length) {
+    showToast('No se encontraron productos válidos');
+    if (btn) btn.disabled = false;
+    if (btnText) btnText.textContent = 'Importar productos →';
+    return;
+  }
   try {
     const batchSize = 20;
     let imported = 0;
@@ -3422,26 +3635,30 @@ async function importarDesdeExcel() {
       const { data } = await sb.from('productos').insert(batch).select();
       if (data) data.forEach(p => productos.unshift(p));
       imported += batch.length;
-      btn.textContent = `Importando... ${imported}/${prods.length}`;
+      if (btnText) btnText.textContent = `Importando... ${imported}/${prods.length}`;
     }
     renderProdGrid();
-    document.getElementById('excel-mapping-section').style.display = 'none';
+    document.getElementById('excel-wizard').style.display = 'none';
     document.getElementById('excel-result').style.display = 'block';
-    document.getElementById('excel-result-text').textContent = '✓ ' + prods.length + ' productos importados' + (errores > 0 ? ' (' + errores + ' filas ignoradas por datos incompletos)' : '');
+    document.getElementById('excel-result-text').textContent = '✓ ' + prods.length + ' productos importados' + (errores > 0 ? ' (' + errores + ' filas ignoradas)' : '');
     showToast('✓ ' + prods.length + ' productos importados');
   } catch(e) {
     showToast('Error al importar. Intentá de nuevo.');
   }
-  btn.textContent = 'Importar productos';
+  if (btn) btn.disabled = false;
+  if (btnText) btnText.textContent = 'Importar productos →';
 }
 
 function resetExcelImport() {
-  excelData = null;
-  excelHeaders = [];
-  document.getElementById('excel-file-input').value = '';
-  document.getElementById('excel-file-name').style.display = 'none';
-  document.getElementById('excel-mapping-section').style.display = 'none';
-  document.getElementById('excel-result').style.display = 'none';
+  excelData = null; excelHeaders = []; excelColMap = {}; excelCatMapping = {};
+  const fi = document.getElementById('excel-file-input');
+  if (fi) fi.value = '';
+  const wizard = document.getElementById('excel-wizard');
+  if (wizard) wizard.style.display = 'none';
+  const step1 = document.getElementById('excel-step1');
+  if (step1) step1.style.display = 'block';
+  const res = document.getElementById('excel-result');
+  if (res) res.style.display = 'none';
 }
 
 // ===== MIS PRODUCTOS MODAL =====
@@ -3454,7 +3671,7 @@ function abrirMisProductos() {
 
 function buscarMisProds(query) {
   const q = (query || '').toLowerCase().trim();
-  const filtrados = q ? productos.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.categoria||'').toLowerCase().includes(q)) : productos;
+  const filtrados = q ? productos.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.categoria||'').toLowerCase().includes(q) || (p.categoria_principal||'').toLowerCase().includes(q)) : productos;
   const el = document.getElementById('misProductosList');
   if (!el) return;
   if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
@@ -3470,7 +3687,7 @@ function buscarMisProds(query) {
         <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -3503,7 +3720,7 @@ function ordenarMisProds(tipo) {
         <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
