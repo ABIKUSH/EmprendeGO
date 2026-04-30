@@ -1437,7 +1437,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url').eq('email', email.toLowerCase().trim());
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         if (prov.plan === 'pro' && prov.plan_hasta) {
@@ -4107,14 +4107,23 @@ async function iniciarPagoPro(btnEl) {
 
 
 // ===== TIENDA NUBE =====
-function renderTiendaNubeSection() {
-  const pd = currentUser?.provData;
+async function renderTiendaNubeSection() {
   const btnArea = document.getElementById('tn-btn-area');
   const statusLabel = document.getElementById('tn-status-label');
   if (!btnArea || !statusLabel) return;
 
-  if (pd?.tn_store_id) {
-    statusLabel.textContent = 'Conectada · Store #' + pd.tn_store_id;
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+
+  // Query fresca para obtener estado actual de tn_store_id
+  const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
+  const tnStoreId = data?.tn_store_id;
+
+  // Actualizar provData en memoria para que sincronizarTiendaNube lo tenga disponible
+  if (currentUser.provData) currentUser.provData.tn_store_id = tnStoreId || null;
+
+  if (tnStoreId) {
+    statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
     btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">🔄 Sincronizar productos</button>`;
   } else {
     statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
