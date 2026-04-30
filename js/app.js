@@ -4154,6 +4154,9 @@ async function sincronizarTiendaNube(btn) {
     if (res.ok) {
       showToast(`✅ ${data.importados} productos importados de Tienda Nube`);
       cargarProductosProveedor();
+      if (data.categorias_tn && data.categorias_tn.length > 0) {
+        mostrarMapeoTN(data.categorias_tn);
+      }
     } else {
       showToast(data.error || 'Error al sincronizar productos.');
     }
@@ -4162,6 +4165,52 @@ async function sincronizarTiendaNube(btn) {
   }
   btn.disabled = false;
   btn.textContent = '🔄 Sincronizar productos';
+}
+
+const TN_CATEGORIAS_EG = ['Textiles','Hogar y Deco','Indumentaria','Belleza y Salud','Tecnología','Bazar','Alimentos','Deportes','Automotor','Otros'];
+
+function mostrarMapeoTN(categorias_tn) {
+  const list = document.getElementById('tn-mapeo-list');
+  if (!list) return;
+  const mapaActual = currentUser?.provData?.tn_categoria_map || {};
+  list.innerHTML = categorias_tn.map(cat => {
+    const opts = TN_CATEGORIAS_EG.map(c =>
+      `<option value="${c}" ${(mapaActual[cat] || 'Otros') === c ? 'selected' : ''}>${c}</option>`
+    ).join('');
+    return `<div style="background:#F8FAF8;border-radius:10px;padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:700;color:#444;margin-bottom:6px">TN: <span style="color:#006039">${escHtml(cat)}</span></div>
+      <select class="tn-mapeo-select" data-tn-cat="${escHtml(cat)}" style="width:100%;border:1.5px solid #D1FAE5;border-radius:8px;padding:8px 10px;font-size:.82rem;color:#111;background:white;appearance:none">${opts}</select>
+    </div>`;
+  }).join('');
+  document.getElementById('tnMapeoModal').classList.add('open');
+}
+
+async function confirmarMapeoTN(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  const selects = document.querySelectorAll('.tn-mapeo-select');
+  const map = {};
+  selects.forEach(s => { map[s.dataset.tnCat] = s.value; });
+
+  // Actualizar categoria_principal de cada grupo de productos por categoria_tn
+  const updates = Object.entries(map).map(([tnCat, catPrincipal]) =>
+    sb.from('productos').update({ categoria_principal: catPrincipal })
+      .eq('proveedor_id', proveedorId).eq('categoria_tn', tnCat)
+  );
+  await Promise.all(updates);
+
+  // Guardar mapa en proveedores para futuras sincronizaciones
+  await sb.from('proveedores').update({ tn_categoria_map: map }).eq('id', proveedorId);
+  if (currentUser.provData) currentUser.provData.tn_categoria_map = map;
+
+  document.getElementById('tnMapeoModal').classList.remove('open');
+  showToast('✅ Categorías actualizadas');
+  cargarProductosProveedor();
+  btn.disabled = false;
+  btn.textContent = 'Confirmar categorías';
 }
 
 function renderBannerProDashboard() {

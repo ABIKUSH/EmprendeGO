@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Leer tn_store_id y tn_access_token del proveedor
+  // Leer datos del proveedor incluyendo mapa de categorías previo
   const getRes = await fetch(
-    `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}&select=tn_store_id,tn_access_token`,
+    `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}&select=tn_store_id,tn_access_token,tn_categoria_map`,
     {
       headers: {
         'apikey': supabaseKey,
@@ -25,7 +25,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Tienda Nube no conectada para este proveedor' });
   }
 
-  const { tn_store_id, tn_access_token } = prov;
+  const { tn_store_id, tn_access_token, tn_categoria_map } = prov;
+  const categoriaMap = tn_categoria_map || {};
 
   // Obtener productos de Tienda Nube
   const tnRes = await fetch(
@@ -47,10 +48,11 @@ export default async function handler(req, res) {
   const products = await tnRes.json();
 
   if (!Array.isArray(products) || products.length === 0) {
-    return res.status(200).json({ importados: 0, mensaje: 'No hay productos en la tienda' });
+    return res.status(200).json({ importados: 0, categorias_tn: [] });
   }
 
   let importados = 0;
+  const categoriasSet = new Set();
 
   for (const product of products) {
     const nombre = product.name?.es || product.name || 'Sin nombre';
@@ -60,7 +62,21 @@ export default async function handler(req, res) {
     const imagen_url = product.images?.[0]?.src || null;
     const tn_product_id = String(product.id);
 
-    // Upsert por proveedor_id + tn_product_id para evitar duplicados
+    // Extraer categoría de TN
+    const catRaw = product.categories?.[0];
+    let categoria_tn = null;
+    if (catRaw) {
+      categoria_tn = typeof catRaw.name === 'object'
+        ? (catRaw.name.es || catRaw.name.en || Object.values(catRaw.name)[0] || null)
+        : (catRaw.name || null);
+    }
+    if (categoria_tn) categoriasSet.add(categoria_tn);
+
+    // Aplicar mapa existente; si no hay mapeo previo, default 'Otros'
+    const categoria_principal = categoria_tn && categoriaMap[categoria_tn]
+      ? categoriaMap[categoria_tn]
+      : 'Otros';
+
     const upsertRes = await fetch(
       `${supabaseUrl}/rest/v1/productos`,
       {
@@ -78,7 +94,8 @@ export default async function handler(req, res) {
           precio,
           stock,
           imagen_url,
-          categoria_principal: 'Otros'
+          categoria_tn,
+          categoria_principal
         })
       }
     );
@@ -91,6 +108,7 @@ export default async function handler(req, res) {
     }
   }
 
-  console.log(`[tn-sync] proveedor=${proveedor_id} store=${tn_store_id} importados=${importados}/${products.length}`);
-  return res.status(200).json({ importados, total: products.length });
+  const categorias_tn = [...categoriasSet];
+  console.log(`[tn-sync] proveedor=${proveedor_id} store=${tn_store_id} importados=${importados}/${products.length} categorias=${categorias_tn.join(',')}`);
+  return res.status(200).json({ importados, total: products.length, categorias_tn });
 }

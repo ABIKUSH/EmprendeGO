@@ -1747,5 +1747,24 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 </script>
+
+<!-- ===== MODAL MAPEO CATEGORÍAS TIENDA NUBE ===== -->
+<div class="modal-overlay" id="tnMapeoModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="max-height:85vh">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800">¿A qué categorías pertenecen tus productos?</span>
+      <button class="modal-close" onclick="document.getElementById('tnMapeoModal').classList.remove('open')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:12px 20px 0">
+      <p style="font-size:.78rem;color:#777;margin-bottom:16px;line-height:1.5">Mapeá cada categoría de tu Tienda Nube a las de EmprendeGO. Lo recordamos para futuras sincronizaciones.</p>
+      <div id="tn-mapeo-list" style="display:flex;flex-direction:column;gap:12px"></div>
+    </div>
+    <div style="padding:16px 20px 28px">
+      <button onclick="confirmarMapeoTN(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Confirmar categorías</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
