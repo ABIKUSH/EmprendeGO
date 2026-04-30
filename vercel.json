@@ -1,4 +1,7 @@
 {
+  "rewrites": [
+    { "source": "/api/tiendanube-callback", "destination": "/api/tiendanube-callback" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

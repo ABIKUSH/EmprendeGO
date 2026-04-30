@@ -1,4 +1,7 @@
 export default async function handler(req, res) {
+  console.log('[tn-callback] REQUEST RECIBIDA - query:', JSON.stringify(new URL(req.url, 'https://emprendego.com.ar').searchParams.toString()));
+  console.log('[tn-callback] headers host:', req.headers.host);
+
   const { code, state } = req.query;
 
   console.log('[tn-callback] query params recibidos:', { code: code ? '***' : null, state });
