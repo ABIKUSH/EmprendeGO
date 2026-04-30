@@ -2562,7 +2562,8 @@ async function cargarProductosReales() {
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
-        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro'
+        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro',
+        _dbg: console.log('imagen_url producto:', p.nombre, '→', p.imagen_url || '(vacío)') || undefined
       }));
       productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
     }
@@ -2595,9 +2596,9 @@ function cargarMasHomeProductos() {
 function renderHomeProdCard(p) {
   const color = catColors[p.cat] || '#1847C8';
   return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
-    <div class="prod-inicio-img" style="background:${color}18">
-      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : p.emoji}
-      <span class="prod-inicio-badge" style="background:${color}">${escHtml(p.cat)}</span>
+    <div class="prod-img-wrap" style="position:relative">
+      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      <span class="prod-inicio-badge" style="position:absolute;top:7px;left:7px;background:${color}">${escHtml(p.cat)}</span>
     </div>
     <div class="prod-inicio-body">
       <div class="prod-inicio-name">${escHtml(p.nombre)}</div>
@@ -2608,11 +2609,10 @@ function renderHomeProdCard(p) {
 }
 
 function renderProdBuscarCard(p) {
-  const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
-    : `<div class="prod-img-ph">${SVG_BOX}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
-    <div class="prod-img-wrap">${img}</div>
+    <div class="prod-img-wrap">
+      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+    </div>
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
       <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
@@ -2683,9 +2683,7 @@ function _drawBuscarGrid(el) {
   el.innerHTML = slice.map(p => `
     <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
       <div class="prod-img-wrap">
-        ${p.imgUrl
-          ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
-          : `<div class="prod-img-ph">${SVG_BOX}</div>`}
+        ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div class="body">
         <div class="title">${escHtml(p.nombre)}</div>
@@ -3819,11 +3817,10 @@ function ordenarMisProds(tipo) {
 
 // ===== HOME CAROUSELS =====
 function renderProdCard(p) {
-  const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
-    : `<div class="prod-img-ph">${SVG_BOX}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-    <div class="prod-img-wrap">${img}</div>
+    <div class="prod-img-wrap">
+      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+    </div>
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
       <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
@@ -3852,11 +3849,10 @@ function renderDetCarousels(prodsDetalle) {
   const visibles = prodsDetalle.slice(0, 6);
   const resto = prodsDetalle.length - visibles.length;
   const cards = visibles.map(p => {
-    const img = p.imgUrl
-      ? `<img src="${p.imgUrl}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
-      : `<div class="prod-img-ph">${SVG_BOX}</div>`;
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
-      <div class="prod-img-wrap" style="height:160px">${img}</div>
+      <div class="prod-img-wrap">
+        ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      </div>
       <div style="padding:7px 8px 9px">
         <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.nombre}</div>
         <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
