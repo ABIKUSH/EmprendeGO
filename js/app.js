@@ -285,6 +285,15 @@ document.addEventListener('DOMContentLoaded', () => {
       hideSearchDropdown();
     }
   });
+
+  const tnParam = new URLSearchParams(window.location.search).get('tn');
+  if (tnParam === 'ok') {
+    setTimeout(() => showToast('✅ Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
+    history.replaceState({}, '', window.location.pathname);
+  } else if (tnParam === 'error') {
+    setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
+    history.replaceState({}, '', window.location.pathname);
+  }
 });
 setTimeout(checkReveal, 500);
 
@@ -1564,6 +1573,7 @@ function updatePerfilUI() {
     cargarPedidosRecientes();
     calcularCompletitudPerfil();
     renderBannerProDashboard();
+    renderTiendaNubeSection();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -4095,6 +4105,69 @@ async function iniciarPagoPro(btnEl) {
   }
 }
 
+
+// ===== TIENDA NUBE =====
+function renderTiendaNubeSection() {
+  const pd = currentUser?.provData;
+  const btnArea = document.getElementById('tn-btn-area');
+  const statusLabel = document.getElementById('tn-status-label');
+  if (!btnArea || !statusLabel) return;
+
+  if (pd?.tn_store_id) {
+    statusLabel.textContent = 'Conectada · Store #' + pd.tn_store_id;
+    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">🔄 Sincronizar productos</button>`;
+  } else {
+    statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
+    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">🔗 Conectar mi Tienda Nube</button>`;
+  }
+}
+
+async function conectarTiendaNube(btn) {
+  const proveedorId = currentUser?.provData?.id;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = 'Cargando...';
+  try {
+    const res = await fetch('/api/tiendanube-auth?proveedor_id=' + proveedorId);
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      showToast('No se pudo iniciar la conexión. Intentá más tarde.');
+      btn.disabled = false;
+      btn.textContent = '🔗 Conectar mi Tienda Nube';
+    }
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+    btn.disabled = false;
+    btn.textContent = '🔗 Conectar mi Tienda Nube';
+  }
+}
+
+async function sincronizarTiendaNube(btn) {
+  const proveedorId = currentUser?.provData?.id;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando...';
+  try {
+    const res = await fetch('/api/tiendanube-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proveedor_id: proveedorId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`✅ ${data.importados} productos importados de Tienda Nube`);
+      cargarProductosProveedor();
+    } else {
+      showToast(data.error || 'Error al sincronizar productos.');
+    }
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+  }
+  btn.disabled = false;
+  btn.textContent = '🔄 Sincronizar productos';
+}
 
 function renderBannerProDashboard() {
   const container = document.getElementById('pro-dashboard-banner');
