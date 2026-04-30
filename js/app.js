@@ -4122,26 +4122,12 @@ function renderTiendaNubeSection() {
   }
 }
 
-async function conectarTiendaNube(btn) {
+function conectarTiendaNube(btn) {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   btn.disabled = true;
-  btn.textContent = 'Cargando...';
-  try {
-    const res = await fetch('/api/tiendanube-auth?proveedor_id=' + proveedorId);
-    const data = await res.json();
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      showToast('No se pudo iniciar la conexión. Intentá más tarde.');
-      btn.disabled = false;
-      btn.textContent = '🔗 Conectar mi Tienda Nube';
-    }
-  } catch {
-    showToast('Error de conexión. Intentá más tarde.');
-    btn.disabled = false;
-    btn.textContent = '🔗 Conectar mi Tienda Nube';
-  }
+  btn.textContent = 'Redirigiendo...';
+  window.location.href = '/api/tiendanube-auth?proveedor_id=' + encodeURIComponent(proveedorId);
 }
 
 async function sincronizarTiendaNube(btn) {

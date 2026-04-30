@@ -9,13 +9,13 @@ export default function handler(req, res) {
   if (!appId) return res.status(500).json({ error: 'TN_APP_ID no configurado' });
 
   const callbackUrl = 'https://emprendego.com.ar/api/tiendanube-callback';
-  const state = Buffer.from(JSON.stringify({ proveedor_id: proveedorId })).toString('base64');
 
   const authUrl =
     `https://www.tiendanube.com/apps/${appId}/authorize` +
     `?scope=read_products` +
     `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
-    `&state=${encodeURIComponent(state)}`;
+    `&state=${encodeURIComponent(proveedorId)}`;
 
-  return res.status(200).json({ url: authUrl });
+  console.log('[tn-auth] redirigiendo a:', authUrl);
+  return res.redirect(302, authUrl);
 }

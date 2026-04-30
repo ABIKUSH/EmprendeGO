@@ -7,18 +7,9 @@ export default async function handler(req, res) {
     return res.status(400).send('Parámetros inválidos');
   }
 
-  let proveedorId;
-  let stateDecoded;
-  try {
-    stateDecoded = JSON.parse(Buffer.from(state, 'base64').toString('utf8'));
-    proveedorId = stateDecoded.proveedor_id;
-  } catch (e) {
-    console.error('[tn-callback] error decodificando state:', e.message, 'state raw:', state);
-    return res.status(400).send('State inválido');
-  }
+  const proveedorId = state;
 
-  console.log('[tn-callback] state decodificado:', stateDecoded);
-  console.log('[tn-callback] proveedor_id extraído:', proveedorId, '| tipo:', typeof proveedorId);
+  console.log('[tn-callback] proveedor_id del state:', proveedorId, '| tipo:', typeof proveedorId);
 
   if (!proveedorId) return res.status(400).send('proveedor_id faltante en state');
 
