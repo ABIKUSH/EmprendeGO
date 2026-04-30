@@ -30,6 +30,7 @@ const PROVINCIAS = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Có
 // ===== RUBROS / CATEGORÍAS =====
 const RUBROS_LISTA = ['Tecnología', 'Hogar', 'Moda', 'Bazar', 'Alimentos', 'Salud', 'Deportes', 'Automotor', 'Construcción', 'Servicios', 'Otro'];
 const RUBROS_ICONS = { 'Tecnología': '💻', 'Hogar': '🏠', 'Moda': '👗', 'Bazar': '🛒', 'Alimentos': '🍽', 'Salud': '💊', 'Deportes': '⚽', 'Automotor': '🚗', 'Construcción': '🏗', 'Servicios': '🛠', 'Otro': '📦' };
+const SVG_BOX = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
 const MAX_RUBROS = 7;
 
 // Subcategorías → rubrosprincipales (para búsqueda flexible)
@@ -2581,10 +2582,9 @@ function renderHomeProdCard(p) {
 }
 
 function renderProdBuscarCard(p) {
-  const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
-    : `<div class="prod-img-ph">${emoji}</div>`;
+    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
+    : `<div class="prod-img-ph">${SVG_BOX}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
     <div class="prod-img-wrap">${img}</div>
     <div style="padding:8px 9px 10px">
@@ -3796,10 +3796,9 @@ function ordenarMisProds(tipo) {
 
 // ===== HOME CAROUSELS =====
 function renderProdCard(p) {
-  const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
-    : `<div class="prod-img-ph">${emoji}</div>`;
+    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
+    : `<div class="prod-img-ph">${SVG_BOX}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     <div class="prod-img-wrap">${img}</div>
     <div style="padding:8px 10px">
@@ -3830,10 +3829,9 @@ function renderDetCarousels(prodsDetalle) {
   const visibles = prodsDetalle.slice(0, 6);
   const resto = prodsDetalle.length - visibles.length;
   const cards = visibles.map(p => {
-    const emoji = p.emoji || '📦';
     const img = p.imgUrl
-      ? `<img src="${p.imgUrl}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
-      : `<div class="prod-img-ph">${emoji}</div>`;
+      ? `<img src="${p.imgUrl}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${SVG_BOX}</div>'">`
+      : `<div class="prod-img-ph">${SVG_BOX}</div>`;
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
       <div class="prod-img-wrap" style="height:160px">${img}</div>
       <div style="padding:7px 8px 9px">
@@ -4125,10 +4123,10 @@ async function renderTiendaNubeSection() {
 
   if (tnStoreId) {
     statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
-    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">🔄 Sincronizar productos</button>`;
+    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
     statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
-    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;cursor:pointer">🔗 Conectar mi Tienda Nube</button>`;
+    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#1B74E4;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
   }
 }
 
