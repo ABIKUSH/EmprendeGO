@@ -4123,7 +4123,7 @@ function renderTiendaNubeSection() {
 }
 
 async function conectarTiendaNube(btn) {
-  const proveedorId = currentUser?.provData?.id;
+  const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   btn.disabled = true;
   btn.textContent = 'Cargando...';
@@ -4145,7 +4145,7 @@ async function conectarTiendaNube(btn) {
 }
 
 async function sincronizarTiendaNube(btn) {
-  const proveedorId = currentUser?.provData?.id;
+  const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';

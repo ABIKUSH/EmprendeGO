@@ -68,7 +68,7 @@ export default async function handler(req, res) {
 
   // Verificar que el registro existe antes de hacer PATCH
   const getUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}&select=id`;
-  console.log('[tn-callback] verificando existencia — GET:', getUrl);
+  console.log('[tn-callback] buscando proveedor con id:', proveedorId, '| GET URL:', getUrl);
 
   const getRes = await fetch(getUrl, {
     headers: {
