@@ -1035,9 +1035,12 @@ async function cargarProductosDetalle(proveedorId) {
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
-    const hasta = provActual?.plan_hasta;
-    provDetalleEsPro = provActual?.plan === 'pro' && (!hasta || new Date(hasta + 'T03:00:00Z') > new Date());
+    const hasta = provActual?.plan_hasta ?? null;
+    const esPlanPro = provActual?.plan === 'pro';
+    const hastaValida = hasta != null && new Date(hasta + 'T03:00:00Z') > new Date();
+    provDetalleEsPro = esPlanPro && hastaValida;
     provDetalleLimite = provDetalleEsPro ? undefined : 30;
+    console.log('plan:', provActual?.plan, 'plan_hasta:', hasta, '→ esPro:', provDetalleEsPro);
     let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', { ascending: false });
     if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
