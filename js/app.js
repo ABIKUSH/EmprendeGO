@@ -25,65 +25,65 @@ function haptic(type) {
 }
 
 // ===== PROVINCIAS =====
-const PROVINCIAS = ['Buenos Aires','CABA','Catamarca','Chaco','Chubut','Córdoba','Corrientes','Entre Ríos','Formosa','Jujuy','La Pampa','La Rioja','Mendoza','Misiones','Neuquén','Río Negro','Salta','San Juan','San Luis','Santa Cruz','Santa Fe','Santiago del Estero','Tierra del Fuego','Tucumán'];
+const PROVINCIAS = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
 
 // ===== RUBROS / CATEGORÍAS =====
-const RUBROS_LISTA = ['Tecnología','Hogar','Moda','Bazar','Alimentos','Salud','Deportes','Automotor','Construcción','Servicios','Otro'];
-const RUBROS_ICONS = {'Tecnología':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍽','Salud':'💊','Deportes':'⚽','Automotor':'🚗','Construcción':'🏗','Servicios':'🛠','Otro':'📦'};
+const RUBROS_LISTA = ['Tecnología', 'Hogar', 'Moda', 'Bazar', 'Alimentos', 'Salud', 'Deportes', 'Automotor', 'Construcción', 'Servicios', 'Otro'];
+const RUBROS_ICONS = { 'Tecnología': '💻', 'Hogar': '🏠', 'Moda': '👗', 'Bazar': '🛒', 'Alimentos': '🍽', 'Salud': '💊', 'Deportes': '⚽', 'Automotor': '🚗', 'Construcción': '🏗', 'Servicios': '🛠', 'Otro': '📦' };
 const MAX_RUBROS = 7;
 
 // Subcategorías → rubrosprincipales (para búsqueda flexible)
 const SUBCATEGORIA_MAP = {
-  'ropa de mujer':['Moda','Indumentaria'],'ropa de hombre':['Moda','Indumentaria'],'ropa de bebe':['Moda','Indumentaria'],
-  'ropa de bebe y ninos':['Moda','Indumentaria'],'ropa infantil':['Moda','Indumentaria'],'ropa deportiva':['Moda','Indumentaria','Deportes'],
-  'talles especiales':['Moda','Indumentaria'],'accesorios de moda':['Moda','Indumentaria'],'carteras':['Moda','Indumentaria'],
-  'calzado':['Moda','Indumentaria'],'mochilas':['Moda','Indumentaria'],'marroquineria':['Moda','Indumentaria'],'textil':['Moda','Textiles'],
-  'indumentaria':['Moda','Indumentaria'],'vestimenta':['Moda','Indumentaria'],
-  'sabanas':['Textiles'],'sabana':['Textiles'],'frazada':['Textiles'],'blanqueria':['Textiles','Hogar'],
-  'acolchado':['Textiles'],'toalla':['Textiles'],'mantel':['Textiles'],'tela':['Textiles'],
-  'muebles':['Hogar','Hogar y Deco'],'decoracion':['Hogar','Hogar y Deco'],'deco':['Hogar','Hogar y Deco'],
-  'articulos de cocina':['Hogar','Hogar y Deco'],'limpieza':['Hogar','Hogar y Deco'],'hogar y deco':['Hogar','Hogar y Deco'],
-  'perfumeria':['Salud','Belleza y Salud'],'cosmeticos':['Salud','Belleza y Salud'],'cuidado personal':['Salud','Belleza y Salud'],
-  'suplementos':['Salud','Belleza y Salud'],'nutricion':['Salud','Belleza y Salud'],'belleza':['Salud','Belleza y Salud'],
-  'electronica':['Tecnología'],'celulares':['Tecnología'],'accesorios de celular':['Tecnología'],
-  'computadoras':['Tecnología'],'gadgets':['Tecnología'],
-  'alimentos y bebidas':['Alimentos'],'comida':['Alimentos'],'bebidas':['Alimentos'],
-  'juguetes':['Otro','Otros'],'libreria':['Otro','Bazar'],'papeleria':['Otro','Bazar']
+  'ropa de mujer': ['Moda', 'Indumentaria'], 'ropa de hombre': ['Moda', 'Indumentaria'], 'ropa de bebe': ['Moda', 'Indumentaria'],
+  'ropa de bebe y ninos': ['Moda', 'Indumentaria'], 'ropa infantil': ['Moda', 'Indumentaria'], 'ropa deportiva': ['Moda', 'Indumentaria', 'Deportes'],
+  'talles especiales': ['Moda', 'Indumentaria'], 'accesorios de moda': ['Moda', 'Indumentaria'], 'carteras': ['Moda', 'Indumentaria'],
+  'calzado': ['Moda', 'Indumentaria'], 'mochilas': ['Moda', 'Indumentaria'], 'marroquineria': ['Moda', 'Indumentaria'], 'textil': ['Moda', 'Textiles'],
+  'indumentaria': ['Moda', 'Indumentaria'], 'vestimenta': ['Moda', 'Indumentaria'],
+  'sabanas': ['Textiles'], 'sabana': ['Textiles'], 'frazada': ['Textiles'], 'blanqueria': ['Textiles', 'Hogar'],
+  'acolchado': ['Textiles'], 'toalla': ['Textiles'], 'mantel': ['Textiles'], 'tela': ['Textiles'],
+  'muebles': ['Hogar', 'Hogar y Deco'], 'decoracion': ['Hogar', 'Hogar y Deco'], 'deco': ['Hogar', 'Hogar y Deco'],
+  'articulos de cocina': ['Hogar', 'Hogar y Deco'], 'limpieza': ['Hogar', 'Hogar y Deco'], 'hogar y deco': ['Hogar', 'Hogar y Deco'],
+  'perfumeria': ['Salud', 'Belleza y Salud'], 'cosmeticos': ['Salud', 'Belleza y Salud'], 'cuidado personal': ['Salud', 'Belleza y Salud'],
+  'suplementos': ['Salud', 'Belleza y Salud'], 'nutricion': ['Salud', 'Belleza y Salud'], 'belleza': ['Salud', 'Belleza y Salud'],
+  'electronica': ['Tecnología'], 'celulares': ['Tecnología'], 'accesorios de celular': ['Tecnología'],
+  'computadoras': ['Tecnología'], 'gadgets': ['Tecnología'],
+  'alimentos y bebidas': ['Alimentos'], 'comida': ['Alimentos'], 'bebidas': ['Alimentos'],
+  'juguetes': ['Otro', 'Otros'], 'libreria': ['Otro', 'Bazar'], 'papeleria': ['Otro', 'Bazar']
 };
 
-const CAT_PRINCIPAL = ['Hogar y Deco','Indumentaria','Textiles','Belleza y Salud','Tecnología','Bazar','Alimentos','Deportes','Automotor','Otros'];
+const CAT_PRINCIPAL = ['Hogar y Deco', 'Indumentaria', 'Textiles', 'Belleza y Salud', 'Tecnología', 'Bazar', 'Alimentos', 'Deportes', 'Automotor', 'Otros'];
 
 const CAT_SUBCATS = {
-  'Hogar y Deco':   ['Muebles','Decoración','Cocina','Limpieza','Iluminación'],
-  'Textiles':       ['Sábanas','Blanquería','Frazadas','Acolchados','Toallas','Manteles','Telas'],
-  'Indumentaria':   ['Ropa mujer','Ropa hombre','Ropa bebé','Deportiva','Accesorios de moda'],
-  'Belleza y Salud':['Perfumería','Cuidado personal','Suplementos'],
-  'Tecnología':     ['Electrónica','Accesorios celular','Computación'],
-  'Bazar':          ['Descartables','Papelería','Mayoreo general'],
-  'Alimentos':      ['Secos','Bebidas','Snacks'],
-  'Deportes':       ['Indumentaria deportiva','Equipamiento'],
-  'Automotor':      ['Accesorios','Repuestos'],
-  'Otros':          ['General'],
+  'Hogar y Deco': ['Muebles', 'Decoración', 'Cocina', 'Limpieza', 'Iluminación'],
+  'Textiles': ['Sábanas', 'Blanquería', 'Frazadas', 'Acolchados', 'Toallas', 'Manteles', 'Telas'],
+  'Indumentaria': ['Ropa mujer', 'Ropa hombre', 'Ropa bebé', 'Deportiva', 'Accesorios de moda'],
+  'Belleza y Salud': ['Perfumería', 'Cuidado personal', 'Suplementos'],
+  'Tecnología': ['Electrónica', 'Accesorios celular', 'Computación'],
+  'Bazar': ['Descartables', 'Papelería', 'Mayoreo general'],
+  'Alimentos': ['Secos', 'Bebidas', 'Snacks'],
+  'Deportes': ['Indumentaria deportiva', 'Equipamiento'],
+  'Automotor': ['Accesorios', 'Repuestos'],
+  'Otros': ['General'],
 };
 
 const EXCEL_COL_PATTERNS = {
-  nombre:     ['nombre','titulo','title','producto','articulo','item','name','denominacion'],
-  precio:     ['precio','price','costo','pvp','valor','importe','monto','cost','precio mayorista'],
-  stock:      ['stock','cantidad','cant','qty','disponible','inventario','inventory','existencias'],
-  descripcion:['descripcion','description','detalle','desc','descripcion larga'],
-  categoria:  ['categoria','category','rubro','tipo','categorias','cat','grupo'],
+  nombre: ['nombre', 'titulo', 'title', 'producto', 'articulo', 'item', 'name', 'denominacion'],
+  precio: ['precio', 'price', 'costo', 'pvp', 'valor', 'importe', 'monto', 'cost', 'precio mayorista'],
+  stock: ['stock', 'cantidad', 'cant', 'qty', 'disponible', 'inventario', 'inventory', 'existencias'],
+  descripcion: ['descripcion', 'description', 'detalle', 'desc', 'descripcion larga'],
+  categoria: ['categoria', 'category', 'rubro', 'tipo', 'categorias', 'cat', 'grupo'],
 };
 
 const EXCEL_CAT_MAP_RULES = [
-  { patterns:['sabana','frazada','blanqueria','blanquería','acolchado','toalla','mantel','textil','tela'], cat:'Textiles' },
-  { patterns:['mueble','decorac','cocina','limpieza','iluminac','hogar','deco'], cat:'Hogar y Deco' },
-  { patterns:['ropa','moda','indumentaria','calzado','remera','pantalon','camisa','vestido','jean','liquidac'], cat:'Indumentaria' },
-  { patterns:['perfum','cosmetic','belleza','salud','cuidado','suplement'], cat:'Belleza y Salud' },
-  { patterns:['tecnolog','electr','celular','comput','tablet','notebook'], cat:'Tecnología' },
-  { patterns:['bazar','descartable','papeler','mayoreo'], cat:'Bazar' },
-  { patterns:['aliment','bebida','snack','comida','dulce'], cat:'Alimentos' },
-  { patterns:['deport','gym','fitness'], cat:'Deportes' },
-  { patterns:['auto','moto','repuest','vehicul'], cat:'Automotor' },
+  { patterns: ['sabana', 'frazada', 'blanqueria', 'blanquería', 'acolchado', 'toalla', 'mantel', 'textil', 'tela'], cat: 'Textiles' },
+  { patterns: ['mueble', 'decorac', 'cocina', 'limpieza', 'iluminac', 'hogar', 'deco'], cat: 'Hogar y Deco' },
+  { patterns: ['ropa', 'moda', 'indumentaria', 'calzado', 'remera', 'pantalon', 'camisa', 'vestido', 'jean', 'liquidac'], cat: 'Indumentaria' },
+  { patterns: ['perfum', 'cosmetic', 'belleza', 'salud', 'cuidado', 'suplement'], cat: 'Belleza y Salud' },
+  { patterns: ['tecnolog', 'electr', 'celular', 'comput', 'tablet', 'notebook'], cat: 'Tecnología' },
+  { patterns: ['bazar', 'descartable', 'papeler', 'mayoreo'], cat: 'Bazar' },
+  { patterns: ['aliment', 'bebida', 'snack', 'comida', 'dulce'], cat: 'Alimentos' },
+  { patterns: ['deport', 'gym', 'fitness'], cat: 'Deportes' },
+  { patterns: ['auto', 'moto', 'repuest', 'vehicul'], cat: 'Automotor' },
 ];
 
 function quitarAcentos(s) {
@@ -137,16 +137,16 @@ function matchesQuery(p, q) {
 }
 
 const RUBRO_LEGACY = {
-  'Indumentaria':'Moda','Hogar y Deco':'Hogar','Belleza y Salud':'Salud',
-  'Bolsos y Marroquinería':'Moda','Ropa de mujer':'Moda','Ropa de hombre':'Moda',
-  'Ropa de bebé y niños':'Moda','Talles especiales':'Moda','Ropa deportiva':'Deportes',
-  'Accesorios de moda':'Moda','Blanquería':'Hogar','Muebles y decoración':'Hogar',
-  'Artículos de cocina':'Hogar','Limpieza y hogar':'Hogar','Perfumería y cosméticos':'Salud',
-  'Cuidado personal':'Salud','Suplementos y nutrición':'Salud','Tecnología y electrónica':'Tecnología',
-  'Accesorios de celular':'Tecnología','Carteras y mochilas':'Moda','Calzado':'Moda',
-  'Telas e insumos textiles':'Moda','Juguetes y juegos':'Otro','Librería y papelería':'Otro',
-  'Alimentos y bebidas':'Alimentos','Otros':'Otro','Moda':'Moda','Hogar':'Hogar',
-  'Tecnologia':'Tecnología','Bazar':'Bazar','Alimentos':'Alimentos','Otro':'Otro'
+  'Indumentaria': 'Moda', 'Hogar y Deco': 'Hogar', 'Belleza y Salud': 'Salud',
+  'Bolsos y Marroquinería': 'Moda', 'Ropa de mujer': 'Moda', 'Ropa de hombre': 'Moda',
+  'Ropa de bebé y niños': 'Moda', 'Talles especiales': 'Moda', 'Ropa deportiva': 'Deportes',
+  'Accesorios de moda': 'Moda', 'Blanquería': 'Hogar', 'Muebles y decoración': 'Hogar',
+  'Artículos de cocina': 'Hogar', 'Limpieza y hogar': 'Hogar', 'Perfumería y cosméticos': 'Salud',
+  'Cuidado personal': 'Salud', 'Suplementos y nutrición': 'Salud', 'Tecnología y electrónica': 'Tecnología',
+  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Moda', 'Calzado': 'Moda',
+  'Telas e insumos textiles': 'Moda', 'Juguetes y juegos': 'Otro', 'Librería y papelería': 'Otro',
+  'Alimentos y bebidas': 'Alimentos', 'Otros': 'Otro', 'Moda': 'Moda', 'Hogar': 'Hogar',
+  'Tecnologia': 'Tecnología', 'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Otro': 'Otro'
 };
 
 function matchesCat(rubroStr, cat) {
@@ -167,13 +167,13 @@ function renderRubrosPicker(containerId, preselected = []) {
   el.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px" id="${containerId}-chips">
       ${RUBROS_LISTA.map(r => {
-        const sel = normPre.includes(r);
-        return `<button type="button" data-rubro="${r}"
+    const sel = normPre.includes(r);
+    return `<button type="button" data-rubro="${r}"
           onclick="toggleRubroChip(this,'${containerId}')"
-          style="border:1.5px solid ${sel?'#006039':'#ddd'};background:${sel?'#e6faf4':'white'};color:${sel?'#006039':'#555'};border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:${sel?'700':'500'};cursor:pointer;font-family:inherit;transition:all .15s">
-          ${RUBROS_ICONS[r]||'📦'} ${r}
+          style="border:1.5px solid ${sel ? '#006039' : '#ddd'};background:${sel ? '#e6faf4' : 'white'};color:${sel ? '#006039' : '#555'};border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:${sel ? '700' : '500'};cursor:pointer;font-family:inherit;transition:all .15s">
+          ${RUBROS_ICONS[r] || '📦'} ${r}
         </button>`;
-      }).join('')}
+  }).join('')}
     </div>
     <div style="font-size:.75rem;color:#888" id="${containerId}-counter">${normPre.length}/${MAX_RUBROS} seleccionados</div>`;
 }
@@ -234,7 +234,7 @@ function esPromoActiva() { return false; }
 
 // ===== CONTADOR ANIMADO =====
 function animarContador(el, target, prefix) {
-  if (!el || target === 0) { if(el) el.textContent = '0'; return; }
+  if (!el || target === 0) { if (el) el.textContent = '0'; return; }
   const duration = 1200;
   const start = performance.now();
   function update(now) {
@@ -316,10 +316,10 @@ const MAX_BUSQ_RECIENTES = 5;
 
 // ===== FAVORITOS =====
 let favs = [];
-try { favs = JSON.parse(localStorage.getItem('eg_favs') || '[]'); } catch(e) { favs = []; }
+try { favs = JSON.parse(localStorage.getItem('eg_favs') || '[]'); } catch (e) { favs = []; }
 
 function guardarFavs() {
-  try { localStorage.setItem('eg_favs', JSON.stringify(favs)); } catch(e) {}
+  try { localStorage.setItem('eg_favs', JSON.stringify(favs)); } catch (e) { }
   refreshFavBadge();
 }
 function refreshFavBadge() {
@@ -352,18 +352,18 @@ function renderFavs() {
     el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6B7A99"><div style="font-size:3rem;margin-bottom:12px">❤️</div><p style="font-size:.88rem;line-height:1.6">Todavia no guardaste favoritos.<br>Toca el corazon en cualquier proveedor.</p></div>';
     return;
   }
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
   el.innerHTML = favs.map((p, i) => {
     const pid = String(p.id);
     const bg = bgs[i % bgs.length];
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const avgR = getProvRating(pid).avg.toFixed(1);
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
-        }
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+      }
         <div style="flex:1;min-width:0">
           <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || ''}${p.provincia ? ' · ' + p.provincia : ''}</div>
@@ -378,7 +378,7 @@ function renderFavs() {
       </div>
     </div>`;
   }).join('');
-  el.onclick = function(e) {
+  el.onclick = function (e) {
     const fb = e.target.closest('[data-favid]');
     const card = e.target.closest('[data-id]');
     if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
@@ -389,19 +389,19 @@ function renderFavs() {
 // ===== SUPABASE =====
 async function cargarProveedores() {
   try {
-    const { data, error } = await sb.from('proveedores').select('*').eq('estado','aprobado').order('created_at',{ascending:false});
+    const { data, error } = await sb.from('proveedores').select('*').eq('estado', 'aprobado').order('created_at', { ascending: false });
     if (error) throw error;
     if (data && data.length > 0) {
       proveedoresDB = data.map(p => ({
         id: String(p.id), nombre: p.nombre, rubro: p.rubro || 'General',
         desc: p.descripcion || '', pro: p.plan === 'pro',
-        inicial: p.nombre.substring(0,2).toUpperCase(), whatsapp: p.whatsapp || '',
+        inicial: p.nombre.substring(0, 2).toUpperCase(), whatsapp: p.whatsapp || '',
         provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || ''
       }));
     } else { proveedoresDB = []; }
-  } catch(e) { proveedoresDB = []; }
+  } catch (e) { proveedoresDB = []; }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -413,16 +413,16 @@ async function cargarProveedores() {
 const resenasCache = {};
 
 function renderStarsHTML(rating, size) {
-  const sizes = {sm:'1rem', xs:'.78rem'};
+  const sizes = { sm: '1rem', xs: '.78rem' };
   const s = sizes[size] || '1rem';
-  return [1,2,3,4,5].map(n => `<span style="color:${n<=Math.round(rating)?'#F59E0B':'#d1d5db'};font-size:${s}">★</span>`).join('');
+  return [1, 2, 3, 4, 5].map(n => `<span style="color:${n <= Math.round(rating) ? '#F59E0B' : '#d1d5db'};font-size:${s}">★</span>`).join('');
 }
 
 function calcRatingStats(resenas) {
-  if (!resenas.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
-  const dist = [0,0,0,0,0];
-  resenas.forEach(r => { if(r.rating >= 1 && r.rating <= 5) dist[r.rating-1]++; });
-  const avg = resenas.reduce((s,r) => s + r.rating, 0) / resenas.length;
+  if (!resenas.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
+  const dist = [0, 0, 0, 0, 0];
+  resenas.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
+  const avg = resenas.reduce((s, r) => s + r.rating, 0) / resenas.length;
   return { avg, count: resenas.length, dist };
 }
 
@@ -440,7 +440,7 @@ async function cargarResenas(provId) {
     if (error) throw error;
     resenasCache[pid] = (data || []).map(r => ({ ...r, autor: r.usuario_nombre, rating: r.estrellas, fecha: r.created_at }));
     return resenasCache[pid];
-  } catch(e) {
+  } catch (e) {
     return [];
   }
 }
@@ -449,7 +449,7 @@ async function cargarResenas(provId) {
 function getProvRating(provId) {
   const pid = String(provId);
   const cached = resenasCache[pid];
-  if (!cached || !cached.length) return { avg: 0, count: 0, dist: [0,0,0,0,0] };
+  if (!cached || !cached.length) return { avg: 0, count: 0, dist: [0, 0, 0, 0, 0] };
   return calcRatingStats(cached);
 }
 
@@ -473,14 +473,14 @@ async function renderRatingSummary(provId) {
 
   // Count
   const countEl = document.getElementById('det-rating-count');
-  if (countEl) countEl.textContent = count > 0 ? `${count} reseña${count!==1?'s':''}` : 'Sin reseñas aún';
+  if (countEl) countEl.textContent = count > 0 ? `${count} reseña${count !== 1 ? 's' : ''}` : 'Sin reseñas aún';
 
   // Barras
   const barsEl = document.getElementById('det-rating-bars');
   if (barsEl) {
-    barsEl.innerHTML = [5,4,3,2,1].map(n => {
-      const c = dist[n-1];
-      const pct = count > 0 ? Math.round((c/count)*100) : 0;
+    barsEl.innerHTML = [5, 4, 3, 2, 1].map(n => {
+      const c = dist[n - 1];
+      const pct = count > 0 ? Math.round((c / count) * 100) : 0;
       return `<div class="rating-bar-row">
         <span class="rating-bar-label">${n}</span>
         <div class="rating-bar-track"><div class="rating-bar-fill" style="width:${pct}%"></div></div>
@@ -494,13 +494,13 @@ async function renderRatingSummary(provId) {
     if (!resenas.length) {
       listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Sé el primero en dejar una reseña ✍️</p>';
     } else {
-      listEl.innerHTML = resenas.slice(0,5).map(r => {
+      listEl.innerHTML = resenas.slice(0, 5).map(r => {
         const fechaStr = r.fecha ? timeAgo(new Date(r.fecha)) : 'Reciente';
         return `<div class="resena-card">
           <div class="resena-header">
             <div>
               <div class="resena-autor">${escHtml(r.autor)}</div>
-              <div style="display:flex;gap:2px;margin-top:2px">${renderStarsHTML(r.rating,'xs')}</div>
+              <div style="display:flex;gap:2px;margin-top:2px">${renderStarsHTML(r.rating, 'xs')}</div>
             </div>
             <div class="resena-fecha">${escHtml(fechaStr)}</div>
           </div>
@@ -534,7 +534,7 @@ function closeResenaOnBg(e) { if (e.target === document.getElementById('resenaMo
 
 function setResenaRating(val) {
   resenaRatingActual = val;
-  const labels = ['','Muy malo 😕','Malo 😐','Regular 🙂','Bueno 😊','Excelente 🤩'];
+  const labels = ['', 'Muy malo 😕', 'Malo 😐', 'Regular 🙂', 'Bueno 😊', 'Excelente 🤩'];
   document.getElementById('resena-rating-label').textContent = labels[val] || '';
   document.querySelectorAll('#resenaStars .star').forEach(s => {
     s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
@@ -550,9 +550,9 @@ async function submitResena() {
   const pid = String(provActual.id);
   // Usamos los nombres de columna reales de tu tabla Supabase
   const nuevaResena = {
-    proveedor_id:   pid,
+    proveedor_id: pid,
     usuario_nombre: autor,
-    estrellas:      resenaRatingActual,
+    estrellas: resenaRatingActual,
     texto
   };
 
@@ -565,7 +565,7 @@ async function submitResena() {
     const normalizada = { ...data, autor: data.usuario_nombre, rating: data.estrellas, fecha: data.created_at };
     resenasCache[pid].unshift(normalizada);
     showToast('¡Reseña publicada! Gracias 🙌');
-  } catch(e) {
+  } catch (e) {
     console.error('Error guardando reseña:', e);
     // Fallback local si falla Supabase
     if (!resenasCache[pid]) resenasCache[pid] = [];
@@ -580,7 +580,7 @@ async function submitResena() {
 // ===== NOTIFICACIONES =====
 let notificaciones = [];
 let notifLeidas = new Set();
-try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch(e) {}
+try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch (e) { }
 
 async function initNotificaciones() {
   try {
@@ -608,9 +608,9 @@ async function initNotificaciones() {
     });
 
     if (!notificaciones.length) {
-      notificaciones.push({ id:'n-empty', tipo:'tip', icon:'🔔', titulo:'Sin novedades', texto:'Cuando haya nuevos proveedores te avisamos acá.', tiempo:'' });
+      notificaciones.push({ id: 'n-empty', tipo: 'tip', icon: '🔔', titulo: 'Sin novedades', texto: 'Cuando haya nuevos proveedores te avisamos acá.', tiempo: '' });
     }
-  } catch(e) {
+  } catch (e) {
     notificaciones = [];
   }
 
@@ -624,7 +624,7 @@ function renderNotifPanel() {
   const el = document.getElementById('notifList');
   if (!el) return;
   el.innerHTML = notificaciones.map(n => `
-    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId||''}')">
+    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
       <div class="notif-icon ${n.tipo}">${n.icon}</div>
       <div class="notif-text"><strong>${n.titulo}</strong><span>${n.texto}</span></div>
       <div class="notif-time">${n.tiempo}</div>
@@ -632,7 +632,7 @@ function renderNotifPanel() {
 }
 function onNotifClick(id, provId) {
   notifLeidas.add(id);
-  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch(e) {}
+  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch (e) { }
   document.getElementById('notifDot').classList.remove('show');
   const d2 = document.getElementById('notifDot2');
   if (d2) d2.classList.remove('show');
@@ -654,7 +654,7 @@ function closeNotifPanel() {
 }
 function limpiarNotificaciones() {
   notificaciones.forEach(n => notifLeidas.add(n.id));
-  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch(e) {}
+  try { localStorage.setItem('eg_notif_leidas', JSON.stringify([...notifLeidas])); } catch (e) { }
   document.getElementById('notifDot').classList.remove('show');
   const d2 = document.getElementById('notifDot2');
   if (d2) d2.classList.remove('show');
@@ -705,20 +705,20 @@ function closeComparadorOnBg(e) { if (e.target === document.getElementById('comp
 function renderComparadorModal() {
   const el = document.getElementById('compModalBody');
   if (!el) return;
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED'];
   const campos = [
-    { key:'rubro', label:'Rubro' },
-    { key:'provincia', label:'Provincia' },
-    { key:'pedido_minimo', label:'Pedido mínimo' },
-    { key:'envios', label:'Envíos' },
-    { key:'pro', label:'Plan' },
-    { key:'_rating', label:'Rating' }
+    { key: 'rubro', label: 'Rubro' },
+    { key: 'provincia', label: 'Provincia' },
+    { key: 'pedido_minimo', label: 'Pedido mínimo' },
+    { key: 'envios', label: 'Envíos' },
+    { key: 'pro', label: 'Plan' },
+    { key: '_rating', label: 'Rating' }
   ];
 
   // Headers
   let thead = '<thead><tr><th style="width:90px">Atributo</th>';
-  comparadorList.forEach((p,i) => {
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+  comparadorList.forEach((p, i) => {
+    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     thead += `<th><div class="comp-header-cell">
       <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
       <div class="comp-header-name">${p.nombre}</div>
@@ -764,8 +764,8 @@ function renderComparadorModal() {
 
 // ===== MAPA PROVINCIAS =====
 const provinciaEmojis = {
-  'Buenos Aires':'🌆','CABA':'🏙️','Cordoba':'🏛️','Santa Fe':'🌾',
-  'Mendoza':'🍇','Otra':'📍'
+  'Buenos Aires': '🌆', 'CABA': '🏙️', 'Cordoba': '🏛️', 'Santa Fe': '🌾',
+  'Mendoza': '🍇', 'Otra': '📍'
 };
 
 function getProvsPorProvincia() {
@@ -783,17 +783,17 @@ function renderMapaProvincias() {
   const el = document.getElementById('provinciasGrid');
   if (!el) return;
   const mapa = getProvsPorProvincia();
-  const total = Object.values(mapa).reduce((s,a) => s+a.length, 0);
-  const provincias = Object.keys(mapa).sort((a,b) => mapa[b].length - mapa[a].length);
+  const total = Object.values(mapa).reduce((s, a) => s + a.length, 0);
+  const provincias = Object.keys(mapa).sort((a, b) => mapa[b].length - mapa[a].length);
   el.innerHTML = provincias.map(prov => {
     const count = mapa[prov].length;
-    const pct = Math.round((count/total)*100);
+    const pct = Math.round((count / total) * 100);
     const emoji = provinciaEmojis[prov] || '📍';
     return `<div class="prov-tile" data-prov="${prov}" onclick="filtrarPorProvincia('${prov}')">
       <div style="position:relative;z-index:1">
         <div style="font-size:1.1rem;margin-bottom:3px">${emoji}</div>
         <div class="prov-tile-name">${prov}</div>
-        <div class="prov-tile-count">${count} proveedor${count!==1?'es':''}</div>
+        <div class="prov-tile-count">${count} proveedor${count !== 1 ? 'es' : ''}</div>
       </div>
       <div class="prov-tile-bar" style="width:${pct}%"></div>
     </div>`;
@@ -804,8 +804,8 @@ function renderMapaAllProvs() {
   const el = document.getElementById('mapaAllList');
   if (!el) return;
   const lista = proveedoresDB;
-  el.innerHTML = lista.slice(0,6).map((p,i) => renderProvCardMini(p,i)).join('');
-  el.onclick = function(e) {
+  el.innerHTML = lista.slice(0, 6).map((p, i) => renderProvCardMini(p, i)).join('');
+  el.onclick = function (e) {
     const card = e.target.closest('[data-id]');
     if (card) abrirDetalle(card.dataset.id);
   };
@@ -819,8 +819,8 @@ function filtrarPorProvincia(prov) {
   document.getElementById('mapaAllProvs').style.display = 'none';
   document.getElementById('mapaResultLabel').textContent = `${lista.length} en ${prov}`;
   const el = document.getElementById('mapaProvList');
-  el.innerHTML = lista.map((p,i) => renderProvCardMini(p,i)).join('');
-  el.onclick = function(e) {
+  el.innerHTML = lista.map((p, i) => renderProvCardMini(p, i)).join('');
+  el.onclick = function (e) {
     const card = e.target.closest('[data-id]');
     if (card) abrirDetalle(card.dataset.id);
   };
@@ -833,24 +833,24 @@ function clearMapaFilter() {
 }
 
 function renderProvCardMini(p, i) {
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
   const bg = bgs[i % bgs.length];
-  const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+  const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   const { avg, count } = getProvRating(p.id);
   return `<div data-id="${p.id}" style="background:white;border-radius:14px;border:1px solid var(--border);padding:13px;cursor:pointer;display:flex;align-items:center;gap:12px">
     <div style="width:42px;height:42px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>
     <div style="flex:1;min-width:0">
       <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.nombre}</div>
       <div style="font-size:.73rem;color:var(--gray)">${p.rubro}${p.provincia ? ' · ' + p.provincia : ''}</div>
-      ${count > 0 ? `<div style="font-size:.7rem;color:var(--yellow);margin-top:2px;font-weight:700">${avg.toFixed(1)} ★ · ${count} reseña${count!==1?'s':''}</div>` : ''}
+      ${count > 0 ? `<div style="font-size:.7rem;color:var(--yellow);margin-top:2px;font-weight:700">${avg.toFixed(1)} ★ · ${count} reseña${count !== 1 ? 's' : ''}</div>` : ''}
     </div>
     ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:3px 8px;border-radius:10px;flex-shrink:0;letter-spacing:.04em">PRO</span>' : ''}
   </div>`;
 }
 
 // ===== SKELETON LOADERS =====
-function skelProv(n=4) {
-  return Array.from({length:n}).map(()=>`
+function skelProv(n = 4) {
+  return Array.from({ length: n }).map(() => `
     <div style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;padding:14px">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
         <div class="skel" style="width:44px;height:44px;border-radius:11px;flex-shrink:0"></div>
@@ -863,8 +863,8 @@ function skelProv(n=4) {
       <div class="skel" style="height:10px;width:74%"></div>
     </div>`).join('');
 }
-function skelCarousel(n=5) {
-  return Array.from({length:n}).map(()=>`
+function skelCarousel(n = 5) {
+  return Array.from({ length: n }).map(() => `
     <div style="flex-shrink:0;width:140px;background:white;border-radius:14px;overflow:hidden;border:1px solid #eee">
       <div class="skel" style="width:140px;height:120px;border-radius:0"></div>
       <div style="padding:9px">
@@ -873,8 +873,8 @@ function skelCarousel(n=5) {
       </div>
     </div>`).join('');
 }
-function skelProvHoriz(n=5) {
-  return Array.from({length:n}).map(()=>`
+function skelProvHoriz(n = 5) {
+  return Array.from({ length: n }).map(() => `
     <div style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:9px">
       <div class="skel" style="width:48px;height:48px;border-radius:12px"></div>
       <div class="skel" style="height:11px;width:80%"></div>
@@ -901,20 +901,20 @@ function renderProvs(list) {
     </div>`;
     return;
   }
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
   el.innerHTML = list.map((p, i) => {
     const pid = String(p.id);
     const fav = esFav(pid);
     const bg = bgs[i % bgs.length];
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const { avg, count } = getProvRating(pid);
     const enComp = comparadorList.some(x => String(x.id) === pid);
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-          ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
-        }
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
+      }
         <div style="flex:1;min-width:0">
           <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
@@ -930,25 +930,25 @@ function renderProvs(list) {
         </div>
         <div class="prov-card-actions">
           ${p.pro
-            ? `<button data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${escHtml(p.nombre||'')}" data-rubro="${escHtml(p.rubro||'')}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
-            : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
+        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
+        : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
         </div>
       </div>
     </div>`;
   }).join('');
-  el.onclick = function(e) {
-    const fb   = e.target.closest('[data-favid]');
-    const wb   = e.target.closest('[data-wa]');
-    const cb   = e.target.closest('[data-chatid]');
-    const compb= e.target.closest('[data-compid]');
+  el.onclick = function (e) {
+    const fb = e.target.closest('[data-favid]');
+    const wb = e.target.closest('[data-wa]');
+    const cb = e.target.closest('[data-chatid]');
+    const compb = e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
-    if (fb)    { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb)    { e.stopPropagation(); abrirWA(wb.dataset.wa, mensajeWAProv({nombre:wb.dataset.nombre,rubro:wb.dataset.rubro})); return; }
-    if (cb)    { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
+    if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
+    if (wb) { e.stopPropagation(); abrirWA(wb.dataset.wa, mensajeWAProv({ nombre: wb.dataset.nombre, rubro: wb.dataset.rubro })); return; }
+    if (cb) { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
     if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
-    if (card)  abrirDetalle(card.dataset.id);
+    if (card) abrirDetalle(card.dataset.id);
   };
 }
 
@@ -967,16 +967,16 @@ function toggleCompararById(id) {
 }
 
 function filterProvs() {
-  const q     = document.getElementById('searchInput')?.value.toLowerCase() || '';
-  const prov  = document.getElementById('fil-prov')?.value || '';
-  const plan  = document.getElementById('fil-plan')?.value || '';
+  const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  const prov = document.getElementById('fil-prov')?.value || '';
+  const plan = document.getElementById('fil-plan')?.value || '';
   const orden = document.getElementById('fil-orden')?.value || '';
   const rubroFil = document.getElementById('fil-rubro')?.value || '';
   const lista = proveedoresDB;
   let result = lista.filter(p => {
-    const mc  = matchesCat(p.rubro, currentCat);
-    const mq  = matchesQuery(p, q);
-    const mp  = !prov || quitarAcentos(p.provincia || '') === quitarAcentos(prov);
+    const mc = matchesCat(p.rubro, currentCat);
+    const mq = matchesQuery(p, q);
+    const mp = !prov || quitarAcentos(p.provincia || '') === quitarAcentos(prov);
     const mpl = !plan || (plan === 'pro' ? p.plan === 'pro' : p.plan !== 'pro');
     const mrb = !rubroFil || matchesCat(p.rubro, rubroFil);
     return mc && mq && mp && mpl && mrb;
@@ -984,7 +984,7 @@ function filterProvs() {
   if (orden === 'rating') {
     result = result.slice().sort((a, b) => getProvRating(String(b.id)).avg - getProvRating(String(a.id)).avg);
   } else if (orden === 'minimo') {
-    const num = s => parseInt((s||'').replace(/[^0-9]/g,'')) || 999999;
+    const num = s => parseInt((s || '').replace(/[^0-9]/g, '')) || 999999;
     result = result.slice().sort((a, b) => num(a.pedido_minimo) - num(b.pedido_minimo));
   } else if (orden === 'nuevo') {
     result = result.slice().sort((a, b) => String(b.id).localeCompare(String(a.id)));
@@ -1028,80 +1028,84 @@ function mensajeWAProd(prod, prov) {
   return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
 }
 
-async function cargarProductosDetalle(proveedorId, mostrarTodos) {
-  if (mostrarTodos) provDetalleMostrarTodos = true;
+async function cargarProductosDetalle(proveedorId) {
+  provDetalleData = [];
+  provDetalleOffset = 0;
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
   el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
-    const esPro = provActual?.plan === 'pro';
-    const limitePublico = esPro ? undefined : 30;
-    let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', {ascending:false});
-    if (limitePublico) q = q.limit(limitePublico);
+    const hasta = provActual?.plan_hasta;
+    provDetalleEsPro = provActual?.plan === 'pro' && (!hasta || new Date(hasta + 'T03:00:00Z') > new Date());
+    provDetalleLimite = provDetalleEsPro ? undefined : 30;
+    let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', { ascending: false });
+    if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
     if (error || !data || !data.length) {
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
       return;
     }
-    const iconM = {'Tecnologia':'📱','Tecnología':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};
-    const bgsColores = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
-    // Agregar productos al listado global para que sean clickeables
+    const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
     data.forEach((p, i) => {
       const existente = productosReales.find(x => x.idReal == p.id);
       if (!existente) {
         productosReales.push({
-          id: 'real_' + p.id,
-          idReal: p.id,
-          nombre: p.nombre,
-          precio: p.precio || 0,
+          id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
           pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
-          cat: p.categoria || 'General',
-          emoji: getEmojiCat(p.categoria),
-          provId: String(p.proveedor_id),
-          provNombre: provActual?.nombre || 'Proveedor',
+          cat: p.categoria_principal || p.categoria || 'General',
+          emoji: getEmojiCat(p.categoria_principal || p.categoria),
+          provId: String(p.proveedor_id), provNombre: provActual?.nombre || 'Proveedor',
           provRubro: (provActual?.rubro || '') + (provActual?.provincia ? ' · ' + provActual.provincia : ''),
-          provColor: bgsColores[i % bgsColores.length],
-          imgUrl: p.imagen_url || '',
-          whatsapp: provActual?.whatsapp || '',
-         esPro: provActual?.plan?.toLowerCase() === 'pro'
+          provColor: bgsColores[i % bgsColores.length], imgUrl: p.imagen_url || '',
+          whatsapp: provActual?.whatsapp || '', esPro: provDetalleEsPro
         });
       }
     });
-    const limite = provDetalleMostrarTodos ? data.length : Math.min(data.length, 40);
-    const resto = data.length - limite;
-    el.style.cssText = '';
-    const cards = data.slice(0, limite).map((p, i) => {
-      const prodId = 'real_' + p.id;
-      const emoji = iconM[p.categoria] || '📦';
-      const imgHtml = p.imagen_url
-        ? `<img src="${escHtml(p.imagen_url)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
-        : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${bgsColores[i%bgsColores.length]}12">${emoji}</div>`;
-      return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
-        ${imgHtml}
-        <div style="padding:8px 9px 10px">
-          <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
-          <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:4px">$${Number(p.precio||0).toLocaleString('es-AR')}</div>
-          <div style="font-size:.62rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Consultar'}</div>
-        </div>
-      </div>`;
-    }).join('');
-    let notaLimite = '';
-    if (!esPro && data.length === limitePublico) {
-      const { count: totalReal } = await sb.from('productos').select('*', {count:'exact',head:true}).eq('proveedor_id', proveedorId);
-      if (totalReal && totalReal > limitePublico) {
-        notaLimite = `<div style="text-align:center;padding:10px;font-size:.75rem;color:var(--gray);background:#f8fafc;border-radius:10px;margin-top:8px">Mostrando 30 de ${totalReal} productos. Este proveedor tiene más en su catálogo completo.</div>`;
-      }
-    }
-    el.innerHTML = `
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto>0||notaLimite)?'12px':'0'}">
-        ${cards}
-      </div>
-      ${resto > 0 ? `<button onclick="provDetalleMostrarTodos=true;cargarProductosDetalle('${proveedorId}')" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${resto} producto${resto>1?'s':''} más →</button>` : ''}
-      ${notaLimite}
-    `;
-  } catch(e) {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
+    provDetalleData = data;
+    await renderDetalleProductos(proveedorId);
+  } catch (e) {
+    const el2 = document.getElementById('det-productos-carousels');
+    if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
   }
+}
+
+async function renderDetalleProductos(proveedorId) {
+  const el = document.getElementById('det-productos-carousels');
+  if (!el) return;
+  const data = provDetalleData;
+  const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  const slice = data.slice(0, (provDetalleOffset + 1) * DETALLE_PAGE_SIZE);
+  const resto = data.length - slice.length;
+  el.style.cssText = '';
+  const cards = slice.map((p, i) => {
+    const prodId = 'real_' + p.id;
+    const emoji = getEmojiCat(p.categoria_principal || p.categoria);
+    const imgHtml = p.imagen_url
+      ? `<img src="${escHtml(p.imagen_url)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
+      : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${bgsColores[i % bgsColores.length]}12">${emoji}</div>`;
+    return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
+      ${imgHtml}
+      <div style="padding:8px 9px 10px">
+        <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
+        <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:4px">$${Number(p.precio || 0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.62rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Consultar'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  let notaLimite = '';
+  if (!provDetalleEsPro && data.length === provDetalleLimite) {
+    const { count: totalReal } = await sb.from('productos').select('*', { count: 'exact', head: true }).eq('proveedor_id', proveedorId);
+    if (totalReal && totalReal > provDetalleLimite) {
+      notaLimite = `<div style="text-align:center;padding:10px;font-size:.75rem;color:var(--gray);background:#f8fafc;border-radius:10px;margin-top:8px">Mostrando 30 de ${totalReal} productos. Este proveedor tiene más en su catálogo completo.</div>`;
+    }
+  }
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite) ? '12px' : '0'}">
+      ${cards}
+    </div>
+    ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
+    ${notaLimite}
+  `;
 }
 
 // ===== DETALLE PROVEEDOR =====
@@ -1135,7 +1139,7 @@ function abrirDetalle(id) {
   addToHistorial(p);
 
   const detLogoEl = document.getElementById('det-logo');
-  const detIni = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
+  const detIni = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   if (p.logo_url) {
     detLogoEl.innerHTML = `<img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
@@ -1147,17 +1151,17 @@ function abrirDetalle(id) {
     `<span style="display:inline-block;background:#f0f4ff;color:#1847C8;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700;margin:2px 2px">${escHtml(r)}</span>`
   ).join('');
   document.getElementById('det-rubro').innerHTML = rubrosHtml + (p.provincia ? `<span style="display:inline-block;color:var(--gray);font-size:.72rem;margin:2px 4px">· ${escHtml(p.provincia)}</span>` : '');
-  document.getElementById('det-desc').textContent     = p.desc || p.descripcion || 'Sin descripcion.';
-  document.getElementById('det-minimo').textContent   = p.pedido_minimo || 'Sin minimo';
-  document.getElementById('det-envios').textContent   = p.envios || 'Consultar';
+  document.getElementById('det-desc').textContent = p.desc || p.descripcion || 'Sin descripcion.';
+  document.getElementById('det-minimo').textContent = p.pedido_minimo || 'Sin minimo';
+  document.getElementById('det-envios').textContent = p.envios || 'Consultar';
   document.getElementById('det-provincia').textContent = p.provincia || '-';
   document.getElementById('det-instagram').textContent = p.instagram || '-';
   document.getElementById('det-pro-badge').style.display = p.pro ? 'inline-flex' : 'none';
-  document.getElementById('det-fav-btn').textContent  = esFav(p.id) ? '❤️' : '♡';
+  document.getElementById('det-fav-btn').textContent = esFav(p.id) ? '❤️' : '♡';
   document.getElementById('det-wa-btn').style.display = (p.pro && p.whatsapp) ? 'flex' : 'none';
 
   // Reset calc
-  ['calc-costo','calc-venta','calc-cantidad'].forEach(id => { const e = document.getElementById(id); if(e) e.value=''; });
+  ['calc-costo', 'calc-venta', 'calc-cantidad'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cr = document.getElementById('calc-result');
   if (cr) cr.style.display = 'none';
 
@@ -1167,8 +1171,8 @@ function abrirDetalle(id) {
   // Comp button
   updateDetCompBtn();
 
-  try { sb.from('busquedas').insert({termino: p.nombre}); } catch(e) {}
-  try { sb.from('proveedores').update({ visitas: (parseInt(p.visitas)||0) + 1 }).eq('id', p.id); } catch(e) {}
+  try { sb.from('busquedas').insert({ termino: p.nombre }); } catch (e) { }
+  try { sb.from('proveedores').update({ visitas: (parseInt(p.visitas) || 0) + 1 }).eq('id', p.id); } catch (e) { }
   cargarProductosDetalle(p.id);
   goTo('detalle');
 }
@@ -1183,14 +1187,14 @@ function calcGanancia() {
   const venta = parseFloat(document.getElementById('calc-venta').value);
   const cantidad = parseFloat(document.getElementById('calc-cantidad').value);
   const resEl = document.getElementById('calc-result');
-  if (!costo || !venta || !cantidad || costo<=0 || venta<=0 || cantidad<=0) { if(resEl) resEl.style.display='none'; return; }
-  const inv = costo*cantidad, tot = venta*cantidad, gan = tot-inv;
-  const mrg = ((gan/inv)*100).toFixed(0);
-  document.getElementById('calc-inv').textContent = '$'+inv.toLocaleString('es-AR');
-  document.getElementById('calc-gan').textContent = '$'+gan.toLocaleString('es-AR');
-  document.getElementById('calc-mrg').textContent = mrg+'%';
-  document.getElementById('calc-tot').textContent = '$'+tot.toLocaleString('es-AR');
-  if(resEl) resEl.style.display='grid';
+  if (!costo || !venta || !cantidad || costo <= 0 || venta <= 0 || cantidad <= 0) { if (resEl) resEl.style.display = 'none'; return; }
+  const inv = costo * cantidad, tot = venta * cantidad, gan = tot - inv;
+  const mrg = ((gan / inv) * 100).toFixed(0);
+  document.getElementById('calc-inv').textContent = '$' + inv.toLocaleString('es-AR');
+  document.getElementById('calc-gan').textContent = '$' + gan.toLocaleString('es-AR');
+  document.getElementById('calc-mrg').textContent = mrg + '%';
+  document.getElementById('calc-tot').textContent = '$' + tot.toLocaleString('es-AR');
+  if (resEl) resEl.style.display = 'grid';
 }
 
 // ===== CHAT =====
@@ -1207,13 +1211,13 @@ async function abrirChatDirecto(id) {
     try {
       const { data } = await sb.from('proveedores').select('*').eq('id', id).maybeSingle();
       if (data) { p = data; proveedoresDB.push(data); }
-    } catch(e) {}
+    } catch (e) { }
   }
   if (!p) { showToast('Proveedor no disponible'); return; }
 
   provActual = p;
   document.getElementById('chat-nombre').textContent = p.nombre;
-  document.getElementById('chat-rubro').textContent  = p.rubro || 'Proveedor';
+  document.getElementById('chat-rubro').textContent = p.rubro || 'Proveedor';
 
   chatMsgs = [];
   renderChat();
@@ -1229,19 +1233,19 @@ async function abrirChatDirecto(id) {
 
     if (data && data.length) {
       chatMsgs = data.map(m => ({
-        tipo:   m.de_tipo === 'proveedor' ? 'recv' : 'sent',
-        texto:  m.texto,
-        hora:   m.created_at ? timeAgo(new Date(m.created_at)) : '',
-        dbId:   m.id,
+        tipo: m.de_tipo === 'proveedor' ? 'recv' : 'sent',
+        texto: m.texto,
+        hora: m.created_at ? timeAgo(new Date(m.created_at)) : '',
+        dbId: m.id,
         nombre: m.de_tipo === 'proveedor' ? p.nombre : null
       }));
       renderChat();
     } else {
-      chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
+      chatMsgs = [{ tipo: 'recv', texto: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', hora: '', nombre: p.nombre }];
       renderChat();
     }
-  } catch(e) {
-    chatMsgs = [{ tipo:'recv', texto:'Hola! Soy '+p.nombre+'. En que te puedo ayudar?', hora:'', nombre: p.nombre }];
+  } catch (e) {
+    chatMsgs = [{ tipo: 'recv', texto: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', hora: '', nombre: p.nombre }];
     renderChat();
   }
 
@@ -1310,16 +1314,16 @@ async function cargarMensajesUsuario() {
       const prov = provsInfo[c.provId];
       const nombre = prov?.nombre || 'Proveedor';
       const rubro = prov?.rubro || '';
-      const ini = nombre.substring(0,2).toUpperCase();
+      const ini = nombre.substring(0, 2).toUpperCase();
       const lastMsg = c.lastMsg;
-      const preview = (lastMsg.texto || '').replace(/\n/g,' ').substring(0,55) + ((lastMsg.texto||'').length > 55 ? '…' : '');
+      const preview = (lastMsg.texto || '').replace(/\n/g, ' ').substring(0, 55) + ((lastMsg.texto || '').length > 55 ? '…' : '');
       const tiempo = timeAgo(new Date(lastMsg.created_at));
       const esRecibido = lastMsg.de_tipo === 'proveedor';
       return `<div class="conv-item" onclick="abrirChatDirecto('${escHtml(c.provId)}')" style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer">
         <div style="width:46px;height:46px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:#006039;flex-shrink:0">${escHtml(ini)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:.9rem;color:#111;margin-bottom:2px">${escHtml(nombre)}</div>
-          <div style="font-size:.75rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esRecibido?'→ ':''} ${escHtml(preview)}</div>
+          <div style="font-size:.75rem;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esRecibido ? '→ ' : ''} ${escHtml(preview)}</div>
         </div>
         <div style="flex-shrink:0;text-align:right">
           <div style="font-size:.7rem;color:#bbb">${escHtml(tiempo)}</div>
@@ -1327,18 +1331,18 @@ async function cargarMensajesUsuario() {
       </div>`;
     }).join('');
 
-  } catch(e) {
+  } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:.85rem">Error al cargar mensajes.</div>';
   }
 }
 
-function getHora() { return new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'}); }
+function getHora() { return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
 function renderChat() {
   const el = document.getElementById('chat-msgs');
   if (!el) return;
   el.innerHTML = chatMsgs.map(m => {
     const nombre = m.tipo === 'recv' && m.nombre ? '<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">' + escHtml(m.nombre) + '</div>' : '';
-    return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + escHtml(m.texto||'').replace(/\n/g,'<br>') + '<div class="chat-msg-time">' + escHtml(m.hora) + '</div></div></div>';
+    return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + escHtml(m.texto || '').replace(/\n/g, '<br>') + '<div class="chat-msg-time">' + escHtml(m.hora) + '</div></div></div>';
   }).join('');
   el.scrollTop = el.scrollHeight;
 }
@@ -1366,7 +1370,7 @@ function iniciarChatPolling(provId) {
         }));
         renderChat();
       }
-    } catch(e) {}
+    } catch (e) { }
   }, 8000);
 }
 
@@ -1385,7 +1389,7 @@ async function sendMsg() {
   const txt = inp.value.trim();
   if (!txt) return;
   inp.value = '';
-  chatMsgs.push({tipo:'sent',texto:txt,hora:getHora()});
+  chatMsgs.push({ tipo: 'sent', texto: txt, hora: getHora() });
   renderChat();
 
   // Guardar en Supabase
@@ -1399,7 +1403,7 @@ async function sendMsg() {
         texto: txt,
         leido: false
       });
-    } catch(e) {}
+    } catch (e) { }
   }
 
 }
@@ -1407,9 +1411,9 @@ async function sendMsg() {
 // ===== AUTH =====
 async function simulateGoogleLogin() {
   try {
-    const { data, error } = await sb.auth.signInWithOAuth({ provider:'google', options:{ redirectTo: window.location.origin } });
+    const { data, error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     if (error) throw error;
-  } catch(e) { showToast('Error al iniciar sesion. Intenta de nuevo.'); }
+  } catch (e) { showToast('Error al iniciar sesion. Intenta de nuevo.'); }
 }
 async function checkSession() {
   try {
@@ -1432,13 +1436,13 @@ async function checkSession() {
             // plan_hasta kept intentionally so verificarExpiracionPlan can detect the expired date
           }
         }
-        handleLogin({name:prov.nombre||name,email,picture,type:'proveedor',proveedorId:prov.id,provData:prov});
+        handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
         verificarExpiracionPlan(prov);
       } else {
-        handleLogin({name,email,picture,type:'user'});
+        handleLogin({ name, email, picture, type: 'user' });
       }
     }
-  } catch(e) {}
+  } catch (e) { }
 }
 function handleLogin(user) {
   currentUser = user;
@@ -1475,7 +1479,7 @@ function mostrarAvisoPlanProximo(fechaVence) {
 }
 function logout() {
   currentUser = null; historial = [];
-  try { localStorage.removeItem('eg_historial'); } catch(e) {}
+  try { localStorage.removeItem('eg_historial'); } catch (e) { }
   document.getElementById('perfil-login').style.display = 'block';
   document.getElementById('perfil-user').style.display = 'none';
   document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1537,18 +1541,18 @@ function updatePerfilUI() {
     document.getElementById('perfil-user').style.display = 'none';
     document.getElementById('perfil-proveedor').style.display = 'block';
     document.getElementById('dash-nombre').textContent = currentUser.name;
-    document.getElementById('dash-avatar-initials').textContent = currentUser.name.substring(0,2).toUpperCase();
+    document.getElementById('dash-avatar-initials').textContent = currentUser.name.substring(0, 2).toUpperCase();
     if (currentUser.provData) {
       const pd = currentUser.provData;
       const rl = document.getElementById('dash-rubro-label');
-      if (rl) rl.textContent = (pd.rubro||'Rubro') + ' · ' + (pd.provincia||'Argentina');
-      const en = document.getElementById('edit-nombre'); if(en) en.value = pd.nombre||'';
-      const ed = document.getElementById('edit-desc'); if(ed) ed.value = pd.descripcion||'';
-      const ewa = document.getElementById('edit-wa'); if(ewa) ewa.value = pd.whatsapp||'';
-      const eig = document.getElementById('edit-instagram'); if(eig) eig.value = pd.instagram||'';
+      if (rl) rl.textContent = (pd.rubro || 'Rubro') + ' · ' + (pd.provincia || 'Argentina');
+      const en = document.getElementById('edit-nombre'); if (en) en.value = pd.nombre || '';
+      const ed = document.getElementById('edit-desc'); if (ed) ed.value = pd.descripcion || '';
+      const ewa = document.getElementById('edit-wa'); if (ewa) ewa.value = pd.whatsapp || '';
+      const eig = document.getElementById('edit-instagram'); if (eig) eig.value = pd.instagram || '';
       if (pd.logo_url) {
-        const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = pd.logo_url; prev.style.display = 'block'; }
-        const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+        const prev = document.getElementById('edit-logo-preview'); if (prev) { prev.src = pd.logo_url; prev.style.display = 'block'; }
+        const ph = document.getElementById('edit-logo-ph'); if (ph) ph.style.display = 'none';
       }
     }
     cargarProductosProveedor();
@@ -1575,7 +1579,7 @@ function updatePerfilUI() {
     document.getElementById('perfil-proveedor').style.display = 'none';
     document.getElementById('user-display-name').textContent = currentUser.name;
     document.getElementById('user-display-email').textContent = currentUser.email;
-    document.getElementById('user-avatar-placeholder').textContent = currentUser.name.substring(0,1).toUpperCase();
+    document.getElementById('user-avatar-placeholder').textContent = currentUser.name.substring(0, 1).toUpperCase();
     if (currentUser.picture) {
       const img = document.getElementById('user-avatar-img');
       img.src = currentUser.picture; img.style.display = 'block';
@@ -1590,13 +1594,13 @@ function calcularCompletitudPerfil() {
   if (!currentUser?.provData) return;
   const pd = currentUser.provData;
   const checks = [
-    { ok: !!(pd.nombre && pd.nombre.length > 2),         tip: 'nombre del negocio' },
+    { ok: !!(pd.nombre && pd.nombre.length > 2), tip: 'nombre del negocio' },
     { ok: !!(pd.descripcion && pd.descripcion.length > 10), tip: 'descripción' },
-    { ok: !!(pd.whatsapp && pd.whatsapp.length > 6),     tip: 'WhatsApp' },
-    { ok: !!(pd.rubro && pd.rubro !== 'General'),         tip: 'rubro' },
-    { ok: !!(pd.provincia && pd.provincia.length > 1),   tip: 'provincia' },
-    { ok: !!(pd.logo_url && pd.logo_url.length > 5),     tip: 'foto/logo' },
-    { ok: !!(pd.instagram && pd.instagram.length > 1),   tip: 'Instagram' },
+    { ok: !!(pd.whatsapp && pd.whatsapp.length > 6), tip: 'WhatsApp' },
+    { ok: !!(pd.rubro && pd.rubro !== 'General'), tip: 'rubro' },
+    { ok: !!(pd.provincia && pd.provincia.length > 1), tip: 'provincia' },
+    { ok: !!(pd.logo_url && pd.logo_url.length > 5), tip: 'foto/logo' },
+    { ok: !!(pd.instagram && pd.instagram.length > 1), tip: 'Instagram' },
     { ok: !!(pd.pedido_minimo && pd.pedido_minimo !== 'Sin minimo'), tip: 'pedido mínimo' },
   ];
   const completados = checks.filter(c => c.ok).length;
@@ -1631,7 +1635,7 @@ function abrirEditarPerfil() {
   if (!tab) return;
   tab.style.display = tab.style.display === 'none' ? 'block' : 'none';
   if (tab.style.display === 'block') {
-    const preselected = (currentUser?.provData?.rubro||'').split(',').map(r=>r.trim()).filter(Boolean);
+    const preselected = (currentUser?.provData?.rubro || '').split(',').map(r => r.trim()).filter(Boolean);
     renderRubrosPicker('edit-rubros-picker', preselected);
     tab.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -1655,11 +1659,11 @@ async function cargarStatsDashboard() {
     const noLeidos = msgs ? msgs.filter(m => !m.leido).length : 0;
     const elNew = document.getElementById('dash-msgs-new');
     if (elNew && noLeidos > 0) { elNew.style.display = 'inline'; elNew.textContent = noLeidos + ' New'; }
-  } catch(e) {}
+  } catch (e) { }
 }
 // ===== HISTORIAL =====
 function guardarHistorialLocal() {
-  try { localStorage.setItem('eg_historial', JSON.stringify(historial)); } catch(e) {}
+  try { localStorage.setItem('eg_historial', JSON.stringify(historial)); } catch (e) { }
 }
 function cargarHistorialLocal(userId) {
   try {
@@ -1667,14 +1671,14 @@ function cargarHistorialLocal(userId) {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) historial = parsed;
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function addToHistorial(proveedor) {
   if (!currentUser || currentUser.type !== 'user') return;
   historial = historial.filter(h => h.id !== proveedor.id);
-  historial.unshift({...proveedor, visitedAt: new Date()});
-  if (historial.length > 10) historial = historial.slice(0,10);
+  historial.unshift({ ...proveedor, visitedAt: new Date() });
+  if (historial.length > 10) historial = historial.slice(0, 10);
   guardarHistorialLocal();
 }
 
@@ -1683,30 +1687,30 @@ async function cargarHistorial() {
   if (!historial.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>';
   } else {
-    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E','#C2410C'];
+    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
     const grupos = {};
     historial.forEach(p => {
       const d = new Date(p.visitedAt);
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-      const ayer = new Date(hoy); ayer.setDate(ayer.getDate()-1);
+      const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+      const ayer = new Date(hoy); ayer.setDate(ayer.getDate() - 1);
       let label = d >= hoy ? 'Hoy' : d >= ayer ? 'Ayer' : 'Anteriores';
       if (!grupos[label]) grupos[label] = [];
       grupos[label].push(p);
     });
     el.innerHTML = Object.entries(grupos).map(([label, items]) => `
       <div style="font-size:.7rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">${label}</div>
-      ${items.map((p,i) => {
-        const ini = (p.inicial||p.nombre.substring(0,2)).toUpperCase();
-        const bg = bgs[Number(p.id||i)%bgs.length];
-        return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
+      ${items.map((p, i) => {
+      const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
+      const bg = bgs[Number(p.id || i) % bgs.length];
+      return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
-            ? `<div class="hist-logo" style="background:none;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
-            : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
-          }
-          <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro||''}${p.pro?' · PRO':''}</span></div>
+          ? `<div class="hist-logo" style="background:none;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+          : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
+        }
+          <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro || ''}${p.pro ? ' · PRO' : ''}</span></div>
           <span class="hist-time">${timeAgo(new Date(p.visitedAt))}</span>
         </div>`;
-      }).join('')}
+    }).join('')}
     `).join('');
   }
   await cargarMisConversaciones();
@@ -1722,7 +1726,7 @@ async function cargarMisConversaciones() {
       .eq('de_tipo', 'usuario')
       .eq('usuario_email', currentUser.email);
 
-    const provIds = [...new Set((misEnvios||[]).map(m => m.proveedor_id).filter(Boolean))];
+    const provIds = [...new Set((misEnvios || []).map(m => m.proveedor_id).filter(Boolean))];
     if (!provIds.length) {
       el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
       return;
@@ -1774,30 +1778,30 @@ async function cargarMisConversaciones() {
       return;
     }
 
-    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
     el.innerHTML = convs.map((c, i) => {
-      const ini = escHtml(c.provNombre.substring(0,2).toUpperCase());
-      const preview = escHtml((c.ultimoMsg||'').split(String.fromCharCode(10)).join(' ').substring(0,45) + ((c.ultimoMsg||'').length > 45 ? '...' : ''));
+      const ini = escHtml(c.provNombre.substring(0, 2).toUpperCase());
+      const preview = escHtml((c.ultimoMsg || '').split(String.fromCharCode(10)).join(' ').substring(0, 45) + ((c.ultimoMsg || '').length > 45 ? '...' : ''));
       return `<div class="hist-item" onclick="abrirChatDirecto('${escHtml(String(c.provId))}')" style="position:relative">` +
-        `<div class="hist-logo" style="background:${bgs[i%bgs.length]};color:white">${ini}</div>` +
+        `<div class="hist-logo" style="background:${bgs[i % bgs.length]};color:white">${ini}</div>` +
         `<div class="hist-info"><strong>${escHtml(c.provNombre)}</strong><span>${preview}</span></div>` +
         `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">` +
         `<span class="hist-time">${escHtml(timeAgo(new Date(c.ultimaFecha)))}</span>` +
         (c.noLeidos > 0 ? `<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
         '</div></div>';
     }).join('');
-  } catch(e) {
+  } catch (e) {
     console.error('Error cargando conversaciones:', e);
   }
 }
 function timeAgo(date) {
-  const mins = Math.floor((new Date()-date)/60000);
-  if (mins<1) return 'Ahora'; if (mins<60) return `${mins}m`; if (mins<1440) return `${Math.floor(mins/60)}h`;
-  return `${Math.floor(mins/1440)}d`;
+  const mins = Math.floor((new Date() - date) / 60000);
+  if (mins < 1) return 'Ahora'; if (mins < 60) return `${mins}m`; if (mins < 1440) return `${Math.floor(mins / 60)}h`;
+  return `${Math.floor(mins / 1440)}d`;
 }
 
 // ===== CATALOGO PROVEEDOR =====
-const iconMap = {'Indumentaria':'👗','Hogar y Deco':'🏠','Belleza y Salud':'💄','Tecnología':'💻','Bolsos y Marroquinería':'👜','Otros':'📦','Tecnologia':'💻','Hogar':'🏠','Moda':'👗','Bazar':'🛒','Alimentos':'🍫'};
+const iconMap = { 'Indumentaria': '👗', 'Hogar y Deco': '🏠', 'Belleza y Salud': '💄', 'Tecnología': '💻', 'Bolsos y Marroquinería': '👜', 'Otros': '📦', 'Tecnologia': '💻', 'Hogar': '🏠', 'Moda': '👗', 'Bazar': '🛒', 'Alimentos': '🍫' };
 function renderProdGrid() {
   const el = document.getElementById('prodGrid');
   if (!el) return;
@@ -1810,11 +1814,11 @@ function renderProdGrid() {
       ${img}
       <div style="flex:1;min-width:0">
         <div style="font-size:.85rem;font-weight:700;color:#111;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
-        <div style="font-size:.95rem;font-weight:900;color:#006039">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock definido'} · ${escHtml(p.categoria||'General')}</div>
+        <div style="font-size:.95rem;font-weight:900;color:#006039">$${(p.precio || 0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock definido'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -1824,7 +1828,7 @@ async function cargarProductosProveedor() {
   if (!currentUser || !currentUser.proveedorId) { productos = []; renderProdGrid(); return; }
   try {
     const esPro = currentUser.provData?.plan === 'pro';
-    const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at',{ascending:false});
+    const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at', { ascending: false });
     productos = data || [];
     if (!esPro && productos.length > 0) {
       const total = productos.length;
@@ -1839,13 +1843,13 @@ async function cargarProductosProveedor() {
       }
       productos = productos.slice(0, 30);
     }
-  } catch(e) { productos = []; }
+  } catch (e) { productos = []; }
   renderProdGrid();
   const countEl = document.getElementById('dash-prod-count');
   if (countEl) countEl.textContent = productos.length + (productos.length === 1 ? ' publicado' : ' publicados');
 }
 async function deleteProduct(id) {
-  try { await sb.from('productos').delete().eq('id', id); } catch(e) {}
+  try { await sb.from('productos').delete().eq('id', id); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid(); showToast('Producto eliminado');
 }
@@ -1889,7 +1893,7 @@ async function subirFotoStorage(file, provId) {
 // ===== TABS MODAL ===
 function switchAddTab(tab) {
   // Ocultar todos los paneles
-  ['uno','ml','excel','multi'].forEach(t => {
+  ['uno', 'ml', 'excel', 'multi'].forEach(t => {
     const panel = document.getElementById('add-tab-' + t);
     if (panel) panel.style.display = t === tab ? 'block' : 'none';
     const btn = document.getElementById('tab-' + t);
@@ -1949,12 +1953,12 @@ async function importarDesdeML() {
       nombre: data.title,
       precio: data.price || 0,
       foto,
-      desc:   data.subtitle || '',
-      cat:    'General'
+      desc: data.subtitle || '',
+      cat: 'General'
     };
 
     // Mostrar preview
-    document.getElementById('ml-preview-name').textContent  = data.title;
+    document.getElementById('ml-preview-name').textContent = data.title;
     document.getElementById('ml-preview-price').textContent = data.price
       ? '$' + Number(data.price).toLocaleString('es-AR')
       : 'Precio a confirmar';
@@ -1969,12 +1973,12 @@ async function importarDesdeML() {
     // Pre-llenar precio editable (vacío si no se encontró)
     document.getElementById('ml-precio-edit').value = data.price || '';
 
-    document.getElementById('ml-preview').style.display  = 'block';
+    document.getElementById('ml-preview').style.display = 'block';
     document.getElementById('ml-save-btn').style.display = 'block';
     btn.textContent = '🔍 Traer datos del producto';
     showToast('✓ Producto encontrado');
 
-  } catch(e) {
+  } catch (e) {
     btn.textContent = '🔍 Traer datos del producto';
     const msg = e.name === 'AbortError' ? 'Tiempo de espera agotado. Intentá de nuevo.' : 'No se pudo importar. Verificá el link.';
     showToast(msg);
@@ -1984,23 +1988,23 @@ async function importarDesdeML() {
 async function guardarProductoML() {
   if (!mlProductoImportado) return;
   const precio = parseFloat(document.getElementById('ml-precio-edit').value);
-  const stock  = parseInt(document.getElementById('ml-stock-edit').value) || null;
-  const cat    = document.getElementById('ml-cat-edit').value;
+  const stock = parseInt(document.getElementById('ml-stock-edit').value) || null;
+  const cat = document.getElementById('ml-cat-edit').value;
   if (!precio) { showToast('Ingresá el precio mayorista'); return; }
 
   const newProd = {
-    nombre:      mlProductoImportado.nombre,
+    nombre: mlProductoImportado.nombre,
     precio,
     stock,
-    categoria:   cat,
-    imagen_url:  mlProductoImportado.foto,
+    categoria: cat,
+    imagen_url: mlProductoImportado.foto,
     proveedor_id: currentUser?.proveedorId || null
   };
 
   try {
     const { data } = await sb.from('productos').insert(newProd).select().single();
     productos.unshift(data || { ...newProd, id: Date.now() });
-  } catch(e) {
+  } catch (e) {
     productos.unshift({ ...newProd, id: Date.now() });
   }
 
@@ -2009,21 +2013,21 @@ async function guardarProductoML() {
   showToast('✓ Producto importado al catálogo!');
 
   // Mostrar opción de importar otro
-  document.getElementById('ml-preview').style.display   = 'none';
-  document.getElementById('ml-save-btn').style.display  = 'none';
-  document.getElementById('ml-url-input').value         = '';
+  document.getElementById('ml-preview').style.display = 'none';
+  document.getElementById('ml-save-btn').style.display = 'none';
+  document.getElementById('ml-url-input').value = '';
   mlProductoImportado = null;
 
   const importadosEl = document.getElementById('ml-importados');
-  const labelEl      = document.getElementById('ml-importados-label');
+  const labelEl = document.getElementById('ml-importados-label');
   importadosEl.style.display = 'block';
   labelEl.textContent = `✓ ${mlImportadosCount} producto${mlImportadosCount !== 1 ? 's' : ''} importado${mlImportadosCount !== 1 ? 's' : ''} en esta sesión`;
 }
 
 function importarOtro() {
-  document.getElementById('ml-preview').style.display   = 'none';
-  document.getElementById('ml-save-btn').style.display  = 'none';
-  document.getElementById('ml-url-input').value         = '';
+  document.getElementById('ml-preview').style.display = 'none';
+  document.getElementById('ml-save-btn').style.display = 'none';
+  document.getElementById('ml-url-input').value = '';
   mlProductoImportado = null;
   document.getElementById('ml-import-btn-text').textContent = '🔍 Traer datos del producto';
 }
@@ -2049,7 +2053,7 @@ function renderFilasMulti() {
   el.innerHTML = filasMulti.map((f, i) => `
     <div style="background:#f8f9ff;border-radius:12px;padding:12px;border:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <span style="font-size:.78rem;font-weight:800;color:var(--blue)">Producto ${i+1}</span>
+        <span style="font-size:.78rem;font-weight:800;color:var(--blue)">Producto ${i + 1}</span>
         ${filasMulti.length > 1 ? `<button onclick="eliminarFilaMulti(${f.id})" style="background:#fee2e2;color:#ef4444;border:none;border-radius:7px;padding:3px 8px;font-size:.72rem;cursor:pointer">✕</button>` : ''}
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
@@ -2070,11 +2074,11 @@ async function addProductosMultiples() {
   const prods = [];
   let hayError = false;
   rows.forEach(row => {
-    const id   = row.dataset.id;
+    const id = row.dataset.id;
     const nombre = row.value.trim();
     const precio = parseFloat(document.querySelector(`[data-field="precio"][data-id="${id}"]`)?.value || '0');
-    const stock  = parseInt(document.querySelector(`[data-field="stock"][data-id="${id}"]`)?.value || '0') || null;
-    const cat    = document.querySelector(`[data-field="cat"][data-id="${id}"]`)?.value || 'General';
+    const stock = parseInt(document.querySelector(`[data-field="stock"][data-id="${id}"]`)?.value || '0') || null;
+    const cat = document.querySelector(`[data-field="cat"][data-id="${id}"]`)?.value || 'General';
     if (!nombre || !precio) { hayError = true; return; }
     prods.push({ nombre, precio, stock, categoria: cat, proveedor_id: currentUser?.proveedorId || null });
   });
@@ -2084,10 +2088,10 @@ async function addProductosMultiples() {
   if (btn) btn.textContent = 'Guardando...';
   try {
     const { data } = await sb.from('productos').insert(prods).select();
-    (data || prods.map((p,i) => ({...p, id: Date.now()+i}))).forEach(p => productos.unshift(p));
+    (data || prods.map((p, i) => ({ ...p, id: Date.now() + i }))).forEach(p => productos.unshift(p));
     showToast(`✓ ${prods.length} productos guardados`);
-  } catch(e) {
-    prods.forEach((p,i) => productos.unshift({...p, id: Date.now()+i}));
+  } catch (e) {
+    prods.forEach((p, i) => productos.unshift({ ...p, id: Date.now() + i }));
     showToast(`${prods.length} productos guardados`);
   }
   renderProdGrid();
@@ -2104,14 +2108,14 @@ function openAddProduct() {
   mlImportadosCount = 0;
   mlProductoImportado = null;
   const impEl = document.getElementById('ml-importados');
-  if(impEl) impEl.style.display = 'none';
+  if (impEl) impEl.style.display = 'none';
   initFilasMulti();
 }
-function closeAddProduct() { document.getElementById('addProdModal').classList.remove('open'); document.body.style.overflow=''; }
-function closeAddProductOnBg(e) { if(e.target===document.getElementById('addProdModal')) closeAddProduct(); }
+function closeAddProduct() { document.getElementById('addProdModal').classList.remove('open'); document.body.style.overflow = ''; }
+function closeAddProductOnBg(e) { if (e.target === document.getElementById('addProdModal')) closeAddProduct(); }
 
 async function addProduct() {
-  const name  = document.getElementById('new-prod-name').value.trim();
+  const name = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
   const stock = document.getElementById('new-prod-stock').value;
   const catPrincipal = document.getElementById('new-prod-cat-principal')?.value || 'Otros';
@@ -2127,7 +2131,7 @@ async function addProduct() {
   if (fotoFile && currentUser?.proveedorId) {
     try {
       imgUrl = await subirFotoStorage(fotoFile, currentUser.proveedorId);
-    } catch(e) {
+    } catch (e) {
       showToast('No se pudo subir la foto, se guardó sin imagen');
     }
   }
@@ -2145,7 +2149,7 @@ async function addProduct() {
   try {
     const { data } = await sb.from('productos').insert(newProd).select().single();
     productos.unshift(data || { ...newProd, id: Date.now() });
-  } catch(e) {
+  } catch (e) {
     productos.unshift({ ...newProd, id: Date.now() });
   }
   renderProdGrid();
@@ -2161,11 +2165,11 @@ function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
   const principalEl = document.getElementById('edit-prod-cat-principal');
   if (principalEl) {
     const matched = catPrincipal
-      || CAT_PRINCIPAL.find(c => c.toLowerCase() === (cat||'').toLowerCase())
+      || CAT_PRINCIPAL.find(c => c.toLowerCase() === (cat || '').toLowerCase())
       || mapExcelCat(cat)
       || 'Otros';
     principalEl.value = matched;
-    actualizarSubcats('edit-prod-cat-principal','edit-prod-cat-sub','edit-prod-subcat-group');
+    actualizarSubcats('edit-prod-cat-principal', 'edit-prod-cat-sub', 'edit-prod-subcat-group');
     const subEl = document.getElementById('edit-prod-cat-sub');
     if (subEl && cat && cat !== matched) {
       Array.from(subEl.options).forEach((opt, i) => {
@@ -2173,10 +2177,10 @@ function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
       });
     }
   }
-  document.getElementById('editProdModal').classList.add('open'); document.body.style.overflow='hidden';
+  document.getElementById('editProdModal').classList.add('open'); document.body.style.overflow = 'hidden';
 }
-function closeEditProduct() { document.getElementById('editProdModal').classList.remove('open'); document.body.style.overflow=''; }
-function closeEditProductOnBg(e) { if(e.target===document.getElementById('editProdModal')) closeEditProduct(); }
+function closeEditProduct() { document.getElementById('editProdModal').classList.remove('open'); document.body.style.overflow = ''; }
+function closeEditProductOnBg(e) { if (e.target === document.getElementById('editProdModal')) closeEditProduct(); }
 // ===== EDIT FOTO =====
 let editFotoFile = null;
 
@@ -2211,23 +2215,23 @@ async function guardarEdicionProducto() {
   const stock = document.getElementById('edit-prod-stock').value;
   const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otros';
   const catSub = document.getElementById('edit-prod-cat-sub')?.value || '';
-  if (!name||!price) { showToast('Completá nombre y precio'); return; }
+  if (!name || !price) { showToast('Completá nombre y precio'); return; }
   let imgUrl = null;
   if (editFotoFile && currentUser?.proveedorId) {
-    try { imgUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch(e) {}
+    try { imgUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch (e) { }
   }
   try {
     await sb.from('productos').update({
-      nombre:name, precio:parseFloat(price), stock:stock?parseInt(stock):null,
+      nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null,
       categoria: catSub || catPrincipal,
       categoria_principal: catPrincipal,
       subcategoria: catSub || null,
       imagen_url: imgUrl || undefined
-    }).eq('id',id);
-    const idx = productos.findIndex(p=>String(p.id)===String(id));
-    if(idx>=0) productos[idx]={...productos[idx],nombre:name,precio:parseFloat(price),stock:stock?parseInt(stock):null,categoria:catSub||catPrincipal,categoria_principal:catPrincipal};
+    }).eq('id', id);
+    const idx = productos.findIndex(p => String(p.id) === String(id));
+    if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: catSub || catPrincipal, categoria_principal: catPrincipal };
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
-  } catch(e) { showToast('Error al guardar'); }
+  } catch (e) { showToast('Error al guardar'); }
 }
 
 // ===== NAV =====
@@ -2247,353 +2251,372 @@ function goTo(s) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.dsb-item').forEach(n => n.classList.remove('active'));
   document.querySelectorAll('.drawer-item').forEach(n => n.classList.remove('active'));
-  const scr = document.getElementById('screen-'+s);
+  const scr = document.getElementById('screen-' + s);
   if (scr) scr.classList.add('active');
-  const nav = document.getElementById('nav-'+s);
+  const nav = document.getElementById('nav-' + s);
   if (nav) nav.classList.add('active');
-  const dsb = document.getElementById('dsb-'+s);
+  const dsb = document.getElementById('dsb-' + s);
   if (dsb) dsb.classList.add('active');
-  const dnav = document.getElementById('dnav-'+s);
+  const dnav = document.getElementById('dnav-' + s);
   if (dnav) dnav.classList.add('active');
-  if (s==='perfil' && currentUser) updatePerfilUI();
-  if (s==='perfil' && currentUser?.type==='user') cargarHistorial();
-  if (s==='favoritos') renderFavs();
-  if (s==='mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
-  if (s==='mensajes') cargarMensajesUsuario();
-  window.scrollTo(0,0);
+  if (s === 'perfil' && currentUser) updatePerfilUI();
+  if (s === 'perfil' && currentUser?.type === 'user') cargarHistorial();
+  if (s === 'favoritos') renderFavs();
+  if (s === 'mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
+  if (s === 'mensajes') cargarMensajesUsuario();
+  window.scrollTo(0, 0);
   setTimeout(checkReveal, 100);
 }
 function switchTab(tab, el) {
-  document.querySelectorAll('.dash-tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
   // Cargar mensajes automáticamente al abrir el tab
   if (tab === 'mensajes-prov') cargarConversaciones();
 }
 
 // ===== REGISTRO =====
 function showRegStep(step) {
-  if (step===2) {
-    const n=document.querySelector('#reg-step1 input[type="text"]')?.value?.trim();
-    const e=document.querySelector('#reg-step1 input[type="email"]')?.value?.trim();
-    const w=document.querySelector('#reg-step1 input[type="tel"]')?.value?.trim();
-    const p=document.querySelector('#reg-step1 select')?.value;
-    if(!n){showToast('Ingresa tu nombre');return;} if(!e){showToast('Ingresa tu email');return;} if(!w){showToast('Ingresa tu WhatsApp');return;} if(!p){showToast('Selecciona tu provincia');return;}
+  if (step === 2) {
+    const n = document.querySelector('#reg-step1 input[type="text"]')?.value?.trim();
+    const e = document.querySelector('#reg-step1 input[type="email"]')?.value?.trim();
+    const w = document.querySelector('#reg-step1 input[type="tel"]')?.value?.trim();
+    const p = document.querySelector('#reg-step1 select')?.value;
+    if (!n) { showToast('Ingresa tu nombre'); return; } if (!e) { showToast('Ingresa tu email'); return; } if (!w) { showToast('Ingresa tu WhatsApp'); return; } if (!p) { showToast('Selecciona tu provincia'); return; }
   }
-  if (step===2) { renderRubrosPicker('reg-rubros-picker'); }
-  if (step===3) {
-    const r=document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
-    const c=document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
-    const ru=getRubrosSeleccionados('reg-rubros-picker');
-    const d=document.querySelector('#reg-step2 textarea')?.value?.trim();
-    if(!r){showToast('Ingresa la razon social');return;} if(!c){showToast('Ingresa el CUIT');return;} if(!ru.length){showToast('Seleccioná al menos un rubro');return;} if(!d){showToast('Ingresa una descripcion');return;}
+  if (step === 2) { renderRubrosPicker('reg-rubros-picker'); }
+  if (step === 3) {
+    const r = document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
+    const c = document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
+    const ru = getRubrosSeleccionados('reg-rubros-picker');
+    const d = document.querySelector('#reg-step2 textarea')?.value?.trim();
+    if (!r) { showToast('Ingresa la razon social'); return; } if (!c) { showToast('Ingresa el CUIT'); return; } if (!ru.length) { showToast('Seleccioná al menos un rubro'); return; } if (!d) { showToast('Ingresa una descripcion'); return; }
   }
-  ['reg-intro','reg-step1','reg-step2','reg-step3','reg-success'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-  const map={0:'reg-intro',1:'reg-step1',2:'reg-step2',3:'reg-step3'};
-  const e=document.getElementById(map[step]||'reg-intro');
-  if(e)e.style.display='block';
-  window.scrollTo(0,0);
+  ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3', 'reg-success'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+  const map = { 0: 'reg-intro', 1: 'reg-step1', 2: 'reg-step2', 3: 'reg-step3' };
+  const e = document.getElementById(map[step] || 'reg-intro');
+  if (e) e.style.display = 'block';
+  window.scrollTo(0, 0);
 }
 async function showRegSuccess() {
-  const envios=document.querySelectorAll('#reg-step3 select')[0]?.value;
-  const minimo=document.querySelectorAll('#reg-step3 select')[1]?.value;
-  if(!envios){showToast('Selecciona si haces envios');return;} if(!minimo){showToast('Selecciona el pedido minimo');return;}
+  const envios = document.querySelectorAll('#reg-step3 select')[0]?.value;
+  const minimo = document.querySelectorAll('#reg-step3 select')[1]?.value;
+  if (!envios) { showToast('Selecciona si haces envios'); return; } if (!minimo) { showToast('Selecciona el pedido minimo'); return; }
   const btn = document.querySelector('#reg-step3 .submit-btn');
-  if(btn){btn.disabled=true;btn.textContent='Verificando...';}
+  if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 
-  const email=(document.querySelector('#reg-step1 input[type="email"]')?.value||'').toLowerCase().trim();
+  const email = (document.querySelector('#reg-step1 input[type="email"]')?.value || '').toLowerCase().trim();
   const datos = {
-    nombre:document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value||'',
-    cuit:document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value||'',
+    nombre: document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '',
+    cuit: document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value || '',
     email,
-    whatsapp:document.querySelector('#reg-step1 input[type="tel"]')?.value||'',
-    rubro:getRubrosSeleccionados('reg-rubros-picker').join(', '),
-    provincia:document.querySelector('#reg-step1 select')?.value||'',
-    descripcion:document.querySelector('#reg-step2 textarea')?.value||'',
-    envios, pedido_minimo:minimo
+    whatsapp: document.querySelector('#reg-step1 input[type="tel"]')?.value || '',
+    rubro: getRubrosSeleccionados('reg-rubros-picker').join(', '),
+    provincia: document.querySelector('#reg-step1 select')?.value || '',
+    descripcion: document.querySelector('#reg-step2 textarea')?.value || '',
+    envios, pedido_minimo: minimo
   };
 
   try {
     // Verificar si ya existe por email
-    const {data:existente} = await sb.from('proveedores').select('id,estado').eq('email',email).maybeSingle();
+    const { data: existente } = await sb.from('proveedores').select('id,estado').eq('email', email).maybeSingle();
     if (existente) {
       if (existente.estado === 'pendiente') {
-        if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
         showToast('Tu solicitud ya está siendo revisada. Te avisamos en 24-48hs por WhatsApp.');
         return;
       }
       if (existente.estado === 'aprobado') {
-        if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
         showToast('¡Ya tenés cuenta aprobada! Iniciá sesión para acceder a tu dashboard.');
         return;
       }
       if (existente.estado === 'rechazado' || existente.estado === 'suspendido') {
-        if(btn) btn.textContent='Enviando...';
-        const {error} = await sb.from('proveedores').update({...datos, estado:'pendiente', plan:'gratis'}).eq('id', existente.id);
-        if(error) throw error;
-        ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-        document.getElementById('reg-success').style.display='block';
-        window.scrollTo(0,0);
+        if (btn) btn.textContent = 'Enviando...';
+        const { error } = await sb.from('proveedores').update({ ...datos, estado: 'pendiente', plan: 'gratis' }).eq('id', existente.id);
+        if (error) throw error;
+        ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+        document.getElementById('reg-success').style.display = 'block';
+        window.scrollTo(0, 0);
         return;
       }
     }
 
     // Verificar si ya existe por CUIT (otro email)
     if (datos.cuit) {
-      const {data:existenteCuit} = await sb.from('proveedores').select('id,estado,email').eq('cuit',datos.cuit).maybeSingle();
+      const { data: existenteCuit } = await sb.from('proveedores').select('id,estado,email').eq('cuit', datos.cuit).maybeSingle();
       if (existenteCuit && existenteCuit.email !== email) {
         if (existenteCuit.estado === 'aprobado' || existenteCuit.estado === 'pendiente') {
-          if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
+          if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
           showToast('Ya existe una cuenta con ese CUIT. Iniciá sesión con el email registrado.');
           return;
         }
         if (existenteCuit.estado === 'suspendido' || existenteCuit.estado === 'rechazado') {
-          if(btn) btn.textContent='Enviando...';
-          const {error} = await sb.from('proveedores').update({...datos, email, estado:'pendiente', plan:'gratis'}).eq('id', existenteCuit.id);
-          if(error) throw error;
-          ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-          document.getElementById('reg-success').style.display='block';
-          window.scrollTo(0,0);
+          if (btn) btn.textContent = 'Enviando...';
+          const { error } = await sb.from('proveedores').update({ ...datos, email, estado: 'pendiente', plan: 'gratis' }).eq('id', existenteCuit.id);
+          if (error) throw error;
+          ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+          document.getElementById('reg-success').style.display = 'block';
+          window.scrollTo(0, 0);
           return;
         }
       }
     }
 
     // No existe: insertar nuevo
-    if(btn) btn.textContent='Enviando...';
-    const {error} = await sb.from('proveedores').insert({...datos, plan:'gratis', estado:'pendiente'});
-    if(error) throw error;
-  } catch(e) {
-    if(btn){btn.disabled=false;btn.textContent='Enviar solicitud ✓';}
-    showToast('Error al enviar: ' + (e.message||'intentá de nuevo'));
+    if (btn) btn.textContent = 'Enviando...';
+    const { error } = await sb.from('proveedores').insert({ ...datos, plan: 'gratis', estado: 'pendiente' });
+    if (error) throw error;
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
+    showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
     return;
   }
 
-  ['reg-intro','reg-step1','reg-step2','reg-step3'].forEach(id=>{const e=document.getElementById(id);if(e)e.style.display='none';});
-  document.getElementById('reg-success').style.display='block';
-  window.scrollTo(0,0);
+  ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+  document.getElementById('reg-success').style.display = 'block';
+  window.scrollTo(0, 0);
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
 
 // ===== AI TEST =====
 const questions = [
-  {text:"En que parte de Argentina estás?",sub:"Tu localidad nos ayuda a sugerirte rubros con demanda real.",options:[
-    {icon:"🏙",label:"Buenos Aires / GBA",sub:"Gran Buenos Aires o CABA"},
-    {icon:"🏔",label:"Córdoba o Rosario",sub:"Grandes ciudades del interior"},
-    {icon:"🏘",label:"Ciudad mediana",sub:"Entre 50.000 y 500.000 hab."},
-    {icon:"🏡",label:"Localidad pequeña",sub:"Menos de 50.000 hab."}
-  ]},
-  {text:"Con cuánto capital inicial contás?",sub:"Recomendamos rubros alcanzables con lo que tenés hoy.",options:[
-    {icon:"💵",label:"Menos de $50.000",sub:"Empezar muy chico"},
-    {icon:"💰",label:"$50.000 a $200.000",sub:"Capital moderado"},
-    {icon:"💼",label:"$200.000 a $500.000",sub:"Buena base"},
-    {icon:"🎯",label:"Más de $500.000",sub:"Puedo invertir fuerte"}
-  ]},
-  {text:"Por qué canal vas a vender?",sub:"El canal define qué tipo de producto funciona mejor.",options:[
-    {icon:"📱",label:"Instagram / TikTok",sub:"Redes sociales"},
-    {icon:"🛒",label:"MercadoLibre / Tiendanube",sub:"Marketplaces online"},
-    {icon:"🏪",label:"Local o feria física",sub:"Venta presencial"},
-    {icon:"👥",label:"WhatsApp / conocidos",sub:"Círculo cercano"}
-  ]},
-  {text:"Cuánta experiencia tenés vendiendo?",sub:"Ajustamos la recomendacion a tu nivel.",options:[
-    {icon:"🌱",label:"Ninguna, primera vez",sub:"Empezando desde cero"},
-    {icon:"📦",label:"Vendí algo alguna vez",sub:"Experiencia puntual"},
-    {icon:"📈",label:"Ya vendo regularmente",sub:"Tengo proceso armado"},
-    {icon:"🚀",label:"Vendedor/a experimentado/a",sub:"Busco escalar"}
-  ]}
+  {
+    text: "En que parte de Argentina estás?", sub: "Tu localidad nos ayuda a sugerirte rubros con demanda real.", options: [
+      { icon: "🏙", label: "Buenos Aires / GBA", sub: "Gran Buenos Aires o CABA" },
+      { icon: "🏔", label: "Córdoba o Rosario", sub: "Grandes ciudades del interior" },
+      { icon: "🏘", label: "Ciudad mediana", sub: "Entre 50.000 y 500.000 hab." },
+      { icon: "🏡", label: "Localidad pequeña", sub: "Menos de 50.000 hab." }
+    ]
+  },
+  {
+    text: "Con cuánto capital inicial contás?", sub: "Recomendamos rubros alcanzables con lo que tenés hoy.", options: [
+      { icon: "💵", label: "Menos de $50.000", sub: "Empezar muy chico" },
+      { icon: "💰", label: "$50.000 a $200.000", sub: "Capital moderado" },
+      { icon: "💼", label: "$200.000 a $500.000", sub: "Buena base" },
+      { icon: "🎯", label: "Más de $500.000", sub: "Puedo invertir fuerte" }
+    ]
+  },
+  {
+    text: "Por qué canal vas a vender?", sub: "El canal define qué tipo de producto funciona mejor.", options: [
+      { icon: "📱", label: "Instagram / TikTok", sub: "Redes sociales" },
+      { icon: "🛒", label: "MercadoLibre / Tiendanube", sub: "Marketplaces online" },
+      { icon: "🏪", label: "Local o feria física", sub: "Venta presencial" },
+      { icon: "👥", label: "WhatsApp / conocidos", sub: "Círculo cercano" }
+    ]
+  },
+  {
+    text: "Cuánta experiencia tenés vendiendo?", sub: "Ajustamos la recomendacion a tu nivel.", options: [
+      { icon: "🌱", label: "Ninguna, primera vez", sub: "Empezando desde cero" },
+      { icon: "📦", label: "Vendí algo alguna vez", sub: "Experiencia puntual" },
+      { icon: "📈", label: "Ya vendo regularmente", sub: "Tengo proceso armado" },
+      { icon: "🚀", label: "Vendedor/a experimentado/a", sub: "Busco escalar" }
+    ]
+  }
 ];
-let currentStep=0, answers=[], selectedOption=null;
-function openTest() { resetTest(); document.getElementById('testModal').classList.add('open'); document.body.style.overflow='hidden'; }
-function closeTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow=''; }
-function closeTestOnBg(e) { if(e.target===document.getElementById('testModal')) closeTest(); }
+let currentStep = 0, answers = [], selectedOption = null;
+function openTest() { resetTest(); document.getElementById('testModal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+function closeTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow = ''; }
+function closeTestOnBg(e) { if (e.target === document.getElementById('testModal')) closeTest(); }
 function resetTest() {
-  currentStep=0; answers=[]; selectedOption=null;
-  document.getElementById('questionsSection').style.display='block';
+  currentStep = 0; answers = []; selectedOption = null;
+  document.getElementById('questionsSection').style.display = 'block';
   document.getElementById('resultSection').classList.remove('show');
-  document.getElementById('resultLoading').style.display='block';
-  document.getElementById('resultContent').style.display='none';
+  document.getElementById('resultLoading').style.display = 'block';
+  document.getElementById('resultContent').style.display = 'none';
   renderQuestion();
 }
 function renderQuestion() {
   const q = questions[currentStep];
-  document.getElementById('stepIndicator').textContent = `Pregunta ${currentStep+1} de ${questions.length}`;
-  document.getElementById('progressFill').style.width = `${(currentStep/questions.length)*100}%`;
+  document.getElementById('stepIndicator').textContent = `Pregunta ${currentStep + 1} de ${questions.length}`;
+  document.getElementById('progressFill').style.width = `${(currentStep / questions.length) * 100}%`;
   document.getElementById('qText').textContent = q.text;
   document.getElementById('qSub').textContent = q.sub;
-  selectedOption=null;
+  selectedOption = null;
   document.getElementById('nextBtn').classList.remove('ready');
-  document.getElementById('optionsGrid').innerHTML = q.options.map((o,i)=>`
+  document.getElementById('optionsGrid').innerHTML = q.options.map((o, i) => `
     <div class="opt-btn" data-idx="${i}">
       <span class="opt-icon">${o.icon}</span>
       <div><div class="opt-label">${o.label}</div><div class="opt-sub">${o.sub}</div></div>
     </div>`).join('');
-  document.getElementById('optionsGrid').onclick = function(e) {
+  document.getElementById('optionsGrid').onclick = function (e) {
     const btn = e.target.closest('.opt-btn');
     if (!btn) return;
-    document.querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('selected'));
+    document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
     btn.classList.add('selected');
     selectedOption = parseInt(btn.dataset.idx);
     document.getElementById('nextBtn').classList.add('ready');
   };
 }
 function nextStep() {
-  if (selectedOption===null) return;
-  answers.push({q:currentStep,a:selectedOption});
-  if (currentStep<questions.length-1) { currentStep++; renderQuestion(); }
+  if (selectedOption === null) return;
+  answers.push({ q: currentStep, a: selectedOption });
+  if (currentStep < questions.length - 1) { currentStep++; renderQuestion(); }
   else showResult();
 }
 async function showResult() {
-  document.getElementById('progressFill').style.width='100%';
-  document.getElementById('questionsSection').style.display='none';
+  document.getElementById('progressFill').style.width = '100%';
+  document.getElementById('questionsSection').style.display = 'none';
   document.getElementById('resultSection').classList.add('show');
-  document.getElementById('resultLoading').style.display='block';
-  document.getElementById('resultContent').style.display='none';
-  const locs=['Buenos Aires / GBA','Córdoba o Rosario','Ciudad mediana','Localidad pequeña'];
-  const caps=['menos de $50.000','entre $50.000 y $200.000','entre $200.000 y $500.000','más de $500.000'];
-  const cans=['Instagram/TikTok','MercadoLibre/Tiendanube','local o feria física','círculo cercano/WhatsApp'];
-  const exps=['ninguna experiencia','algo de experiencia','vende regularmente','vendedor experimentado'];
-  const prompt=`Sos un asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${locs[answers[0].a]}, Capital: ${caps[answers[1].a]}, Canal: ${cans[answers[2].a]}, Experiencia: ${exps[answers[3].a]}. Recomienda el MEJOR rubro mayorista. Responde SOLO JSON sin backticks: {"rubro":"Moda|Tecnologia|Bazar|Hogar|Alimentos","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
+  document.getElementById('resultLoading').style.display = 'block';
+  document.getElementById('resultContent').style.display = 'none';
+  const locs = ['Buenos Aires / GBA', 'Córdoba o Rosario', 'Ciudad mediana', 'Localidad pequeña'];
+  const caps = ['menos de $50.000', 'entre $50.000 y $200.000', 'entre $200.000 y $500.000', 'más de $500.000'];
+  const cans = ['Instagram/TikTok', 'MercadoLibre/Tiendanube', 'local o feria física', 'círculo cercano/WhatsApp'];
+  const exps = ['ninguna experiencia', 'algo de experiencia', 'vende regularmente', 'vendedor experimentado'];
+  const prompt = `Sos un asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${locs[answers[0].a]}, Capital: ${caps[answers[1].a]}, Canal: ${cans[answers[2].a]}, Experiencia: ${exps[answers[3].a]}. Recomienda el MEJOR rubro mayorista. Responde SOLO JSON sin backticks: {"rubro":"Moda|Tecnologia|Bazar|Hogar|Alimentos","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})});
+    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
     const data = await res.json();
-    const parsed = JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
-    currentResult=parsed.rubro;
-    document.getElementById('resultRubro').textContent=parsed.titulo;
-    document.getElementById('resultWhy').textContent=parsed.porque;
-    document.getElementById('resultChips').innerHTML=parsed.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
-  } catch(e) {
-    const fallbacks=[
-      {rubro:'Moda',titulo:'Moda y Accesorios',porque:'La moda es uno de los rubros más accesibles para empezar al por mayor.',tips:['Empezá con accesorios baratos','Usá Instagram para mostrar looks','Buscá proveedores en La Salada']},
-      {rubro:'Bazar',titulo:'Bazar del Hogar',porque:'El bazar tiene alta rotación. Con poco capital armás un catálogo variado.',tips:['Armá combos de regalo','Vendé en ferias locales','Artículos de cocina se venden solos']},
-      {rubro:'Tecnologia',titulo:'Accesorios Tech',porque:'Los accesorios tech tienen márgenes muy buenos en MercadoLibre.',tips:['Fundas y cargadores son lo más vendido','Comprá en cantidad','MercadoLibre es el mejor canal']}
+    const parsed = JSON.parse(data.content.map(i => i.text || '').join('').replace(/```json|```/g, '').trim());
+    currentResult = parsed.rubro;
+    document.getElementById('resultRubro').textContent = parsed.titulo;
+    document.getElementById('resultWhy').textContent = parsed.porque;
+    document.getElementById('resultChips').innerHTML = parsed.tips.map(t => `<span class="result-chip">💡 ${t}</span>`).join('');
+  } catch (e) {
+    const fallbacks = [
+      { rubro: 'Moda', titulo: 'Moda y Accesorios', porque: 'La moda es uno de los rubros más accesibles para empezar al por mayor.', tips: ['Empezá con accesorios baratos', 'Usá Instagram para mostrar looks', 'Buscá proveedores en La Salada'] },
+      { rubro: 'Bazar', titulo: 'Bazar del Hogar', porque: 'El bazar tiene alta rotación. Con poco capital armás un catálogo variado.', tips: ['Armá combos de regalo', 'Vendé en ferias locales', 'Artículos de cocina se venden solos'] },
+      { rubro: 'Tecnologia', titulo: 'Accesorios Tech', porque: 'Los accesorios tech tienen márgenes muy buenos en MercadoLibre.', tips: ['Fundas y cargadores son lo más vendido', 'Comprá en cantidad', 'MercadoLibre es el mejor canal'] }
     ];
-    const r=fallbacks[Math.floor(Math.random()*fallbacks.length)];
-    currentResult=r.rubro;
-    document.getElementById('resultRubro').textContent=r.titulo;
-    document.getElementById('resultWhy').textContent=r.porque;
-    document.getElementById('resultChips').innerHTML=r.tips.map(t=>`<span class="result-chip">💡 ${t}</span>`).join('');
+    const r = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    currentResult = r.rubro;
+    document.getElementById('resultRubro').textContent = r.titulo;
+    document.getElementById('resultWhy').textContent = r.porque;
+    document.getElementById('resultChips').innerHTML = r.tips.map(t => `<span class="result-chip">💡 ${t}</span>`).join('');
   }
-  document.getElementById('resultLoading').style.display='none';
-  document.getElementById('resultContent').style.display='block';
+  document.getElementById('resultLoading').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
 }
 
 // ===== PRODUCTOS =====
-let productosReales=[];
-const catColors={'Hogar y Deco':'#00A651','Indumentaria':'#FF6B00','Textiles':'#8B5CF6','Belleza y Salud':'#E91E8C','Tecnología':'#1847C8','Bazar':'#7C3AED','Alimentos':'#F59E0B','Deportes':'#EF4444','Automotor':'#6B7280','Otros':'#9CA3AF','Moda':'#FF6B00','Hogar':'#00A651','Salud':'#E91E8C','Blanquería':'#8B5CF6','Sábanas':'#8B5CF6','Frazadas':'#8B5CF6','Tecnologia':'#1847C8'};
+let productosReales = [];
+let homeProductosPage = 0;
+const HOME_PAGE_SIZE = 20;
+let _buscarListaFiltrada = [], _buscarOffset = 0, _buscarFiltroActual = '';
+let provDetalleData = [], provDetalleOffset = 0, provDetalleEsPro = false, provDetalleLimite;
+const DETALLE_PAGE_SIZE = 20;
+const catColors = { 'Hogar y Deco': '#00A651', 'Indumentaria': '#FF6B00', 'Textiles': '#8B5CF6', 'Belleza y Salud': '#E91E8C', 'Tecnología': '#1847C8', 'Bazar': '#7C3AED', 'Alimentos': '#F59E0B', 'Deportes': '#EF4444', 'Automotor': '#6B7280', 'Otros': '#9CA3AF', 'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Blanquería': '#8B5CF6', 'Sábanas': '#8B5CF6', 'Frazadas': '#8B5CF6', 'Tecnologia': '#1847C8' };
 
-function getEmojiCat(cat){const map={'Hogar y Deco':'🏠','Indumentaria':'👗','Textiles':'🛏️','Belleza y Salud':'💄','Tecnología':'💻','Bazar':'🛒','Alimentos':'🍫','Deportes':'⚽','Automotor':'🚗','Otros':'📦','Moda':'👗','Hogar':'🏠','Salud':'💄','Blanquería':'🛏️','Sábanas':'🛏️','Frazadas':'🛏️','Tecnologia':'📱'};return map[cat]||'📦';}
-function getProdLista(){return productosReales;}
+function getEmojiCat(cat) { const map = { 'Hogar y Deco': '🏠', 'Indumentaria': '👗', 'Textiles': '🛏️', 'Belleza y Salud': '💄', 'Tecnología': '💻', 'Bazar': '🛒', 'Alimentos': '🍫', 'Deportes': '⚽', 'Automotor': '🚗', 'Otros': '📦', 'Moda': '👗', 'Hogar': '🏠', 'Salud': '💄', 'Blanquería': '🛏️', 'Sábanas': '🛏️', 'Frazadas': '🛏️', 'Tecnologia': '📱' }; return map[cat] || '📦'; }
+function getProdLista() { return productosReales; }
 
 async function cargarProductosReales() {
+  const grid = document.getElementById('home-prod-grid');
+  if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    const {data,error}=await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,whatsapp)').order('created_at',{ascending:false}).limit(50);
-    if(!error&&data&&data.length>0){
-      const bgs=['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
-      productosReales=data.map((p,i)=>({
-        id:'real_'+p.id,idReal:p.id,nombre:p.nombre,precio:p.precio||0,
-        pedido_minimo:p.stock?'Stock: '+p.stock+' unidades':'Consultar',
-        cat:p.categoria_principal||p.categoria||'General',emoji:getEmojiCat(p.categoria_principal||p.categoria),catPrincipal:p.categoria_principal||null,descripcion:p.descripcion||null,
-        provId:String(p.proveedor_id),
-        provNombre:p.proveedores?.nombre||'Proveedor',
-        provRubro:(p.proveedores?.rubro||'')+(p.proveedores?.provincia?' · '+p.proveedores.provincia:''),
-        provColor:bgs[i%bgs.length],imgUrl:p.imagen_url||'',
-        whatsapp:p.proveedores?.whatsapp||'',esPro:p.proveedores?.plan==='pro'
+    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').order('created_at', { ascending: false }).limit(500);
+    if (!error && data && data.length > 0) {
+      const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+      const mapped = data.map((p, i) => ({
+        id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
+        pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
+        cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria), catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
+        provId: String(p.proveedor_id),
+        provNombre: p.proveedores?.nombre || 'Proveedor',
+        provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
+        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
+        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro'
       }));
-      renderHomeCarousels();
+      productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
     }
-  } catch(e){}
-  renderProdInicio();
+  } catch (e) { }
+  homeProductosPage = 0;
+  renderHomeGrid();
   renderProdBuscar();
 }
 
-function renderProdInicio(){
-  const el=document.getElementById('prodInicioGrid');
-  if(!el) return;
-  const lista=getProdLista().slice(0,6);
-  if(!lista.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Los primeros productos apareceran pronto.</div>';return;}
-  el.innerHTML=lista.map(p=>`
-    <div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
-      <div class="prod-inicio-img" style="background:${p.provColor}18">
-        ${p.imgUrl?`<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
-        <span class="prod-inicio-badge" style="background:${catColors[p.cat]||'#1847C8'}">${escHtml(p.cat)}</span>
-      </div>
-      <div class="prod-inicio-body">
-        <div class="prod-inicio-name">${escHtml(p.nombre)}</div>
-        <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
-      </div>
-    </div>`).join('');
+function renderHomeGrid() {
+  const grid = document.getElementById('home-prod-grid');
+  const btn = document.getElementById('home-ver-mas-btn');
+  if (!grid) return;
+  const hasta = (homeProductosPage + 1) * HOME_PAGE_SIZE;
+  const slice = productosReales.slice(0, hasta);
+  if (!slice.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--gray);font-size:.88rem">Los primeros productos aparecerán pronto.</div>';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  grid.innerHTML = slice.map(p => renderHomeProdCard(p)).join('');
+  if (btn) btn.style.display = productosReales.length > hasta ? '' : 'none';
+}
+
+function cargarMasHomeProductos() {
+  homeProductosPage++;
+  renderHomeGrid();
+}
+
+function renderHomeProdCard(p) {
+  const color = catColors[p.cat] || '#1847C8';
+  return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
+    <div class="prod-inicio-img" style="background:${color}18">
+      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : p.emoji}
+      <span class="prod-inicio-badge" style="background:${color}">${escHtml(p.cat)}</span>
+    </div>
+    <div class="prod-inicio-body">
+      <div class="prod-inicio-name">${escHtml(p.nombre)}</div>
+      <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
+      <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
+    </div>
+  </div>`;
 }
 
 function renderProdBuscarCard(p) {
   const emoji = p.emoji || '📦';
   const img = p.imgUrl
     ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
-    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor||'#EEF2FF'}22">${emoji}</div>`;
+    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor || '#EEF2FF'}22">${emoji}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
     ${img}
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
       <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
-      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provNombre||'')}</div>
+      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provNombre || '')}</div>
     </div>
   </div>`;
 }
 
-function renderProdBuscar(filtro, query='') {
+function renderProdBuscar(filtro, query = '') {
   const el = document.getElementById('prodBuscarGrid');
   const summary = document.getElementById('buscarSummary');
   if (!el) return;
   let lista = getProdLista();
-  const q = (query||'').toLowerCase().trim();
+  const q = (query || '').toLowerCase().trim();
   if (filtro && filtro !== 'Todas') lista = lista.filter(p => {
     const cat = p.cat || ''; const catP = p.catPrincipal || cat;
     if (catP.toLowerCase() === filtro.toLowerCase()) return true;
     if (cat.toLowerCase() === filtro.toLowerCase()) return true;
-    if (filtro === 'Textiles') { const tt=['sabana','frazada','blanqueria','acolchado','toalla','mantel','textil','tela']; return tt.some(t=>quitarAcentos(cat.toLowerCase()).includes(t)); }
+    if (filtro === 'Textiles') { const tt = ['sabana', 'frazada', 'blanqueria', 'acolchado', 'toalla', 'mantel', 'textil', 'tela']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
     if (filtro === 'Hogar y Deco') return cat.toLowerCase().includes('hogar') || cat.toLowerCase().includes('deco') || cat.toLowerCase().includes('mueble') || cat.toLowerCase().includes('cocina');
     if (filtro === 'Belleza y Salud') return cat.toLowerCase().includes('belleza') || cat.toLowerCase().includes('salud') || cat.toLowerCase().includes('cosmet') || cat.toLowerCase().includes('perfum');
     return false;
   });
-  if (q) lista = lista.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q) || (p.provNombre||'').toLowerCase().includes(q));
-  if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length===1?'':'s'} en productos` : 'Sin resultados en productos';
+  if (q) lista = lista.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.cat || '').toLowerCase().includes(q) || (p.provNombre || '').toLowerCase().includes(q));
+  if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
   if (!lista.length) {
     el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#999;font-size:.88rem">🔎 No encontramos productos con esos filtros.</div>';
     el.style.display = 'block';
     return;
   }
 
-  // Si hay búsqueda por texto o categoría específica → grid 2 columnas
+  // Si hay búsqueda por texto o categoría específica → grid 2 columnas paginado
   if (q || (filtro && filtro !== 'Todas')) {
-    el.style.display = 'grid';
-    el.innerHTML = lista.map(p => `
-      <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
-        <div class="top" style="background:${p.provColor}18">
-          ${p.imgUrl?`<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
-          <span class="prod-buscar-badge" style="background:${catColors[p.cat]||'#1847C8'}">${escHtml(p.cat)}</span>
-        </div>
-        <div class="body">
-          <div class="title">${escHtml(p.nombre)}</div>
-          <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-          <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
-          <div class="actions">
-            <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${escHtml(p.id)}')">Ver detalle</button>
-            <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${escHtml(p.provId)}')">Proveedor</button>
-          </div>
-        </div>
-      </div>`).join('');
+    _buscarListaFiltrada = lista;
+    _buscarOffset = 0;
+    _buscarFiltroActual = filtro || '';
+    _drawBuscarGrid(el);
     return;
   }
 
   // Sin filtro → carruseles por rubro
   el.style.display = 'block';
-  const catEmojis = {'Tecnología':'📱','Tecnologia':'📱','Moda':'👗','Hogar':'🏠','Bazar':'🛒','Alimentos':'🍫','Otro':'📦'};
+  const catEmojis = { 'Tecnología': '📱', 'Tecnologia': '📱', 'Moda': '👗', 'Hogar': '🏠', 'Bazar': '🛒', 'Alimentos': '🍫', 'Otro': '📦' };
   const porRubro = {};
   lista.forEach(p => {
     const rubro = p.cat || 'Otro';
@@ -2603,7 +2626,7 @@ function renderProdBuscar(filtro, query='') {
   el.innerHTML = Object.entries(porRubro).map(([rubro, prods]) => `
     <div style="margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111">${catEmojis[rubro]||'📦'} ${rubro}</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111">${catEmojis[rubro] || '📦'} ${rubro}</div>
         <span onclick="setChip(document.querySelector('.chip[onclick*=\\'${rubro}\\']')||document.querySelector('.chip'),'${rubro}')" style="font-size:.75rem;font-weight:700;color:#006039;cursor:pointer">Ver todos ></span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
@@ -2612,22 +2635,53 @@ function renderProdBuscar(filtro, query='') {
     </div>`).join('');
 }
 
-function switchBuscarTab(tab,el){
-  buscarTab=tab;
-  document.querySelectorAll('.search-tab').forEach(t=>t.classList.remove('active'));
+function _drawBuscarGrid(el) {
+  const lista = _buscarListaFiltrada;
+  const PAGE = 20;
+  const slice = lista.slice(0, _buscarOffset + PAGE);
+  const hasMore = lista.length > slice.length;
+  el.style.display = 'grid';
+  el.innerHTML = slice.map(p => `
+    <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
+      <div class="top" style="background:${p.provColor}18">
+        ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : p.emoji}
+        <span class="prod-buscar-badge" style="background:${catColors[p.cat] || '#1847C8'}">${escHtml(p.cat)}</span>
+      </div>
+      <div class="body">
+        <div class="title">${escHtml(p.nombre)}</div>
+        <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
+        <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
+        <div class="actions">
+          <button class="mini-btn primary" onclick="event.stopPropagation();abrirDetalleProd('${escHtml(p.id)}')">Ver detalle</button>
+          <button class="mini-btn soft" onclick="event.stopPropagation();abrirDetalle('${escHtml(p.provId)}')">Proveedor</button>
+        </div>
+      </div>
+    </div>`).join('') +
+    (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
+}
+
+function buscarVerMas() {
+  _buscarOffset += 20;
+  const el = document.getElementById('prodBuscarGrid');
+  if (el) _drawBuscarGrid(el);
+}
+
+function switchBuscarTab(tab, el) {
+  buscarTab = tab;
+  document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  const pv=document.getElementById('buscar-productos-view');
-  const rv=document.getElementById('buscar-proveedores-view');
-  const sv=document.getElementById('buscarSummary');
-  if(tab==='productos'){
-    if(pv)pv.style.display='block'; if(rv)rv.style.display='none'; if(sv)sv.style.display='block';
-    renderProdBuscar(currentCat,document.getElementById('searchInput')?.value||'');
+  const pv = document.getElementById('buscar-productos-view');
+  const rv = document.getElementById('buscar-proveedores-view');
+  const sv = document.getElementById('buscarSummary');
+  if (tab === 'productos') {
+    if (pv) pv.style.display = 'block'; if (rv) rv.style.display = 'none'; if (sv) sv.style.display = 'block';
+    renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
   } else {
-    if(pv)pv.style.display='none'; if(rv)rv.style.display='block'; if(sv)sv.style.display='none';
+    if (pv) pv.style.display = 'none'; if (rv) rv.style.display = 'block'; if (sv) sv.style.display = 'none';
     filterProvs();
   }
 }
-function applySearchInput(){
+function applySearchInput() {
   const val = document.getElementById('searchInput')?.value || '';
   showSearchDropdown(val);
   clearTimeout(_searchDebounceTimer);
@@ -2684,10 +2738,10 @@ function showSearchDropdown(val) {
   const qn = quitarAcentos(trimmed.toLowerCase());
   const sugs = proveedoresDB.filter(p =>
     p.estado === 'aprobado' && (
-      quitarAcentos((p.nombre||'').toLowerCase()).includes(qn) ||
-      quitarAcentos((p.rubro||'').toLowerCase()).includes(qn) ||
-      quitarAcentos((p.provincia||'').toLowerCase()).includes(qn) ||
-      quitarAcentos((p.descripcion||'').toLowerCase()).includes(qn)
+      quitarAcentos((p.nombre || '').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.rubro || '').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.provincia || '').toLowerCase()).includes(qn) ||
+      quitarAcentos((p.descripcion || '').toLowerCase()).includes(qn)
     )
   ).slice(0, 5);
 
@@ -2696,10 +2750,10 @@ function showSearchDropdown(val) {
   dd.innerHTML = sugs.map(p =>
     `<div onclick="seleccionarProveedor('${p.id}')"
       style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #F0F4FF">
-      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#1847C8;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0,2).toUpperCase())}</div>
+      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#1847C8;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0, 2).toUpperCase())}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.85rem;font-weight:700;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
-        <div style="font-size:.72rem;color:#6B7A99">${escHtml(p.rubro||'')}${p.provincia?' · '+escHtml(p.provincia):''}</div>
+        <div style="font-size:.72rem;color:#6B7A99">${escHtml(p.rubro || '')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
       </div>
     </div>`
   ).join('');
@@ -2737,54 +2791,54 @@ function guardarBusqReciente(texto) {
   let r = getBusqRecientes().filter(x => x.toLowerCase() !== t.toLowerCase());
   r.unshift(t);
   if (r.length > MAX_BUSQ_RECIENTES) r = r.slice(0, MAX_BUSQ_RECIENTES);
-  try { localStorage.setItem(BUSQ_RECIENTES_KEY, JSON.stringify(r)); } catch(e) {}
+  try { localStorage.setItem(BUSQ_RECIENTES_KEY, JSON.stringify(r)); } catch (e) { }
 }
 
 function limpiarBusqRecientes() {
-  try { localStorage.removeItem(BUSQ_RECIENTES_KEY); } catch(e) {}
+  try { localStorage.removeItem(BUSQ_RECIENTES_KEY); } catch (e) { }
   hideSearchDropdown();
 }
 
-function abrirDetalleProd(id){
-  const p=getProdLista().find(x=>String(x.id)===String(id));
-  if(!p){ showToast('Producto no disponible'); return; }
-  productoActual=p;
-  document.getElementById('prod-det-emoji').innerHTML=`${p.imgUrl?`<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`:p.emoji}
+function abrirDetalleProd(id) {
+  const p = getProdLista().find(x => String(x.id) === String(id));
+  if (!p) { showToast('Producto no disponible'); return; }
+  productoActual = p;
+  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? `<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : p.emoji}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
-    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId))?'❤️':'♡'}</button>`;
-  document.getElementById('prod-det-name').textContent=p.nombre;
-  document.getElementById('prod-det-price').textContent='$'+p.precio.toLocaleString('es-AR')+' por unidad';
-  document.getElementById('prod-det-min').textContent=p.pedido_minimo;
-  document.getElementById('prod-det-cat').textContent=p.cat;
-  const pav=document.getElementById('prod-det-pav');
-  if(pav){pav.style.background=p.provColor;pav.textContent=p.provNombre.substring(0,2).toUpperCase();}
-  document.getElementById('prod-det-pname').textContent=p.provNombre;
-  document.getElementById('prod-det-psub').textContent=p.provRubro;
-  const vc=document.getElementById('pdcalc-venta'),cc=document.getElementById('pdcalc-cant');
-  if(vc)vc.value=''; if(cc)cc.value='';
-  const rc=document.getElementById('pdcalc-result'); if(rc)rc.style.display='none';
-  const prov=(proveedoresDB).find(x=>String(x.id)===String(p.provId));
-  const waBtn=document.getElementById('prod-det-wa-btn');
-  if(waBtn)waBtn.style.display=(prov&&prov.pro&&prov.whatsapp)?'flex':'none';
+    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? '❤️' : '♡'}</button>`;
+  document.getElementById('prod-det-name').textContent = p.nombre;
+  document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
+  document.getElementById('prod-det-min').textContent = p.pedido_minimo;
+  document.getElementById('prod-det-cat').textContent = p.cat;
+  const pav = document.getElementById('prod-det-pav');
+  if (pav) { pav.style.background = p.provColor; pav.textContent = p.provNombre.substring(0, 2).toUpperCase(); }
+  document.getElementById('prod-det-pname').textContent = p.provNombre;
+  document.getElementById('prod-det-psub').textContent = p.provRubro;
+  const vc = document.getElementById('pdcalc-venta'), cc = document.getElementById('pdcalc-cant');
+  if (vc) vc.value = ''; if (cc) cc.value = '';
+  const rc = document.getElementById('pdcalc-result'); if (rc) rc.style.display = 'none';
+  const prov = (proveedoresDB).find(x => String(x.id) === String(p.provId));
+  const waBtn = document.getElementById('prod-det-wa-btn');
+  if (waBtn) waBtn.style.display = (prov && prov.pro && prov.whatsapp) ? 'flex' : 'none';
   goTo('detalle-producto');
 }
-function volverDetProd(){ goBack('inicio'); }
-function irAProveedorDesdeProd(){if(productoActual)abrirDetalle(productoActual.provId);}
-function detWAProd(){if(!productoActual)return;const prov=(proveedoresDB).find(x=>String(x.id)===String(productoActual.provId));if(prov&&prov.whatsapp)abrirWA(prov.whatsapp,mensajeWAProd(productoActual,prov));else showToast('WhatsApp no disponible');}
-function detChatProd(){if(productoActual)abrirChatDirecto(productoActual.provId);}
-function calcProdDet(){
-  const costo=productoActual?productoActual.precio:0;
-  const venta=parseFloat(document.getElementById('pdcalc-venta').value);
-  const cant=parseFloat(document.getElementById('pdcalc-cant').value);
-  const resEl=document.getElementById('pdcalc-result');
-  if(!venta||!cant||cant<=0||venta<=0){if(resEl)resEl.style.display='none';return;}
-  const inv=costo*cant,tot=venta*cant,gan=tot-inv;
-  const mrg=inv>0?((gan/inv)*100).toFixed(0):0;
-  document.getElementById('pdcalc-inv').textContent='$'+inv.toLocaleString('es-AR');
-  document.getElementById('pdcalc-gan').textContent='$'+gan.toLocaleString('es-AR');
-  document.getElementById('pdcalc-mrg').textContent=mrg+'%';
-  document.getElementById('pdcalc-tot').textContent='$'+tot.toLocaleString('es-AR');
-  if(resEl)resEl.style.display='grid';
+function volverDetProd() { goBack('inicio'); }
+function irAProveedorDesdeProd() { if (productoActual) abrirDetalle(productoActual.provId); }
+function detWAProd() { if (!productoActual) return; const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId)); if (prov && prov.whatsapp) abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov)); else showToast('WhatsApp no disponible'); }
+function detChatProd() { if (productoActual) abrirChatDirecto(productoActual.provId); }
+function calcProdDet() {
+  const costo = productoActual ? productoActual.precio : 0;
+  const venta = parseFloat(document.getElementById('pdcalc-venta').value);
+  const cant = parseFloat(document.getElementById('pdcalc-cant').value);
+  const resEl = document.getElementById('pdcalc-result');
+  if (!venta || !cant || cant <= 0 || venta <= 0) { if (resEl) resEl.style.display = 'none'; return; }
+  const inv = costo * cant, tot = venta * cant, gan = tot - inv;
+  const mrg = inv > 0 ? ((gan / inv) * 100).toFixed(0) : 0;
+  document.getElementById('pdcalc-inv').textContent = '$' + inv.toLocaleString('es-AR');
+  document.getElementById('pdcalc-gan').textContent = '$' + gan.toLocaleString('es-AR');
+  document.getElementById('pdcalc-mrg').textContent = mrg + '%';
+  document.getElementById('pdcalc-tot').textContent = '$' + tot.toLocaleString('es-AR');
+  if (resEl) resEl.style.display = 'grid';
 }
 
 // ===== CHAT REAL PROVEEDOR =====
@@ -2821,18 +2875,18 @@ async function cargarConversaciones() {
     });
 
     const convs = Object.values(convMap);
-    const totalNoLeidos = convs.reduce((s,c) => s + c.noLeidos, 0);
+    const totalNoLeidos = convs.reduce((s, c) => s + c.noLeidos, 0);
 
     // Actualizar badge del tab
     const badge = document.getElementById('msgs-badge');
     if (badge) badge.classList.toggle('show', totalNoLeidos > 0);
 
-    el.innerHTML = convs.map((c,i) => {
-      const ini = c.nombre.substring(0,2).toUpperCase();
+    el.innerHTML = convs.map((c, i) => {
+      const ini = c.nombre.substring(0, 2).toUpperCase();
       const ultimo = c.ultimo;
-      const preview = (ultimo.texto||'').replace(/\n/g,' ').substring(0,50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
+      const preview = (ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
       const tiempo = timeAgo(new Date(ultimo.created_at));
-      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${c.nombre.replace(/'/g,"\'")}')">
+      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${c.nombre.replace(/'/g, "\'")}')">
         <div class="conv-avatar">${ini}</div>
         <div class="conv-info">
           <div class="conv-name">${c.nombre}</div>
@@ -2845,7 +2899,7 @@ async function cargarConversaciones() {
       </div>`;
     }).join('');
 
-  } catch(e) {
+  } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Error cargando mensajes.</div>';
   }
 }
@@ -2872,8 +2926,8 @@ async function abrirConvProveedor(nombre) {
       .order('created_at', { ascending: true });
 
     // Combinar y ordenar por fecha
-    const todos = [...(msgsUsuario||[]), ...(msgsProveedor||[])];
-    todos.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+    const todos = [...(msgsUsuario || []), ...(msgsProveedor || [])];
+    todos.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     convActual.msgs = todos;
 
     // Marcar como leidos los del usuario
@@ -2881,7 +2935,7 @@ async function abrirConvProveedor(nombre) {
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_nombre', nombre).eq('de_tipo', 'usuario');
     renderProvChat();
-  } catch(e) {
+  } catch (e) {
     msgsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray)">Error cargando mensajes.</div>';
   }
 }
@@ -2900,7 +2954,7 @@ function renderProvChat() {
     const nombre = !esProveedor ? `<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">${escHtml(m.de_nombre || 'Emprendedor')}</div>` : '';
     return `<div style="display:flex;flex-direction:column;align-items:${esProveedor ? 'flex-end' : 'flex-start'}">
       ${nombre}
-      <div class="chat-msg ${tipo}">${escHtml(m.texto||'').replace(/\n/g,'<br>')}<div class="chat-msg-time">${escHtml(hora)}</div></div>
+      <div class="chat-msg ${tipo}">${escHtml(m.texto || '').replace(/\n/g, '<br>')}<div class="chat-msg-time">${escHtml(hora)}</div></div>
     </div>`;
   }).join('');
   el.scrollTop = el.scrollHeight;
@@ -2927,7 +2981,7 @@ async function provSendMsg() {
   // Guardar en Supabase
   try {
     await sb.from('mensajes').insert(nuevoMsg);
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function closeProvChat() {
@@ -3016,19 +3070,19 @@ function renderCarrito() {
   if (!carrito.length) { closeCarrito(); return; }
 
   const item0 = carrito[0];
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
 
   // Info proveedor
   const avatarEl = document.getElementById('carrito-prov-avatar');
-  const nameEl   = document.getElementById('carrito-prov-name');
-  if (avatarEl) { avatarEl.textContent = item0.provNombre.substring(0,2).toUpperCase(); avatarEl.style.background = bgs[0]; }
-  if (nameEl)   nameEl.textContent = item0.provNombre;
+  const nameEl = document.getElementById('carrito-prov-name');
+  if (avatarEl) { avatarEl.textContent = item0.provNombre.substring(0, 2).toUpperCase(); avatarEl.style.background = bgs[0]; }
+  if (nameEl) nameEl.textContent = item0.provNombre;
 
   // Items
   const itemsEl = document.getElementById('carrito-items');
   itemsEl.innerHTML = carrito.map((item, idx) => `
     <div class="carrito-item">
-      <div style="width:42px;height:42px;border-radius:10px;background:${bgs[idx%bgs.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">
+      <div style="width:42px;height:42px;border-radius:10px;background:${bgs[idx % bgs.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">
         ${item.producto.imgUrl ? `<img src="${item.producto.imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : item.producto.emoji}
       </div>
       <div class="carrito-item-info">
@@ -3043,16 +3097,16 @@ function renderCarrito() {
     </div>`).join('');
 
   // Totales
-  const subtotal  = carrito.reduce((s,i) => s + (i.producto.precio * i.cantidad), 0);
-  const unidades  = carrito.reduce((s,i) => s + i.cantidad, 0);
-  document.getElementById('carrito-subtotal').textContent  = '$' + subtotal.toLocaleString('es-AR');
-  document.getElementById('carrito-unidades').textContent  = unidades + ' unidades';
-  document.getElementById('carrito-total').textContent     = '$' + subtotal.toLocaleString('es-AR');
+  const subtotal = carrito.reduce((s, i) => s + (i.producto.precio * i.cantidad), 0);
+  const unidades = carrito.reduce((s, i) => s + i.cantidad, 0);
+  document.getElementById('carrito-subtotal').textContent = '$' + subtotal.toLocaleString('es-AR');
+  document.getElementById('carrito-unidades').textContent = unidades + ' unidades';
+  document.getElementById('carrito-total').textContent = '$' + subtotal.toLocaleString('es-AR');
 
   // Botones según plan
   const actionsEl = document.getElementById('carrito-actions');
-  const esPro     = item0.provPro;
-  const tieneWA   = item0.provWA && item0.provWA.trim() !== '';
+  const esPro = item0.provPro;
+  const tieneWA = item0.provWA && item0.provWA.trim() !== '';
 
   if (esPro && tieneWA) {
     actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA()">📲 Enviar pedido por WhatsApp</button>`;
@@ -3078,7 +3132,7 @@ function generarMensajePedido() {
     msg += `📦 ${item.producto.nombre} x${item.cantidad} = $${Number(item.producto.precio * item.cantidad).toLocaleString('es-AR')}
 `;
   });
-  const total = carrito.reduce((s,i) => s + (i.producto.precio * i.cantidad), 0);
+  const total = carrito.reduce((s, i) => s + (i.producto.precio * i.cantidad), 0);
   msg += `
 💰 Total estimado: $${total.toLocaleString('es-AR')}
 `;
@@ -3105,7 +3159,7 @@ async function guardarPedido() {
       total,
       estado: 'pendiente'
     });
-  } catch(e) {}
+  } catch (e) { }
 }
 
 function enviarPedidoPorWA() {
@@ -3129,15 +3183,15 @@ function enviarPedidoPorChat() {
   }, 400);
 }
 
-const ESTADOS_PEDIDO = ['pendiente','confirmado','pago recibido','en preparacion','enviado'];
+const ESTADOS_PEDIDO = ['pendiente', 'confirmado', 'pago recibido', 'en preparacion', 'enviado'];
 let pedidosCache = [];
 const ESTADO_COLOR = {
   pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444',
   'pago recibido': '#1847C8', 'en preparacion': '#7C3AED', enviado: '#006039', archivado: '#999'
 };
 const ESTADO_LABEL = {
-  pendiente:'Pendiente', confirmado:'Confirmado', cancelado:'Cancelado',
-  'pago recibido':'Pago recibido', 'en preparacion':'En preparación', enviado:'Enviado', archivado:'Archivado'
+  pendiente: 'Pendiente', confirmado: 'Confirmado', cancelado: 'Cancelado',
+  'pago recibido': 'Pago recibido', 'en preparacion': 'En preparación', enviado: 'Enviado', archivado: 'Archivado'
 };
 let pedidoActual = null;
 
@@ -3161,11 +3215,11 @@ async function cargarPedidosRecientes() {
       return;
     }
     el.innerHTML = pedidosCache.map((p, idx) => {
-      const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
+      const items = (() => { try { return JSON.parse(p.items); } catch (e) { return []; } })();
       const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
       const fecha = new Date(p.created_at);
       const hace = Math.floor((Date.now() - fecha) / 60000);
-      const tiempo = hace < 60 ? 'Hace ' + hace + ' min' : hace < 1440 ? 'Hace ' + Math.floor(hace/60) + 'h' : fecha.toLocaleDateString('es-AR');
+      const tiempo = hace < 60 ? 'Hace ' + hace + ' min' : hace < 1440 ? 'Hace ' + Math.floor(hace / 60) + 'h' : fecha.toLocaleDateString('es-AR');
       const color = ESTADO_COLOR[p.estado] || '#999';
       const label = ESTADO_LABEL[p.estado] || p.estado;
       return `<div onclick="abrirDetallePedido(${idx})" style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer">
@@ -3180,7 +3234,7 @@ async function cargarPedidosRecientes() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) {
+  } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:16px;color:#999;font-size:.82rem">Error al cargar pedidos</div>';
   }
 }
@@ -3189,8 +3243,8 @@ function abrirDetallePedido(idx) {
   const p = typeof idx === 'number' ? pedidosCache[idx] : idx;
   if (!p) return;
   pedidoActual = p;
-  const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
-  const fecha = new Date(p.created_at).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const items = (() => { try { return JSON.parse(p.items); } catch (e) { return []; } })();
+  const fecha = new Date(p.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const color = ESTADO_COLOR[p.estado] || '#999';
   const label = ESTADO_LABEL[p.estado] || p.estado;
 
@@ -3202,13 +3256,13 @@ function abrirDetallePedido(idx) {
   document.getElementById('pedido-det-progreso').innerHTML = `
     <div style="display:flex;align-items:center;gap:0;margin:16px 0 8px">
       ${pasos.map((s, i) => {
-        const done = i <= idxActual && p.estado !== 'cancelado';
-        const lbl = ESTADO_LABEL[s] || s;
-        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
-          <div style="width:22px;height:22px;border-radius:50%;background:${done?'#006039':'#eee'};display:flex;align-items:center;justify-content:center;font-size:.65rem;color:${done?'white':'#999'};font-weight:800;position:relative;z-index:1">${done?'✓':(i+1)}</div>
-          <div style="font-size:.55rem;color:${done?'#006039':'#aaa'};font-weight:700;text-align:center;line-height:1.2">${lbl.replace('en preparacion','En prep.')}</div>
-        </div>${i < pasos.length-1 ? `<div style="height:2px;flex:1;background:${i < idxActual && p.estado !== 'cancelado'?'#006039':'#eee'};margin-bottom:14px;margin-top:10px"></div>` : ''}`;
-      }).join('')}
+    const done = i <= idxActual && p.estado !== 'cancelado';
+    const lbl = ESTADO_LABEL[s] || s;
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <div style="width:22px;height:22px;border-radius:50%;background:${done ? '#006039' : '#eee'};display:flex;align-items:center;justify-content:center;font-size:.65rem;color:${done ? 'white' : '#999'};font-weight:800;position:relative;z-index:1">${done ? '✓' : (i + 1)}</div>
+          <div style="font-size:.55rem;color:${done ? '#006039' : '#aaa'};font-weight:700;text-align:center;line-height:1.2">${lbl.replace('en preparacion', 'En prep.')}</div>
+        </div>${i < pasos.length - 1 ? `<div style="height:2px;flex:1;background:${i < idxActual && p.estado !== 'cancelado' ? '#006039' : '#eee'};margin-bottom:14px;margin-top:10px"></div>` : ''}`;
+  }).join('')}
     </div>
     ${p.estado === 'cancelado' ? '<div style="background:#fff0f0;color:#ef4444;border-radius:10px;padding:8px 12px;font-size:.78rem;font-weight:700;text-align:center">Pedido cancelado</div>' : ''}
   `;
@@ -3249,14 +3303,14 @@ function abrirDetallePedido(idx) {
 function renderAccionesPedido(p) {
   const el = document.getElementById('pedido-det-acciones');
   if (!el) return;
-  const siguiente = { pendiente:'confirmado', confirmado:'pago recibido', 'pago recibido':'en preparacion', 'en preparacion':'enviado' };
-  const btnLabel = { confirmado:'✓ Confirmar pedido', 'pago recibido':'💳 Marcar pago recibido', 'en preparacion':'📦 En preparación', enviado:'🚀 Marcar como enviado' };
+  const siguiente = { pendiente: 'confirmado', confirmado: 'pago recibido', 'pago recibido': 'en preparacion', 'en preparacion': 'enviado' };
+  const btnLabel = { confirmado: '✓ Confirmar pedido', 'pago recibido': '💳 Marcar pago recibido', 'en preparacion': '📦 En preparación', enviado: '🚀 Marcar como enviado' };
   const sigEstado = siguiente[p.estado];
   el.innerHTML = `
     ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
     ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado')" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
-    ${['enviado','cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
-    ${!['enviado','cancelado','archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
+    ${['enviado', 'cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
+    ${!['enviado', 'cancelado', 'archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
   `;
 }
 
@@ -3270,7 +3324,7 @@ async function avanzarEstadoPedido(id, estado) {
     if (estado === 'archivado') { cerrarDetallePedido(); showToast('Pedido archivado'); }
     else { renderAccionesPedido(pedidoActual); abrirDetallePedido(pedidoActual); showToast('Estado actualizado ✓'); }
     cargarPedidosRecientes();
-  } catch(e) { showToast('Error: ' + (e?.message || 'desconocido')); }
+  } catch (e) { showToast('Error: ' + (e?.message || 'desconocido')); }
 }
 
 function cerrarDetallePedido() {
@@ -3292,7 +3346,7 @@ async function verPedidosArchivados() {
     <span>🗂 Pedidos archivados</span>
     <span onclick="cargarPedidosRecientes()" style="color:#006039;cursor:pointer">← Ver activos</span>
   </div>` + pedidosCache.map((p, idx) => {
-    const items = (() => { try { return JSON.parse(p.items); } catch(e) { return []; } })();
+    const items = (() => { try { return JSON.parse(p.items); } catch (e) { return []; } })();
     const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
     const fecha = new Date(p.created_at).toLocaleDateString('es-AR');
     return `<div onclick="abrirDetallePedido(${idx})" style="background:#f8f8f8;border-radius:12px;padding:14px;border:1.5px solid #eee;cursor:pointer;opacity:.8">
@@ -3323,7 +3377,7 @@ async function subirAvatar(file, carpeta) {
     }
     const { data: urlData } = sb.storage.from('Avatares').getPublicUrl(path);
     return urlData.publicUrl;
-  } catch(e) {
+  } catch (e) {
     showToast('Error al subir imagen');
     return null;
   }
@@ -3345,7 +3399,7 @@ async function subirAvatarUsuario(input) {
     if (currentUser?.email) {
       await sb.from('usuarios').upsert({ email: currentUser.email, foto_url: url }, { onConflict: 'email' });
     }
-  } catch(e) {}
+  } catch (e) { }
   showToast('✓ Foto actualizada');
 }
 
@@ -3365,11 +3419,11 @@ async function subirLogoProveedor(input) {
     if (currentUser?.proveedorId) {
       await sb.from('proveedores').update({ logo_url: url }).eq('id', currentUser.proveedorId);
       if (currentUser.provData) currentUser.provData.logo_url = url;
-      const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = url; prev.style.display = 'block'; }
-      const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+      const prev = document.getElementById('edit-logo-preview'); if (prev) { prev.src = url; prev.style.display = 'block'; }
+      const ph = document.getElementById('edit-logo-ph'); if (ph) ph.style.display = 'none';
       calcularCompletitudPerfil();
     }
-  } catch(e) {}
+  } catch (e) { }
   showToast('✓ Logo actualizado');
 }
 
@@ -3383,7 +3437,7 @@ async function cargarAvatarUsuario() {
       const ph = document.getElementById('user-avatar-placeholder');
       if (ph) ph.style.display = 'none';
     }
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function cargarLogoProveedor() {
@@ -3396,11 +3450,11 @@ async function cargarLogoProveedor() {
       const initials = document.getElementById('dash-avatar-initials');
       if (initials) initials.style.display = 'none';
       if (currentUser.provData) currentUser.provData.logo_url = data.logo_url;
-      const prev = document.getElementById('edit-logo-preview'); if(prev){ prev.src = data.logo_url; prev.style.display = 'block'; }
-      const ph = document.getElementById('edit-logo-ph'); if(ph) ph.style.display = 'none';
+      const prev = document.getElementById('edit-logo-preview'); if (prev) { prev.src = data.logo_url; prev.style.display = 'block'; }
+      const ph = document.getElementById('edit-logo-ph'); if (ph) ph.style.display = 'none';
       calcularCompletitudPerfil();
     }
-  } catch(e) {}
+  } catch (e) { }
 }
 
 async function guardarCambiosPerfil() {
@@ -3424,10 +3478,10 @@ async function guardarCambiosPerfil() {
     }
     currentUser.name = nombre;
     updateTopbar();
-    const dn = document.getElementById('dash-nombre'); if(dn) dn.textContent = nombre;
+    const dn = document.getElementById('dash-nombre'); if (dn) dn.textContent = nombre;
     calcularCompletitudPerfil();
     showToast('✓ Cambios guardados');
-  } catch(e) { showToast('Error al guardar'); }
+  } catch (e) { showToast('Error al guardar'); }
 }
 
 // ===== EXCEL IMPORT =====
@@ -3444,7 +3498,7 @@ function descargarTemplateExcel() {
     ['Zapatillas deportivas', 'Talle 36 al 44, varios colores', '8500', '50', 'Moda'],
     ['Auriculares inalámbricos', 'Bluetooth 5.0, batería 20hs', '4200', '30', 'Tecnología'],
   ]);
-  ws['!cols'] = [{wch:28},{wch:35},{wch:10},{wch:8},{wch:14}];
+  ws['!cols'] = [{ wch: 28 }, { wch: 35 }, { wch: 10 }, { wch: 8 }, { wch: 14 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Productos');
   XLSX.writeFile(wb, 'template_productos_emprendego.xlsx');
@@ -3456,7 +3510,7 @@ function leerExcelImport(input) {
   if (!file) return;
   if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     try {
       const data = new Uint8Array(e.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
@@ -3469,7 +3523,7 @@ function leerExcelImport(input) {
       excelCatMapping = {};
       document.getElementById('excel-result').style.display = 'none';
       renderExcelStep2();
-    } catch(err) {
+    } catch (err) {
       showToast('Error al leer el archivo. Verificá que sea un Excel válido.');
     }
   };
@@ -3487,7 +3541,7 @@ function renderExcelStep2() {
     <div style="overflow-x:auto;border:1px solid #e0e7ff;border-radius:10px;margin:10px 0 14px">
       <table style="width:100%;border-collapse:collapse;font-size:.68rem">
         <thead><tr>${previewCols.map(h => `<th style="padding:6px 10px;background:#f0f4ff;border-bottom:1px solid #e0e7ff;text-align:left;font-weight:800;color:#1847C8;white-space:nowrap">${escHtml(String(h))}</th>`).join('')}</tr></thead>
-        <tbody>${preview.map(row => `<tr>${previewCols.map(h => `<td style="padding:6px 10px;border-bottom:1px solid #f4f7ff;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(String(row[h]||''))}</td>`).join('')}</tr>`).join('')}</tbody>
+        <tbody>${preview.map(row => `<tr>${previewCols.map(h => `<td style="padding:6px 10px;border-bottom:1px solid #f4f7ff;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(String(row[h] || ''))}</td>`).join('')}</tr>`).join('')}</tbody>
       </table>
     </div>` : '';
 
@@ -3512,11 +3566,11 @@ function renderExcelStep2() {
     ${previewHTML}
     ${detected.length ? `<div style="background:#e8f5ee;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:.78rem;color:#006039">✓ Detectamos: ${detected.join(' · ')}</div>` : ''}
     <div style="font-size:.82rem;font-weight:700;color:#374151;margin-bottom:10px">Confirmá las columnas:</div>
-    ${colOpts('nombre','Nombre del producto',true)}
-    ${colOpts('precio','Precio',true)}
-    ${colOpts('stock','Stock',false)}
-    ${colOpts('descripcion','Descripción',false)}
-    ${colOpts('categoria','Categoría del Excel',false)}
+    ${colOpts('nombre', 'Nombre del producto', true)}
+    ${colOpts('precio', 'Precio', true)}
+    ${colOpts('stock', 'Stock', false)}
+    ${colOpts('descripcion', 'Descripción', false)}
+    ${colOpts('categoria', 'Categoría del Excel', false)}
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="excelBack(2)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
       <button onclick="confirmarColumnasExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Continuar →</button>
@@ -3547,7 +3601,7 @@ function confirmarColumnasExcel() {
             <select onchange="excelCatMapping[${JSON.stringify(rawCat)}] = this.value"
               style="flex:1;border:1.5px solid #e0e7ff;border-radius:8px;padding:6px 8px;font-size:.78rem;max-width:140px">
               <option value="">Seleccioná...</option>
-              ${CAT_PRINCIPAL.map(c => `<option value="${c}" ${(excelCatMapping[rawCat]||'') === c ? 'selected' : ''}>${c}</option>`).join('')}
+              ${CAT_PRINCIPAL.map(c => `<option value="${c}" ${(excelCatMapping[rawCat] || '') === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>
           </div>`).join('')}
       </div>`;
@@ -3563,7 +3617,7 @@ function confirmarColumnasExcel() {
   wizard.innerHTML = `
     ${catContent}
     <div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.8rem;color:#374151">
-      Listo para importar <strong>${total} producto${total===1?'':'s'}</strong>.
+      Listo para importar <strong>${total} producto${total === 1 ? '' : 's'}</strong>.
     </div>
     <div style="display:flex;gap:8px;margin-top:14px">
       <button onclick="excelBack(3)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
@@ -3642,7 +3696,7 @@ async function importarDesdeExcel() {
     document.getElementById('excel-result').style.display = 'block';
     document.getElementById('excel-result-text').textContent = '✓ ' + prods.length + ' productos importados' + (errores > 0 ? ' (' + errores + ' filas ignoradas)' : '');
     showToast('✓ ' + prods.length + ' productos importados');
-  } catch(e) {
+  } catch (e) {
     showToast('Error al importar. Intentá de nuevo.');
   }
   if (btn) btn.disabled = false;
@@ -3671,7 +3725,7 @@ function abrirMisProductos() {
 
 function buscarMisProds(query) {
   const q = (query || '').toLowerCase().trim();
-  const filtrados = q ? productos.filter(p => (p.nombre||'').toLowerCase().includes(q) || (p.categoria||'').toLowerCase().includes(q) || (p.categoria_principal||'').toLowerCase().includes(q)) : productos;
+  const filtrados = q ? productos.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q) || (p.categoria_principal || '').toLowerCase().includes(q)) : productos;
   const el = document.getElementById('misProductosList');
   if (!el) return;
   if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
@@ -3683,11 +3737,11 @@ function buscarMisProds(query) {
       ${img}
       <div style="flex:1;min-width:0">
         <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
-        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
+        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -3695,16 +3749,16 @@ function buscarMisProds(query) {
 }
 
 function ordenarMisProds(tipo) {
-  ['az','za','nuevo','viejo'].forEach(t => {
-    const btn = document.getElementById('sort-'+t);
+  ['az', 'za', 'nuevo', 'viejo'].forEach(t => {
+    const btn = document.getElementById('sort-' + t);
     if (btn) btn.style.background = t === tipo ? '#006039' : 'white';
     if (btn) btn.style.color = t === tipo ? 'white' : '#111';
   });
   let sorted = [...productos];
-  if (tipo === 'az') sorted.sort((a,b) => (a.nombre||'').localeCompare(b.nombre||''));
-  if (tipo === 'za') sorted.sort((a,b) => (b.nombre||'').localeCompare(a.nombre||''));
-  if (tipo === 'nuevo') sorted.sort((a,b) => (b.id||'').localeCompare(a.id||''));
-  if (tipo === 'viejo') sorted.sort((a,b) => (a.id||'').localeCompare(b.id||''));
+  if (tipo === 'az') sorted.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+  if (tipo === 'za') sorted.sort((a, b) => (b.nombre || '').localeCompare(a.nombre || ''));
+  if (tipo === 'nuevo') sorted.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+  if (tipo === 'viejo') sorted.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
   const el = document.getElementById('misProductosList');
   if (!el) return;
   if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">No tenés productos aún.</div>'; return; }
@@ -3716,11 +3770,11 @@ function ordenarMisProds(tipo) {
       ${img}
       <div style="flex:1;min-width:0">
         <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
-        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: '+escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria||'General')}</div>
+        <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
-        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre||'')}',${p.precio||0},'${escHtml(String(p.stock||0))}','${escHtml(p.categoria||p.cat||'')}','${escHtml(p.categoria_principal||'')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -3737,8 +3791,8 @@ function renderProdCard(p) {
     ${img}
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
-      <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio||0).toLocaleString('es-AR')}</div>
-      <div style="font-size:.68rem;color:#999;margin-top:3px">${escHtml(p.provNombre||'')}</div>
+      <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
+      <div style="font-size:.68rem;color:#999;margin-top:3px">${escHtml(p.provNombre || '')}</div>
     </div>
   </div>`;
 }
@@ -3750,36 +3804,6 @@ function toggleResenas(header) {
   const open = col.style.display !== 'none';
   col.style.display = open ? 'none' : 'block';
   icon.textContent = open ? '▼ Ver reseñas' : '▲ Ocultar reseñas';
-}
-
-function renderHomeCarousels() {
-  const all = productosReales || [];
-  const c1 = document.getElementById('prodInicioCarousel1');
-  const c2 = document.getElementById('prodInicioCarousel2');
-  if (!c1 || !c2) return;
-
-  // Diversificar: max 2 productos por proveedor, intercalados
-  const byProv = {};
-  all.forEach(p => { if(!byProv[p.provId]) byProv[p.provId]=[]; if(byProv[p.provId].length<2) byProv[p.provId].push(p); });
-  const diverse = [];
-  const provKeys = Object.keys(byProv);
-  let i = 0;
-  while(diverse.length < 16) {
-    let added = false;
-    for(const k of provKeys) { if(byProv[k][i]) { diverse.push(byProv[k][i]); added=true; } }
-    if(!added) break;
-    i++;
-  }
-
-  const first8 = diverse.slice(0, 8);
-  const second8 = diverse.slice(8, 16);
-  c1.innerHTML = first8.length ? first8.map(p => renderProdCard(p)).join('') : '<div style="color:#999;font-size:.85rem;padding:20px">No hay productos aún</div>';
-  c2.innerHTML = second8.length ? second8.map(p => renderProdCard(p)).join('') : '';
-  if (!second8.length && c2.parentElement) {
-    const title = c2.previousElementSibling;
-    if (title) title.style.display = 'none';
-    c2.style.display = 'none';
-  }
 }
 
 // ===== DETALLE PROVEEDOR CAROUSELS POR MARCA =====
@@ -3794,13 +3818,13 @@ function renderDetCarousels(prodsDetalle) {
   const resto = prodsDetalle.length - visibles.length;
   const cards = visibles.map(p => {
     const img = p.imgUrl
-      ? `<img src="${p.imgUrl}" style="width:100%;height:80px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:80px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem\'>${p.emoji||'📦'}</div>'">`
-      : `<div style="width:100%;height:80px;background:#f5f7ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem">${p.emoji||'📦'}</div>`;
+      ? `<img src="${p.imgUrl}" style="width:100%;height:80px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:80px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem\'>${p.emoji || '📦'}</div>'">`
+      : `<div style="width:100%;height:80px;background:#f5f7ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem">${p.emoji || '📦'}</div>`;
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
       ${img}
       <div style="padding:7px 8px 9px">
         <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.nombre}</div>
-        <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio||0).toLocaleString('es-AR')}</div>
+        <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
       </div>
     </div>`;
   }).join('');
@@ -3828,13 +3852,13 @@ function renderProvDestacados() {
   if (!seccion || !lista) return;
   const all = proveedoresDB;
   if (!all.length) return;
-  const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED','#0D1B3E','#C2410C'];
+  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
   const top = all
     .map(p => ({ ...p, avgR: getProvRating(String(p.id)).avg }))
     .sort((a, b) => b.avgR - a.avgR || (b.pro ? 1 : 0) - (a.pro ? 1 : 0))
     .slice(0, 8);
   lista.innerHTML = top.map((p, i) => {
-    const ini = (p.inicial || p.nombre.substring(0,2)).toUpperCase();
+    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const bg = bgs[i % bgs.length];
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
@@ -3868,7 +3892,7 @@ async function renderRecienLlegados() {
       .limit(3);
     if (!data || !data.length) return;
     seccion.style.display = 'block';
-    const bgs = ['#1847C8','#FF6B00','#00A651','#7C3AED'];
+    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED'];
     lista.innerHTML = data.map((p, i) => {
       const ini = p.nombre.substring(0, 2).toUpperCase();
       const bg = bgs[i % bgs.length];
@@ -3889,7 +3913,7 @@ async function renderRecienLlegados() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) {}
+  } catch (e) { }
 }
 
 // ===== HERO STATS =====
@@ -3909,7 +3933,7 @@ async function cargarHeroStats() {
     if (e1) animarContador(e1, numProvs, '+');
     if (e2) animarContador(e2, numProds, '+');
     if (e3) animarContador(e3, numRubros, '+');
-  } catch(e) {
+  } catch (e) {
     const e1 = document.getElementById('hero-stat-provs');
     const e2 = document.getElementById('hero-stat-prods');
     const e3 = document.getElementById('hero-stat-rubros');
@@ -3924,7 +3948,7 @@ let obSlide = 0;
 const OB_SLIDES = 3;
 
 function initOnboarding() {
-  try { if (localStorage.getItem('eg_onboarding_done')) return; } catch(e) {}
+  try { if (localStorage.getItem('eg_onboarding_done')) return; } catch (e) { }
   const overlay = document.getElementById('onboarding-overlay');
   if (!overlay) return;
   overlay.style.display = 'flex';
@@ -3933,8 +3957,8 @@ function initOnboarding() {
 function renderObDots() {
   const el = document.getElementById('ob-dots');
   if (!el) return;
-  el.innerHTML = Array.from({length: OB_SLIDES}).map((_, i) =>
-    `<div style="width:${i===obSlide?20:8}px;height:8px;border-radius:4px;background:${i===obSlide?'#006039':'#E5E5E5'};transition:all .25s"></div>`
+  el.innerHTML = Array.from({ length: OB_SLIDES }).map((_, i) =>
+    `<div style="width:${i === obSlide ? 20 : 8}px;height:8px;border-radius:4px;background:${i === obSlide ? '#006039' : '#E5E5E5'};transition:all .25s"></div>`
   ).join('');
 }
 function nextSlideOnboarding() {
@@ -3955,7 +3979,7 @@ function nextSlideOnboarding() {
 function cerrarOnboarding() {
   const overlay = document.getElementById('onboarding-overlay');
   if (overlay) overlay.style.display = 'none';
-  try { localStorage.setItem('eg_onboarding_done', '1'); } catch(e) {}
+  try { localStorage.setItem('eg_onboarding_done', '1'); } catch (e) { }
 }
 
 // ===== COMPARTIR PROVEEDOR =====
@@ -3963,26 +3987,26 @@ function compartirProveedor() {
   if (!provActual) return;
   const texto = `¡Mirá este proveedor en EmprendeGO!\n\n*${provActual.nombre}*\n${provActual.rubro || ''}${provActual.provincia ? ' · ' + provActual.provincia : ''}\n\n${provActual.desc || ''}\n\n👉 emprendego.vercel.app`;
   if (navigator.share) {
-    navigator.share({ title: provActual.nombre, text: texto, url: 'https://emprendego.vercel.app' }).catch(() => {});
+    navigator.share({ title: provActual.nombre, text: texto, url: 'https://emprendego.vercel.app' }).catch(() => { });
   } else {
-    try { navigator.clipboard.writeText(texto); showToast('¡Link copiado! Compartilo por WhatsApp 📋'); } catch(e) { showToast('Copiá este link: emprendego.vercel.app'); }
+    try { navigator.clipboard.writeText(texto); showToast('¡Link copiado! Compartilo por WhatsApp 📋'); } catch (e) { showToast('Copiá este link: emprendego.vercel.app'); }
   }
 }
 
 // ===== LANDING PROVEEDORES =====
 async function enviarContactoProv(btn) {
   const nombre = document.getElementById('lp-nombre').value.trim();
-  const email  = document.getElementById('lp-email').value.trim();
-  const wa     = document.getElementById('lp-wa').value.trim();
-  const rubro  = document.getElementById('lp-rubro').value;
+  const email = document.getElementById('lp-email').value.trim();
+  const wa = document.getElementById('lp-wa').value.trim();
+  const rubro = document.getElementById('lp-rubro').value;
   if (!nombre) { showToast('Ingresá el nombre de tu negocio'); return; }
-  if (!email)  { showToast('Ingresá tu email'); return; }
+  if (!email) { showToast('Ingresá tu email'); return; }
   const orig = btn.textContent;
   btn.textContent = 'Enviando...';
   btn.disabled = true;
   try {
     await sb.from('contactos_prov').insert({ nombre, email, whatsapp: wa || null, rubro: rubro || null });
-  } catch(e) {}
+  } catch (e) { }
   showToast('¡Recibimos tu consulta! Te contactamos pronto 👋');
   btn.textContent = '¡Enviado! ✓';
   setTimeout(() => goTo('registro'), 1500);
@@ -3990,7 +4014,7 @@ async function enviarContactoProv(btn) {
 
 // ===== INIT =====
 refreshFavBadge();
-cargarProveedores().then(()=>{
+cargarProveedores().then(() => {
   initNotificaciones();
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -4002,7 +4026,7 @@ cargarProveedores().then(()=>{
 // ===== CARRUSEL TESTIMONIOS =====
 (function initTestimonios() {
   const slides = document.querySelectorAll('.testim-slide');
-  const dots   = document.querySelectorAll('.testim-dot');
+  const dots = document.querySelectorAll('.testim-dot');
   if (!slides.length) return;
   let cur = 0;
   function goTo(n) {
@@ -4022,7 +4046,7 @@ cargarProveedores().then(()=>{
 initOnboarding();
 
 // Skeletons inmediatos mientras cargan los datos
-(function initSkeletons(){
+(function initSkeletons() {
   const pl = document.getElementById('provList');
   if (pl) pl.innerHTML = skelProv(4);
   const c1 = document.getElementById('prodInicioCarousel1');
@@ -4030,7 +4054,7 @@ initOnboarding();
   const c2 = document.getElementById('prodInicioCarousel2');
   if (c2) c2.innerHTML = skelCarousel(5);
   const pd = document.getElementById('prov-dest-list');
-  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display='block'; }
+  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display = 'block'; }
 })();
 
 renderQuestion();
@@ -4038,7 +4062,7 @@ checkSession();
 cargarHeroStats();
 renderRecienLlegados();
 cargarProductosReales();
-setTimeout(()=>{try{renderProdBuscar(currentCat,'');}catch(e){}},300);
+setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
 // ===== PLAN PRO - FUNCIONES =====
 async function iniciarPagoPro(btnEl) {
   if (!currentUser || !currentUser.proveedorId) {
@@ -4062,7 +4086,7 @@ async function iniciarPagoPro(btnEl) {
       return;
     }
     window.location.href = data.init_point;
-  } catch(e) {
+  } catch (e) {
     showToast('Error al conectar con el servidor de pago.');
     if (btn) { btn.disabled = false; btn.textContent = txtOrig; }
   }

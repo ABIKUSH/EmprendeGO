@@ -416,17 +416,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div id="prov-dest-list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch"></div>
   </div>
 
-  <!-- PRODUCTOS DESTACADOS -->
-  <div class="reveal" style="padding:20px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos destacados</div>
-    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+  <!-- PRODUCTOS MARKETPLACE -->
+  <div class="reveal" id="home-marketplace-section" style="padding:20px 20px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos para mayoristas</div>
+      <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
+    </div>
+    <div id="home-prod-grid" class="home-prod-grid"></div>
+    <button id="home-ver-mas-btn" onclick="cargarMasHomeProductos()" style="display:none;width:100%;margin-top:14px;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#1847C8;cursor:pointer">Ver más productos →</button>
   </div>
-  <div id="prodInicioCarousel1" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
-  <div style="padding:16px 20px 0;display:flex;justify-content:space-between;align-items:center">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Más productos</div>
-    <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
-  </div>
-  <div id="prodInicioCarousel2" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding:12px 20px"></div>
 
   <!-- BANNER TEST -->
   <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px">
