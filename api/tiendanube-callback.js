@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
   const appId = process.env.TN_APP_ID;
   const clientSecret = process.env.TN_CLIENT_SECRET;
-  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   console.log('[tn-callback] SUPABASE_URL (sin trailing slash):', supabaseUrl);
