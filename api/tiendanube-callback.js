@@ -29,6 +29,7 @@ export default async function handler(req, res) {
 
   console.log('[tn-callback] SUPABASE_URL (sin trailing slash):', supabaseUrl);
   console.log('[tn-callback] TN_APP_ID configurado:', !!appId);
+  console.log('[tn-callback] SERVICE_ROLE_KEY primeros 20 chars:', supabaseKey ? supabaseKey.substring(0, 20) : 'NO CONFIGURADA');
 
   if (!appId || !clientSecret) {
     return res.status(500).send('Credenciales TN no configuradas');
@@ -72,8 +73,8 @@ export default async function handler(req, res) {
 
   const getRes = await fetch(getUrl, {
     headers: {
-      'apikey': supabaseKey,
-      'Authorization': `Bearer ${supabaseKey}`
+      'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
     }
   });
   const getBody = await getRes.text();
