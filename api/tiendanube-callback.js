@@ -60,7 +60,9 @@ export default async function handler(req, res) {
 
   // Verificar que el registro existe antes de hacer PATCH
   const getUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}&select=id`;
-  console.log('[tn-callback] buscando proveedor con id:', proveedorId, '| GET URL:', getUrl);
+
+  console.log('[tn-callback] SUPABASE_URL:', process.env.SUPABASE_URL);
+  console.log('[tn-callback] KEY primeros 20:', process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20));
 
   const getRes = await fetch(getUrl, {
     headers: {
@@ -68,10 +70,10 @@ export default async function handler(req, res) {
       'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
     }
   });
-  const getBody = await getRes.text();
-  console.log('[tn-callback] GET status:', getRes.status, '| body:', getBody);
+  const text = await getRes.text();
+  console.log('[tn-callback] status:', getRes.status, 'body raw:', text);
 
-  if (!getRes.ok || getBody === '[]') {
+  if (!getRes.ok || text === '[]') {
     console.error('[tn-callback] proveedor no encontrado en Supabase. id buscado:', proveedorId);
     return res.redirect('https://emprendego.com.ar/?tn=error');
   }
