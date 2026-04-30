@@ -4,7 +4,7 @@ export default async function handler(req, res) {
   const { proveedor_id } = req.body || {};
   if (!proveedor_id) return res.status(400).json({ error: 'Falta proveedor_id' });
 
-  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   // Leer tn_store_id y tn_access_token del proveedor
