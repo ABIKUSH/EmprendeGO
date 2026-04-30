@@ -183,6 +183,9 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
 .prod-card{background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .prod-img{width:100%;aspect-ratio:1;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-size:2rem}
 .prod-body{padding:10px}
+.prod-img-wrap{height:200px;overflow:hidden;background:#f5f7ff;flex-shrink:0}
+.prod-img-wrap img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.prod-img-wrap .prod-img-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:2.2rem}
 .prod-body h4{font-family:'Fraunces',serif;font-size:.85rem;font-weight:700;margin-bottom:2px}
 .prod-body .price{font-size:.8rem;font-weight:700;color:var(--blue)}
 .prod-body .stock{font-size:.72rem;color:var(--gray)}

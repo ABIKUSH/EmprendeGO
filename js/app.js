@@ -2583,10 +2583,10 @@ function renderHomeProdCard(p) {
 function renderProdBuscarCard(p) {
   const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
-    : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${p.provColor || '#EEF2FF'}22">${emoji}</div>`;
+    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
+    : `<div class="prod-img-ph">${emoji}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
-    ${img}
+    <div class="prod-img-wrap">${img}</div>
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
       <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
@@ -3798,10 +3798,10 @@ function ordenarMisProds(tipo) {
 function renderProdCard(p) {
   const emoji = p.emoji || '📦';
   const img = p.imgUrl
-    ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100px;object-fit:cover" onerror="this.style.display='none'">`
-    : `<div style="width:100%;height:100px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:2rem">${emoji}</div>`;
+    ? `<img src="${escHtml(p.imgUrl)}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
+    : `<div class="prod-img-ph">${emoji}</div>`;
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
-    ${img}
+    <div class="prod-img-wrap">${img}</div>
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
       <div style="font-size:.88rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
@@ -3830,11 +3830,12 @@ function renderDetCarousels(prodsDetalle) {
   const visibles = prodsDetalle.slice(0, 6);
   const resto = prodsDetalle.length - visibles.length;
   const cards = visibles.map(p => {
+    const emoji = p.emoji || '📦';
     const img = p.imgUrl
-      ? `<img src="${p.imgUrl}" style="width:100%;height:80px;object-fit:cover;display:block" onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:80px;background:#f0f4ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem\'>${p.emoji || '📦'}</div>'">`
-      : `<div style="width:100%;height:80px;background:#f5f7ff;display:flex;align-items:center;justify-content:center;font-size:1.6rem">${p.emoji || '📦'}</div>`;
+      ? `<img src="${p.imgUrl}" onerror="this.parentElement.innerHTML='<div class=prod-img-ph>${emoji}</div>'">`
+      : `<div class="prod-img-ph">${emoji}</div>`;
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
-      ${img}
+      <div class="prod-img-wrap" style="height:160px">${img}</div>
       <div style="padding:7px 8px 9px">
         <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.nombre}</div>
         <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
