@@ -1964,7 +1964,10 @@ async function cargarProductosProveedor() {
 async function deleteProduct(id) {
   try { await sb.from('productos').delete().eq('id', id); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
-  renderProdGrid(); showToast('Producto eliminado');
+  renderProdGrid();
+  const modal = document.getElementById('misProductosModal');
+  if (modal && modal.classList.contains('open')) ordenarMisProds(_misProdSort);
+  showToast('Producto eliminado');
 }
 async function toggleVisibleProduct(id, estaOculto) {
   const nuevoVisible = estaOculto;
@@ -1973,6 +1976,12 @@ async function toggleVisibleProduct(id, estaOculto) {
     const idx = productos.findIndex(p => String(p.id) === String(id));
     if (idx >= 0) productos[idx].visible = nuevoVisible;
     renderProdGrid();
+    const modal = document.getElementById('misProductosModal');
+    if (modal && modal.classList.contains('open')) {
+      const searchVal = document.getElementById('mis-prod-search')?.value || '';
+      if (searchVal) buscarMisProds(searchVal);
+      else ordenarMisProds(_misProdSort);
+    }
     showToast(nuevoVisible ? '✓ Producto visible' : 'Producto ocultado');
   } catch (e) { showToast('Error al actualizar'); }
 }
@@ -3839,6 +3848,7 @@ function resetExcelImport() {
 }
 
 // ===== MIS PRODUCTOS MODAL =====
+let _misProdSort = 'nuevo';
 function abrirMisProductos() {
   document.getElementById('misProductosModal').classList.add('open');
   const s = document.getElementById('mis-prod-search');
@@ -3853,18 +3863,20 @@ function buscarMisProds(query) {
   if (!el) return;
   if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
   el.innerHTML = filtrados.map(p => {
+    const oculto = p.visible === false;
     const img = p.imagen_url
       ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
-    return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
+    return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}${oculto ? '<span style="font-size:.6rem;font-weight:800;background:#ef4444;color:white;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle">OCULTO</span>' : ''}</div>
         <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
         <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -3872,6 +3884,7 @@ function buscarMisProds(query) {
 }
 
 function ordenarMisProds(tipo) {
+  _misProdSort = tipo;
   ['az', 'za', 'nuevo', 'viejo'].forEach(t => {
     const btn = document.getElementById('sort-' + t);
     if (btn) btn.style.background = t === tipo ? '#006039' : 'white';
@@ -3886,18 +3899,20 @@ function ordenarMisProds(tipo) {
   if (!el) return;
   if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">No tenés productos aún.</div>'; return; }
   el.innerHTML = sorted.map(p => {
+    const oculto = p.visible === false;
     const img = p.imagen_url
       ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
-    return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
+    return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
+        <div style="font-size:.82rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}${oculto ? '<span style="font-size:.6rem;font-weight:800;background:#ef4444;color:white;padding:1px 5px;border-radius:4px;margin-left:5px;vertical-align:middle">OCULTO</span>' : ''}</div>
         <div style="font-size:.9rem;font-weight:900;color:#006039;margin-top:2px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
         <div style="font-size:.68rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
