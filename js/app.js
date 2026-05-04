@@ -3974,10 +3974,12 @@ function renderProvDestacados() {
   if (!all.length) return;
   const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
   const now = new Date();
+  const provsPro = all.filter(p => p.pro);
+  console.log('[home] proveedores pro encontrados:', provsPro.length, provsPro.map(p => p.nombre));
   const top = all
     .filter(p => {
       if (!p.pro) return false;
-      if (!p.plan_hasta) return false;
+      if (!p.plan_hasta) return true; // Pro permanente sin vencimiento
       return new Date(p.plan_hasta + 'T03:00:00Z') > now;
     })
     .map(p => ({ ...p, avgR: getProvRating(String(p.id)).avg }))
