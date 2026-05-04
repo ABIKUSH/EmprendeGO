@@ -418,7 +418,7 @@ async function cargarProveedores() {
         inicial: p.nombre.substring(0, 2).toUpperCase(), whatsapp: p.whatsapp || '',
         provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
-        logo_url: p.logo_url || ''
+        logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
       }));
     } else { proveedoresDB = []; }
   } catch (e) { proveedoresDB = []; }
@@ -1077,7 +1077,7 @@ async function cargarProductosDetalle(proveedorId) {
     provDetalleEsPro = esPlanPro && hastaValida;
     provDetalleLimite = provDetalleEsPro ? undefined : 30;
     console.log('plan:', provActual?.plan, 'plan_hasta:', hasta, '→ esPro:', provDetalleEsPro);
-    let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).order('created_at', { ascending: false });
+    let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).eq('visible', true).order('created_at', { ascending: false });
     if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
     if (error || !data || !data.length) {
@@ -1199,13 +1199,17 @@ function abrirDetalle(id) {
   document.getElementById('det-fav-btn').textContent = esFav(p.id) ? '❤️' : '♡';
   document.getElementById('det-wa-btn').style.display = (p.pro && p.whatsapp) ? 'flex' : 'none';
 
+  // Reseñas solo para plan Pro
+  const resenasSection = document.getElementById('det-resenas-section');
+  if (resenasSection) resenasSection.style.display = p.pro ? 'block' : 'none';
+
   // Reset calc
   ['calc-costo', 'calc-venta', 'calc-cantidad'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cr = document.getElementById('calc-result');
   if (cr) cr.style.display = 'none';
 
-  // Rating (async — carga desde Supabase)
-  renderRatingSummary(p.id);
+  // Rating (async — carga desde Supabase, solo Pro)
+  if (p.pro) renderRatingSummary(p.id);
 
   // Comp button
   updateDetCompBtn();
@@ -1681,24 +1685,77 @@ function abrirEditarPerfil() {
   }
 }
 
+// ===== MODAL PRO =====
+function showModalPro(feature) {
+  const existing = document.getElementById('modal-pro-upgrade');
+  if (existing) existing.remove();
+  const f = feature || 'Esta función';
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-pro-upgrade';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  overlay.innerHTML = `<div style="background:white;border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;text-align:center">
+    <div style="font-size:2.5rem;margin-bottom:12px">⭐</div>
+    <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A;margin-bottom:8px">${escHtml(f)} es exclusivo del Plan Pro</div>
+    <div style="font-size:.85rem;color:#777;line-height:1.5;margin-bottom:24px">Desbloqueá todas las funciones avanzadas para hacer crecer tu negocio mayorista.</div>
+    <button onclick="document.getElementById('modal-pro-upgrade').remove();goTo('planes')" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-bottom:10px">Activar Plan Pro →</button>
+    <button onclick="document.getElementById('modal-pro-upgrade').remove()" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Ahora no</button>
+  </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+}
+
 // ===== STATS DASHBOARD =====
 async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
+  const esPro = currentUser.provData?.plan === 'pro' && currentUser.provData?.plan_hasta
+    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
   try {
     const { data: prov } = await sb.from('proveedores').select('visitas').eq('id', currentUser.proveedorId).single();
     if (prov) {
       const el = document.getElementById('stat-visitas');
-      if (el) el.textContent = prov.visitas || 0;
+      if (el) {
+        if (esPro) {
+          el.textContent = prov.visitas || 0;
+          el.style.filter = '';
+        } else {
+          el.textContent = '??';
+          el.style.cssText += ';filter:blur(6px);user-select:none';
+        }
+      }
     }
-    const { data: msgs } = await sb.from('mensajes').select('id').eq('proveedor_id', currentUser.proveedorId).eq('de_tipo', 'usuario');
+    const { data: msgs } = await sb.from('mensajes').select('id,leido').eq('proveedor_id', currentUser.proveedorId).eq('de_tipo', 'usuario');
     const totalMsgs = msgs ? msgs.length : 0;
     const elMsgs = document.getElementById('dash-msgs-count');
     if (elMsgs) elMsgs.textContent = totalMsgs;
     const elLeads = document.getElementById('stat-leads');
-    if (elLeads) elLeads.textContent = totalMsgs;
+    if (elLeads) {
+      if (esPro) {
+        elLeads.textContent = totalMsgs;
+        elLeads.style.filter = '';
+      } else {
+        elLeads.textContent = '??';
+        elLeads.style.cssText += ';filter:blur(6px);user-select:none';
+      }
+    }
     const noLeidos = msgs ? msgs.filter(m => !m.leido).length : 0;
     const elNew = document.getElementById('dash-msgs-new');
     if (elNew && noLeidos > 0) { elNew.style.display = 'inline'; elNew.textContent = noLeidos + ' New'; }
+    // Mostrar candado sobre stats si plan gratis
+    const statsGrid = document.getElementById('dash-stats-grid');
+    if (statsGrid && !esPro) {
+      if (!statsGrid.querySelector('.stats-lock-overlay')) {
+        const lockDiv = document.createElement('div');
+        lockDiv.className = 'stats-lock-overlay';
+        lockDiv.onclick = () => showModalPro('Las estadísticas');
+        lockDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;gap:6px;font-size:.75rem;font-weight:700;color:rgba(255,255,255,.85)';
+        lockDiv.innerHTML = '<span style="font-size:1.1rem">🔒</span> Solo Plan Pro';
+        statsGrid.style.position = 'relative';
+        statsGrid.appendChild(lockDiv);
+      }
+    } else if (statsGrid) {
+      const lock = statsGrid.querySelector('.stats-lock-overlay');
+      if (lock) lock.remove();
+    }
   } catch (e) { }
 }
 // ===== HISTORIAL =====
@@ -1847,18 +1904,23 @@ function renderProdGrid() {
   if (!el) return;
   if (!productos.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:8px">📦</div><p style="font-size:.88rem">No tenés productos aún.</p></div>'; return; }
   el.innerHTML = productos.map(p => {
+    const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img src="${escHtml(p.imagen_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px">`
-      : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
-    return `<div style="background:white;border-radius:12px;padding:12px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      ? `<img src="${escHtml(p.imagen_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;${oculto ? 'opacity:.45' : ''}">`
+      : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;${oculto ? 'opacity:.45' : ''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
+    return `<div style="background:${oculto ? '#f8f8f8' : 'white'};border-radius:12px;padding:12px;border:1.5px solid ${oculto ? '#e0e0e0' : '#eee'};display:flex;align-items:center;gap:12px;margin-bottom:8px">
       ${img}
       <div style="flex:1;min-width:0">
-        <div style="font-size:.85rem;font-weight:700;color:#111;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
-        <div style="font-size:.95rem;font-weight:900;color:#006039">$${(p.precio || 0).toLocaleString('es-AR')}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <div style="font-size:.85rem;font-weight:700;color:${oculto ? '#999' : '#111'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
+          ${oculto ? '<span style="font-size:.6rem;font-weight:800;background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb;padding:1px 6px;border-radius:20px;flex-shrink:0">OCULTO</span>' : ''}
+        </div>
+        <div style="font-size:.95rem;font-weight:900;color:${oculto ? '#bbb' : '#006039'}">$${(p.precio || 0).toLocaleString('es-AR')}</div>
         <div style="font-size:.7rem;color:#999;margin-top:2px">${p.stock ? 'Stock: ' + escHtml(String(p.stock)) : 'Sin stock definido'} · ${escHtml(p.categoria || 'General')}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#E8F2EE' : '#FFF8E1'};border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:${oculto ? '#006039' : '#92400e'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
@@ -1892,6 +1954,16 @@ async function deleteProduct(id) {
   try { await sb.from('productos').delete().eq('id', id); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid(); showToast('Producto eliminado');
+}
+async function toggleVisibleProduct(id, estaOculto) {
+  const nuevoVisible = estaOculto;
+  try {
+    await sb.from('productos').update({ visible: nuevoVisible }).eq('id', id);
+    const idx = productos.findIndex(p => String(p.id) === String(id));
+    if (idx >= 0) productos[idx].visible = nuevoVisible;
+    renderProdGrid();
+    showToast(nuevoVisible ? '✓ Producto visible' : 'Producto ocultado');
+  } catch (e) { showToast('Error al actualizar'); }
 }
 // ===== FOTO UPLOAD =====
 let fotoFile = null;
@@ -2140,6 +2212,12 @@ async function addProductosMultiples() {
 }
 
 function openAddProduct() {
+  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
+    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+  if (!esPro && productos.length >= 30) {
+    showModalPro('Más de 30 productos');
+    return;
+  }
   fotoFile = null;
   removeFoto();
   document.getElementById('addProdModal').classList.add('open');
@@ -2551,7 +2629,7 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').order('created_at', { ascending: false }).limit(500);
+    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').eq('visible', true).order('created_at', { ascending: false }).limit(500);
     if (!error && data && data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
       const mapped = data.map((p, i) => ({
@@ -3542,6 +3620,9 @@ function descargarTemplateExcel() {
 function leerExcelImport(input) {
   const file = input.files[0];
   if (!file) return;
+  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
+    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+  if (!esPro) { input.value = ''; showModalPro('Carga por Excel'); return; }
   if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -3884,10 +3965,16 @@ function renderProvDestacados() {
   const all = proveedoresDB;
   if (!all.length) return;
   const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
+  const now = new Date();
   const top = all
+    .filter(p => {
+      if (!p.pro) return false;
+      if (!p.plan_hasta) return false;
+      return new Date(p.plan_hasta + 'T03:00:00Z') > now;
+    })
     .map(p => ({ ...p, avgR: getProvRating(String(p.id)).avg }))
-    .sort((a, b) => b.avgR - a.avgR || (b.pro ? 1 : 0) - (a.pro ? 1 : 0))
-    .slice(0, 8);
+    .sort((a, b) => (b.visitas || 0) - (a.visitas || 0))
+    .slice(0, 6);
   lista.innerHTML = top.map((p, i) => {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const bg = bgs[i % bgs.length];
@@ -4133,6 +4220,18 @@ async function renderTiendaNubeSection() {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
 
+  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
+    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+
+  // Si no es Pro, mostrar botón bloqueado
+  if (!esPro) {
+    const card = document.getElementById('tn-card');
+    if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+    statusLabel.textContent = 'Disponible en Plan Pro';
+    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar Tienda Nube · Solo Pro</button>`;
+    return;
+  }
+
   // Query fresca para obtener estado actual de tn_store_id
   const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
   const tnStoreId = data?.tn_store_id;
@@ -4234,6 +4333,52 @@ async function confirmarMapeoTN(btn) {
   cargarProductosProveedor();
   btn.disabled = false;
   btn.textContent = 'Confirmar categorías';
+}
+
+// ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====
+async function exportarContactosCSV() {
+  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
+    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+  if (!esPro) { showModalPro('Exportar contactos'); return; }
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  try {
+    showToast('Generando CSV...');
+    const { data, error } = await sb.from('mensajes')
+      .select('de_nombre,de_email,created_at,texto')
+      .eq('proveedor_id', proveedorId)
+      .eq('de_tipo', 'usuario')
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+    if (!data || !data.length) { showToast('No tenés contactos para exportar'); return; }
+    // Agrupar por usuario (por nombre)
+    const mapa = {};
+    data.forEach(m => {
+      const key = m.de_email || m.de_nombre || 'Anónimo';
+      if (!mapa[key]) {
+        mapa[key] = { nombre: m.de_nombre || 'Anónimo', email: m.de_email || '', primera: m.created_at, ultima: m.created_at, ultimo_msg: m.texto };
+      } else {
+        if (m.created_at > mapa[key].ultima) { mapa[key].ultima = m.created_at; mapa[key].ultimo_msg = m.texto; }
+      }
+    });
+    const filas = [['Nombre', 'Email', 'Primer mensaje', 'Último mensaje', 'Último texto']];
+    Object.values(mapa).forEach(c => {
+      filas.push([
+        c.nombre,
+        c.email,
+        new Date(c.primera).toLocaleDateString('es-AR'),
+        new Date(c.ultima).toLocaleDateString('es-AR'),
+        (c.ultimo_msg || '').replace(/"/g, '""').substring(0, 100)
+      ]);
+    });
+    const csv = filas.map(f => f.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'contactos_emprendego.csv'; a.click();
+    URL.revokeObjectURL(url);
+    showToast('✓ CSV exportado con ' + Object.keys(mapa).length + ' contactos');
+  } catch (e) { showToast('Error al exportar contactos'); }
 }
 
 function renderBannerProDashboard() {

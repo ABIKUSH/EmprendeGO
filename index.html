@@ -641,8 +641,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       <div class="det-info-row" style="border-bottom:none"><span>📷</span><span class="det-info-key">Instagram</span><span class="det-info-val" id="det-instagram">-</span></div>
     </div>
 
-    <!-- RESEÑAS COLAPSADAS -->
-    <div class="rating-summary">
+    <!-- RESEÑAS COLAPSADAS (solo Pro) -->
+    <div id="det-resenas-section" class="rating-summary">
       <div class="rating-header" onclick="toggleResenas(this)" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:12px">
           <div class="rating-avg" id="det-rating-avg">—</div>
@@ -1201,6 +1201,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg></span>
           <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
           <span id="dash-msgs-new" style="position:absolute;top:8px;right:8px;background:#F43F8E;color:white;font-size:.55rem;font-weight:800;padding:2px 6px;border-radius:8px;display:none">NEW</span>
+        </button>
+        <button class="dash-action-btn" onclick="exportarContactosCSV();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+          <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
+          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Contactos</div><div style="font-size:.7rem;color:#999">exportar CSV 🔒</div></div>
         </button>
         <button class="dash-action-btn" onclick="abrirMisProductos();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
