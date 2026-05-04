@@ -233,6 +233,17 @@ function escHtml(s) {
 // ===== PLAN PRO - PROMO DEADLINE =====
 function esPromoActiva() { return false; }
 
+// Helper único para verificar si el proveedor logueado tiene Plan Pro activo.
+// plan_hasta=null significa Pro permanente (activado manualmente o por admin).
+// checkSession() ya invalida planes vencidos seteando plan='gratis', así que
+// si plan==='pro' podemos confiar que está vigente; igual hacemos el check de fecha.
+function esProvPro() {
+  const pd = currentUser?.provData;
+  if (!pd || pd.plan !== 'pro') return false;
+  if (!pd.plan_hasta) return true; // Pro sin vencimiento definido = activo
+  return new Date(pd.plan_hasta + 'T03:00:00Z') > new Date();
+}
+
 // ===== CONTADOR ANIMADO =====
 function animarContador(el, target, prefix) {
   if (!el || target === 0) { if (el) el.textContent = '0'; return; }
@@ -1581,6 +1592,7 @@ function updatePerfilUI() {
   if (!currentUser) return;
   document.getElementById('perfil-login').style.display = 'none';
   if (currentUser.type === 'proveedor') {
+    console.log('[dashboard] plan:', currentUser?.provData?.plan, '| plan_hasta:', currentUser?.provData?.plan_hasta, '| esProvPro():', esProvPro());
     document.getElementById('perfil-user').style.display = 'none';
     document.getElementById('perfil-proveedor').style.display = 'block';
     document.getElementById('dash-nombre').textContent = currentUser.name;
@@ -1707,8 +1719,7 @@ function showModalPro(feature) {
 // ===== STATS DASHBOARD =====
 async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
-  const esPro = currentUser.provData?.plan === 'pro' && currentUser.provData?.plan_hasta
-    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+  const esPro = esProvPro();
   try {
     const { data: prov } = await sb.from('proveedores').select('visitas').eq('id', currentUser.proveedorId).single();
     if (prov) {
@@ -1929,7 +1940,7 @@ function renderProdGrid() {
 async function cargarProductosProveedor() {
   if (!currentUser || !currentUser.proveedorId) { productos = []; renderProdGrid(); return; }
   try {
-    const esPro = currentUser.provData?.plan === 'pro';
+    const esPro = esProvPro();
     const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at', { ascending: false });
     productos = data || [];
     if (!esPro && productos.length > 0) {
@@ -2212,8 +2223,7 @@ async function addProductosMultiples() {
 }
 
 function openAddProduct() {
-  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
-    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
+  const esPro = esProvPro();
   if (!esPro && productos.length >= 30) {
     showModalPro('Más de 30 productos');
     return;
@@ -3620,9 +3630,7 @@ function descargarTemplateExcel() {
 function leerExcelImport(input) {
   const file = input.files[0];
   if (!file) return;
-  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
-    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
-  if (!esPro) { input.value = ''; showModalPro('Carga por Excel'); return; }
+  if (!esProvPro()) { input.value = ''; showModalPro('Carga por Excel'); return; }
   if (typeof XLSX === 'undefined') { showToast('Cargando librería...'); return; }
   const reader = new FileReader();
   reader.onload = function (e) {
@@ -4220,11 +4228,8 @@ async function renderTiendaNubeSection() {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
 
-  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
-    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
-
   // Si no es Pro, mostrar botón bloqueado
-  if (!esPro) {
+  if (!esProvPro()) {
     const card = document.getElementById('tn-card');
     if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
     statusLabel.textContent = 'Disponible en Plan Pro';
@@ -4337,9 +4342,7 @@ async function confirmarMapeoTN(btn) {
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====
 async function exportarContactosCSV() {
-  const esPro = currentUser?.provData?.plan === 'pro' && currentUser?.provData?.plan_hasta
-    && new Date(currentUser.provData.plan_hasta + 'T03:00:00Z') > new Date();
-  if (!esPro) { showModalPro('Exportar contactos'); return; }
+  if (!esProvPro()) { showModalPro('Exportar contactos'); return; }
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   try {
