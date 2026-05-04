@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const tnParam = new URLSearchParams(window.location.search).get('tn');
   if (tnParam === 'ok') {
-    setTimeout(() => showToast('✅ Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
+    setTimeout(() => showToast('Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   } else if (tnParam === 'error') {
     setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
@@ -573,7 +573,7 @@ function setResenaRating(val) {
 }
 
 async function submitResena() {
-  if (!resenaRatingActual) { showToast('Por favor calificá primero ⭐'); return; }
+  if (!resenaRatingActual) { showToast('Por favor calificá primero'); return; }
   const autor = document.getElementById('resena-autor-input').value.trim() || 'Anónimo';
   const texto = document.getElementById('resena-texto-input').value.trim();
   if (!texto) { showToast('Escribí tu experiencia'); return; }
@@ -595,7 +595,7 @@ async function submitResena() {
     if (!resenasCache[pid]) resenasCache[pid] = [];
     const normalizada = { ...data, autor: data.usuario_nombre, rating: data.estrellas, fecha: data.created_at };
     resenasCache[pid].unshift(normalizada);
-    showToast('¡Reseña publicada! Gracias 🙌');
+    showToast('Reseña publicada. ¡Gracias!');
   } catch (e) {
     console.error('Error guardando reseña:', e);
     // Fallback local si falla Supabase
@@ -794,10 +794,7 @@ function renderComparadorModal() {
 }
 
 // ===== MAPA PROVINCIAS =====
-const provinciaEmojis = {
-  'Buenos Aires': '🌆', 'CABA': '🏙️', 'Cordoba': '🏛️', 'Santa Fe': '🌾',
-  'Mendoza': '🍇', 'Otra': '📍'
-};
+const _pinSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`;
 
 function getProvsPorProvincia() {
   const lista = proveedoresDB;
@@ -819,10 +816,9 @@ function renderMapaProvincias() {
   el.innerHTML = provincias.map(prov => {
     const count = mapa[prov].length;
     const pct = Math.round((count / total) * 100);
-    const emoji = provinciaEmojis[prov] || '📍';
     return `<div class="prov-tile" data-prov="${prov}" onclick="filtrarPorProvincia('${prov}')">
       <div style="position:relative;z-index:1">
-        <div style="font-size:1.1rem;margin-bottom:3px">${emoji}</div>
+        <div style="margin-bottom:4px;opacity:.7">${_pinSvg}</div>
         <div class="prov-tile-name">${prov}</div>
         <div class="prov-tile-count">${count} proveedor${count !== 1 ? 'es' : ''}</div>
       </div>
@@ -1007,7 +1003,7 @@ function toggleCompararById(id) {
   if (idx >= 0) { comparadorList.splice(idx, 1); showToast('Quitado del comparador'); }
   else {
     if (comparadorList.length >= 3) { showToast('Máximo 3 proveedores'); return; }
-    comparadorList.push(p); showToast('Agregado al comparador ⚖');
+    comparadorList.push(p); showToast('Agregado al comparador');
   }
   updateComparadorFab();
   filterProvs();
@@ -1131,7 +1127,7 @@ async function renderDetalleProductos(proveedorId) {
     const emoji = getEmojiCat(p.categoria_principal || p.categoria);
     const imgHtml = p.imagen_url
       ? `<img src="${escHtml(p.imagen_url)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
-      : `<div style="height:90px;display:flex;align-items:center;justify-content:center;font-size:2rem;background:${bgsColores[i % bgsColores.length]}12">${emoji}</div>`;
+      : `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
     return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
       ${imgHtml}
       <div style="padding:8px 9px 10px">
@@ -1908,7 +1904,7 @@ function timeAgo(date) {
 }
 
 // ===== CATALOGO PROVEEDOR =====
-const iconMap = { 'Indumentaria': '👗', 'Hogar y Deco': '🏠', 'Belleza y Salud': '💄', 'Tecnología': '💻', 'Bolsos y Marroquinería': '👜', 'Otros': '📦', 'Tecnologia': '💻', 'Hogar': '🏠', 'Moda': '👗', 'Bazar': '🛒', 'Alimentos': '🍫' };
+const iconMap = {}; // emojis reemplazados por colores en renderProdGrid
 function renderProdGrid() {
   const el = document.getElementById('prodGrid');
   if (!el) return;
@@ -2640,7 +2636,7 @@ let provDetalleData = [], provDetalleOffset = 0, provDetalleEsPro = false, provD
 const DETALLE_PAGE_SIZE = 20;
 const catColors = { 'Hogar y Deco': '#00A651', 'Indumentaria': '#FF6B00', 'Textiles': '#8B5CF6', 'Belleza y Salud': '#E91E8C', 'Tecnología': '#1847C8', 'Bazar': '#7C3AED', 'Alimentos': '#F59E0B', 'Deportes': '#EF4444', 'Automotor': '#6B7280', 'Otros': '#9CA3AF', 'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Blanquería': '#8B5CF6', 'Sábanas': '#8B5CF6', 'Frazadas': '#8B5CF6', 'Tecnologia': '#1847C8' };
 
-function getEmojiCat(cat) { const map = { 'Hogar y Deco': '🏠', 'Indumentaria': '👗', 'Textiles': '🛏️', 'Belleza y Salud': '💄', 'Tecnología': '💻', 'Bazar': '🛒', 'Alimentos': '🍫', 'Deportes': '⚽', 'Automotor': '🚗', 'Otros': '📦', 'Moda': '👗', 'Hogar': '🏠', 'Salud': '💄', 'Blanquería': '🛏️', 'Sábanas': '🛏️', 'Frazadas': '🛏️', 'Tecnologia': '📱' }; return map[cat] || '📦'; }
+function getEmojiCat(cat) { return ''; }
 function getProdLista() { return productosReales; }
 
 async function cargarProductosReales() {
@@ -2933,9 +2929,12 @@ function abrirDetalleProd(id) {
   const p = getProdLista().find(x => String(x.id) === String(id));
   if (!p) { showToast('Producto no disponible'); return; }
   productoActual = p;
-  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? `<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : p.emoji}
+  const _boxIcon = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
+  const _heartFilled = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? `<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : _boxIcon}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
-    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? '❤️' : '♡'}</button>`;
+    <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? _heartFilled : _heartEmpty}</button>`;
   document.getElementById('prod-det-name').textContent = p.nombre;
   document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
   document.getElementById('prod-det-min').textContent = p.pedido_minimo;
@@ -3212,8 +3211,8 @@ function renderCarrito() {
   const itemsEl = document.getElementById('carrito-items');
   itemsEl.innerHTML = carrito.map((item, idx) => `
     <div class="carrito-item">
-      <div style="width:42px;height:42px;border-radius:10px;background:${bgs[idx % bgs.length]}18;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0">
-        ${item.producto.imgUrl ? `<img src="${item.producto.imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : item.producto.emoji}
+      <div style="width:42px;height:42px;border-radius:10px;background:#F3F4F6;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden">
+        ${item.producto.imgUrl ? `<img src="${item.producto.imgUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px">` : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`}
       </div>
       <div class="carrito-item-info">
         <div class="carrito-item-name">${item.producto.nombre}</div>
@@ -4350,7 +4349,7 @@ async function confirmarMapeoTN(btn) {
   if (currentUser.provData) currentUser.provData.tn_categoria_map = map;
 
   document.getElementById('tnMapeoModal').classList.remove('open');
-  showToast('✅ Categorías actualizadas');
+  showToast('Categorías actualizadas');
   cargarProductosProveedor();
   btn.disabled = false;
   btn.textContent = 'Confirmar categorías';
