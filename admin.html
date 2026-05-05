@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>EmprendeGo — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -546,6 +547,15 @@ tr:hover td{background:#fafbff}
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const ADMIN_EMAILS = ['abikushjafif2004@icloud.com', 'abrahamjafifjob@gmail.com'];
 
+function escHtml(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let pendingAction = null;
 
 async function tryLogin(){
@@ -669,7 +679,7 @@ async function cargarDashboard(){
     const maxBusq = topRubros[0]?.[1] || 1;
     const chartBusq = document.getElementById('chart-busquedas');
     chartBusq.innerHTML = topRubros.length ? topRubros.map(([r,n])=>
-      `<div class="bar-row"><span class="bar-label">${r}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxBusq*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+      `<div class="bar-row"><span class="bar-label">${escHtml(r)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxBusq*100)}%"></div></div><span class="bar-val">${n}</span></div>`
     ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin búsquedas registradas aún</div>';
 
     // Chart provincias
@@ -679,13 +689,13 @@ async function cargarDashboard(){
     const maxProv = topProvs[0]?.[1] || 1;
     const chartProv = document.getElementById('chart-provincias');
     chartProv.innerHTML = topProvs.length ? topProvs.map(([p,n])=>
-      `<div class="bar-row"><span class="bar-label">${p}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxProv*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+      `<div class="bar-row"><span class="bar-label">${escHtml(p)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxProv*100)}%"></div></div><span class="bar-val">${n}</span></div>`
     ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin proveedores aprobados aún</div>';
 
     // Actividad reciente
     const actividad = [];
-    ultProvs?.forEach(p=>actividad.push({icon:'🏭',color:'blue',texto:`Nuevo proveedor: <strong>${p.nombre}</strong>`,time:p.created_at}));
-    ultUsers?.forEach(u=>actividad.push({icon:'👤',color:'blue',texto:`Nuevo usuario: <strong>${u.nombre||u.email}</strong>`,time:u.created_at}));
+    ultProvs?.forEach(p=>actividad.push({icon:'🏭',color:'blue',texto:`Nuevo proveedor: <strong>${escHtml(p.nombre)}</strong>`,time:p.created_at}));
+    ultUsers?.forEach(u=>actividad.push({icon:'👤',color:'blue',texto:`Nuevo usuario: <strong>${escHtml(u.nombre||u.email)}</strong>`,time:u.created_at}));
     actividad.sort((a,b)=>new Date(b.time)-new Date(a.time));
     const actHTML = actividad.length ? actividad.slice(0,8).map(a=>`
       <div class="activity-item"><div class="a-icon ${a.color}">${a.icon}</div>
@@ -705,7 +715,7 @@ async function cargarProveedoresPendientes(){
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('*')
+      .select('id,nombre,email,cuit,rubro,provincia,created_at,estado,whatsapp,descripcion,plan,plan_hasta')
       .eq('estado','pendiente')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -715,19 +725,20 @@ async function cargarProveedoresPendientes(){
     }
     tbody.innerHTML = data.map(p=>`
       <tr>
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${p.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${p.email}</span></div></div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
-        <td>${p.provincia||'—'}</td>
+        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml(p.nombre.substring(0,2).toUpperCase())}</div>
+          <div><strong>${escHtml(p.nombre)}</strong><br><span style="font-size:.72rem;color:var(--gray)">${escHtml(p.email)}</span></div></div></td>
+        <td>${escHtml(p.cuit||'—')}</td>
+        <td>${escHtml(p.rubro||'—')}</td>
+        <td>${escHtml(p.provincia||'—')}</td>
         <td>${timeAgoAdmin(p.created_at)}</td>
         <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁 Ver</button>
-          <button class="tbl-btn approve" onclick="aprobarProveedor('${p.id}','${p.nombre}',this)">✓ Aprobar</button>
-          <button class="tbl-btn reject" onclick="rechazarProveedor('${p.id}','${p.nombre}',this)">✗ Rechazar</button>
+          <button class="tbl-btn view" onclick="verProveedor('${escHtml(p.id)}')">👁 Ver</button>
+          <button class="tbl-btn approve" onclick="aprobarProveedor('${escHtml(p.id)}','${escHtml(p.nombre)}',this)">✓ Aprobar</button>
+          <button class="tbl-btn reject" onclick="rechazarProveedor('${escHtml(p.id)}','${escHtml(p.nombre)}',this)">✗ Rechazar</button>
         </div></td>
       </tr>`).join('');
   } catch(e){
+    console.error('[admin] cargarProveedoresPendientes error:', e);
     tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>';
   }
 }
@@ -748,7 +759,7 @@ async function cargarTodosProveedores(){
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('*')
+      .select('id,nombre,email,cuit,rubro,provincia,plan,plan_hasta,plan_desde,created_at,estado,whatsapp,descripcion,visitas')
       .eq('estado','aprobado')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -766,7 +777,6 @@ async function cargarTodosProveedores(){
     tbody.innerHTML = sorted.map(p => {
       const ps = p._ps;
       const planHasta = p.plan_hasta ? new Date(p.plan_hasta + 'T03:00:00Z') : null;
-      const nombreSafe = (p.nombre||'').replace(/'/g,"\\'");
       let planBadge;
       if (ps === 'proactivo') {
         const fechaStr = planHasta ? planHasta.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
@@ -779,22 +789,23 @@ async function cargarTodosProveedores(){
       } else {
         planBadge = `<span class="status-badge free">Gratis</span>`;
       }
+      const nombreSafeHtml = escHtml(p.nombre||'');
       return `
       <tr data-plan-status="${ps}">
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
+        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml(p.nombre.substring(0,2).toUpperCase())}</div>${nombreSafeHtml}</div></td>
+        <td>${escHtml(p.cuit||'—')}</td>
+        <td>${escHtml(p.rubro||'—')}</td>
         <td>${planBadge}</td>
         <td>—</td>
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
+          <button class="tbl-btn view" onclick="verProveedor('${escHtml(p.id)}')">👁</button>
           ${p.plan==='pro'
-            ? `<button class="tbl-btn warn" onclick="quitarPlanPro('${p.id}','${nombreSafe}')">⭐ Quitar</button>`
-            : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" onclick="darPlanPro('${p.id}','${nombreSafe}')">⭐ Dar Pro</button>`}
+            ? `<button class="tbl-btn warn" onclick="quitarPlanPro('${escHtml(p.id)}','${nombreSafeHtml}')">⭐ Quitar</button>`
+            : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" onclick="darPlanPro('${escHtml(p.id)}','${nombreSafeHtml}')">⭐ Dar Pro</button>`}
           <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
-          <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
-          <button class="tbl-btn reject" style="background:#fee2e2" onclick="eliminarProveedor('${p.id}','${nombreSafe}')">🗑</button>
+          <button class="tbl-btn reject" onclick="suspenderProveedor('${escHtml(p.id)}')">🚫</button>
+          <button class="tbl-btn reject" style="background:#fee2e2" onclick="eliminarProveedor('${escHtml(p.id)}','${nombreSafeHtml}')">🗑</button>
         </div></td>
       </tr>`;
     }).join('');
@@ -803,7 +814,10 @@ async function cargarTodosProveedores(){
     const filterEl = document.getElementById('prov-plan-filter');
     if (filterEl && filterEl.value) filtrarPorPlanStatus(filterEl.value);
 
-  } catch(e){ console.log('proveedores error',e); }
+  } catch(e){
+    console.error('[admin] cargarTodosProveedores error:', e);
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>';
+  }
 }
 
 // ===== SUPABASE: USUARIOS =====
@@ -812,7 +826,7 @@ async function cargarUsuarios(){
   try {
     const {data, error} = await sb
       .from('usuarios')
-      .select('*')
+      .select('id,nombre,email,provincia,created_at')
       .order('created_at',{ascending:false});
     if(error) throw error;
     const badgeU = document.getElementById('badge-usuarios');
@@ -824,10 +838,10 @@ async function cargarUsuarios(){
     tbody.innerHTML = data.map(u=>`
       <tr>
         <td><div class="avatar-cell">
-          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${u.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${u.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${u.email}</span></div>
+          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${escHtml((u.nombre||'??').substring(0,2).toUpperCase())}</div>
+          <div><strong>${escHtml(u.nombre||'')}</strong><br><span style="font-size:.72rem;color:var(--gray)">${escHtml(u.email||'')}</span></div>
         </div></td>
-        <td>${u.provincia||'—'}</td>
+        <td>${escHtml(u.provincia||'—')}</td>
         <td>${timeAgoAdmin(u.created_at)}</td>
         <td>—</td>
         <td>—</td>
@@ -837,7 +851,7 @@ async function cargarUsuarios(){
           <button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button>
         </div></td>
       </tr>`).join('');
-  } catch(e){ console.log('usuarios error',e); }
+  } catch(e){ console.error('[admin] cargarUsuarios error:', e); }
 }
 
 // ===== VER / EDITAR PROVEEDOR =====
@@ -853,7 +867,7 @@ async function verProveedor(id){
   document.getElementById('provModal').classList.add('open');
 
   const [{data:prov},{data:prods}] = await Promise.all([
-    sb.from('proveedores').select('*').eq('id',id).single(),
+    sb.from('proveedores').select('id,nombre,email,cuit,whatsapp,rubro,provincia,plan,plan_hasta,plan_desde,descripcion,estado,instagram,logo_url,foto_url,pedido_minimo,envios,visitas,created_at').eq('id',id).single(),
     sb.from('productos').select('nombre,precio,imagen_url').eq('proveedor_id',id).limit(10)
   ]);
   if(!prov){ showToast('Error al cargar proveedor'); return; }
@@ -876,14 +890,14 @@ async function verProveedor(id){
   const planHastaDate = prov.plan_hasta ? new Date(prov.plan_hasta+'T03:00:00Z') : null;
   const planVence = planHastaDate ? planHastaDate.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
   proBar.innerHTML = `<span style="font-size:.8rem;font-weight:700;color:${prov.plan==='pro'?'#16a34a':'#64748b'}">
-    ${prov.plan==='pro' ? '⭐ Plan PRO' + (planVence ? ' · vence ' + planVence : '') : 'Plan Gratis'}
+    ${prov.plan==='pro' ? '⭐ Plan PRO' + (planVence ? ' · vence ' + escHtml(planVence) : '') : 'Plan Gratis'}
   </span>` + (prov.plan==='pro'
-    ? `<button onclick="quitarPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">Quitar Pro</button>`
-    : `<button onclick="darPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">⭐ Dar Plan Pro</button>`);
+    ? `<button onclick="quitarPlanPro('${escHtml(prov.id)}','${escHtml(prov.nombre||'')}');closeProvModal()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">Quitar Pro</button>`
+    : `<button onclick="darPlanPro('${escHtml(prov.id)}','${escHtml(prov.nombre||'')}');closeProvModal()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">⭐ Dar Plan Pro</button>`);
 
   const prodsEl = document.getElementById('prov-productos-list');
   prodsEl.innerHTML = prods?.length
-    ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${p.imagen_url}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${p.nombre||'Sin nombre'}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${p.precio}</span>`:''}</div>`).join('')
+    ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${escHtml(p.imagen_url)}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${escHtml(p.nombre||'Sin nombre')}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${escHtml(String(p.precio))}</span>`:''}</div>`).join('')
     : '<div style="color:var(--gray);font-size:.82rem">Sin productos cargados</div>';
 }
 
@@ -963,7 +977,7 @@ async function quitarPlanPro(id, nombre) {
 // ===== REPORTES =====
 async function cargarReportes(){
   const el = document.getElementById('reportes-list');
-  const {data, error} = await sb.from('reportes').select('*').order('created_at',{ascending:false});
+  const {data, error} = await sb.from('reportes').select('id,tipo,estado,proveedor_id,proveedor_nombre,usuario_email,motivo,created_at').order('created_at',{ascending:false});
   if(error || !data?.length){
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">No hay reportes pendientes ✓</div>';
     return;
@@ -1110,14 +1124,13 @@ async function cargarPlanes(){
       const desde = p.plan_desde ? new Date(p.plan_desde+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const hasta = p.plan_hasta ? new Date(p.plan_hasta+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const activo = p.plan_hasta && new Date(p.plan_hasta+'T03:00:00Z') >= hoy;
-      const nombreSafe = (p.nombre||'').replace(/'/g,"\\'");
       return `<tr>
-        <td>${p.nombre||'—'}</td>
-        <td style="font-size:.78rem;color:var(--gray)">${p.email||'—'}</td>
+        <td>${escHtml(p.nombre||'—')}</td>
+        <td style="font-size:.78rem;color:var(--gray)">${escHtml(p.email||'—')}</td>
         <td>${desde}</td>
         <td>${hasta}</td>
         <td><span class="status-badge ${activo?'approved':'rejected'}">${activo?'● Activo':'✗ Vencido'}</span></td>
-        <td><button class="tbl-btn reject" onclick="quitarPlanPro('${p.id}','${nombreSafe}')">Quitar</button></td>
+        <td><button class="tbl-btn reject" onclick="quitarPlanPro('${escHtml(p.id)}','${escHtml(p.nombre||'')}')">Quitar</button></td>
       </tr>`;
     }).join('');
   } catch(e){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>'; }

@@ -1,8 +1,30 @@
+const ALLOWED_ORIGINS = [
+  'https://emprendego.com.ar',
+  'https://www.emprendego.com.ar',
+  'https://emprende-go.vercel.app'
+];
+
+function setCors(req, res) {
+  const origin = req.headers.origin || '';
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function handler(req, res) {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
   const { proveedor_id } = req.body || {};
-  if (!proveedor_id) return res.status(400).json({ error: 'Falta proveedor_id' });
+  if (!proveedor_id || !UUID_RE.test(String(proveedor_id))) {
+    return res.status(400).json({ error: 'proveedor_id inválido' });
+  }
 
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

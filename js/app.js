@@ -298,13 +298,56 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const tnParam = new URLSearchParams(window.location.search).get('tn');
+  const urlParams = new URLSearchParams(window.location.search);
+  const tnParam = urlParams.get('tn');
+  const mlParam = urlParams.get('ml');
   if (tnParam === 'ok') {
     setTimeout(() => showToast('Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   } else if (tnParam === 'error') {
     setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
     history.replaceState({}, '', window.location.pathname);
+  } else if (mlParam === 'ok') {
+    sessionStorage.setItem('ml_post_oauth', '1');
+    setTimeout(() => showToast('MercadoLibre conectado. Ahora sincronizá tus publicaciones.'), 800);
+    history.replaceState({}, '', window.location.pathname);
+  } else if (mlParam === 'error') {
+    setTimeout(() => showToast('Error al conectar MercadoLibre. Intentá de nuevo.'), 1200);
+    history.replaceState({}, '', window.location.pathname);
+  }
+
+  const pagoParam = urlParams.get('pago');
+  const paymentId = urlParams.get('payment_id') || urlParams.get('collection_id');
+  if (pagoParam === 'ok' && paymentId) {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/verificar-pago?payment_id=${paymentId}`);
+        const d = await r.json();
+        if (d.ok) {
+          if (currentUser?.provData) {
+            currentUser.provData.plan = 'pro';
+            currentUser.provData.plan_desde = d.plan_desde;
+            currentUser.provData.plan_hasta = d.plan_hasta;
+          }
+          updatePerfilUI();
+          showToast('¡Pago aprobado! Ya tenés Plan Pro activado.');
+          goTo('perfil');
+        } else {
+          showToast('Pago recibido. Tu plan se activará en breve.');
+          goTo('perfil');
+        }
+      } catch (e) {
+        showToast('Pago recibido. Tu plan se activará en breve.');
+        goTo('perfil');
+      }
+    }, 800);
+  } else if (pagoParam === 'error') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => showToast('El pago no se completó. Intentá de nuevo.'), 800);
+  } else if (pagoParam === 'pendiente') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => showToast('Pago pendiente. Te avisaremos cuando se acredite.'), 800);
   }
 });
 setTimeout(checkReveal, 500);
@@ -420,7 +463,8 @@ function renderFavs() {
 // ===== SUPABASE =====
 async function cargarProveedores() {
   try {
-    const { data, error } = await sb.from('proveedores').select('*').eq('estado', 'aprobado').order('created_at', { ascending: false });
+    const PROV_COLS = 'id,nombre,rubro,descripcion,plan,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,plan_hasta,plan_desde,pro_hasta,pro_desde,visitas,foto_url,estado,created_at,tn_store_id,tn_categoria_map,razon_social,cuit,email';
+    const { data, error } = await sb.from('proveedores').select(PROV_COLS).eq('estado', 'aprobado').order('created_at', { ascending: false });
     if (error) throw error;
     if (data && data.length > 0) {
       proveedoresDB = data.map(p => ({
@@ -431,8 +475,9 @@ async function cargarProveedores() {
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
       }));
+      try { localStorage.setItem('eg_provs_cache', JSON.stringify(proveedoresDB)); } catch (e) { }
     } else { proveedoresDB = []; }
-  } catch (e) { proveedoresDB = []; }
+  } catch (e) { console.error('[EmprendeGO] Error al cargar proveedores:', e); proveedoresDB = []; }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -655,10 +700,10 @@ function renderNotifPanel() {
   const el = document.getElementById('notifList');
   if (!el) return;
   el.innerHTML = notificaciones.map(n => `
-    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
-      <div class="notif-icon ${n.tipo}">${n.icon}</div>
-      <div class="notif-text"><strong>${n.titulo}</strong><span>${n.texto}</span></div>
-      <div class="notif-time">${n.tiempo}</div>
+    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${escHtml(String(n.id))}','${escHtml(String(n.provId || ''))}')">
+      <div class="notif-icon ${escHtml(n.tipo)}">${n.icon}</div>
+      <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
+      <div class="notif-time">${escHtml(n.tiempo)}</div>
     </div>`).join('');
 }
 function onNotifClick(id, provId) {
@@ -749,10 +794,10 @@ function renderComparadorModal() {
   // Headers
   let thead = '<thead><tr><th style="width:90px">Atributo</th>';
   comparadorList.forEach((p, i) => {
-    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
+    const ini = escHtml((p.inicial || p.nombre.substring(0, 2)).toUpperCase());
     thead += `<th><div class="comp-header-cell">
       <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
-      <div class="comp-header-name">${p.nombre}</div>
+      <div class="comp-header-name">${escHtml(p.nombre)}</div>
       ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
     </div></th>`;
   });
@@ -1258,7 +1303,8 @@ async function abrirChatDirecto(id) {
   let p = proveedoresDB.find(x => String(x.id) === String(id));
   if (!p) {
     try {
-      const { data } = await sb.from('proveedores').select('*').eq('id', id).maybeSingle();
+      const PROV_COLS = 'id,nombre,rubro,descripcion,plan,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,plan_hasta,plan_desde,pro_hasta,pro_desde,visitas,foto_url,estado,created_at,tn_store_id,tn_categoria_map,razon_social,cuit,email';
+      const { data } = await sb.from('proveedores').select(PROV_COLS).eq('id', id).maybeSingle();
       if (data) { p = data; proveedoresDB.push(data); }
     } catch (e) { }
   }
@@ -1474,7 +1520,8 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id').eq('email', email.toLowerCase().trim());
+      const { data: provList, error: provErr } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_user_id').eq('email', email.toLowerCase().trim());
+      if (provErr) { console.error('[checkSession] error query proveedores:', provErr); return; }
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         if (prov.plan === 'pro' && prov.plan_hasta) {
@@ -1487,17 +1534,25 @@ async function checkSession() {
         }
         handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
         verificarExpiracionPlan(prov);
+      } else if (prov) {
+        // Tiene solicitud enviada (pendiente / rechazado / suspendido) — sigue como usuario pero bloqueamos re-registro
+        handleLogin({ name, email, picture, type: 'user', provEstado: prov.estado });
       } else {
         handleLogin({ name, email, picture, type: 'user' });
       }
     }
-  } catch (e) { }
+  } catch (e) { console.error('[checkSession] error:', e); }
 }
 function handleLogin(user) {
   currentUser = user;
+  try { localStorage.setItem('eg_user_cache', JSON.stringify(user)); } catch (e) { }
   if (user.type === 'user') cargarHistorialLocal(user.email);
   updatePerfilUI();
   updateTopbar();
+  if (sessionStorage.getItem('ml_post_oauth') && user.type === 'proveedor') {
+    sessionStorage.removeItem('ml_post_oauth');
+    goTo('perfil');
+  }
 }
 
 function verificarExpiracionPlan(prov) {
@@ -1526,9 +1581,11 @@ function mostrarAvisoPlanProximo(fechaVence) {
     <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
   </div>`;
 }
-function logout() {
+async function logout() {
+  try { await sb.auth.signOut(); } catch (e) { }
   currentUser = null; historial = [];
   try { localStorage.removeItem('eg_historial'); } catch (e) { }
+  try { localStorage.removeItem('eg_user_cache'); } catch (e) { }
   document.getElementById('perfil-login').style.display = 'block';
   document.getElementById('perfil-user').style.display = 'none';
   document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1612,6 +1669,7 @@ function updatePerfilUI() {
     calcularCompletitudPerfil();
     renderBannerProDashboard();
     renderTiendaNubeSection();
+    renderMLSection();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -1635,6 +1693,28 @@ function updatePerfilUI() {
       const img = document.getElementById('user-avatar-img');
       img.src = currentUser.picture; img.style.display = 'block';
       document.getElementById('user-avatar-placeholder').style.display = 'none';
+    }
+    // Ocultar / mostrar opción de registro según si ya tiene solicitud
+    const btnReg = document.getElementById('btn-registrar-prov');
+    const drawerReg = document.getElementById('dnav-registro');
+    const bannerEstado = document.getElementById('banner-prov-estado');
+    if (currentUser.provEstado) {
+      if (btnReg) btnReg.style.display = 'none';
+      if (drawerReg) drawerReg.style.display = 'none';
+      if (bannerEstado) {
+        const cfg = {
+          pendiente:  { bg: '#fffbeb', border: '#fde68a', icon: '⏳', color: '#92400e', title: 'Solicitud en revisión', text: 'Recibimos tu solicitud. Te avisamos en 24-48hs hábiles por WhatsApp cuando esté aprobada.' },
+          rechazado:  { bg: '#fef2f2', border: '#fecaca', icon: '❌', color: '#991b1b', title: 'Solicitud rechazada', text: 'Tu solicitud no fue aprobada. Contactanos por soporte si creés que es un error.' },
+          suspendido: { bg: '#fef2f2', border: '#fecaca', icon: '🚫', color: '#991b1b', title: 'Cuenta suspendida', text: 'Tu cuenta de proveedor fue suspendida. Contactanos por soporte para más información.' }
+        };
+        const c = cfg[currentUser.provEstado] || cfg.pendiente;
+        bannerEstado.style.display = 'block';
+        bannerEstado.innerHTML = `<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:14px;padding:14px 16px"><div style="font-size:.85rem;font-weight:800;color:${c.color};margin-bottom:4px">${c.icon} ${c.title}</div><div style="font-size:.78rem;color:${c.color};line-height:1.5;opacity:.85">${c.text}</div></div>`;
+      }
+    } else {
+      if (btnReg) btnReg.style.display = '';
+      if (drawerReg) drawerReg.style.display = '';
+      if (bannerEstado) bannerEstado.style.display = 'none';
     }
     cargarAvatarUsuario();
     cargarHistorial();
@@ -2369,6 +2449,16 @@ async function guardarEdicionProducto() {
 // ===== NAV =====
 function goTo(s) {
   haptic('light');
+  // Bloquear acceso al registro si el usuario ya tiene una solicitud enviada
+  if (s === 'registro' && currentUser?.provEstado) {
+    const msgs = {
+      pendiente:  'Tu solicitud ya fue enviada y está en revisión. Te avisamos en 24-48hs por WhatsApp.',
+      rechazado:  'Tu solicitud fue rechazada. Contactanos por soporte para más información.',
+      suspendido: 'Tu cuenta está suspendida. Contactanos por soporte para más información.'
+    };
+    showToast(msgs[currentUser.provEstado] || 'Ya tenés una solicitud enviada.');
+    return;
+  }
   // Push to navigation stack (avoid consecutive duplicates)
   if (navStack[navStack.length - 1] !== s) {
     navStack.push(s);
@@ -2502,7 +2592,12 @@ async function showRegSuccess() {
     if (error) throw error;
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
-    showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
+    // Un error de clave única (23505) indica que ya existe un registro con ese CUIT o email
+    if (e.code === '23505' || (e.message || '').toLowerCase().includes('duplicate') || (e.message || '').toLowerCase().includes('unique')) {
+      showToast('Ya existe una solicitud con ese CUIT o email. Iniciá sesión para ver el estado de tu registro.');
+    } else {
+      showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
+    }
     return;
   }
 
@@ -3011,14 +3106,14 @@ async function cargarConversaciones() {
     if (badge) badge.classList.toggle('show', totalNoLeidos > 0);
 
     el.innerHTML = convs.map((c, i) => {
-      const ini = c.nombre.substring(0, 2).toUpperCase();
+      const ini = escHtml(c.nombre.substring(0, 2).toUpperCase());
       const ultimo = c.ultimo;
-      const preview = (ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
-      const tiempo = timeAgo(new Date(ultimo.created_at));
-      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${c.nombre.replace(/'/g, "\'")}')">
+      const preview = escHtml((ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : ''));
+      const tiempo = escHtml(timeAgo(new Date(ultimo.created_at)));
+      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${escHtml(c.nombre)}')">
         <div class="conv-avatar">${ini}</div>
         <div class="conv-info">
-          <div class="conv-name">${c.nombre}</div>
+          <div class="conv-name">${escHtml(c.nombre)}</div>
           <div class="conv-preview">${preview}</div>
         </div>
         <div class="conv-meta">
@@ -4155,6 +4250,17 @@ async function enviarContactoProv(btn) {
 
 // ===== INIT =====
 refreshFavBadge();
+// Restaurar providers desde caché para eliminar el skeleton en recargas
+(function restoreProvsCache() {
+  try {
+    const cached = JSON.parse(localStorage.getItem('eg_provs_cache') || 'null');
+    if (cached && cached.length > 0) {
+      proveedoresDB = cached;
+      renderProvs(proveedoresDB);
+      renderProvDestacados();
+    }
+  } catch (e) { }
+})();
 cargarProveedores().then(() => {
   initNotificaciones();
   renderMapaProvincias();
@@ -4199,7 +4305,34 @@ initOnboarding();
 })();
 
 renderQuestion();
-checkSession();
+
+// Restaurar sesión desde caché inmediatamente (sin esperar a Supabase)
+(function restoreUserCache() {
+  try {
+    const raw = localStorage.getItem('eg_user_cache');
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    if (user && user.email) {
+      currentUser = user;
+      updatePerfilUI();
+      updateTopbar();
+    }
+  } catch (e) { }
+})();
+
+// Auth state listener — reacciona a login, logout y renovación de token
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+    if (session) await checkSession();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null; historial = [];
+    try { localStorage.removeItem('eg_historial'); } catch (e) { }
+    try { localStorage.removeItem('eg_user_cache'); } catch (e) { }
+    updatePerfilUI(); updateTopbar();
+  }
+  // TOKEN_REFRESHED: sesión renovada automáticamente, sin acción necesaria
+});
+
 cargarHeroStats();
 renderRecienLlegados();
 cargarProductosReales();
@@ -4353,6 +4486,85 @@ async function confirmarMapeoTN(btn) {
   cargarProductosProveedor();
   btn.disabled = false;
   btn.textContent = 'Confirmar categorías';
+}
+
+
+// ===== MERCADOLIBRE =====
+async function renderMLSection() {
+  const btnArea = document.getElementById('ml-btn-area');
+  const statusLabel = document.getElementById('ml-status-label');
+  if (!btnArea || !statusLabel) return;
+
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+
+  if (!esProvPro()) {
+    const card = document.getElementById('ml-card');
+    if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+    statusLabel.textContent = 'Disponible en Plan Pro';
+    btnArea.innerHTML = `<button onclick="showModalPro('MercadoLibre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar MercadoLibre · Solo Pro</button>`;
+    return;
+  }
+
+  // Usar dato cargado en checkSession; si falta, hacer query fresca
+  let mlUserId = currentUser.provData?.ml_user_id ?? undefined;
+  if (mlUserId === undefined) {
+    const { data } = await sb.from('proveedores').select('ml_user_id').eq('id', proveedorId).single();
+    mlUserId = data?.ml_user_id || null;
+    if (currentUser.provData) currentUser.provData.ml_user_id = mlUserId;
+  }
+
+  const card = document.getElementById('ml-card');
+  if (mlUserId) {
+    statusLabel.textContent = 'Conectado · Vendedor #' + mlUserId;
+    statusLabel.style.color = 'rgba(255,255,255,.8)';
+    if (card) card.style.background = 'linear-gradient(135deg,#065F46,#059669)';
+    btnArea.innerHTML = `<div style="display:flex;gap:8px"><button onclick="sincronizarML(this)" style="flex:1;background:white;color:#059669;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar</button><button onclick="conectarML(this)" title="Reconectar cuenta" style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:11px 13px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Reconectar</button></div>`;
+  } else {
+    statusLabel.textContent = 'Importá todas tus publicaciones automáticamente';
+    statusLabel.style.color = 'rgba(255,255,255,.8)';
+    if (card) card.style.background = 'linear-gradient(135deg,#1A6EB8,#3483FA)';
+    btnArea.innerHTML = `<button onclick="conectarML(this)" style="width:100%;background:white;color:#3483FA;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3483FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
+  }
+}
+
+function conectarML(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = 'Redirigiendo...';
+  window.location.href = '/api/ml-auth?proveedor_id=' + encodeURIComponent(proveedorId);
+}
+
+async function sincronizarML(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando...';
+  try {
+    const res = await fetch('/api/ml-sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proveedor_id: proveedorId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      const msg = data.total > 0
+        ? `${data.importados} de ${data.total} publicaciones importadas de MercadoLibre`
+        : 'No se encontraron publicaciones en tu cuenta de MercadoLibre';
+      showToast(msg);
+      if (data.importados > 0) cargarProductosProveedor();
+    } else {
+      const errMsg = data.error || 'Error al sincronizar publicaciones.';
+      showToast(errMsg.includes('token') || res.status === 401
+        ? 'Sesión ML expirada. Usá el botón Reconectar.'
+        : errMsg);
+    }
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar';
 }
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====

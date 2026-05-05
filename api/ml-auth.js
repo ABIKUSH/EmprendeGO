@@ -6,28 +6,27 @@ export default function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
 
   const proveedorId = req.query.proveedor_id;
-  console.log('[tn-auth] proveedor_id recibido:', proveedorId, '| tipo:', typeof proveedorId);
   if (!proveedorId || !UUID_RE.test(proveedorId)) {
     return res.status(400).json({ error: 'proveedor_id inválido' });
   }
 
-  const appId = process.env.TN_APP_ID;
-  const stateSecret = process.env.TN_STATE_SECRET;
-  if (!appId) return res.status(500).json({ error: 'TN_APP_ID no configurado' });
-  if (!stateSecret) return res.status(500).json({ error: 'TN_STATE_SECRET no configurado' });
+  const appId = process.env.ML_APP_ID;
+  const stateSecret = process.env.ML_STATE_SECRET;
+  if (!appId) return res.status(500).json({ error: 'ML_APP_ID no configurado' });
+  if (!stateSecret) return res.status(500).json({ error: 'ML_STATE_SECRET no configurado' });
 
-  // Firmar el proveedorId para que el state no pueda ser falsificado en el callback
   const sig = createHmac('sha256', stateSecret).update(proveedorId).digest('hex').slice(0, 32);
   const state = `${proveedorId}.${sig}`;
 
-  const callbackUrl = 'https://emprendego.com.ar/api/tiendanube-callback';
+  const callbackUrl = 'https://emprendego.com.ar/api/ml-callback';
 
   const authUrl =
-    `https://www.tiendanube.com/apps/${appId}/authorize` +
-    `?scope=read_products` +
+    `https://auth.mercadolibre.com.ar/authorization` +
+    `?response_type=code` +
+    `&client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
     `&state=${encodeURIComponent(state)}`;
 
-  console.log('[tn-auth] redirigiendo a:', authUrl);
+  console.log('[ml-auth] redirigiendo — proveedor_id:', proveedorId);
   return res.redirect(302, authUrl);
 }

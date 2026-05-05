@@ -1,20 +1,43 @@
+import { createHmac, timingSafeEqual } from 'crypto';
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default async function handler(req, res) {
   console.log('[tn-callback] REQUEST RECIBIDA - query:', JSON.stringify(new URL(req.url, 'https://emprendego.com.ar').searchParams.toString()));
   console.log('[tn-callback] headers host:', req.headers.host);
 
   const { code, state } = req.query;
 
-  console.log('[tn-callback] query params recibidos:', { code: code ? '***' : null, state });
+  console.log('[tn-callback] query params recibidos:', { code: code ? '***' : null, state: state ? '***' : null });
 
   if (!code || !state) {
     return res.status(400).send('Parámetros inválidos');
   }
 
-  const proveedorId = state;
+  // Verificar firma HMAC del state para prevenir CSRF
+  const stateSecret = process.env.TN_STATE_SECRET;
+  if (!stateSecret) {
+    console.error('[tn-callback] TN_STATE_SECRET no configurado');
+    return res.redirect('https://emprendego.com.ar/?tn=error');
+  }
+  const dotIdx = state.lastIndexOf('.');
+  if (dotIdx === -1) {
+    console.warn('[tn-callback] state sin firma — rechazado');
+    return res.status(400).send('State inválido');
+  }
+  const proveedorId = state.slice(0, dotIdx);
+  const receivedSig = state.slice(dotIdx + 1);
+  const expectedSig = createHmac('sha256', stateSecret).update(proveedorId).digest('hex').slice(0, 32);
+  let sigOk = false;
+  try {
+    sigOk = timingSafeEqual(Buffer.from(receivedSig, 'utf8'), Buffer.from(expectedSig, 'utf8'));
+  } catch { sigOk = false; }
+  if (!sigOk || !UUID_RE.test(proveedorId)) {
+    console.warn('[tn-callback] firma inválida o proveedorId no es UUID — rechazado');
+    return res.status(400).send('State inválido');
+  }
 
-  console.log('[tn-callback] proveedor_id del state:', proveedorId, '| tipo:', typeof proveedorId);
-
-  if (!proveedorId) return res.status(400).send('proveedor_id faltante en state');
+  console.log('[tn-callback] proveedor_id verificado:', proveedorId);
 
   const appId = process.env.TN_APP_ID;
   const clientSecret = process.env.TN_CLIENT_SECRET;

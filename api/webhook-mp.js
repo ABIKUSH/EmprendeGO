@@ -29,8 +29,21 @@ function verificarFirmaMP(req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
 
-  if (!verificarFirmaMP(req)) {
-    console.warn('[webhook-mp] firma inválida o secreto no configurado');
+  if (!process.env.MP_WEBHOOK_SECRET) {
+    console.error('[webhook-mp] MP_WEBHOOK_SECRET no configurado — rechazando request');
+    return res.status(503).send('Service unavailable');
+  }
+
+  // Ignorar eventos que no son pagos (ej: topic_merchant_order_wh)
+  const eventType = req.body?.type;
+  if (eventType && eventType !== 'payment') {
+    console.log(`[webhook-mp] tipo no procesado: ${eventType} — OK sin acción`);
+    return res.status(200).send('OK');
+  }
+
+  const firmaOk = verificarFirmaMP(req);
+  if (!firmaOk) {
+    console.warn('[webhook-mp] firma inválida — rechazando');
     return res.status(401).send('Unauthorized');
   }
 
