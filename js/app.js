@@ -431,8 +431,9 @@ async function cargarProveedores() {
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
       }));
-    } else { proveedoresDB = []; }
-  } catch (e) { proveedoresDB = []; }
+      try { localStorage.setItem('eg_provs_cache', JSON.stringify(proveedoresDB)); } catch (_) { }
+    }
+  } catch (e) { /* preserve cached proveedoresDB on network error */ }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -2643,20 +2644,28 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').eq('visible', true).order('created_at', { ascending: false }).limit(500);
+    // Simple query without JOIN — uses proveedoresDB (loaded by cargarProveedores) for provider data
+    const { data, error } = await sb.from('productos')
+      .select('id,nombre,precio,stock,imagen_url,categoria,categoria_principal,descripcion,proveedor_id')
+      .eq('visible', true)
+      .order('created_at', { ascending: false })
+      .limit(500);
     if (!error && data && data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
-      const mapped = data.map((p, i) => ({
-        id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
-        pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
-        cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria), catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
-        provId: String(p.proveedor_id),
-        provNombre: p.proveedores?.nombre || 'Proveedor',
-        provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
-        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
-        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro',
-        _dbg: console.log('imagen_url producto:', p.nombre, '→', p.imagen_url || '(vacío)') || undefined
-      }));
+      const mapped = data.map((p, i) => {
+        const prov = proveedoresDB.find(x => String(x.id) === String(p.proveedor_id));
+        return {
+          id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
+          pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
+          cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria),
+          catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
+          provId: String(p.proveedor_id),
+          provNombre: prov?.nombre || 'Proveedor',
+          provRubro: (prov?.rubro || '') + (prov?.provincia ? ' · ' + prov.provincia : ''),
+          provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
+          whatsapp: prov?.whatsapp || '', esPro: prov?.pro === true
+        };
+      });
       productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
     }
   } catch (e) { }
@@ -4155,14 +4164,6 @@ async function enviarContactoProv(btn) {
 
 // ===== INIT =====
 refreshFavBadge();
-cargarProveedores().then(() => {
-  initNotificaciones();
-  renderMapaProvincias();
-  renderMapaAllProvs();
-  renderProvDestacados();
-  const lpStat = document.getElementById('lp-stat-provs');
-  if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
-});
 
 // ===== CARRUSEL TESTIMONIOS =====
 (function initTestimonios() {
@@ -4199,11 +4200,35 @@ initOnboarding();
 })();
 
 renderQuestion();
-checkSession();
-cargarHeroStats();
-renderRecienLlegados();
-cargarProductosReales();
-setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
+
+// Supabase JS v2 mantiene un lock interno durante initialize().
+// Cualquier query lanzada ANTES de INITIAL_SESSION puede colgar silenciosamente.
+// Solución: todas las queries arrancan dentro de INITIAL_SESSION.
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'INITIAL_SESSION') {
+    cargarProveedores().then(() => {
+      initNotificaciones();
+      renderMapaProvincias();
+      renderMapaAllProvs();
+      renderProvDestacados();
+      const lpStat = document.getElementById('lp-stat-provs');
+      if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
+      cargarProductosReales();
+    }).catch(() => {
+      renderProvDestacados();
+      cargarProductosReales();
+    });
+    cargarHeroStats();
+    renderRecienLlegados();
+    setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
+    if (session) await checkSession();
+  } else if (event === 'SIGNED_IN') {
+    if (session) await checkSession();
+  } else if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    updatePerfilUI(); updateTopbar();
+  }
+});
 // ===== PLAN PRO - FUNCIONES =====
 async function iniciarPagoPro(btnEl) {
   if (!currentUser || !currentUser.proveedorId) {
@@ -4235,42 +4260,15 @@ async function iniciarPagoPro(btnEl) {
 
 
 // ===== TIENDA NUBE =====
-async function renderTiendaNubeSection() {
+function renderTiendaNubeSection() {
   const btnArea = document.getElementById('tn-btn-area');
   const statusLabel = document.getElementById('tn-status-label');
   if (!btnArea || !statusLabel) return;
-
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
-
-  // Si no es Pro, mostrar botón bloqueado
-  if (!esProvPro()) {
-    const card = document.getElementById('tn-card');
-    if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
-    statusLabel.textContent = 'Disponible en Plan Pro';
-    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar Tienda Nube · Solo Pro</button>`;
-    return;
-  }
-
-  // Query fresca para obtener estado actual de tn_store_id
-  const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
-  const tnStoreId = data?.tn_store_id;
-
-  // Actualizar provData en memoria para que sincronizarTiendaNube lo tenga disponible
-  if (currentUser.provData) currentUser.provData.tn_store_id = tnStoreId || null;
-
   const card = document.getElementById('tn-card');
-  if (tnStoreId) {
-    statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#065F46,#059669)';
-    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:white;color:#059669;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
-  } else {
-    statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#1E40AF,#1B74E4)';
-    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:white;color:#1B74E4;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B74E4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
-  }
+  if (card) card.style.background = 'linear-gradient(135deg,#1E40AF,#1B74E4)';
+  statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
+  statusLabel.style.color = 'rgba(255,255,255,.8)';
+  btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:white;color:#1B74E4;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B74E4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
 }
 
 function conectarTiendaNube(btn) {
