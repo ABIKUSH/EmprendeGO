@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /admin.html
 
-Sitemap: https://emprendego.com.ar/sitemap.xml
+Sitemap: https://emprendego.vercel.app/sitemap.xml

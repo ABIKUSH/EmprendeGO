@@ -291,11 +291,6 @@ function checkReveal() {
 window.addEventListener('scroll', checkReveal, { passive: true });
 // También al cargar
 document.addEventListener('DOMContentLoaded', () => {
-  // Strip bare # left by Supabase OAuth processing
-  if (window.location.hash === '#') {
-    history.replaceState({}, '', window.location.pathname + window.location.search);
-  }
-
   setTimeout(checkReveal, 200);
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
@@ -303,56 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const tnParam = urlParams.get('tn');
-  const mlParam = urlParams.get('ml');
+  const tnParam = new URLSearchParams(window.location.search).get('tn');
   if (tnParam === 'ok') {
     setTimeout(() => showToast('Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   } else if (tnParam === 'error') {
     setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
     history.replaceState({}, '', window.location.pathname);
-  } else if (mlParam === 'ok') {
-    sessionStorage.setItem('ml_post_oauth', '1');
-    setTimeout(() => showToast('MercadoLibre conectado correctamente.'), 800);
-    history.replaceState({}, '', window.location.pathname);
-  } else if (mlParam === 'error') {
-    setTimeout(() => showToast('Error al conectar MercadoLibre. Intentá de nuevo.'), 1200);
-    history.replaceState({}, '', window.location.pathname);
-  }
-
-  const pagoParam = urlParams.get('pago');
-  const paymentId = urlParams.get('payment_id') || urlParams.get('collection_id');
-  if (pagoParam === 'ok' && paymentId) {
-    history.replaceState({}, '', window.location.pathname);
-    setTimeout(async () => {
-      try {
-        const r = await fetch(`/api/verificar-pago?payment_id=${paymentId}`);
-        const d = await r.json();
-        if (d.ok) {
-          if (currentUser?.provData) {
-            currentUser.provData.plan = 'pro';
-            currentUser.provData.plan_desde = d.plan_desde;
-            currentUser.provData.plan_hasta = d.plan_hasta;
-          }
-          updatePerfilUI();
-          showToast('¡Pago aprobado! Ya tenés Plan Pro activado.');
-          goTo('perfil');
-        } else {
-          showToast('Pago recibido. Tu plan se activará en breve.');
-          goTo('perfil');
-        }
-      } catch (e) {
-        showToast('Pago recibido. Tu plan se activará en breve.');
-        goTo('perfil');
-      }
-    }, 800);
-  } else if (pagoParam === 'error') {
-    history.replaceState({}, '', window.location.pathname);
-    setTimeout(() => showToast('El pago no se completó. Intentá de nuevo.'), 800);
-  } else if (pagoParam === 'pendiente') {
-    history.replaceState({}, '', window.location.pathname);
-    setTimeout(() => showToast('Pago pendiente. Te avisaremos cuando se acredite.'), 800);
   }
 });
 setTimeout(checkReveal, 500);
@@ -468,8 +420,7 @@ function renderFavs() {
 // ===== SUPABASE =====
 async function cargarProveedores() {
   try {
-    const PROV_COLS = 'id,nombre,rubro,descripcion,plan,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,plan_hasta,plan_desde,pro_hasta,pro_desde,visitas,foto_url,estado,created_at,tn_store_id,tn_categoria_map,razon_social,cuit,email';
-    const { data, error } = await sb.from('proveedores').select(PROV_COLS).eq('estado', 'aprobado').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('proveedores').select('*').eq('estado', 'aprobado').order('created_at', { ascending: false });
     if (error) throw error;
     if (data && data.length > 0) {
       proveedoresDB = data.map(p => ({
@@ -480,10 +431,8 @@ async function cargarProveedores() {
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
       }));
-      try { localStorage.setItem('eg_provs_cache', JSON.stringify(proveedoresDB)); } catch (e) { }
-    }
-    // if data is empty/null keep existing proveedoresDB (may have valid cache data)
-  } catch (e) { console.error('[EmprendeGO] Error al cargar proveedores:', e); }
+    } else { proveedoresDB = []; }
+  } catch (e) { proveedoresDB = []; }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -706,10 +655,10 @@ function renderNotifPanel() {
   const el = document.getElementById('notifList');
   if (!el) return;
   el.innerHTML = notificaciones.map(n => `
-    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${escHtml(String(n.id))}','${escHtml(String(n.provId || ''))}')">
-      <div class="notif-icon ${escHtml(n.tipo)}">${n.icon}</div>
-      <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
-      <div class="notif-time">${escHtml(n.tiempo)}</div>
+    <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
+      <div class="notif-icon ${n.tipo}">${n.icon}</div>
+      <div class="notif-text"><strong>${n.titulo}</strong><span>${n.texto}</span></div>
+      <div class="notif-time">${n.tiempo}</div>
     </div>`).join('');
 }
 function onNotifClick(id, provId) {
@@ -800,10 +749,10 @@ function renderComparadorModal() {
   // Headers
   let thead = '<thead><tr><th style="width:90px">Atributo</th>';
   comparadorList.forEach((p, i) => {
-    const ini = escHtml((p.inicial || p.nombre.substring(0, 2)).toUpperCase());
+    const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     thead += `<th><div class="comp-header-cell">
       <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
-      <div class="comp-header-name">${escHtml(p.nombre)}</div>
+      <div class="comp-header-name">${p.nombre}</div>
       ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
     </div></th>`;
   });
@@ -1127,34 +1076,18 @@ async function cargarProductosDetalle(proveedorId) {
   provDetalleOffset = 0;
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
-
-  // Mostrar cache local inmediatamente para eliminar el delay visual
-  const hasta0 = provActual?.plan_hasta ?? null;
-  provDetalleEsPro = !!provActual?.pro && (!hasta0 || new Date(hasta0 + 'T03:00:00Z') > new Date());
-  provDetalleLimite = provDetalleEsPro ? undefined : 30;
-
-  const cached = productosReales.filter(x => String(x.provId) === String(proveedorId));
-  if (cached.length > 0) {
-    const limite = provDetalleLimite || cached.length;
-    provDetalleData = cached.slice(0, limite).map(x => ({
-      id: x.idReal, nombre: x.nombre, precio: x.precio,
-      stock: null, imagen_url: x.imgUrl, categoria_principal: x.cat
-    }));
-    await renderDetalleProductos(proveedorId);
-  } else {
-    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
-  }
-
-  // Refrescar desde DB en background
+  el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
   try {
+    const hasta = provActual?.plan_hasta ?? null;
+    // provActual.pro es booleano (pro: p.plan==='pro'), no existe campo .plan
+    provDetalleEsPro = !!provActual?.pro && (!hasta || new Date(hasta + 'T03:00:00Z') > new Date());
+    provDetalleLimite = provDetalleEsPro ? undefined : 30;
+    console.log('[detalle] pro:', provActual?.pro, 'plan_hasta:', hasta, '→ esPro:', provDetalleEsPro);
     let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).eq('visible', true).order('created_at', { ascending: false });
     if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
     if (error || !data || !data.length) {
-      if (!cached.length) {
-        const el2 = document.getElementById('det-productos-carousels');
-        if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
-      }
+      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
       return;
     }
     const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
@@ -1176,10 +1109,8 @@ async function cargarProductosDetalle(proveedorId) {
     provDetalleData = data;
     await renderDetalleProductos(proveedorId);
   } catch (e) {
-    if (!cached.length) {
-      const el2 = document.getElementById('det-productos-carousels');
-      if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
-    }
+    const el2 = document.getElementById('det-productos-carousels');
+    if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
   }
 }
 
@@ -1327,8 +1258,7 @@ async function abrirChatDirecto(id) {
   let p = proveedoresDB.find(x => String(x.id) === String(id));
   if (!p) {
     try {
-      const PROV_COLS = 'id,nombre,rubro,descripcion,plan,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,plan_hasta,plan_desde,pro_hasta,pro_desde,visitas,foto_url,estado,created_at,tn_store_id,tn_categoria_map,razon_social,cuit,email';
-      const { data } = await sb.from('proveedores').select(PROV_COLS).eq('id', id).maybeSingle();
+      const { data } = await sb.from('proveedores').select('*').eq('id', id).maybeSingle();
       if (data) { p = data; proveedoresDB.push(data); }
     } catch (e) { }
   }
@@ -1544,8 +1474,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList, error: provErr } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,tn_access_token,ml_user_id').eq('email', email.toLowerCase().trim());
-      if (provErr) { console.error('[checkSession] error query proveedores:', provErr); return; }
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         if (prov.plan === 'pro' && prov.plan_hasta) {
@@ -1558,25 +1487,17 @@ async function checkSession() {
         }
         handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
         verificarExpiracionPlan(prov);
-      } else if (prov) {
-        // Tiene solicitud enviada (pendiente / rechazado / suspendido) — sigue como usuario pero bloqueamos re-registro
-        handleLogin({ name, email, picture, type: 'user', provEstado: prov.estado });
       } else {
         handleLogin({ name, email, picture, type: 'user' });
       }
     }
-  } catch (e) { console.error('[checkSession] error:', e); }
+  } catch (e) { }
 }
 function handleLogin(user) {
   currentUser = user;
-  try { localStorage.setItem('eg_user_cache', JSON.stringify(user)); } catch (e) { }
   if (user.type === 'user') cargarHistorialLocal(user.email);
   updatePerfilUI();
   updateTopbar();
-  if (sessionStorage.getItem('ml_post_oauth') && user.type === 'proveedor') {
-    sessionStorage.removeItem('ml_post_oauth');
-    goTo('perfil');
-  }
 }
 
 function verificarExpiracionPlan(prov) {
@@ -1605,11 +1526,9 @@ function mostrarAvisoPlanProximo(fechaVence) {
     <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
   </div>`;
 }
-async function logout() {
-  try { await sb.auth.signOut(); } catch (e) { }
+function logout() {
   currentUser = null; historial = [];
   try { localStorage.removeItem('eg_historial'); } catch (e) { }
-  try { localStorage.removeItem('eg_user_cache'); } catch (e) { }
   document.getElementById('perfil-login').style.display = 'block';
   document.getElementById('perfil-user').style.display = 'none';
   document.getElementById('perfil-proveedor').style.display = 'none';
@@ -1664,7 +1583,7 @@ function updateTopbar() {
     }
   }
 }
-function updatePerfilUI(skipDb = false) {
+function updatePerfilUI() {
   if (!currentUser) return;
   document.getElementById('perfil-login').style.display = 'none';
   if (currentUser.type === 'proveedor') {
@@ -1686,16 +1605,13 @@ function updatePerfilUI(skipDb = false) {
         const ph = document.getElementById('edit-logo-ph'); if (ph) ph.style.display = 'none';
       }
     }
+    cargarProductosProveedor();
+    cargarStatsDashboard();
+    cargarLogoProveedor();
+    cargarPedidosRecientes();
     calcularCompletitudPerfil();
     renderBannerProDashboard();
-    if (!skipDb) {
-      cargarProductosProveedor();
-      cargarStatsDashboard();
-      cargarLogoProveedor();
-      cargarPedidosRecientes();
-      renderTiendaNubeSection();
-      renderMLSection();
-    }
+    renderTiendaNubeSection();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -1719,28 +1635,6 @@ function updatePerfilUI(skipDb = false) {
       const img = document.getElementById('user-avatar-img');
       img.src = currentUser.picture; img.style.display = 'block';
       document.getElementById('user-avatar-placeholder').style.display = 'none';
-    }
-    // Ocultar / mostrar opción de registro según si ya tiene solicitud
-    const btnReg = document.getElementById('btn-registrar-prov');
-    const drawerReg = document.getElementById('dnav-registro');
-    const bannerEstado = document.getElementById('banner-prov-estado');
-    if (currentUser.provEstado) {
-      if (btnReg) btnReg.style.display = 'none';
-      if (drawerReg) drawerReg.style.display = 'none';
-      if (bannerEstado) {
-        const cfg = {
-          pendiente:  { bg: '#fffbeb', border: '#fde68a', icon: '⏳', color: '#92400e', title: 'Solicitud en revisión', text: 'Recibimos tu solicitud. Te avisamos en 24-48hs hábiles por WhatsApp cuando esté aprobada.' },
-          rechazado:  { bg: '#fef2f2', border: '#fecaca', icon: '❌', color: '#991b1b', title: 'Solicitud rechazada', text: 'Tu solicitud no fue aprobada. Contactanos por soporte si creés que es un error.' },
-          suspendido: { bg: '#fef2f2', border: '#fecaca', icon: '🚫', color: '#991b1b', title: 'Cuenta suspendida', text: 'Tu cuenta de proveedor fue suspendida. Contactanos por soporte para más información.' }
-        };
-        const c = cfg[currentUser.provEstado] || cfg.pendiente;
-        bannerEstado.style.display = 'block';
-        bannerEstado.innerHTML = `<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:14px;padding:14px 16px"><div style="font-size:.85rem;font-weight:800;color:${c.color};margin-bottom:4px">${c.icon} ${c.title}</div><div style="font-size:.78rem;color:${c.color};line-height:1.5;opacity:.85">${c.text}</div></div>`;
-      }
-    } else {
-      if (btnReg) btnReg.style.display = '';
-      if (drawerReg) drawerReg.style.display = '';
-      if (bannerEstado) bannerEstado.style.display = 'none';
     }
     cargarAvatarUsuario();
     cargarHistorial();
@@ -2475,16 +2369,6 @@ async function guardarEdicionProducto() {
 // ===== NAV =====
 function goTo(s) {
   haptic('light');
-  // Bloquear acceso al registro si el usuario ya tiene una solicitud enviada
-  if (s === 'registro' && currentUser?.provEstado) {
-    const msgs = {
-      pendiente:  'Tu solicitud ya fue enviada y está en revisión. Te avisamos en 24-48hs por WhatsApp.',
-      rechazado:  'Tu solicitud fue rechazada. Contactanos por soporte para más información.',
-      suspendido: 'Tu cuenta está suspendida. Contactanos por soporte para más información.'
-    };
-    showToast(msgs[currentUser.provEstado] || 'Ya tenés una solicitud enviada.');
-    return;
-  }
   // Push to navigation stack (avoid consecutive duplicates)
   if (navStack[navStack.length - 1] !== s) {
     navStack.push(s);
@@ -2618,12 +2502,7 @@ async function showRegSuccess() {
     if (error) throw error;
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
-    // Un error de clave única (23505) indica que ya existe un registro con ese CUIT o email
-    if (e.code === '23505' || (e.message || '').toLowerCase().includes('duplicate') || (e.message || '').toLowerCase().includes('unique')) {
-      showToast('Ya existe una solicitud con ese CUIT o email. Iniciá sesión para ver el estado de tu registro.');
-    } else {
-      showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
-    }
+    showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
     return;
   }
 
@@ -2764,40 +2643,26 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    // Simple query without JOIN — uses proveedoresDB (already loaded) for provider data.
-    // Avoids PostgREST embedded-resource issues that can silently fail for authenticated users.
-    const { data, error } = await sb.from('productos')
-      .select('id,nombre,precio,stock,imagen_url,categoria,categoria_principal,subcategoria,descripcion,proveedor_id')
-      .eq('visible', true)
-      .order('created_at', { ascending: false })
-      .limit(500);
+    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').eq('visible', true).order('created_at', { ascending: false }).limit(500);
     if (!error && data && data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
-      const mapped = data.map((p, i) => {
-        const prov = proveedoresDB.find(x => String(x.id) === String(p.proveedor_id));
-        return {
-          id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
-          pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
-          cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria),
-          catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
-          provId: String(p.proveedor_id),
-          provNombre: prov?.nombre || 'Proveedor',
-          provRubro: (prov?.rubro || '') + (prov?.provincia ? ' · ' + prov.provincia : ''),
-          provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
-          whatsapp: prov?.whatsapp || '', esPro: prov?.pro === true,
-          _unused: undefined
-        };
-      });
+      const mapped = data.map((p, i) => ({
+        id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
+        pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
+        cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria), catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
+        provId: String(p.proveedor_id),
+        provNombre: p.proveedores?.nombre || 'Proveedor',
+        provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
+        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
+        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro',
+        _dbg: console.log('imagen_url producto:', p.nombre, '→', p.imagen_url || '(vacío)') || undefined
+      }));
       productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
     }
-  } catch (e) {}
+  } catch (e) { }
   homeProductosPage = 0;
   renderHomeGrid();
   renderProdBuscar();
-  // Diagnostic: briefly shows product count in the browser tab title
-  const n = productosReales.length;
-  document.title = (n > 0 ? '[✅ ' + n + ' productos]' : '[❌ sin productos]') + ' EmprendeGO';
-  setTimeout(() => { document.title = 'EmprendeGO'; }, 8000);
 }
 
 function renderHomeGrid() {
@@ -3146,14 +3011,14 @@ async function cargarConversaciones() {
     if (badge) badge.classList.toggle('show', totalNoLeidos > 0);
 
     el.innerHTML = convs.map((c, i) => {
-      const ini = escHtml(c.nombre.substring(0, 2).toUpperCase());
+      const ini = c.nombre.substring(0, 2).toUpperCase();
       const ultimo = c.ultimo;
-      const preview = escHtml((ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : ''));
-      const tiempo = escHtml(timeAgo(new Date(ultimo.created_at)));
-      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${escHtml(c.nombre)}')">
+      const preview = (ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
+      const tiempo = timeAgo(new Date(ultimo.created_at));
+      return `<div class="conv-item ${c.noLeidos > 0 ? 'unread' : ''}" onclick="abrirConvProveedor('${c.nombre.replace(/'/g, "\'")}')">
         <div class="conv-avatar">${ini}</div>
         <div class="conv-info">
-          <div class="conv-name">${escHtml(c.nombre)}</div>
+          <div class="conv-name">${c.nombre}</div>
           <div class="conv-preview">${preview}</div>
         </div>
         <div class="conv-meta">
@@ -3423,7 +3288,7 @@ async function guardarPedido() {
       total,
       estado: 'pendiente'
     });
-  } catch (e) { console.error('[guardarPedido]', e); }
+  } catch (e) { }
 }
 
 function enviarPedidoPorWA() {
@@ -4290,28 +4155,15 @@ async function enviarContactoProv(btn) {
 
 // ===== INIT =====
 refreshFavBadge();
-// Skeletons inmediatos mientras cargan los datos
-(function initSkeletons() {
-  const pl = document.getElementById('provList');
-  if (pl) pl.innerHTML = skelProv(4);
-  const c1 = document.getElementById('prodInicioCarousel1');
-  if (c1) c1.innerHTML = skelCarousel(5);
-  const c2 = document.getElementById('prodInicioCarousel2');
-  if (c2) c2.innerHTML = skelCarousel(5);
-  const pd = document.getElementById('prov-dest-list');
-  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display = 'block'; }
-})();
-// Restaurar providers desde caché para eliminar el skeleton en recargas
-(function restoreProvsCache() {
-  try {
-    const cached = JSON.parse(localStorage.getItem('eg_provs_cache') || 'null');
-    if (cached && cached.length > 0) {
-      proveedoresDB = cached;
-      renderProvs(proveedoresDB);
-      renderProvDestacados();
-    }
-  } catch (e) { }
-})();
+cargarProveedores().then(() => {
+  initNotificaciones();
+  renderMapaProvincias();
+  renderMapaAllProvs();
+  renderProvDestacados();
+  const lpStat = document.getElementById('lp-stat-provs');
+  if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
+});
+
 // ===== CARRUSEL TESTIMONIOS =====
 (function initTestimonios() {
   const slides = document.querySelectorAll('.testim-slide');
@@ -4333,77 +4185,25 @@ refreshFavBadge();
 })();
 
 initOnboarding();
-renderQuestion();
 
-// Restaurar visual desde caché inmediatamente (sin consultas a DB)
-(function restoreUserCache() {
-  try {
-    const raw = localStorage.getItem('eg_user_cache');
-    if (!raw) return;
-    const user = JSON.parse(raw);
-    if (user && user.email) {
-      currentUser = user;
-      updatePerfilUI(true); // visual-only; DB queries run after INITIAL_SESSION → checkSession
-      updateTopbar();
-    }
-  } catch (e) { }
+// Skeletons inmediatos mientras cargan los datos
+(function initSkeletons() {
+  const pl = document.getElementById('provList');
+  if (pl) pl.innerHTML = skelProv(4);
+  const c1 = document.getElementById('prodInicioCarousel1');
+  if (c1) c1.innerHTML = skelCarousel(5);
+  const c2 = document.getElementById('prodInicioCarousel2');
+  if (c2) c2.innerHTML = skelCarousel(5);
+  const pd = document.getElementById('prov-dest-list');
+  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display = 'block'; }
 })();
 
-// Supabase JS v2 mantiene un lock interno durante initialize().
-// Cualquier query (incluso pública/anon) lanzada ANTES de INITIAL_SESSION queda
-// encolada detrás del lock y puede colgar sin devolver error ni resultado.
-// Solución: todas las queries arrancan dentro de INITIAL_SESSION, cuando el lock ya se liberó.
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'INITIAL_SESSION') {
-    // Datos públicos — arrancan apenas Supabase está listo, sin depender de sesión.
-    // cargarProductosReales() corre dentro de .then() para garantizar que proveedoresDB
-    // ya esté cargado (lo necesita para enriquecer cada producto con datos del proveedor).
-    cargarProveedores().then(() => {
-      initNotificaciones();
-      renderMapaProvincias();
-      renderMapaAllProvs();
-      renderProvDestacados();
-      const lpStat = document.getElementById('lp-stat-provs');
-      if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
-      cargarProductosReales();
-    }).catch(err => {
-      console.error('[init] Error cargando proveedores:', err);
-      renderProvDestacados();
-      cargarProductosReales(); // intentar igual aunque fallen los proveedores
-    });
-    cargarHeroStats();
-    renderRecienLlegados();
-    setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
-    // Timeout diagnóstico: muestra en el título si los productos nunca cargaron
-    setTimeout(() => {
-      if (productosReales.length === 0) {
-        document.title = '[⏱️ TIMEOUT] EmprendeGO';
-        setTimeout(() => { document.title = 'EmprendeGO'; }, 10000);
-      }
-    }, 15000);
-    // Datos privados — solo si hay sesión activa
-    if (session) await checkSession();
-  } else if (event === 'SIGNED_IN') {
-    if (session) await checkSession();
-  } else if (event === 'SIGNED_OUT') {
-    currentUser = null; historial = [];
-    try { localStorage.removeItem('eg_historial'); } catch (e) { }
-    try { localStorage.removeItem('eg_user_cache'); } catch (e) { }
-    updatePerfilUI(); updateTopbar();
-  }
-  // TOKEN_REFRESHED: sesión renovada automáticamente, sin acción necesaria
-});
-
-// BFCache fix: when Chrome restores the page from back-forward cache after navigating
-// to Mercado Pago (or any external page), pending Supabase fetches are cancelled and
-// skeletons stay forever. Re-run data loading when the page is restored from cache.
-window.addEventListener('pageshow', (event) => {
-  if (event.persisted) {
-    cargarProveedores().then(() => { renderProvDestacados(); }).catch(() => {});
-    cargarProductosReales();
-    cargarHeroStats();
-  }
-});
+renderQuestion();
+checkSession();
+cargarHeroStats();
+renderRecienLlegados();
+cargarProductosReales();
+setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
 // ===== PLAN PRO - FUNCIONES =====
 async function iniciarPagoPro(btnEl) {
   if (!currentUser || !currentUser.proveedorId) {
@@ -4435,7 +4235,7 @@ async function iniciarPagoPro(btnEl) {
 
 
 // ===== TIENDA NUBE =====
-function renderTiendaNubeSection() {
+async function renderTiendaNubeSection() {
   const btnArea = document.getElementById('tn-btn-area');
   const statusLabel = document.getElementById('tn-status-label');
   if (!btnArea || !statusLabel) return;
@@ -4452,8 +4252,12 @@ function renderTiendaNubeSection() {
     return;
   }
 
-  // tn_store_id is fetched fresh by checkSession() before this function ever runs
-  const tnStoreId = currentUser?.provData?.tn_store_id || null;
+  // Query fresca para obtener estado actual de tn_store_id
+  const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
+  const tnStoreId = data?.tn_store_id;
+
+  // Actualizar provData en memoria para que sincronizarTiendaNube lo tenga disponible
+  if (currentUser.provData) currentUser.provData.tn_store_id = tnStoreId || null;
 
   const card = document.getElementById('tn-card');
   if (tnStoreId) {
@@ -4549,61 +4353,6 @@ async function confirmarMapeoTN(btn) {
   cargarProductosProveedor();
   btn.disabled = false;
   btn.textContent = 'Confirmar categorías';
-}
-
-
-// ===== MERCADOLIBRE =====
-async function renderMLSection() {
-  const btnArea = document.getElementById('ml-btn-area');
-  const statusLabel = document.getElementById('ml-status-label');
-  if (!btnArea || !statusLabel) return;
-
-  const card = document.getElementById('ml-card');
-  if (card) card.style.background = 'linear-gradient(135deg,#F5C000,#FFE600)';
-  statusLabel.textContent = 'Integración en desarrollo · Disponible próximamente';
-  statusLabel.style.color = 'rgba(0,0,0,.6)';
-  btnArea.innerHTML = `<button disabled style="width:100%;background:rgba(0,0,0,.1);color:rgba(0,0,0,.45);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Próximamente</button>`;
-}
-
-function conectarML(btn) {
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
-  btn.disabled = true;
-  btn.textContent = 'Redirigiendo...';
-  window.location.href = '/api/ml-auth?proveedor_id=' + encodeURIComponent(proveedorId);
-}
-
-async function sincronizarML(btn) {
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
-  btn.disabled = true;
-  btn.textContent = '⏳ Sincronizando...';
-  try {
-    const res = await fetch('/api/ml-sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proveedor_id: proveedorId })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      const msg = data.total > 0
-        ? `${data.importados} de ${data.total} publicaciones importadas`
-        : 'No se encontraron publicaciones activas en tu cuenta de MercadoLibre';
-      showToast(msg);
-    } else {
-      const errMsg = data.error || 'Error al sincronizar publicaciones.';
-      const mlDetail = data.ml_error ? ' | ML dice: ' + data.ml_error.slice(0, 100) : '';
-      showToast(res.status === 401
-        ? 'Sesión de ML expirada. Usá el botón Reconectar.'
-        : errMsg + mlDetail);
-    }
-    cargarProductosProveedor();
-  } catch {
-    showToast('Error de conexión. Intentá más tarde.');
-    cargarProductosProveedor();
-  }
-  btn.disabled = false;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar';
 }
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====

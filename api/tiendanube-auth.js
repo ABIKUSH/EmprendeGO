@@ -1,24 +1,12 @@
-import { createHmac } from 'crypto';
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
 
   const proveedorId = req.query.proveedor_id;
   console.log('[tn-auth] proveedor_id recibido:', proveedorId, '| tipo:', typeof proveedorId);
-  if (!proveedorId || !UUID_RE.test(proveedorId)) {
-    return res.status(400).json({ error: 'proveedor_id inválido' });
-  }
+  if (!proveedorId) return res.status(400).json({ error: 'Falta proveedor_id' });
 
   const appId = process.env.TN_APP_ID;
-  const stateSecret = process.env.TN_STATE_SECRET;
   if (!appId) return res.status(500).json({ error: 'TN_APP_ID no configurado' });
-  if (!stateSecret) return res.status(500).json({ error: 'TN_STATE_SECRET no configurado' });
-
-  // Firmar el proveedorId para que el state no pueda ser falsificado en el callback
-  const sig = createHmac('sha256', stateSecret).update(proveedorId).digest('hex').slice(0, 32);
-  const state = `${proveedorId}.${sig}`;
 
   const callbackUrl = 'https://emprendego.com.ar/api/tiendanube-callback';
 
@@ -26,7 +14,7 @@ export default function handler(req, res) {
     `https://www.tiendanube.com/apps/${appId}/authorize` +
     `?scope=read_products` +
     `&redirect_uri=${encodeURIComponent(callbackUrl)}` +
-    `&state=${encodeURIComponent(state)}`;
+    `&state=${encodeURIComponent(proveedorId)}`;
 
   console.log('[tn-auth] redirigiendo a:', authUrl);
   return res.redirect(302, authUrl);

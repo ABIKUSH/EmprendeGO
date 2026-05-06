@@ -31,9 +31,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email inválido' });
   }
 
-  // Validar que proveedorId sea un string no vacío (UUID de Supabase)
-  const provId = String(proveedorId).trim();
-  if (!provId) {
+  // Validar que proveedorId sea un entero positivo
+  const provId = parseInt(proveedorId, 10);
+  if (!provId || provId <= 0) {
     return res.status(400).json({ error: 'proveedorId inválido' });
   }
 
