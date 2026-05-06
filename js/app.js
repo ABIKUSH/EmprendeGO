@@ -291,6 +291,11 @@ function checkReveal() {
 window.addEventListener('scroll', checkReveal, { passive: true });
 // También al cargar
 document.addEventListener('DOMContentLoaded', () => {
+  // Strip bare # left by Supabase OAuth processing
+  if (window.location.hash === '#') {
+    history.replaceState({}, '', window.location.pathname + window.location.search);
+  }
+
   setTimeout(checkReveal, 200);
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
@@ -309,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   } else if (mlParam === 'ok') {
     sessionStorage.setItem('ml_post_oauth', '1');
-    setTimeout(() => showToast('MercadoLibre conectado. Ahora sincronizá tus publicaciones.'), 800);
+    setTimeout(() => showToast('MercadoLibre conectado correctamente.'), 800);
     history.replaceState({}, '', window.location.pathname);
   } else if (mlParam === 'error') {
     setTimeout(() => showToast('Error al conectar MercadoLibre. Intentá de nuevo.'), 1200);
@@ -476,8 +481,9 @@ async function cargarProveedores() {
         logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
       }));
       try { localStorage.setItem('eg_provs_cache', JSON.stringify(proveedoresDB)); } catch (e) { }
-    } else { proveedoresDB = []; }
-  } catch (e) { console.error('[EmprendeGO] Error al cargar proveedores:', e); proveedoresDB = []; }
+    }
+    // if data is empty/null keep existing proveedoresDB (may have valid cache data)
+  } catch (e) { console.error('[EmprendeGO] Error al cargar proveedores:', e); }
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -1121,18 +1127,34 @@ async function cargarProductosDetalle(proveedorId) {
   provDetalleOffset = 0;
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
-  el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
+
+  // Mostrar cache local inmediatamente para eliminar el delay visual
+  const hasta0 = provActual?.plan_hasta ?? null;
+  provDetalleEsPro = !!provActual?.pro && (!hasta0 || new Date(hasta0 + 'T03:00:00Z') > new Date());
+  provDetalleLimite = provDetalleEsPro ? undefined : 30;
+
+  const cached = productosReales.filter(x => String(x.provId) === String(proveedorId));
+  if (cached.length > 0) {
+    const limite = provDetalleLimite || cached.length;
+    provDetalleData = cached.slice(0, limite).map(x => ({
+      id: x.idReal, nombre: x.nombre, precio: x.precio,
+      stock: null, imagen_url: x.imgUrl, categoria_principal: x.cat
+    }));
+    await renderDetalleProductos(proveedorId);
+  } else {
+    el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
+  }
+
+  // Refrescar desde DB en background
   try {
-    const hasta = provActual?.plan_hasta ?? null;
-    // provActual.pro es booleano (pro: p.plan==='pro'), no existe campo .plan
-    provDetalleEsPro = !!provActual?.pro && (!hasta || new Date(hasta + 'T03:00:00Z') > new Date());
-    provDetalleLimite = provDetalleEsPro ? undefined : 30;
-    console.log('[detalle] pro:', provActual?.pro, 'plan_hasta:', hasta, '→ esPro:', provDetalleEsPro);
     let q = sb.from('productos').select('*').eq('proveedor_id', proveedorId).eq('visible', true).order('created_at', { ascending: false });
     if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
     if (error || !data || !data.length) {
-      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
+      if (!cached.length) {
+        const el2 = document.getElementById('det-productos-carousels');
+        if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
+      }
       return;
     }
     const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
@@ -1154,8 +1176,10 @@ async function cargarProductosDetalle(proveedorId) {
     provDetalleData = data;
     await renderDetalleProductos(proveedorId);
   } catch (e) {
-    const el2 = document.getElementById('det-productos-carousels');
-    if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
+    if (!cached.length) {
+      const el2 = document.getElementById('det-productos-carousels');
+      if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
+    }
   }
 }
 
@@ -1520,7 +1544,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList, error: provErr } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_user_id').eq('email', email.toLowerCase().trim());
+      const { data: provList, error: provErr } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,tn_access_token,ml_user_id').eq('email', email.toLowerCase().trim());
       if (provErr) { console.error('[checkSession] error query proveedores:', provErr); return; }
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
@@ -1640,7 +1664,7 @@ function updateTopbar() {
     }
   }
 }
-function updatePerfilUI() {
+function updatePerfilUI(skipDb = false) {
   if (!currentUser) return;
   document.getElementById('perfil-login').style.display = 'none';
   if (currentUser.type === 'proveedor') {
@@ -1662,14 +1686,16 @@ function updatePerfilUI() {
         const ph = document.getElementById('edit-logo-ph'); if (ph) ph.style.display = 'none';
       }
     }
-    cargarProductosProveedor();
-    cargarStatsDashboard();
-    cargarLogoProveedor();
-    cargarPedidosRecientes();
     calcularCompletitudPerfil();
     renderBannerProDashboard();
-    renderTiendaNubeSection();
-    renderMLSection();
+    if (!skipDb) {
+      cargarProductosProveedor();
+      cargarStatsDashboard();
+      cargarLogoProveedor();
+      cargarPedidosRecientes();
+      renderTiendaNubeSection();
+      renderMLSection();
+    }
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -2750,7 +2776,7 @@ async function cargarProductosReales() {
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
         whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro',
-        _dbg: console.log('imagen_url producto:', p.nombre, '→', p.imagen_url || '(vacío)') || undefined
+        _unused: undefined
       }));
       productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
     }
@@ -3383,7 +3409,7 @@ async function guardarPedido() {
       total,
       estado: 'pendiente'
     });
-  } catch (e) { }
+  } catch (e) { console.error('[guardarPedido]', e); }
 }
 
 function enviarPedidoPorWA() {
@@ -4250,6 +4276,17 @@ async function enviarContactoProv(btn) {
 
 // ===== INIT =====
 refreshFavBadge();
+// Skeletons inmediatos mientras cargan los datos
+(function initSkeletons() {
+  const pl = document.getElementById('provList');
+  if (pl) pl.innerHTML = skelProv(4);
+  const c1 = document.getElementById('prodInicioCarousel1');
+  if (c1) c1.innerHTML = skelCarousel(5);
+  const c2 = document.getElementById('prodInicioCarousel2');
+  if (c2) c2.innerHTML = skelCarousel(5);
+  const pd = document.getElementById('prov-dest-list');
+  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display = 'block'; }
+})();
 // Restaurar providers desde caché para eliminar el skeleton en recargas
 (function restoreProvsCache() {
   try {
@@ -4268,6 +4305,9 @@ cargarProveedores().then(() => {
   renderProvDestacados();
   const lpStat = document.getElementById('lp-stat-provs');
   if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
+}).catch(err => {
+  console.error('[init] Error cargando proveedores:', err);
+  renderProvDestacados();
 });
 
 // ===== CARRUSEL TESTIMONIOS =====
@@ -4292,21 +4332,15 @@ cargarProveedores().then(() => {
 
 initOnboarding();
 
-// Skeletons inmediatos mientras cargan los datos
-(function initSkeletons() {
-  const pl = document.getElementById('provList');
-  if (pl) pl.innerHTML = skelProv(4);
-  const c1 = document.getElementById('prodInicioCarousel1');
-  if (c1) c1.innerHTML = skelCarousel(5);
-  const c2 = document.getElementById('prodInicioCarousel2');
-  if (c2) c2.innerHTML = skelCarousel(5);
-  const pd = document.getElementById('prov-dest-list');
-  if (pd) { pd.innerHTML = skelProvHoriz(5); document.getElementById('seccion-prov-dest').style.display = 'block'; }
-})();
-
 renderQuestion();
 
-// Restaurar sesión desde caché inmediatamente (sin esperar a Supabase)
+// Datos públicos — se cargan de inmediato, sin depender de la sesión
+cargarHeroStats();
+renderRecienLlegados();
+cargarProductosReales();
+setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
+
+// Restaurar visual desde caché (sin consultas a DB — esas van después de checkSession)
 (function restoreUserCache() {
   try {
     const raw = localStorage.getItem('eg_user_cache');
@@ -4314,13 +4348,14 @@ renderQuestion();
     const user = JSON.parse(raw);
     if (user && user.email) {
       currentUser = user;
-      updatePerfilUI();
+      updatePerfilUI(true); // visual-only restore; async DB calls happen after INITIAL_SESSION fires
       updateTopbar();
     }
   } catch (e) { }
 })();
 
-// Auth state listener — reacciona a login, logout y renovación de token
+// Auth — checkSession() hace el fetch completo del proveedor (incl. tn_store_id, tn_access_token)
+// El dashboard y las integraciones se renderizan DESPUÉS de que checkSession() termine (via handleLogin → updatePerfilUI)
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
     if (session) await checkSession();
@@ -4333,10 +4368,16 @@ sb.auth.onAuthStateChange(async (event, session) => {
   // TOKEN_REFRESHED: sesión renovada automáticamente, sin acción necesaria
 });
 
-cargarHeroStats();
-renderRecienLlegados();
-cargarProductosReales();
-setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
+// BFCache fix: when Chrome restores the page from back-forward cache after navigating
+// to Mercado Pago (or any external page), pending Supabase fetches are cancelled and
+// skeletons stay forever. Re-run data loading when the page is restored from cache.
+window.addEventListener('pageshow', (event) => {
+  if (event.persisted) {
+    cargarProveedores().then(() => { renderProvDestacados(); }).catch(() => {});
+    cargarProductosReales();
+    cargarHeroStats();
+  }
+});
 // ===== PLAN PRO - FUNCIONES =====
 async function iniciarPagoPro(btnEl) {
   if (!currentUser || !currentUser.proveedorId) {
@@ -4368,7 +4409,7 @@ async function iniciarPagoPro(btnEl) {
 
 
 // ===== TIENDA NUBE =====
-async function renderTiendaNubeSection() {
+function renderTiendaNubeSection() {
   const btnArea = document.getElementById('tn-btn-area');
   const statusLabel = document.getElementById('tn-status-label');
   if (!btnArea || !statusLabel) return;
@@ -4385,12 +4426,8 @@ async function renderTiendaNubeSection() {
     return;
   }
 
-  // Query fresca para obtener estado actual de tn_store_id
-  const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
-  const tnStoreId = data?.tn_store_id;
-
-  // Actualizar provData en memoria para que sincronizarTiendaNube lo tenga disponible
-  if (currentUser.provData) currentUser.provData.tn_store_id = tnStoreId || null;
+  // tn_store_id is fetched fresh by checkSession() before this function ever runs
+  const tnStoreId = currentUser?.provData?.tn_store_id || null;
 
   const card = document.getElementById('tn-card');
   if (tnStoreId) {
@@ -4495,37 +4532,11 @@ async function renderMLSection() {
   const statusLabel = document.getElementById('ml-status-label');
   if (!btnArea || !statusLabel) return;
 
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
-
-  if (!esProvPro()) {
-    const card = document.getElementById('ml-card');
-    if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
-    statusLabel.textContent = 'Disponible en Plan Pro';
-    btnArea.innerHTML = `<button onclick="showModalPro('MercadoLibre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar MercadoLibre · Solo Pro</button>`;
-    return;
-  }
-
-  // Usar dato cargado en checkSession; si falta, hacer query fresca
-  let mlUserId = currentUser.provData?.ml_user_id ?? undefined;
-  if (mlUserId === undefined) {
-    const { data } = await sb.from('proveedores').select('ml_user_id').eq('id', proveedorId).single();
-    mlUserId = data?.ml_user_id || null;
-    if (currentUser.provData) currentUser.provData.ml_user_id = mlUserId;
-  }
-
   const card = document.getElementById('ml-card');
-  if (mlUserId) {
-    statusLabel.textContent = 'Conectado · Vendedor #' + mlUserId;
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#065F46,#059669)';
-    btnArea.innerHTML = `<div style="display:flex;gap:8px"><button onclick="sincronizarML(this)" style="flex:1;background:white;color:#059669;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar</button><button onclick="conectarML(this)" title="Reconectar cuenta" style="background:rgba(255,255,255,.2);color:white;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:11px 13px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Reconectar</button></div>`;
-  } else {
-    statusLabel.textContent = 'Importá todas tus publicaciones automáticamente';
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#1A6EB8,#3483FA)';
-    btnArea.innerHTML = `<button onclick="conectarML(this)" style="width:100%;background:white;color:#3483FA;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3483FA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
-  }
+  if (card) card.style.background = 'linear-gradient(135deg,#F5C000,#FFE600)';
+  statusLabel.textContent = 'Integración en desarrollo · Disponible próximamente';
+  statusLabel.style.color = 'rgba(0,0,0,.6)';
+  btnArea.innerHTML = `<button disabled style="width:100%;background:rgba(0,0,0,.1);color:rgba(0,0,0,.45);border:1px solid rgba(0,0,0,.12);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:not-allowed;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,.4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Próximamente</button>`;
 }
 
 function conectarML(btn) {
@@ -4550,18 +4561,20 @@ async function sincronizarML(btn) {
     const data = await res.json();
     if (res.ok) {
       const msg = data.total > 0
-        ? `${data.importados} de ${data.total} publicaciones importadas de MercadoLibre`
-        : 'No se encontraron publicaciones en tu cuenta de MercadoLibre';
+        ? `${data.importados} de ${data.total} publicaciones importadas`
+        : 'No se encontraron publicaciones activas en tu cuenta de MercadoLibre';
       showToast(msg);
-      if (data.importados > 0) cargarProductosProveedor();
     } else {
       const errMsg = data.error || 'Error al sincronizar publicaciones.';
-      showToast(errMsg.includes('token') || res.status === 401
-        ? 'Sesión ML expirada. Usá el botón Reconectar.'
-        : errMsg);
+      const mlDetail = data.ml_error ? ' | ML dice: ' + data.ml_error.slice(0, 100) : '';
+      showToast(res.status === 401
+        ? 'Sesión de ML expirada. Usá el botón Reconectar.'
+        : errMsg + mlDetail);
     }
+    cargarProductosProveedor();
   } catch {
     showToast('Error de conexión. Intentá más tarde.');
+    cargarProductosProveedor();
   }
   btn.disabled = false;
   btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar';
