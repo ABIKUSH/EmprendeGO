@@ -4298,18 +4298,6 @@ refreshFavBadge();
     }
   } catch (e) { }
 })();
-cargarProveedores().then(() => {
-  initNotificaciones();
-  renderMapaProvincias();
-  renderMapaAllProvs();
-  renderProvDestacados();
-  const lpStat = document.getElementById('lp-stat-provs');
-  if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
-}).catch(err => {
-  console.error('[init] Error cargando proveedores:', err);
-  renderProvDestacados();
-});
-
 // ===== CARRUSEL TESTIMONIOS =====
 (function initTestimonios() {
   const slides = document.querySelectorAll('.testim-slide');
@@ -4331,16 +4319,9 @@ cargarProveedores().then(() => {
 })();
 
 initOnboarding();
-
 renderQuestion();
 
-// Datos públicos — se cargan de inmediato, sin depender de la sesión
-cargarHeroStats();
-renderRecienLlegados();
-cargarProductosReales();
-setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
-
-// Restaurar visual desde caché (sin consultas a DB — esas van después de checkSession)
+// Restaurar visual desde caché inmediatamente (sin consultas a DB)
 (function restoreUserCache() {
   try {
     const raw = localStorage.getItem('eg_user_cache');
@@ -4348,16 +4329,37 @@ setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 30
     const user = JSON.parse(raw);
     if (user && user.email) {
       currentUser = user;
-      updatePerfilUI(true); // visual-only restore; async DB calls happen after INITIAL_SESSION fires
+      updatePerfilUI(true); // visual-only; DB queries run after INITIAL_SESSION → checkSession
       updateTopbar();
     }
   } catch (e) { }
 })();
 
-// Auth — checkSession() hace el fetch completo del proveedor (incl. tn_store_id, tn_access_token)
-// El dashboard y las integraciones se renderizan DESPUÉS de que checkSession() termine (via handleLogin → updatePerfilUI)
+// Supabase JS v2 mantiene un lock interno durante initialize().
+// Cualquier query (incluso pública/anon) lanzada ANTES de INITIAL_SESSION queda
+// encolada detrás del lock y puede colgar sin devolver error ni resultado.
+// Solución: todas las queries arrancan dentro de INITIAL_SESSION, cuando el lock ya se liberó.
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+  if (event === 'INITIAL_SESSION') {
+    // Datos públicos — arrancan apenas Supabase está listo, sin depender de sesión
+    cargarProveedores().then(() => {
+      initNotificaciones();
+      renderMapaProvincias();
+      renderMapaAllProvs();
+      renderProvDestacados();
+      const lpStat = document.getElementById('lp-stat-provs');
+      if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
+    }).catch(err => {
+      console.error('[init] Error cargando proveedores:', err);
+      renderProvDestacados();
+    });
+    cargarHeroStats();
+    renderRecienLlegados();
+    cargarProductosReales();
+    setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
+    // Datos privados — solo si hay sesión activa
+    if (session) await checkSession();
+  } else if (event === 'SIGNED_IN') {
     if (session) await checkSession();
   } else if (event === 'SIGNED_OUT') {
     currentUser = null; historial = [];
