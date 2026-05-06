@@ -2761,10 +2761,13 @@ function getEmojiCat(cat) { return ''; }
 function getProdLista() { return productosReales; }
 
 async function cargarProductosReales() {
+  console.log('[CPR] 1 - función iniciada, productosReales.length actual:', productosReales.length);
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
+    console.log('[CPR] 2 - antes del fetch a Supabase');
     const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').eq('visible', true).order('created_at', { ascending: false }).limit(500);
+    console.log('[CPR] 3 - después del fetch | data.length:', data?.length, '| error:', error);
     if (!error && data && data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
       const mapped = data.map((p, i) => ({
@@ -2779,11 +2782,16 @@ async function cargarProductosReales() {
         _unused: undefined
       }));
       productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
+      console.log('[CPR] 4 - productosReales seteado:', productosReales.length, 'productos');
+    } else {
+      console.warn('[CPR] 4 - NO se cargaron productos. error:', error, '| data nulo o vacío:', !data || data.length === 0);
     }
-  } catch (e) { }
+  } catch (e) { console.error('[CPR] CATCH - excepción silenciada:', e); }
+  console.log('[CPR] 5 - antes de renderHomeGrid, productosReales.length:', productosReales.length);
   homeProductosPage = 0;
   renderHomeGrid();
   renderProdBuscar();
+  console.log('[CPR] 6 - renderHomeGrid ejecutado');
 }
 
 function renderHomeGrid() {
@@ -4341,6 +4349,7 @@ renderQuestion();
 // Solución: todas las queries arrancan dentro de INITIAL_SESSION, cuando el lock ya se liberó.
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'INITIAL_SESSION') {
+    console.log('[INIT] INITIAL_SESSION disparado | session:', !!session);
     // Datos públicos — arrancan apenas Supabase está listo, sin depender de sesión
     cargarProveedores().then(() => {
       initNotificaciones();
