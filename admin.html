@@ -705,7 +705,7 @@ async function cargarProveedoresPendientes(){
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('*')
+      .select('id,nombre,email,cuit,rubro,provincia,estado,created_at')
       .eq('estado','pendiente')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -748,7 +748,7 @@ async function cargarTodosProveedores(){
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('*')
+      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at')
       .eq('estado','aprobado')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -853,7 +853,7 @@ async function verProveedor(id){
   document.getElementById('provModal').classList.add('open');
 
   const [{data:prov},{data:prods}] = await Promise.all([
-    sb.from('proveedores').select('*').eq('id',id).single(),
+    sb.from('proveedores').select('id,nombre,razon_social,cuit,email,whatsapp,rubro,provincia,descripcion,instagram,envios,pedido_minimo,foto_url,plan,estado,created_at,logo_url,visitas,plan_desde,plan_hasta,pro_desde,pro_hasta,tn_store_id,tn_categoria_map,ml_user_id').eq('id',id).single(),
     sb.from('productos').select('nombre,precio,imagen_url').eq('proveedor_id',id).limit(10)
   ]);
   if(!prov){ showToast('Error al cargar proveedor'); return; }

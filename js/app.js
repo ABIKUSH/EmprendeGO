@@ -420,7 +420,7 @@ function renderFavs() {
 // ===== SUPABASE =====
 async function cargarProveedores() {
   try {
-    const { data, error } = await sb.from('proveedores').select('*').eq('estado', 'aprobado').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('proveedores').select('id,nombre,rubro,descripcion,plan,plan_hasta,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,visitas,estado,created_at').eq('estado', 'aprobado').order('created_at', { ascending: false });
     if (error) throw error;
     if (data && data.length > 0) {
       proveedoresDB = data.map(p => ({
@@ -1258,7 +1258,7 @@ async function abrirChatDirecto(id) {
   let p = proveedoresDB.find(x => String(x.id) === String(id));
   if (!p) {
     try {
-      const { data } = await sb.from('proveedores').select('*').eq('id', id).maybeSingle();
+      const { data } = await sb.from('proveedores').select('id,nombre,rubro,descripcion,plan,plan_hasta,whatsapp,provincia,pedido_minimo,envios,instagram,logo_url,visitas,estado,created_at').eq('id', id).maybeSingle();
       if (data) { p = data; proveedoresDB.push(data); }
     } catch (e) { }
   }
