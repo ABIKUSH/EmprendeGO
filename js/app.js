@@ -1091,7 +1091,7 @@ function filterProvs() {
     const mc = matchesCat(p.rubro, currentCat);
     const mq = matchesQuery(p, q);
     const mp = !prov || quitarAcentos(p.provincia || '') === quitarAcentos(prov);
-    const mpl = !plan || (plan === 'pro' ? p.plan === 'pro' : p.plan !== 'pro');
+    const mpl = !plan || (plan === 'pro' ? p.pro === true : p.pro !== true);
     const mrb = !rubroFil || matchesCat(p.rubro, rubroFil);
     return mc && mq && mp && mpl && mrb;
   });
