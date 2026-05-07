@@ -28,43 +28,88 @@ function haptic(type) {
 const PROVINCIAS = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
 
 // ===== RUBROS / CATEGORÍAS =====
-const RUBROS_LISTA = ['Tecnología', 'Hogar', 'Moda', 'Bazar', 'Alimentos', 'Salud', 'Deportes', 'Automotor', 'Construcción', 'Servicios', 'Otro'];
-const RUBROS_ICONS = { 'Tecnología': '💻', 'Hogar': '🏠', 'Moda': '👗', 'Bazar': '🛒', 'Alimentos': '🍽', 'Salud': '💊', 'Deportes': '⚽', 'Automotor': '🚗', 'Construcción': '🏗', 'Servicios': '🛠', 'Otro': '📦' };
-const SVG_BOX = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>`;
+const RUBROS_LISTA = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+const RUBROS_ICONS = {
+  'Tecnología':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
+  'Indumentaria':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>`,
+  'Hogar y Deco':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  'Bazar':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
+  'Alimentos':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>`,
+  'Belleza y Salud':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  'Deportes':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>`,
+  'Automotor':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 9 7 5h10l2 4"/></svg>`,
+  'Construcción':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>`,
+  'Servicios':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>`,
+  'Juguetería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  'Ferretería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5a2.12 2.12 0 0 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91z"/></svg>`,
+  'Iluminación':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>`,
+  'Muebles':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/><path d="M4 18v2M20 18v2"/></svg>`,
+  'Textil y Telas':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>`,
+  'Librería y Papelería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
+  'Marroquinería y Bolsos':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
+  'Limpieza':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 0 1-8-8c0-4.314 7.5-12.5 8-12.5s8 8.186 8 12.5a8 8 0 0 1-8 8z"/></svg>`,
+  'Blanquería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M22 8V4H2"/><rect x="2" y="14" width="20" height="6" rx="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/></svg>`,
+  'Mascotas':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>`,
+  'Bebés y Niños':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></svg>`,
+  'Electrónica':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`,
+  'Herramientas':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>`,
+  'Packaging':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+  'Otro':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>`,
+};
+const SVG_BOX = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`;
 const MAX_RUBROS = 7;
 
-// Subcategorías → rubrosprincipales (para búsqueda flexible)
+// Subcategorías → rubros principales (para búsqueda flexible)
 const SUBCATEGORIA_MAP = {
-  'ropa de mujer': ['Moda', 'Indumentaria'], 'ropa de hombre': ['Moda', 'Indumentaria'], 'ropa de bebe': ['Moda', 'Indumentaria'],
-  'ropa de bebe y ninos': ['Moda', 'Indumentaria'], 'ropa infantil': ['Moda', 'Indumentaria'], 'ropa deportiva': ['Moda', 'Indumentaria', 'Deportes'],
-  'talles especiales': ['Moda', 'Indumentaria'], 'accesorios de moda': ['Moda', 'Indumentaria'], 'carteras': ['Moda', 'Indumentaria'],
-  'calzado': ['Moda', 'Indumentaria'], 'mochilas': ['Moda', 'Indumentaria'], 'marroquineria': ['Moda', 'Indumentaria'], 'textil': ['Moda', 'Textiles'],
-  'indumentaria': ['Moda', 'Indumentaria'], 'vestimenta': ['Moda', 'Indumentaria'],
-  'sabanas': ['Textiles'], 'sabana': ['Textiles'], 'frazada': ['Textiles'], 'blanqueria': ['Textiles', 'Hogar'],
-  'acolchado': ['Textiles'], 'toalla': ['Textiles'], 'mantel': ['Textiles'], 'tela': ['Textiles'],
-  'muebles': ['Hogar', 'Hogar y Deco'], 'decoracion': ['Hogar', 'Hogar y Deco'], 'deco': ['Hogar', 'Hogar y Deco'],
-  'articulos de cocina': ['Hogar', 'Hogar y Deco'], 'limpieza': ['Hogar', 'Hogar y Deco'], 'hogar y deco': ['Hogar', 'Hogar y Deco'],
-  'perfumeria': ['Salud', 'Belleza y Salud'], 'cosmeticos': ['Salud', 'Belleza y Salud'], 'cuidado personal': ['Salud', 'Belleza y Salud'],
-  'suplementos': ['Salud', 'Belleza y Salud'], 'nutricion': ['Salud', 'Belleza y Salud'], 'belleza': ['Salud', 'Belleza y Salud'],
-  'electronica': ['Tecnología'], 'celulares': ['Tecnología'], 'accesorios de celular': ['Tecnología'],
+  'ropa de mujer': ['Indumentaria'], 'ropa de hombre': ['Indumentaria'], 'ropa de bebe': ['Indumentaria', 'Bebés y Niños'],
+  'ropa de bebe y ninos': ['Indumentaria', 'Bebés y Niños'], 'ropa infantil': ['Indumentaria', 'Bebés y Niños'], 'ropa deportiva': ['Indumentaria', 'Deportes'],
+  'talles especiales': ['Indumentaria'], 'accesorios de moda': ['Indumentaria', 'Marroquinería y Bolsos'], 'carteras': ['Marroquinería y Bolsos'],
+  'calzado': ['Indumentaria'], 'mochilas': ['Marroquinería y Bolsos'], 'marroquineria': ['Marroquinería y Bolsos'], 'textil': ['Textil y Telas'],
+  'indumentaria': ['Indumentaria'], 'vestimenta': ['Indumentaria'],
+  'sabanas': ['Blanquería', 'Textil y Telas'], 'sabana': ['Blanquería', 'Textil y Telas'], 'frazada': ['Blanquería', 'Textil y Telas'], 'blanqueria': ['Blanquería'],
+  'acolchado': ['Blanquería'], 'toalla': ['Blanquería', 'Textil y Telas'], 'mantel': ['Textil y Telas'], 'tela': ['Textil y Telas'],
+  'muebles': ['Muebles', 'Hogar y Deco'], 'decoracion': ['Hogar y Deco'], 'deco': ['Hogar y Deco'],
+  'articulos de cocina': ['Hogar y Deco', 'Bazar'], 'limpieza': ['Limpieza'], 'hogar y deco': ['Hogar y Deco'],
+  'perfumeria': ['Belleza y Salud'], 'cosmeticos': ['Belleza y Salud'], 'cuidado personal': ['Belleza y Salud'],
+  'suplementos': ['Belleza y Salud'], 'nutricion': ['Belleza y Salud'], 'belleza': ['Belleza y Salud'],
+  'electronica': ['Electrónica', 'Tecnología'], 'celulares': ['Tecnología'], 'accesorios de celular': ['Tecnología'],
   'computadoras': ['Tecnología'], 'gadgets': ['Tecnología'],
   'alimentos y bebidas': ['Alimentos'], 'comida': ['Alimentos'], 'bebidas': ['Alimentos'],
-  'juguetes': ['Otro', 'Otros'], 'libreria': ['Otro', 'Bazar'], 'papeleria': ['Otro', 'Bazar']
+  'juguetes': ['Juguetería'], 'libreria': ['Librería y Papelería'], 'papeleria': ['Librería y Papelería'],
+  'ferreteria': ['Ferretería'], 'herramientas': ['Herramientas', 'Ferretería'],
+  'construccion': ['Construcción'], 'mascotas': ['Mascotas'],
+  'bebes': ['Bebés y Niños'], 'ninos': ['Bebés y Niños'], 'packaging': ['Packaging'],
+  'iluminacion': ['Iluminación'], 'automotor': ['Automotor'], 'servicios': ['Servicios'],
 };
 
-const CAT_PRINCIPAL = ['Hogar y Deco', 'Indumentaria', 'Textiles', 'Belleza y Salud', 'Tecnología', 'Bazar', 'Alimentos', 'Deportes', 'Automotor', 'Otros'];
+const CAT_PRINCIPAL = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 
 const CAT_SUBCATS = {
-  'Hogar y Deco': ['Muebles', 'Decoración', 'Cocina', 'Limpieza', 'Iluminación'],
-  'Textiles': ['Sábanas', 'Blanquería', 'Frazadas', 'Acolchados', 'Toallas', 'Manteles', 'Telas'],
+  'Tecnología': ['Smartphones', 'Computadoras', 'Tablets', 'Accesorios', 'Periféricos'],
   'Indumentaria': ['Ropa mujer', 'Ropa hombre', 'Ropa bebé', 'Deportiva', 'Accesorios de moda'],
-  'Belleza y Salud': ['Perfumería', 'Cuidado personal', 'Suplementos'],
-  'Tecnología': ['Electrónica', 'Accesorios celular', 'Computación'],
-  'Bazar': ['Descartables', 'Papelería', 'Mayoreo general'],
-  'Alimentos': ['Secos', 'Bebidas', 'Snacks'],
-  'Deportes': ['Indumentaria deportiva', 'Equipamiento'],
-  'Automotor': ['Accesorios', 'Repuestos'],
-  'Otros': ['General'],
+  'Hogar y Deco': ['Decoración', 'Cocina', 'Baño', 'Jardín', 'Organización'],
+  'Bazar': ['Descartables', 'Artículos de regalo', 'Vajilla', 'Mayoreo general'],
+  'Alimentos': ['Secos', 'Bebidas', 'Snacks', 'Golosinas', 'Congelados'],
+  'Belleza y Salud': ['Perfumería', 'Cuidado personal', 'Suplementos', 'Cosméticos'],
+  'Deportes': ['Indumentaria deportiva', 'Equipamiento', 'Nutrición deportiva'],
+  'Automotor': ['Accesorios', 'Repuestos', 'Limpieza automotor'],
+  'Construcción': ['Materiales', 'Pinturas', 'Seguridad', 'Sanitarios'],
+  'Servicios': ['Logística', 'Marketing', 'Diseño', 'Consultoría'],
+  'Juguetería': ['0-3 años', '3-8 años', 'Juegos de mesa', 'Educativos'],
+  'Ferretería': ['Fijaciones', 'Electricidad', 'Plomería', 'Pinturería'],
+  'Iluminación': ['LED', 'Decorativa', 'Exterior', 'Industrial'],
+  'Muebles': ['Living', 'Dormitorio', 'Cocina', 'Oficina', 'Jardín'],
+  'Textil y Telas': ['Sábanas', 'Frazadas', 'Telas por metro', 'Toallas', 'Manteles'],
+  'Librería y Papelería': ['Útiles escolares', 'Oficina', 'Arte y manualidades'],
+  'Marroquinería y Bolsos': ['Carteras', 'Mochilas', 'Valijas', 'Billeteras', 'Cinturones'],
+  'Limpieza': ['Hogar', 'Industrial', 'Higiene personal', 'Descartables'],
+  'Blanquería': ['Sábanas', 'Acolchados', 'Almohadas', 'Toallas', 'Manteles'],
+  'Mascotas': ['Perros', 'Gatos', 'Aves', 'Peces', 'Accesorios'],
+  'Bebés y Niños': ['Ropa', 'Juguetes', 'Higiene', 'Alimentación', 'Accesorios'],
+  'Electrónica': ['Audio', 'Video', 'Componentes', 'Cables', 'Cargadores'],
+  'Herramientas': ['Manuales', 'Eléctricas', 'Medición', 'Seguridad'],
+  'Packaging': ['Cajas', 'Bolsas', 'Papel de regalo', 'Etiquetas', 'Cinta'],
+  'Otro': ['General'],
 };
 
 const EXCEL_COL_PATTERNS = {
@@ -76,15 +121,30 @@ const EXCEL_COL_PATTERNS = {
 };
 
 const EXCEL_CAT_MAP_RULES = [
-  { patterns: ['sabana', 'frazada', 'blanqueria', 'blanquería', 'acolchado', 'toalla', 'mantel', 'textil', 'tela'], cat: 'Textiles' },
-  { patterns: ['mueble', 'decorac', 'cocina', 'limpieza', 'iluminac', 'hogar', 'deco'], cat: 'Hogar y Deco' },
-  { patterns: ['ropa', 'moda', 'indumentaria', 'calzado', 'remera', 'pantalon', 'camisa', 'vestido', 'jean', 'liquidac'], cat: 'Indumentaria' },
+  { patterns: ['sabana', 'frazada', 'blanqueria', 'blanquería', 'acolchado', 'toalla', 'mantel'], cat: 'Blanquería' },
+  { patterns: ['textil', 'tela', 'telas'], cat: 'Textil y Telas' },
+  { patterns: ['mueble', 'sillon', 'sofa', 'mesa', 'silla'], cat: 'Muebles' },
+  { patterns: ['decorac', 'deco', 'cocina', 'hogar'], cat: 'Hogar y Deco' },
+  { patterns: ['iluminac', 'lampara', 'led', 'foco', 'luz'], cat: 'Iluminación' },
+  { patterns: ['limpieza', 'detergente', 'desinfect', 'jabón', 'jabon'], cat: 'Limpieza' },
+  { patterns: ['ropa', 'moda', 'indumentaria', 'calzado', 'remera', 'pantalon', 'camisa', 'vestido', 'jean'], cat: 'Indumentaria' },
   { patterns: ['perfum', 'cosmetic', 'belleza', 'salud', 'cuidado', 'suplement'], cat: 'Belleza y Salud' },
-  { patterns: ['tecnolog', 'electr', 'celular', 'comput', 'tablet', 'notebook'], cat: 'Tecnología' },
-  { patterns: ['bazar', 'descartable', 'papeler', 'mayoreo'], cat: 'Bazar' },
-  { patterns: ['aliment', 'bebida', 'snack', 'comida', 'dulce'], cat: 'Alimentos' },
-  { patterns: ['deport', 'gym', 'fitness'], cat: 'Deportes' },
+  { patterns: ['tecnolog', 'celular', 'comput', 'tablet', 'notebook', 'smartphone'], cat: 'Tecnología' },
+  { patterns: ['electr', 'audio', 'video', 'cable', 'component', 'cpu'], cat: 'Electrónica' },
+  { patterns: ['bazar', 'descartable', 'mayoreo'], cat: 'Bazar' },
+  { patterns: ['aliment', 'bebida', 'snack', 'comida', 'dulce', 'golosina'], cat: 'Alimentos' },
+  { patterns: ['deport', 'gym', 'fitness', 'sport'], cat: 'Deportes' },
   { patterns: ['auto', 'moto', 'repuest', 'vehicul'], cat: 'Automotor' },
+  { patterns: ['construc', 'material', 'pintura', 'cemento', 'ladrill'], cat: 'Construcción' },
+  { patterns: ['ferret', 'fijacion', 'tornillo', 'clavo', 'tuerca'], cat: 'Ferretería' },
+  { patterns: ['herramienta', 'taladro', 'sierra', 'destornill'], cat: 'Herramientas' },
+  { patterns: ['juguete', 'juego', 'peluche', 'didact'], cat: 'Juguetería' },
+  { patterns: ['papeler', 'librer', 'utiles', 'lapiz', 'cuaderno', 'carpeta'], cat: 'Librería y Papelería' },
+  { patterns: ['cartera', 'bolso', 'mochila', 'valija', 'marroquin'], cat: 'Marroquinería y Bolsos' },
+  { patterns: ['mascota', 'perro', 'gato', 'veterinar'], cat: 'Mascotas' },
+  { patterns: ['bebe', 'nino', 'infan', 'maternal', 'pañal'], cat: 'Bebés y Niños' },
+  { patterns: ['packag', 'caja', 'bolsa', 'embalaje', 'envase', 'nylon'], cat: 'Packaging' },
+  { patterns: ['servic', 'logistic', 'transport', 'consultoria'], cat: 'Servicios' },
 ];
 
 function quitarAcentos(s) {
@@ -138,16 +198,27 @@ function matchesQuery(p, q) {
 }
 
 const RUBRO_LEGACY = {
-  'Indumentaria': 'Moda', 'Hogar y Deco': 'Hogar', 'Belleza y Salud': 'Salud',
-  'Bolsos y Marroquinería': 'Moda', 'Ropa de mujer': 'Moda', 'Ropa de hombre': 'Moda',
-  'Ropa de bebé y niños': 'Moda', 'Talles especiales': 'Moda', 'Ropa deportiva': 'Deportes',
-  'Accesorios de moda': 'Moda', 'Blanquería': 'Hogar', 'Muebles y decoración': 'Hogar',
-  'Artículos de cocina': 'Hogar', 'Limpieza y hogar': 'Hogar', 'Perfumería y cosméticos': 'Salud',
-  'Cuidado personal': 'Salud', 'Suplementos y nutrición': 'Salud', 'Tecnología y electrónica': 'Tecnología',
-  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Moda', 'Calzado': 'Moda',
-  'Telas e insumos textiles': 'Moda', 'Juguetes y juegos': 'Otro', 'Librería y papelería': 'Otro',
-  'Alimentos y bebidas': 'Alimentos', 'Otros': 'Otro', 'Moda': 'Moda', 'Hogar': 'Hogar',
-  'Tecnologia': 'Tecnología', 'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Otro': 'Otro'
+  // Old rubros → new rubros
+  'Moda': 'Indumentaria', 'Hogar': 'Hogar y Deco', 'Salud': 'Belleza y Salud',
+  'Textiles': 'Textil y Telas', 'Otros': 'Otro',
+  'Bolsos y Marroquinería': 'Marroquinería y Bolsos', 'Ropa de mujer': 'Indumentaria', 'Ropa de hombre': 'Indumentaria',
+  'Ropa de bebé y niños': 'Bebés y Niños', 'Talles especiales': 'Indumentaria', 'Ropa deportiva': 'Deportes',
+  'Accesorios de moda': 'Indumentaria', 'Muebles y decoración': 'Muebles',
+  'Artículos de cocina': 'Hogar y Deco', 'Limpieza y hogar': 'Limpieza', 'Perfumería y cosméticos': 'Belleza y Salud',
+  'Cuidado personal': 'Belleza y Salud', 'Suplementos y nutrición': 'Belleza y Salud', 'Tecnología y electrónica': 'Tecnología',
+  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Marroquinería y Bolsos', 'Calzado': 'Indumentaria',
+  'Telas e insumos textiles': 'Textil y Telas', 'Juguetes y juegos': 'Juguetería', 'Librería y papelería': 'Librería y Papelería',
+  'Alimentos y bebidas': 'Alimentos', 'Tecnologia': 'Tecnología',
+  // Current rubros map to themselves
+  'Tecnología': 'Tecnología', 'Indumentaria': 'Indumentaria', 'Hogar y Deco': 'Hogar y Deco',
+  'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Belleza y Salud': 'Belleza y Salud',
+  'Deportes': 'Deportes', 'Automotor': 'Automotor', 'Construcción': 'Construcción',
+  'Servicios': 'Servicios', 'Juguetería': 'Juguetería', 'Ferretería': 'Ferretería',
+  'Iluminación': 'Iluminación', 'Muebles': 'Muebles', 'Textil y Telas': 'Textil y Telas',
+  'Librería y Papelería': 'Librería y Papelería', 'Marroquinería y Bolsos': 'Marroquinería y Bolsos',
+  'Limpieza': 'Limpieza', 'Blanquería': 'Blanquería', 'Mascotas': 'Mascotas',
+  'Bebés y Niños': 'Bebés y Niños', 'Electrónica': 'Electrónica', 'Herramientas': 'Herramientas',
+  'Packaging': 'Packaging', 'Otro': 'Otro',
 };
 
 function matchesCat(rubroStr, cat) {
@@ -171,8 +242,8 @@ function renderRubrosPicker(containerId, preselected = []) {
     const sel = normPre.includes(r);
     return `<button type="button" data-rubro="${r}"
           onclick="toggleRubroChip(this,'${containerId}')"
-          style="border:1.5px solid ${sel ? '#006039' : '#ddd'};background:${sel ? '#e6faf4' : 'white'};color:${sel ? '#006039' : '#555'};border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:${sel ? '700' : '500'};cursor:pointer;font-family:inherit;transition:all .15s">
-          ${RUBROS_ICONS[r] || '📦'} ${r}
+          style="display:flex;align-items:center;gap:5px;border:1.5px solid ${sel ? '#006039' : '#ddd'};background:${sel ? '#e6faf4' : 'white'};color:${sel ? '#006039' : '#555'};border-radius:20px;padding:6px 14px;font-size:.82rem;font-weight:${sel ? '700' : '500'};cursor:pointer;font-family:inherit;transition:all .15s">
+          ${RUBROS_ICONS[r] || ''} ${r}
         </button>`;
   }).join('')}
     </div>
@@ -934,7 +1005,7 @@ function renderProvs(list) {
       ? `No encontramos proveedores para "<strong>${escHtml(q)}</strong>". Probá con otro término.`
       : 'No encontramos proveedores con esos filtros.';
     const cats = RUBROS_LISTA.slice(0, 6).map(r =>
-      `<button onclick="filterCat('${r}')" style="background:white;border:1.5px solid #E2E8F8;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;white-space:nowrap">${escHtml(r)}</button>`
+      `<button onclick="filterCat('${r}')" style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid #E2E8F8;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;white-space:nowrap">${RUBROS_ICONS[r] || ''} ${escHtml(r)}</button>`
     ).join('');
     el.innerHTML = `<div style="text-align:center;padding:40px 24px">
       <div style="font-size:3rem;margin-bottom:14px">🔍</div>
@@ -1046,9 +1117,28 @@ function setChip(el, cat) {
 function filterCat(cat) {
   goTo('buscar');
   currentCat = cat;
-  document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.textContent.trim() === cat));
+  document.querySelectorAll('#buscar-chips .chip').forEach(c => {
+    const label = (c.dataset.cat || c.textContent.replace(/[\s\S]*<\/svg>/,'').trim() || c.textContent.trim());
+    const match = c.onclick?.toString().includes(`'${cat}'`) || label === cat;
+    c.classList.toggle('active', match);
+    if (match && c.dataset.extra !== undefined) {
+      c.style.display = '';
+      const masBtn = document.getElementById('chip-mas-btn');
+      if (masBtn) { masBtn.dataset.expanded = '1'; masBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg> Menos`; document.querySelectorAll('#buscar-chips [data-extra]').forEach(e => { e.style.display = ''; }); }
+    }
+  });
   switchBuscarTab('proveedores', document.getElementById('tab-proveedores'));
   filterProvs();
+}
+
+function toggleMasRubros(btn) {
+  const extras = document.querySelectorAll('#buscar-chips [data-extra]');
+  const isExpanded = btn.dataset.expanded === '1';
+  extras.forEach(e => { e.style.display = isExpanded ? 'none' : ''; });
+  btn.dataset.expanded = isExpanded ? '0' : '1';
+  btn.innerHTML = isExpanded
+    ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg> Más rubros`
+    : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg> Menos`;
 }
 
 function abrirWA(num, msg) {
@@ -2190,7 +2280,7 @@ function renderFilasMulti() {
           <input type="number" data-field="stock" data-id="${f.id}" placeholder="Stock" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
         </div>
         <select data-field="cat" data-id="${f.id}" style="border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;background:white">
-          <option>Tecnología</option><option>Hogar</option><option>Moda</option><option>Bazar</option><option>Alimentos</option>
+          ${CAT_PRINCIPAL.map(c => `<option>${c}</option>`).join('')}
         </select>
       </div>
     </div>`).join('');
@@ -2250,7 +2340,7 @@ async function addProduct() {
   const name = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
   const stock = document.getElementById('new-prod-stock').value;
-  const catPrincipal = document.getElementById('new-prod-cat-principal')?.value || 'Otros';
+  const catPrincipal = document.getElementById('new-prod-cat-principal')?.value || 'Otro';
   const catSub = document.getElementById('new-prod-cat-sub')?.value || '';
   const desc = document.getElementById('new-prod-desc')?.value?.trim() || null;
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
@@ -2299,7 +2389,7 @@ function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
     const matched = catPrincipal
       || CAT_PRINCIPAL.find(c => c.toLowerCase() === (cat || '').toLowerCase())
       || mapExcelCat(cat)
-      || 'Otros';
+      || 'Otro';
     principalEl.value = matched;
     actualizarSubcats('edit-prod-cat-principal', 'edit-prod-cat-sub', 'edit-prod-subcat-group');
     const subEl = document.getElementById('edit-prod-cat-sub');
@@ -2345,7 +2435,7 @@ async function guardarEdicionProducto() {
   const name = document.getElementById('edit-prod-name').value.trim();
   const price = document.getElementById('edit-prod-price').value;
   const stock = document.getElementById('edit-prod-stock').value;
-  const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otros';
+  const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otro';
   const catSub = document.getElementById('edit-prod-cat-sub')?.value || '';
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
   let imgUrl = null;
@@ -2602,7 +2692,7 @@ async function showResult() {
   const caps = ['menos de $50.000', 'entre $50.000 y $200.000', 'entre $200.000 y $500.000', 'más de $500.000'];
   const cans = ['Instagram/TikTok', 'MercadoLibre/Tiendanube', 'local o feria física', 'círculo cercano/WhatsApp'];
   const exps = ['ninguna experiencia', 'algo de experiencia', 'vende regularmente', 'vendedor experimentado'];
-  const prompt = `Sos un asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${locs[answers[0].a]}, Capital: ${caps[answers[1].a]}, Canal: ${cans[answers[2].a]}, Experiencia: ${exps[answers[3].a]}. Recomienda el MEJOR rubro mayorista. Responde SOLO JSON sin backticks: {"rubro":"Moda|Tecnologia|Bazar|Hogar|Alimentos","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
+  const prompt = `Sos un asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${locs[answers[0].a]}, Capital: ${caps[answers[1].a]}, Canal: ${cans[answers[2].a]}, Experiencia: ${exps[answers[3].a]}. Recomienda el MEJOR rubro mayorista. Responde SOLO JSON sin backticks: {"rubro":"Indumentaria|Tecnología|Bazar|Hogar y Deco|Alimentos|Belleza y Salud|Deportes|Muebles|Textil y Telas|Marroquinería y Bolsos|Packaging|Mascotas","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
     const data = await res.json();
@@ -2613,9 +2703,9 @@ async function showResult() {
     document.getElementById('resultChips').innerHTML = parsed.tips.map(t => `<span class="result-chip">💡 ${t}</span>`).join('');
   } catch (e) {
     const fallbacks = [
-      { rubro: 'Moda', titulo: 'Moda y Accesorios', porque: 'La moda es uno de los rubros más accesibles para empezar al por mayor.', tips: ['Empezá con accesorios baratos', 'Usá Instagram para mostrar looks', 'Buscá proveedores en La Salada'] },
+      { rubro: 'Indumentaria', titulo: 'Moda y Accesorios', porque: 'La indumentaria es uno de los rubros más accesibles para empezar al por mayor.', tips: ['Empezá con accesorios baratos', 'Usá Instagram para mostrar looks', 'Buscá proveedores en La Salada'] },
       { rubro: 'Bazar', titulo: 'Bazar del Hogar', porque: 'El bazar tiene alta rotación. Con poco capital armás un catálogo variado.', tips: ['Armá combos de regalo', 'Vendé en ferias locales', 'Artículos de cocina se venden solos'] },
-      { rubro: 'Tecnologia', titulo: 'Accesorios Tech', porque: 'Los accesorios tech tienen márgenes muy buenos en MercadoLibre.', tips: ['Fundas y cargadores son lo más vendido', 'Comprá en cantidad', 'MercadoLibre es el mejor canal'] }
+      { rubro: 'Tecnología', titulo: 'Accesorios Tech', porque: 'Los accesorios tech tienen márgenes muy buenos en MercadoLibre.', tips: ['Fundas y cargadores son lo más vendido', 'Comprá en cantidad', 'MercadoLibre es el mejor canal'] },
     ];
     const r = fallbacks[Math.floor(Math.random() * fallbacks.length)];
     currentResult = r.rubro;
@@ -2634,7 +2724,17 @@ const HOME_PAGE_SIZE = 20;
 let _buscarListaFiltrada = [], _buscarOffset = 0, _buscarFiltroActual = '';
 let provDetalleData = [], provDetalleOffset = 0, provDetalleEsPro = false, provDetalleLimite;
 const DETALLE_PAGE_SIZE = 20;
-const catColors = { 'Hogar y Deco': '#00A651', 'Indumentaria': '#FF6B00', 'Textiles': '#8B5CF6', 'Belleza y Salud': '#E91E8C', 'Tecnología': '#1847C8', 'Bazar': '#7C3AED', 'Alimentos': '#F59E0B', 'Deportes': '#EF4444', 'Automotor': '#6B7280', 'Otros': '#9CA3AF', 'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Blanquería': '#8B5CF6', 'Sábanas': '#8B5CF6', 'Frazadas': '#8B5CF6', 'Tecnologia': '#1847C8' };
+const catColors = {
+  'Tecnología': '#1847C8', 'Indumentaria': '#FF6B00', 'Hogar y Deco': '#00A651', 'Bazar': '#7C3AED',
+  'Alimentos': '#F59E0B', 'Belleza y Salud': '#E91E8C', 'Deportes': '#EF4444', 'Automotor': '#6B7280',
+  'Construcción': '#92400E', 'Servicios': '#0369A1', 'Juguetería': '#D97706', 'Ferretería': '#78716C',
+  'Iluminación': '#CA8A04', 'Muebles': '#7C3AED', 'Textil y Telas': '#8B5CF6',
+  'Librería y Papelería': '#059669', 'Marroquinería y Bolsos': '#B45309', 'Limpieza': '#0891B2',
+  'Blanquería': '#6366F1', 'Mascotas': '#16A34A', 'Bebés y Niños': '#DB2777',
+  'Electrónica': '#2563EB', 'Herramientas': '#57534E', 'Packaging': '#0F766E', 'Otro': '#9CA3AF',
+  // legacy
+  'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Textiles': '#8B5CF6', 'Otros': '#9CA3AF', 'Tecnologia': '#1847C8',
+};
 
 function getEmojiCat(cat) { return ''; }
 function getProdLista() { return productosReales; }
@@ -2723,9 +2823,12 @@ function renderProdBuscar(filtro, query = '') {
     const cat = p.cat || ''; const catP = p.catPrincipal || cat;
     if (catP.toLowerCase() === filtro.toLowerCase()) return true;
     if (cat.toLowerCase() === filtro.toLowerCase()) return true;
-    if (filtro === 'Textiles') { const tt = ['sabana', 'frazada', 'blanqueria', 'acolchado', 'toalla', 'mantel', 'textil', 'tela']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
-    if (filtro === 'Hogar y Deco') return cat.toLowerCase().includes('hogar') || cat.toLowerCase().includes('deco') || cat.toLowerCase().includes('mueble') || cat.toLowerCase().includes('cocina');
+    if (filtro === 'Textil y Telas' || filtro === 'Blanquería') { const tt = ['sabana', 'frazada', 'blanqueria', 'acolchado', 'toalla', 'mantel', 'textil', 'tela']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
+    if (filtro === 'Hogar y Deco') return cat.toLowerCase().includes('hogar') || cat.toLowerCase().includes('deco') || cat.toLowerCase().includes('cocina');
     if (filtro === 'Belleza y Salud') return cat.toLowerCase().includes('belleza') || cat.toLowerCase().includes('salud') || cat.toLowerCase().includes('cosmet') || cat.toLowerCase().includes('perfum');
+    // Legacy mapping for old product categories
+    const legacyNorm = RUBRO_LEGACY[cat] || cat;
+    if (legacyNorm.toLowerCase() === filtro.toLowerCase()) return true;
     return false;
   });
   if (q) lista = lista.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.cat || '').toLowerCase().includes(q) || (p.provNombre || '').toLowerCase().includes(q));
@@ -2747,7 +2850,7 @@ function renderProdBuscar(filtro, query = '') {
 
   // Sin filtro → carruseles por rubro
   el.style.display = 'block';
-  const catEmojis = { 'Tecnología': '📱', 'Tecnologia': '📱', 'Moda': '👗', 'Hogar': '🏠', 'Bazar': '🛒', 'Alimentos': '🍫', 'Otro': '📦' };
+  const catEmojis = {}; // Icons come from RUBROS_ICONS; fallback to category name only
   const porRubro = {};
   lista.forEach(p => {
     const rubro = p.cat || 'Otro';
@@ -2757,7 +2860,7 @@ function renderProdBuscar(filtro, query = '') {
   el.innerHTML = Object.entries(porRubro).map(([rubro, prods]) => `
     <div style="margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111">${catEmojis[rubro] || '📦'} ${rubro}</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111;display:flex;align-items:center;gap:5px">${RUBROS_ICONS[rubro] || ''} ${rubro}</div>
         <span onclick="setChip(document.querySelector('.chip[onclick*=\\'${rubro}\\']')||document.querySelector('.chip'),'${rubro}')" style="font-size:.75rem;font-weight:700;color:#006039;cursor:pointer">Ver todos ></span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
@@ -3795,7 +3898,7 @@ async function importarDesdeExcel() {
     let categoria_principal;
     if (hasCatCol) {
       const rawCat = String(row[excelColMap.categoria] || '').trim();
-      categoria_principal = excelCatMapping[rawCat] || mapExcelCat(rawCat) || 'Otros';
+      categoria_principal = excelCatMapping[rawCat] || mapExcelCat(rawCat) || 'Otro';
     } else {
       categoria_principal = globalCat;
     }
@@ -4313,7 +4416,7 @@ async function sincronizarTiendaNube(btn) {
   btn.textContent = '🔄 Sincronizar productos';
 }
 
-const TN_CATEGORIAS_EG = ['Textiles','Hogar y Deco','Indumentaria','Belleza y Salud','Tecnología','Bazar','Alimentos','Deportes','Automotor','Otros'];
+const TN_CATEGORIAS_EG = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 
 function mostrarMapeoTN(categorias_tn) {
   const list = document.getElementById('tn-mapeo-list');

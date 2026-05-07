@@ -384,18 +384,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Tecnología</span>
         </div>
       </div>
-      <div onclick="filterCat('Bolsos y Marroquinería')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+      <div onclick="filterCat('Alimentos')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Bolsos</span>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Alimentos</span>
         </div>
       </div>
-      <div onclick="filterCat('Otros')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
-        <img src="https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
+      <div onclick="filterCat('Deportes')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
+        <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Otros</span>
+          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Deportes</span>
         </div>
       </div>
     </div>
@@ -453,14 +453,34 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div class="search-box"><span style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()" onfocus="onSearchFocus()" onkeydown="onSearchKeydown(event)" autocomplete="off"></div>
     <div id="search-dropdown" style="display:none;position:absolute;top:100%;left:20px;right:20px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:300;overflow:hidden;border:1px solid #E2E8F8;margin-top:2px"></div>
   </div>
-  <div class="chips">
+  <div class="chips" id="buscar-chips">
     <div class="chip active" onclick="setChip(this,'Todas')">Todas</div>
-    <div class="chip" onclick="setChip(this,'Indumentaria')">Indumentaria</div>
-    <div class="chip" onclick="setChip(this,'Hogar y Deco')">Hogar y Deco</div>
-    <div class="chip" onclick="setChip(this,'Belleza y Salud')">Belleza y Salud</div>
-    <div class="chip" onclick="setChip(this,'Tecnología')">Tecnología</div>
-    <div class="chip" onclick="setChip(this,'Bolsos y Marroquinería')">Bolsos</div>
-    <div class="chip" onclick="setChip(this,'Otros')">Otros</div>
+    <div class="chip" onclick="setChip(this,'Tecnología')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Tecnología</div>
+    <div class="chip" onclick="setChip(this,'Indumentaria')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>Indumentaria</div>
+    <div class="chip" onclick="setChip(this,'Hogar y Deco')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Hogar y Deco</div>
+    <div class="chip" onclick="setChip(this,'Bazar')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>Bazar</div>
+    <div class="chip" onclick="setChip(this,'Alimentos')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>Alimentos</div>
+    <div class="chip" onclick="setChip(this,'Belleza y Salud')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Belleza y Salud</div>
+    <div class="chip" onclick="setChip(this,'Deportes')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>Deportes</div>
+    <div class="chip" onclick="setChip(this,'Automotor')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 9 7 5h10l2 4"/></svg>Automotor</div>
+    <div class="chip" onclick="toggleMasRubros(this)" id="chip-mas-btn" data-expanded="0" style="color:#1847C8;border-color:#c7d4f8"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg> Más rubros</div>
+    <div class="chip" onclick="setChip(this,'Construcción')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4M10 10h4M10 14h4M10 18h4"/></svg>Construcción</div>
+    <div class="chip" onclick="setChip(this,'Servicios')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>Servicios</div>
+    <div class="chip" onclick="setChip(this,'Juguetería')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>Juguetería</div>
+    <div class="chip" onclick="setChip(this,'Ferretería')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5a2.12 2.12 0 0 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 11.7-1.25-1.25c-.6-.6-.93-1.4-.93-2.25v-.86L16.01 4.6a5.56 5.56 0 0 0-3.94-1.64H9l.92.82A6.18 6.18 0 0 1 12 8.4v1.56l2 2h2.47l2.26 1.91z"/></svg>Ferretería</div>
+    <div class="chip" onclick="setChip(this,'Iluminación')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>Iluminación</div>
+    <div class="chip" onclick="setChip(this,'Muebles')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-4 0v2H6v-2a2 2 0 0 0-4 0z"/><path d="M4 18v2M20 18v2"/></svg>Muebles</div>
+    <div class="chip" onclick="setChip(this,'Textil y Telas')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/></svg>Textil y Telas</div>
+    <div class="chip" onclick="setChip(this,'Librería y Papelería')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>Librería</div>
+    <div class="chip" onclick="setChip(this,'Marroquinería y Bolsos')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Bolsos</div>
+    <div class="chip" onclick="setChip(this,'Limpieza')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 0 1-8-8c0-4.314 7.5-12.5 8-12.5s8 8.186 8 12.5a8 8 0 0 1-8 8z"/></svg>Limpieza</div>
+    <div class="chip" onclick="setChip(this,'Blanquería')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M22 8V4H2"/><rect x="2" y="14" width="20" height="6" rx="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/></svg>Blanquería</div>
+    <div class="chip" onclick="setChip(this,'Mascotas')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>Mascotas</div>
+    <div class="chip" onclick="setChip(this,'Bebés y Niños')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h.01M15 12h.01M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/></svg>Bebés y Niños</div>
+    <div class="chip" onclick="setChip(this,'Electrónica')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>Electrónica</div>
+    <div class="chip" onclick="setChip(this,'Herramientas')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Herramientas</div>
+    <div class="chip" onclick="setChip(this,'Packaging')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>Packaging</div>
+    <div class="chip" onclick="setChip(this,'Otro')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Otro</div>
   </div>
   <div class="search-tabs">
     <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)">&#128230; Productos</div>
@@ -513,41 +533,32 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </div>
     <div class="filtros-row" style="padding-top:0">
       <select class="filtro-sel" id="fil-rubro" onchange="filterProvs()" style="width:100%">
-        <option value="">🏷️ Todos los rubros</option>
-        <optgroup label="👗 Indumentaria">
-          <option value="Ropa de mujer">Ropa de mujer</option>
-          <option value="Ropa de hombre">Ropa de hombre</option>
-          <option value="Ropa de bebé y niños">Ropa de bebé y niños</option>
-          <option value="Talles especiales">Talles especiales</option>
-          <option value="Ropa deportiva">Ropa deportiva</option>
-          <option value="Accesorios de moda">Accesorios de moda</option>
-        </optgroup>
-        <optgroup label="🏠 Hogar y Deco">
-          <option value="Blanquería">Blanquería</option>
-          <option value="Muebles y decoración">Muebles y decoración</option>
-          <option value="Artículos de cocina">Artículos de cocina</option>
-          <option value="Limpieza y hogar">Limpieza y hogar</option>
-        </optgroup>
-        <optgroup label="💄 Belleza y Salud">
-          <option value="Perfumería y cosméticos">Perfumería y cosméticos</option>
-          <option value="Cuidado personal">Cuidado personal</option>
-          <option value="Suplementos y nutrición">Suplementos y nutrición</option>
-        </optgroup>
-        <optgroup label="💻 Tecnología">
-          <option value="Tecnología y electrónica">Tecnología y electrónica</option>
-          <option value="Accesorios de celular">Accesorios de celular</option>
-        </optgroup>
-        <optgroup label="👜 Bolsos y Marroquinería">
-          <option value="Carteras y mochilas">Carteras y mochilas</option>
-          <option value="Calzado">Calzado</option>
-        </optgroup>
-        <optgroup label="Otros">
-          <option value="Telas e insumos textiles">Telas e insumos textiles</option>
-          <option value="Juguetes y juegos">Juguetes y juegos</option>
-          <option value="Librería y papelería">Librería y papelería</option>
-          <option value="Alimentos y bebidas">Alimentos y bebidas</option>
-          <option value="Otros">Otros</option>
-        </optgroup>
+        <option value="">Todos los rubros</option>
+        <option value="Tecnología">Tecnología</option>
+        <option value="Indumentaria">Indumentaria</option>
+        <option value="Hogar y Deco">Hogar y Deco</option>
+        <option value="Bazar">Bazar</option>
+        <option value="Alimentos">Alimentos</option>
+        <option value="Belleza y Salud">Belleza y Salud</option>
+        <option value="Deportes">Deportes</option>
+        <option value="Automotor">Automotor</option>
+        <option value="Construcción">Construcción</option>
+        <option value="Servicios">Servicios</option>
+        <option value="Juguetería">Juguetería</option>
+        <option value="Ferretería">Ferretería</option>
+        <option value="Iluminación">Iluminación</option>
+        <option value="Muebles">Muebles</option>
+        <option value="Textil y Telas">Textil y Telas</option>
+        <option value="Librería y Papelería">Librería y Papelería</option>
+        <option value="Marroquinería y Bolsos">Marroquinería y Bolsos</option>
+        <option value="Limpieza">Limpieza</option>
+        <option value="Blanquería">Blanquería</option>
+        <option value="Mascotas">Mascotas</option>
+        <option value="Bebés y Niños">Bebés y Niños</option>
+        <option value="Electrónica">Electrónica</option>
+        <option value="Herramientas">Herramientas</option>
+        <option value="Packaging">Packaging</option>
+        <option value="Otro">Otro</option>
       </select>
     </div>
     <div class="filtros-row" style="padding-top:0">
@@ -893,40 +904,31 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div style="font-size:.78rem;font-weight:600;color:rgba(255,255,255,.65);margin-bottom:5px">Rubro</div>
           <select id="lp-rubro" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.9rem;color:white;outline:none;-webkit-appearance:none;appearance:none">
             <option value="" style="background:#222">Seleccioná tu rubro</option>
-            <optgroup label="👗 Indumentaria" style="background:#222">
-              <option value="Ropa de mujer" style="background:#222">Ropa de mujer</option>
-              <option value="Ropa de hombre" style="background:#222">Ropa de hombre</option>
-              <option value="Ropa de bebé y niños" style="background:#222">Ropa de bebé y niños</option>
-              <option value="Talles especiales" style="background:#222">Talles especiales</option>
-              <option value="Ropa deportiva" style="background:#222">Ropa deportiva</option>
-              <option value="Accesorios de moda" style="background:#222">Accesorios de moda</option>
-            </optgroup>
-            <optgroup label="🏠 Hogar y Deco" style="background:#222">
-              <option value="Blanquería" style="background:#222">Blanquería</option>
-              <option value="Muebles y decoración" style="background:#222">Muebles y decoración</option>
-              <option value="Artículos de cocina" style="background:#222">Artículos de cocina</option>
-              <option value="Limpieza y hogar" style="background:#222">Limpieza y hogar</option>
-            </optgroup>
-            <optgroup label="💄 Belleza y Salud" style="background:#222">
-              <option value="Perfumería y cosméticos" style="background:#222">Perfumería y cosméticos</option>
-              <option value="Cuidado personal" style="background:#222">Cuidado personal</option>
-              <option value="Suplementos y nutrición" style="background:#222">Suplementos y nutrición</option>
-            </optgroup>
-            <optgroup label="💻 Tecnología" style="background:#222">
-              <option value="Tecnología y electrónica" style="background:#222">Tecnología y electrónica</option>
-              <option value="Accesorios de celular" style="background:#222">Accesorios de celular</option>
-            </optgroup>
-            <optgroup label="👜 Bolsos y Marroquinería" style="background:#222">
-              <option value="Carteras y mochilas" style="background:#222">Carteras y mochilas</option>
-              <option value="Calzado" style="background:#222">Calzado</option>
-            </optgroup>
-            <optgroup label="📦 Otros" style="background:#222">
-              <option value="Telas e insumos textiles" style="background:#222">Telas e insumos textiles</option>
-              <option value="Juguetes y juegos" style="background:#222">Juguetes y juegos</option>
-              <option value="Librería y papelería" style="background:#222">Librería y papelería</option>
-              <option value="Alimentos y bebidas" style="background:#222">Alimentos y bebidas</option>
-              <option value="Otros" style="background:#222">Otros</option>
-            </optgroup>
+            <option value="Tecnología" style="background:#222">Tecnología</option>
+            <option value="Indumentaria" style="background:#222">Indumentaria</option>
+            <option value="Hogar y Deco" style="background:#222">Hogar y Deco</option>
+            <option value="Bazar" style="background:#222">Bazar</option>
+            <option value="Alimentos" style="background:#222">Alimentos</option>
+            <option value="Belleza y Salud" style="background:#222">Belleza y Salud</option>
+            <option value="Deportes" style="background:#222">Deportes</option>
+            <option value="Automotor" style="background:#222">Automotor</option>
+            <option value="Construcción" style="background:#222">Construcción</option>
+            <option value="Servicios" style="background:#222">Servicios</option>
+            <option value="Juguetería" style="background:#222">Juguetería</option>
+            <option value="Ferretería" style="background:#222">Ferretería</option>
+            <option value="Iluminación" style="background:#222">Iluminación</option>
+            <option value="Muebles" style="background:#222">Muebles</option>
+            <option value="Textil y Telas" style="background:#222">Textil y Telas</option>
+            <option value="Librería y Papelería" style="background:#222">Librería y Papelería</option>
+            <option value="Marroquinería y Bolsos" style="background:#222">Marroquinería y Bolsos</option>
+            <option value="Limpieza" style="background:#222">Limpieza</option>
+            <option value="Blanquería" style="background:#222">Blanquería</option>
+            <option value="Mascotas" style="background:#222">Mascotas</option>
+            <option value="Bebés y Niños" style="background:#222">Bebés y Niños</option>
+            <option value="Electrónica" style="background:#222">Electrónica</option>
+            <option value="Herramientas" style="background:#222">Herramientas</option>
+            <option value="Packaging" style="background:#222">Packaging</option>
+            <option value="Otro" style="background:#222">Otro</option>
           </select>
         </div>
       </div>
@@ -1500,9 +1502,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
           <div class="form-group"><label>Categoría *</label>
             <select id="new-prod-cat-principal" onchange="actualizarSubcats('new-prod-cat-principal','new-prod-cat-sub','new-prod-subcat-group')">
               <option value="">Seleccioná categoría...</option>
-              <option>Hogar y Deco</option><option>Indumentaria</option><option>Textiles</option>
-              <option>Belleza y Salud</option><option>Tecnología</option><option>Bazar</option>
-              <option>Alimentos</option><option>Deportes</option><option>Automotor</option><option>Otros</option>
+              <option>Tecnología</option><option>Indumentaria</option><option>Hogar y Deco</option>
+              <option>Bazar</option><option>Alimentos</option><option>Belleza y Salud</option>
+              <option>Deportes</option><option>Automotor</option><option>Construcción</option>
+              <option>Servicios</option><option>Juguetería</option><option>Ferretería</option>
+              <option>Iluminación</option><option>Muebles</option><option>Textil y Telas</option>
+              <option>Librería y Papelería</option><option>Marroquinería y Bolsos</option>
+              <option>Limpieza</option><option>Blanquería</option><option>Mascotas</option>
+              <option>Bebés y Niños</option><option>Electrónica</option><option>Herramientas</option>
+              <option>Packaging</option><option>Otro</option>
             </select>
           </div>
           <div class="form-group" id="new-prod-subcat-group" style="display:none"><label>Subcategoría <span style="font-weight:400;color:#999">(opcional)</span></label>
@@ -1546,9 +1554,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             </div>
             <div class="form-group"><label>Categoría</label>
               <select id="ml-cat-edit">
-                <option>Hogar y Deco</option><option>Indumentaria</option><option>Textiles</option>
-                <option>Belleza y Salud</option><option>Tecnología</option><option>Bazar</option>
-                <option>Alimentos</option><option>Deportes</option><option>Automotor</option><option>Otros</option>
+                <option>Tecnología</option><option>Indumentaria</option><option>Hogar y Deco</option>
+                <option>Bazar</option><option>Alimentos</option><option>Belleza y Salud</option>
+                <option>Deportes</option><option>Automotor</option><option>Construcción</option>
+                <option>Servicios</option><option>Juguetería</option><option>Ferretería</option>
+                <option>Iluminación</option><option>Muebles</option><option>Textil y Telas</option>
+                <option>Librería y Papelería</option><option>Marroquinería y Bolsos</option>
+                <option>Limpieza</option><option>Blanquería</option><option>Mascotas</option>
+                <option>Bebés y Niños</option><option>Electrónica</option><option>Herramientas</option>
+                <option>Packaging</option><option>Otro</option>
               </select>
             </div>
           </div>
@@ -1620,9 +1634,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         <div class="form-group"><label>Categoría</label>
           <select id="edit-prod-cat-principal" onchange="actualizarSubcats('edit-prod-cat-principal','edit-prod-cat-sub','edit-prod-subcat-group')">
             <option value="">Seleccioná categoría...</option>
-            <option>Hogar y Deco</option><option>Indumentaria</option><option>Textiles</option>
-            <option>Belleza y Salud</option><option>Tecnología</option><option>Bazar</option>
-            <option>Alimentos</option><option>Deportes</option><option>Automotor</option><option>Otros</option>
+            <option>Tecnología</option><option>Indumentaria</option><option>Hogar y Deco</option>
+            <option>Bazar</option><option>Alimentos</option><option>Belleza y Salud</option>
+            <option>Deportes</option><option>Automotor</option><option>Construcción</option>
+            <option>Servicios</option><option>Juguetería</option><option>Ferretería</option>
+            <option>Iluminación</option><option>Muebles</option><option>Textil y Telas</option>
+            <option>Librería y Papelería</option><option>Marroquinería y Bolsos</option>
+            <option>Limpieza</option><option>Blanquería</option><option>Mascotas</option>
+            <option>Bebés y Niños</option><option>Electrónica</option><option>Herramientas</option>
+            <option>Packaging</option><option>Otro</option>
           </select>
         </div>
         <div class="form-group" id="edit-prod-subcat-group" style="display:none"><label>Subcategoría <span style="font-weight:400;color:#999">(opcional)</span></label>
