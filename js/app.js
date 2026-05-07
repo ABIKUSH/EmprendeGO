@@ -1272,12 +1272,12 @@ async function abrirChatDirecto(id) {
   renderChat();
   goTo('chat');
 
-  // Cargar historial filtrado por usuario_email + proveedor_id
+  // Cargar historial filtrado por proveedor_id: mensajes del usuario + respuestas del proveedor
   try {
     const { data } = await sb.from('mensajes')
       .select('*')
       .eq('proveedor_id', p.id)
-      .eq('usuario_email', currentUser.email)
+      .or(`usuario_email.eq.${currentUser.email},de_tipo.eq.proveedor`)
       .order('created_at', { ascending: true });
 
     if (data && data.length) {
@@ -1405,7 +1405,7 @@ function iniciarChatPolling(provId) {
       const { data } = await sb.from('mensajes')
         .select('*')
         .eq('proveedor_id', provId)
-        .eq('usuario_email', currentUser.email)
+        .or(`usuario_email.eq.${currentUser.email},de_tipo.eq.proveedor`)
         .order('created_at', { ascending: true });
       if (!data || !data.length) return;
       const hayNuevos = data.some(m => !chatMsgs.some(cm => cm.dbId === m.id));
@@ -3034,7 +3034,7 @@ async function cargarConversaciones() {
 }
 
 async function abrirConvProveedor(nombre) {
-  convActual = { nombre, msgs: [] };
+  convActual = { nombre, msgs: [], usuarioEmail: null };
   document.getElementById('prov-chat-nombre').textContent = nombre;
   document.getElementById('prov-chat-sub').textContent = 'Emprendedor';
   const msgsEl = document.getElementById('prov-chat-msgs');
@@ -3053,6 +3053,9 @@ async function abrirConvProveedor(nombre) {
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_tipo', 'proveedor')
       .order('created_at', { ascending: true });
+
+    // Guardar email del usuario para taguear las respuestas del proveedor
+    convActual.usuarioEmail = msgsUsuario?.[0]?.usuario_email || null;
 
     // Combinar y ordenar por fecha
     const todos = [...(msgsUsuario || []), ...(msgsProveedor || [])];
@@ -3099,6 +3102,7 @@ async function provSendMsg() {
     proveedor_id: currentUser.proveedorId,
     de_tipo: 'proveedor',
     de_nombre: currentUser.name,
+    usuario_email: convActual.usuarioEmail,
     texto: txt,
     leido: false
   };
