@@ -31,11 +31,12 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email inválido' });
   }
 
-  // Validar que proveedorId sea un entero positivo
-  const provId = parseInt(proveedorId, 10);
-  if (!provId || provId <= 0) {
+  // Validar que proveedorId sea un UUID válido (string)
+  if (typeof proveedorId !== 'string' || proveedorId.trim().length === 0) {
     return res.status(400).json({ error: 'proveedorId inválido' });
   }
+
+  const provId = proveedorId.trim();
 
   console.log('[crear-pago] TOKEN:', !!process.env.MP_ACCESS_TOKEN);
   console.log('[crear-pago] proveedorId:', provId, 'email:', email);
