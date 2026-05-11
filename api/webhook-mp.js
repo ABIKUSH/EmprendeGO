@@ -3,10 +3,9 @@ import { createHmac, timingSafeEqual } from 'crypto';
 function verificarFirmaMP(req) {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    // Sin secreto configurado: se permite el paso pero se loguea advertencia.
-    // Para producción: configurar MP_WEBHOOK_SECRET en Vercel y en el panel de MP.
-    console.warn('[webhook-mp] MP_WEBHOOK_SECRET no configurado — verificación de firma omitida');
-    return true;
+    // Sin secreto: rechazar siempre. Configurar MP_WEBHOOK_SECRET en Vercel + panel de MP.
+    console.error('[webhook-mp] CRÍTICO: MP_WEBHOOK_SECRET no configurado — request rechazado');
+    return false;
   }
 
   const xSignature = req.headers['x-signature'] || '';
@@ -79,11 +78,13 @@ export default async function handler(req, res) {
         const rpcUrl = `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`;
         console.log(`[webhook-mp] RPC URL completa (${rpcUrl.length} chars): "${rpcUrl}"`);
 
-        // Usamos RPC (función SECURITY DEFINER) que bypassa RLS y permisos de columna.
-        // La anon key es pública (está en index.html). La service role key en Vercel
-        // devuelve PGRST125 por estar mal configurada; se usa la anon key directamente.
-        const apiKey = process.env.SUPABASE_ANON_KEY ||
+        // Usar service role key (servidor privado) para llamar al RPC.
+        // Fallback al anon key solo mientras se confirma la service role key en Vercel.
+        const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY ||
+          process.env.SUPABASE_ANON_KEY ||
           'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
+        const usingServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
+        console.log(`[webhook-mp] usando ${usingServiceRole ? 'SERVICE ROLE KEY ✅' : 'ANON KEY ⚠️ — configurar SUPABASE_SERVICE_ROLE_KEY en Vercel'}`);
         const rpcRes = await fetch(
           rpcUrl,
           {
