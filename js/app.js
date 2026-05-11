@@ -2876,7 +2876,8 @@ function renderProdBuscar(filtro, query = '') {
     const cat = p.cat || ''; const catP = p.catPrincipal || cat;
     if (catP.toLowerCase() === filtro.toLowerCase()) return true;
     if (cat.toLowerCase() === filtro.toLowerCase()) return true;
-    if (filtro === 'Textil y Telas' || filtro === 'Blanquería') { const tt = ['sabana', 'frazada', 'blanqueria', 'acolchado', 'toalla', 'mantel', 'textil', 'tela']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
+    if (filtro === 'Textil y Telas') { const tt = ['textil', 'tela']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
+    if (filtro === 'Blanquería') { const tt = ['sabana', 'frazada', 'blanqueria', 'acolchado', 'toalla', 'mantel']; return tt.some(t => quitarAcentos(cat.toLowerCase()).includes(t)); }
     if (filtro === 'Hogar y Deco') return cat.toLowerCase().includes('hogar') || cat.toLowerCase().includes('deco') || cat.toLowerCase().includes('cocina');
     if (filtro === 'Belleza y Salud') return cat.toLowerCase().includes('belleza') || cat.toLowerCase().includes('salud') || cat.toLowerCase().includes('cosmet') || cat.toLowerCase().includes('perfum');
     // Legacy mapping for old product categories
