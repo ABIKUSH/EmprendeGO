@@ -35,6 +35,8 @@ function verificarFirmaMP(req) {
   }
 }
 
+const SUPABASE_BASE = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
 
@@ -79,7 +81,7 @@ export default async function handler(req, res) {
 
         // Leer plan_hasta actual para sumar 30 días encima si ya tenía Pro vigente
         const getRes = await fetch(
-          `${process.env.SUPABASE_URL}/rest/v1/proveedores?id=eq.${proveedorId}&select=plan_hasta`,
+          `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${proveedorId}&select=plan_hasta`,
           {
             headers: {
               apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -102,7 +104,7 @@ export default async function handler(req, res) {
         console.log(`[webhook-mp] plan_hasta actual=${currentHasta?.toISOString() ?? 'null'} → nuevo=${toDate(fechaVencimiento)}`);
 
         const patchRes = await fetch(
-          `${process.env.SUPABASE_URL}/rest/v1/proveedores?id=eq.${proveedorId}`,
+          `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${proveedorId}`,
           {
             method: 'PATCH',
             headers: {
