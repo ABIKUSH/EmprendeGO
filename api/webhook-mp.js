@@ -80,7 +80,9 @@ export default async function handler(req, res) {
         const now = new Date();
         const fechaVencimiento = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+        const srvKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
         console.log(`[webhook-mp] SUPABASE_BASE: ${SUPABASE_BASE?.substring(0, 40)}`);
+        console.log(`[webhook-mp] SERVICE_KEY set: ${!!srvKey} | primeros 15 chars: "${srvKey.substring(0, 15)}"`);
         console.log(`[webhook-mp] activando Pro hasta ${toDate(fechaVencimiento)}`);
 
         const patchRes = await fetch(
