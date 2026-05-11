@@ -764,7 +764,7 @@ function renderNotifPanel() {
   el.innerHTML = notificaciones.map(n => `
     <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
       <div class="notif-icon ${n.tipo}">${n.icon}</div>
-      <div class="notif-text"><strong>${n.titulo}</strong><span>${n.texto}</span></div>
+      <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
       <div class="notif-time">${n.tiempo}</div>
     </div>`).join('');
 }
@@ -1312,7 +1312,7 @@ function abrirDetalle(id) {
   const detLogoEl = document.getElementById('det-logo');
   const detIni = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   if (p.logo_url) {
-    detLogoEl.innerHTML = `<img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    detLogoEl.innerHTML = `<img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
     detLogoEl.textContent = detIni;
   }
