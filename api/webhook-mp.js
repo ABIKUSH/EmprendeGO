@@ -1,16 +1,35 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 
+const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+
+async function logWebhook(entry) {
+  try {
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+    if (!key || !SUPABASE_BASE) return;
+    await fetch(`${SUPABASE_BASE}/rest/v1/webhook_logs`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(entry)
+    });
+  } catch (e) {
+    console.warn('[webhook-mp] log failed (non-critical):', e.message);
+  }
+}
+
 function verificarFirmaMP(req) {
   const secret = process.env.MP_WEBHOOK_SECRET;
   if (!secret) {
-    // Sin secreto: rechazar siempre. Configurar MP_WEBHOOK_SECRET en Vercel + panel de MP.
     console.error('[webhook-mp] CRÍTICO: MP_WEBHOOK_SECRET no configurado — request rechazado');
     return false;
   }
 
   const xSignature = req.headers['x-signature'] || '';
   const xRequestId = req.headers['x-request-id'] || '';
-  // IPN antiguo: ID en query param. Webhook nuevo: ID en body.data.id
   const dataId = req.body?.data?.id || req.query?.id;
   if (!xSignature || !dataId) {
     console.warn('[webhook-mp] firma requerida pero faltan headers o payment id');
@@ -34,8 +53,6 @@ function verificarFirmaMP(req) {
   }
 }
 
-const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
 
@@ -49,8 +66,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Soporta formato nuevo (JSON body: type + data.id)
-    // y formato viejo IPN (query params: topic + id)
     const type = req.body?.type || req.query?.topic;
     const dataId = String(req.body?.data?.id || req.query?.id || '').trim();
 
@@ -72,40 +87,46 @@ export default async function handler(req, res) {
 
         if (!proveedorId) {
           console.error('[webhook-mp] pago aprobado pero sin proveedorId — no se puede actualizar');
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: false, error_detail: 'missing_proveedor_id', raw_body: req.body });
           return res.status(200).send('OK');
         }
 
-        const rpcUrl = `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`;
-        console.log(`[webhook-mp] RPC URL completa (${rpcUrl.length} chars): "${rpcUrl}"`);
+        const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+        if (!apiKey) {
+          console.error('[webhook-mp] CRÍTICO: ninguna Supabase key configurada');
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: 'missing_supabase_key', raw_body: req.body });
+          return res.status(200).send('OK');
+        }
 
-        // Usar service role key (servidor privado) para llamar al RPC.
-        // Fallback al anon key solo mientras se confirma la service role key en Vercel.
-        const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY ||
-          process.env.SUPABASE_ANON_KEY ||
-          'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
         const usingServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-        console.log(`[webhook-mp] usando ${usingServiceRole ? 'SERVICE ROLE KEY ✅' : 'ANON KEY ⚠️ — configurar SUPABASE_SERVICE_ROLE_KEY en Vercel'}`);
-        const rpcRes = await fetch(
-          rpcUrl,
-          {
-            method: 'POST',
-            headers: {
-              apikey: apiKey,
-              Authorization: `Bearer ${apiKey}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ p_id: proveedorId })
-          }
-        );
+        console.log(`[webhook-mp] usando ${usingServiceRole ? 'SERVICE ROLE KEY ✅' : 'ANON KEY ⚠️'}`);
+
+        const rpcUrl = `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`;
+        console.log(`[webhook-mp] RPC URL: "${rpcUrl}"`);
+
+        const rpcRes = await fetch(rpcUrl, {
+          method: 'POST',
+          headers: {
+            apikey: apiKey,
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ p_id: proveedorId })
+        });
 
         const rpcData = await rpcRes.json();
-        if (!rpcRes.ok || rpcData?.ok === false) {
+        const rpcOk = rpcRes.ok && rpcData?.ok !== false;
+
+        if (!rpcOk) {
           console.error(`[webhook-mp] error RPC: ${rpcRes.status}`, JSON.stringify(rpcData));
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: JSON.stringify(rpcData), raw_body: req.body });
         } else {
           console.log(`[webhook-mp] ✅ proveedor ${proveedorId} activado a Pro hasta ${rpcData?.plan_hasta}`);
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: true, error_detail: null, raw_body: req.body });
         }
       } else {
         console.log(`[webhook-mp] pago con status="${payment.status}" — no se actualiza`);
+        await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: null, error_detail: null, raw_body: req.body });
       }
     } else {
       console.log(`[webhook-mp] notificación ignorada (type="${type}", dataId="${dataId}")`);
@@ -114,6 +135,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   } catch (err) {
     console.error('[webhook-mp] error inesperado:', err.message, err.cause);
+    await logWebhook({ payment_id: null, payment_status: null, proveedor_id: null, rpc_ok: false, error_detail: err.message, raw_body: req.body });
     return res.status(200).send('OK');
   }
 }

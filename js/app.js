@@ -528,7 +528,7 @@ async function cargarProveedores() {
     if (data && data.length > 0) {
       proveedoresDB = data.map(p => ({
         id: String(p.id), nombre: p.nombre, rubro: p.rubro || 'General',
-        desc: p.descripcion || '', pro: p.plan === 'pro',
+        desc: p.descripcion || '', pro: p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date()),
         inicial: p.nombre.substring(0, 2).toUpperCase(), whatsapp: p.whatsapp || '',
         provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
@@ -2786,7 +2786,7 @@ async function cargarProductosReales() {
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
-        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro'
+        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro' && (!p.proveedores?.plan_hasta || new Date(p.proveedores.plan_hasta + 'T03:00:00Z') > new Date())
       }));
       // Round-robin interleave by provider so no single provider dominates the feed.
       // Pro providers rotate first; products within each provider are shuffled.
@@ -4178,7 +4178,7 @@ async function renderRecienLlegados() {
   try {
     const hace14dias = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
     const { data } = await sb.from('proveedores')
-      .select('id, nombre, rubro, provincia, plan, logo_url, created_at')
+      .select('id, nombre, rubro, provincia, plan, plan_hasta, logo_url, created_at')
       .eq('estado', 'aprobado')
       .gte('created_at', hace14dias)
       .order('created_at', { ascending: false })
@@ -4202,7 +4202,7 @@ async function renderRecienLlegados() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <span style="font-size:.62rem;font-weight:800;background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:20px">${badge}</span>
-          ${p.plan === 'pro' ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
+          ${p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date()) ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
         </div>
       </div>`;
     }).join('');

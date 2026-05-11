@@ -2,6 +2,9 @@
   "rewrites": [
     { "source": "/api/tiendanube-callback", "destination": "/api/tiendanube-callback" }
   ],
+  "crons": [
+    { "path": "/api/recordatorio-planes", "schedule": "0 12 * * *" }
+  ],
   "headers": [
     {
       "source": "/(.*)",
