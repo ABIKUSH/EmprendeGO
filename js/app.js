@@ -2786,10 +2786,21 @@ async function cargarProductosReales() {
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
-        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro',
-        _dbg: console.log('imagen_url producto:', p.nombre, '→', p.imagen_url || '(vacío)') || undefined
+        whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro'
       }));
-      productosReales = mapped.sort((a, b) => (b.esPro ? 1 : 0) - (a.esPro ? 1 : 0));
+      // Round-robin interleave by provider so no single provider dominates the feed.
+      // Pro providers rotate first; products within each provider are shuffled.
+      const _shuffle = arr => { for (let _si = arr.length - 1; _si > 0; _si--) { const _sj = Math.floor(Math.random() * (_si + 1)); [arr[_si], arr[_sj]] = [arr[_sj], arr[_si]]; } return arr; };
+      const _byProv = {};
+      mapped.forEach(p => { if (!_byProv[p.provId]) _byProv[p.provId] = []; _byProv[p.provId].push(p); });
+      const _proG = _shuffle(Object.values(_byProv).filter(g => g[0].esPro));
+      const _freeG = _shuffle(Object.values(_byProv).filter(g => !g[0].esPro));
+      const _allG = [..._proG, ..._freeG];
+      _allG.forEach(g => _shuffle(g));
+      const _mixed = [];
+      const _maxLen = Math.max(..._allG.map(g => g.length), 0);
+      for (let _ri = 0; _ri < _maxLen; _ri++) { _allG.forEach(g => { if (g[_ri]) _mixed.push(g[_ri]); }); }
+      productosReales = _mixed;
     }
   } catch (e) { }
   homeProductosPage = 0;
@@ -2884,10 +2895,12 @@ function renderProdBuscar(filtro, query = '') {
   el.style.display = 'block';
   const catEmojis = {}; // Icons come from RUBROS_ICONS; fallback to category name only
   const porRubro = {};
+  const _provPerCat = {};
   lista.forEach(p => {
     const rubro = p.cat || 'Otro';
-    if (!porRubro[rubro]) porRubro[rubro] = [];
-    porRubro[rubro].push(p);
+    if (!porRubro[rubro]) { porRubro[rubro] = []; _provPerCat[rubro] = {}; }
+    const cnt = _provPerCat[rubro][p.provId] || 0;
+    if (cnt < 4) { porRubro[rubro].push(p); _provPerCat[rubro][p.provId] = cnt + 1; }
   });
   el.innerHTML = Object.entries(porRubro).map(([rubro, prods]) => `
     <div style="margin-bottom:20px">
