@@ -83,7 +83,7 @@ export default async function handler(req, res) {
         // La anon key es pública (está en index.html). La service role key en Vercel
         // devuelve PGRST125 por estar mal configurada; se usa la anon key directamente.
         const apiKey = process.env.SUPABASE_ANON_KEY ||
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldWJ0aWpteW9haG55c3B2aWRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5ODAyMDMsImV4cCI6MjA5MDU1NjIwM30.YyMB_vfPHAZw2AaSv66plzpHeFlORU3qUXYJBCw0Nkg';
+          'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
         const rpcRes = await fetch(
           `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`,
           {
