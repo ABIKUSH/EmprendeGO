@@ -35,7 +35,7 @@ function verificarFirmaMP(req) {
   }
 }
 
-const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
