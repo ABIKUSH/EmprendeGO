@@ -35,7 +35,7 @@ function verificarFirmaMP(req) {
   }
 }
 
-const SUPABASE_BASE = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
+const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
@@ -76,8 +76,8 @@ export default async function handler(req, res) {
           return res.status(200).send('OK');
         }
 
-        console.log(`[webhook-mp] SUPABASE_BASE: ${SUPABASE_BASE?.substring(0, 40)}`);
-        console.log(`[webhook-mp] llamando RPC activar_plan_pro para ${proveedorId}`);
+        const rpcUrl = `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`;
+        console.log(`[webhook-mp] RPC URL completa (${rpcUrl.length} chars): "${rpcUrl}"`);
 
         // Usamos RPC (función SECURITY DEFINER) que bypassa RLS y permisos de columna.
         // La anon key es pública (está en index.html). La service role key en Vercel
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
         const apiKey = process.env.SUPABASE_ANON_KEY ||
           'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
         const rpcRes = await fetch(
-          `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`,
+          rpcUrl,
           {
             method: 'POST',
             headers: {
