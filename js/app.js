@@ -377,6 +377,38 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   }
+
+  const pagoParam = new URLSearchParams(window.location.search).get('pago');
+  if (pagoParam === 'ok') {
+    history.replaceState({}, '', window.location.pathname);
+    // El webhook de MP puede tardar unos segundos en llegar y actualizar Supabase.
+    // Hacemos polling hasta confirmar que el plan se actualizó (máx ~16 seg).
+    let intentos = 0;
+    const MAX_INTENTOS = 8;
+    const verificarPlan = async () => {
+      intentos++;
+      await checkSession();
+      if (esProvPro()) {
+        showToast('🎉 ¡Plan Pro activado! Ahora tenés acceso a todas las funciones.');
+        goTo('perfil');
+      } else if (intentos < MAX_INTENTOS) {
+        setTimeout(verificarPlan, 2000);
+      } else {
+        showToast('Pago recibido. El Plan Pro se activará en minutos. Si no aparece, escribinos.');
+        goTo('perfil');
+      }
+    };
+    setTimeout(() => {
+      showToast('⏳ Verificando pago...');
+      verificarPlan();
+    }, 2500);
+  } else if (pagoParam === 'error') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => showToast('Hubo un problema con el pago. Intentá de nuevo.'), 800);
+  } else if (pagoParam === 'pendiente') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => showToast('Tu pago está pendiente de acreditación. Te avisaremos cuando se confirme.'), 800);
+  }
 });
 setTimeout(checkReveal, 500);
 
