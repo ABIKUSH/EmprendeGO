@@ -76,38 +76,29 @@ export default async function handler(req, res) {
           return res.status(200).send('OK');
         }
 
-        const toDate = d => new Date(d).toISOString().slice(0, 10);
-        const now = new Date();
-        const fechaVencimiento = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        const srvKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
         console.log(`[webhook-mp] SUPABASE_BASE: ${SUPABASE_BASE?.substring(0, 40)}`);
-        console.log(`[webhook-mp] SERVICE_KEY set: ${!!srvKey} | primeros 15 chars: "${srvKey.substring(0, 15)}"`);
-        console.log(`[webhook-mp] activando Pro hasta ${toDate(fechaVencimiento)}`);
+        console.log(`[webhook-mp] llamando RPC activar_plan_pro para ${proveedorId}`);
 
-        const patchRes = await fetch(
-          `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${proveedorId}`,
+        // Usamos RPC (función SECURITY DEFINER) que bypassa RLS y permisos de columna
+        const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+        const rpcRes = await fetch(
+          `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`,
           {
-            method: 'PATCH',
+            method: 'POST',
             headers: {
-              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal'
+              apikey: apiKey,
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-              plan: 'pro',
-              plan_desde: toDate(now),
-              plan_hasta: toDate(fechaVencimiento)
-            })
+            body: JSON.stringify({ p_id: proveedorId })
           }
         );
 
-        if (!patchRes.ok) {
-          const errText = await patchRes.text();
-          console.error(`[webhook-mp] error PATCH Supabase: ${patchRes.status} ${errText}`);
+        const rpcData = await rpcRes.json();
+        if (!rpcRes.ok || rpcData?.ok === false) {
+          console.error(`[webhook-mp] error RPC: ${rpcRes.status}`, JSON.stringify(rpcData));
         } else {
-          console.log(`[webhook-mp] ✅ proveedor ${proveedorId} actualizado a Pro hasta ${toDate(fechaVencimiento)}`);
+          console.log(`[webhook-mp] ✅ proveedor ${proveedorId} activado a Pro hasta ${rpcData?.plan_hasta}`);
         }
       } else {
         console.log(`[webhook-mp] pago con status="${payment.status}" — no se actualiza`);
