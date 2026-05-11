@@ -79,8 +79,11 @@ export default async function handler(req, res) {
         console.log(`[webhook-mp] SUPABASE_BASE: ${SUPABASE_BASE?.substring(0, 40)}`);
         console.log(`[webhook-mp] llamando RPC activar_plan_pro para ${proveedorId}`);
 
-        // Usamos RPC (función SECURITY DEFINER) que bypassa RLS y permisos de columna
-        const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || '';
+        // Usamos RPC (función SECURITY DEFINER) que bypassa RLS y permisos de columna.
+        // La anon key es pública (está en index.html). La service role key en Vercel
+        // devuelve PGRST125 por estar mal configurada; se usa la anon key directamente.
+        const apiKey = process.env.SUPABASE_ANON_KEY ||
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldWJ0aWpteW9haG55c3B2aWRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5ODAyMDMsImV4cCI6MjA5MDU1NjIwM30.YyMB_vfPHAZw2AaSv66plzpHeFlORU3qUXYJBCw0Nkg';
         const rpcRes = await fetch(
           `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`,
           {
