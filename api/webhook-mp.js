@@ -78,30 +78,10 @@ export default async function handler(req, res) {
 
         const toDate = d => new Date(d).toISOString().slice(0, 10);
         const now = new Date();
+        const fechaVencimiento = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        // Leer plan_hasta actual para sumar 30 días encima si ya tenía Pro vigente
-        const getRes = await fetch(
-          `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${proveedorId}&select=plan_hasta`,
-          {
-            headers: {
-              apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-              Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
-            }
-          }
-        );
-        const rows = await getRes.json();
-        console.log(`[webhook-mp] rows Supabase:`, JSON.stringify(rows));
-
-        if (!Array.isArray(rows) || rows.length === 0) {
-          console.error(`[webhook-mp] proveedor ${proveedorId} no encontrado en Supabase`);
-          return res.status(200).send('OK');
-        }
-
-        const currentHasta = rows[0]?.plan_hasta ? new Date(rows[0].plan_hasta) : null;
-        const base = (currentHasta && currentHasta > now) ? currentHasta : now;
-        const fechaVencimiento = new Date(base.getTime() + 30 * 24 * 60 * 60 * 1000);
-
-        console.log(`[webhook-mp] plan_hasta actual=${currentHasta?.toISOString() ?? 'null'} → nuevo=${toDate(fechaVencimiento)}`);
+        console.log(`[webhook-mp] SUPABASE_BASE: ${SUPABASE_BASE?.substring(0, 40)}`);
+        console.log(`[webhook-mp] activando Pro hasta ${toDate(fechaVencimiento)}`);
 
         const patchRes = await fetch(
           `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${proveedorId}`,
