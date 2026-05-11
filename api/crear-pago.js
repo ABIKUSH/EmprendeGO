@@ -38,7 +38,9 @@ export default async function handler(req, res) {
 
   const provId = proveedorId.trim();
 
-  console.log('[crear-pago] TOKEN:', !!process.env.MP_ACCESS_TOKEN);
+  const token = process.env.MP_ACCESS_TOKEN || '';
+  console.log('[crear-pago] TOKEN present:', !!token);
+  console.log('[crear-pago] TOKEN type:', token.startsWith('TEST-') ? 'TEST (sandbox) ⚠️' : token.startsWith('APP_USR-') ? 'PRODUCTION ✅' : 'UNKNOWN ⚠️');
   console.log('[crear-pago] proveedorId:', provId, 'email:', email);
 
   try {
@@ -54,7 +56,7 @@ export default async function handler(req, res) {
           description: 'WhatsApp directo, badge verificado, productos ilimitados, estadísticas',
           quantity: 1,
           currency_id: 'ARS',
-          unit_price: 20000
+          unit_price: 20000.00
         }],
         payer: { email },
         external_reference: String(provId),
@@ -70,10 +72,10 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
-    console.log('[crear-pago] PREFERENCE RESPONSE status:', response.status);
-    console.log('[crear-pago] PREFERENCE RESPONSE body:', JSON.stringify(data));
+    console.log('[crear-pago] MP response status:', response.status);
+    console.log('[crear-pago] MP response body:', JSON.stringify(data));
     console.log('[crear-pago] init_point:', data.init_point);
-    console.log('[crear-pago] sandbox_init_point:', data.sandbox_init_point);
+    console.log('[crear-pago] sandbox_init_point:', data.sandbox_init_point, data.sandbox_init_point ? '⚠️ token is TEST mode' : '✅ not present (production)');
 
     if (!response.ok) {
       return res.status(500).json({ error: 'Error de Mercado Pago', detail: data });
