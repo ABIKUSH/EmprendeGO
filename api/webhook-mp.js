@@ -11,9 +11,10 @@ function verificarFirmaMP(req) {
 
   const xSignature = req.headers['x-signature'] || '';
   const xRequestId = req.headers['x-request-id'] || '';
-  const dataId = req.body?.data?.id;
+  // IPN antiguo: ID en query param. Webhook nuevo: ID en body.data.id
+  const dataId = req.body?.data?.id || req.query?.id;
   if (!xSignature || !dataId) {
-    console.warn('[webhook-mp] firma requerida pero faltan headers o data.id');
+    console.warn('[webhook-mp] firma requerida pero faltan headers o payment id');
     return false;
   }
 
