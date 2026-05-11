@@ -536,6 +536,10 @@ async function cargarProveedores() {
       }));
     } else { proveedoresDB = []; }
   } catch (e) { proveedoresDB = []; }
+  proveedoresDB.sort((a, b) => {
+    const score = p => (p.pro ? 20 : 0) + Math.min(p.visitas, 500) * 0.06;
+    return score(b) - score(a);
+  });
   renderProvs(proveedoresDB);
   renderMapaProvincias();
   renderMapaAllProvs();
@@ -1343,7 +1347,11 @@ function abrirDetalle(id) {
   updateDetCompBtn();
 
   try { sb.from('busquedas').insert({ termino: p.nombre }); } catch (e) { }
-  try { sb.from('proveedores').update({ visitas: (parseInt(p.visitas) || 0) + 1 }).eq('id', p.id); } catch (e) { }
+  const _vk = `eg_visit_${p.id}`, _vt = parseInt(localStorage.getItem(_vk) || '0');
+  if (Date.now() - _vt > 86400000) {
+    localStorage.setItem(_vk, Date.now());
+    sb.rpc('increment_visitas', { proveedor_id: p.id }).then(() => {});
+  }
   cargarProductosDetalle(p.id);
   goTo('detalle');
 }
@@ -2518,6 +2526,8 @@ function goTo(s) {
   if (s === 'favoritos') renderFavs();
   if (s === 'mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
   if (s === 'mensajes') cargarMensajesUsuario();
+  const fab = document.getElementById('soporte-fab');
+  if (fab) fab.style.display = s === 'perfil' ? 'flex' : 'none';
   window.scrollTo(0, 0);
   setTimeout(checkReveal, 100);
 }
