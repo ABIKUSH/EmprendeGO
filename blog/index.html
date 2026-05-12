@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog EmprendeGO — Recursos para emprendedores mayoristas de Argentina</title>
+<meta name="description" content="Guías, consejos y recursos para emprendedores y revendedores argentinos. Cómo encontrar proveedores, negociar precios y crecer tu negocio.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://emprendego.com.ar/blog/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blog EmprendeGO — Recursos para emprendedores mayoristas">
+<meta property="og:description" content="Guías, consejos y recursos para emprendedores y revendedores argentinos.">
+<meta property="og:url" content="https://emprendego.com.ar/blog/">
+<meta property="og:site_name" content="EmprendeGO">
+<meta property="og:locale" content="es_AR">
+
+<!-- TWITTER CARD -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@emprendego_ar">
+<meta name="twitter:title" content="Blog EmprendeGO — Recursos para emprendedores mayoristas">
+<meta name="twitter:description" content="Guías, consejos y recursos para emprendedores y revendedores argentinos. Cómo encontrar proveedores, negociar precios y crecer tu negocio.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80">
+
+<!-- JSON-LD: Blog -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "@id": "https://emprendego.com.ar/blog/#blog",
+  "name": "Blog EmprendeGO",
+  "description": "Guías y recursos para emprendedores y revendedores de Argentina",
+  "url": "https://emprendego.com.ar/blog/",
+  "publisher": {
+    "@type": "Organization",
+    "name": "EmprendeGO",
+    "url": "https://emprendego.com.ar",
+    "logo": { "@type": "ImageObject", "url": "https://emprendego.com.ar/favicon.svg" }
+  },
+  "inLanguage": "es-AR"
+}
+</script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root { --green: #006039; --green-light: #00A651; --dark: #0D1B3E; --text: #1e293b; --muted: #64748b; --bg: #f8fafc; --white: #fff; --border: #e2e8f0; }
+  body { font-family: Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; }
+  a { color: inherit; text-decoration: none; }
+  .site-nav { background: var(--dark); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .site-nav .logo { font-family: 'Arial Black', sans-serif; font-weight: 900; color: white; font-size: 1.1rem; }
+  .site-nav .logo span { color: var(--green-light); }
+  .site-nav .cta-nav { background: var(--green-light); color: white; padding: 8px 18px; border-radius: 8px; font-size: .85rem; font-weight: 700; }
+  .site-nav .cta-nav:hover { opacity: .9; }
+  .hero { background: var(--dark); color: white; padding: 48px 24px; text-align: center; }
+  .hero h1 { font-size: clamp(1.4rem, 3.5vw, 2.2rem); font-weight: 900; margin-bottom: 12px; }
+  .hero p { color: rgba(255,255,255,.7); font-size: .95rem; max-width: 500px; margin: 0 auto; }
+  .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+  .section-label { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; color: var(--green); margin-bottom: 20px; }
+  .posts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+  .post-card { background: var(--white); border: 1.5px solid var(--border); border-radius: 16px; overflow: hidden; transition: box-shadow .2s; }
+  .post-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.09); }
+  .post-card .card-top { height: 8px; }
+  .post-card .card-top.green { background: linear-gradient(90deg, var(--green), var(--green-light)); }
+  .post-card .card-top.purple { background: linear-gradient(90deg, #7C3AED, #a855f7); }
+  .post-card .card-top.blue { background: linear-gradient(90deg, #1847C8, #3b82f6); }
+  .post-card .card-body { padding: 22px; }
+  .post-card .tag { font-size: .7rem; font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+  .post-card h2 { font-size: 1rem; color: var(--dark); line-height: 1.4; margin-bottom: 10px; font-weight: 800; }
+  .post-card p { font-size: .85rem; color: var(--muted); line-height: 1.5; margin-bottom: 16px; }
+  .post-card .read-more { font-size: .82rem; font-weight: 700; color: var(--green); }
+  .post-card .read-more:hover { text-decoration: underline; }
+  .cta-banner { background: linear-gradient(135deg, var(--dark), #1847C8); border-radius: 20px; padding: 36px; text-align: center; color: white; margin-top: 56px; }
+  .cta-banner h2 { font-size: 1.4rem; margin-bottom: 10px; }
+  .cta-banner p { color: rgba(255,255,255,.7); font-size: .9rem; margin-bottom: 20px; }
+  .cta-banner a { display: inline-block; background: var(--green-light); color: white; padding: 13px 28px; border-radius: 10px; font-weight: 800; font-size: .95rem; }
+  .cta-banner a:hover { opacity: .9; }
+  footer { background: var(--dark); color: rgba(255,255,255,.5); text-align: center; padding: 24px; font-size: .82rem; margin-top: 60px; }
+  footer a { color: var(--green-light); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <a href="https://emprendego.com.ar" class="logo">Emprende<span>GO</span></a>
+  <a href="https://emprendego.com.ar" class="cta-nav">Buscar proveedores →</a>
+</nav>
+
+<div class="hero">
+  <h1>Blog EmprendeGO</h1>
+  <p>Recursos, guías y consejos para emprendedores y revendedores de toda Argentina</p>
+</div>
+
+<div class="container">
+  <p class="section-label">Artículos más leídos</p>
+  <div class="posts-grid">
+
+    <a href="guia-completa-proveedores-mayoristas-argentina.html" class="post-card">
+      <div class="card-top green"></div>
+      <div class="card-body">
+        <div class="tag">Guía esencial</div>
+        <h2>Cómo encontrar proveedores mayoristas en Argentina: la guía completa 2026</h2>
+        <p>Dónde buscar, cómo verificar que son confiables, cómo negociar y evitar estafas. Con checklist descargable.</p>
+        <span class="read-more">Leer guía → 12 min</span>
+      </div>
+    </a>
+
+    <a href="como-empezar-a-revender-productos-argentina.html" class="post-card">
+      <div class="card-top blue"></div>
+      <div class="card-body">
+        <div class="tag">Emprendimiento</div>
+        <h2>Cómo empezar a revender productos en Argentina desde cero (2026)</h2>
+        <p>Paso a paso: qué vender, dónde comprar al por mayor, cómo fijar precios y dónde vender sin local.</p>
+        <span class="read-more">Leer guía → 10 min</span>
+      </div>
+    </a>
+
+    <a href="comprar-ropa-al-por-mayor-argentina.html" class="post-card">
+      <div class="card-top purple"></div>
+      <div class="card-body">
+        <div class="tag">Moda mayorista</div>
+        <h2>Comprar ropa al por mayor en Argentina: Once, La Salada y proveedores online</h2>
+        <p>Zonas, precios de referencia, pedidos mínimos y cómo evitar los intermediarios que inflan el precio.</p>
+        <span class="read-more">Leer guía → 9 min</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div class="cta-banner">
+    <h2>¿Buscás un proveedor mayorista ahora?</h2>
+    <p>Más de 200 proveedores verificados de toda Argentina. Gratis para compradores, contacto directo por WhatsApp.</p>
+    <a href="https://emprendego.com.ar">Buscar en EmprendeGO →</a>
+  </div>
+</div>
+
+<footer>
+  <p>© 2026 <a href="https://emprendego.com.ar">EmprendeGO</a> — El marketplace B2B mayorista de Argentina</p>
+</footer>
+</body>
+</html>
