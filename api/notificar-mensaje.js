@@ -49,7 +49,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        from: 'EmprendeGO <notificaciones@emprendego.app>',
+        from: 'EmprendeGO <notificaciones@emprendego.com.ar>',
         to: [proveedor.email],
         subject: `Nuevo mensaje de ${de_nombre} en EmprendeGO`,
         html: `
