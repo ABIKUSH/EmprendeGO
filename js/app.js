@@ -1419,10 +1419,11 @@ async function abrirChatDirecto(id) {
         nombre: m.de_tipo === 'proveedor' ? p.nombre : null
       }));
       renderChat();
-      // Marcar mensajes del proveedor como leídos (fire-and-forget)
+      // Marcar mensajes del proveedor como leídos para este usuario (fire-and-forget)
       sb.from('mensajes').update({ leido: true })
         .eq('proveedor_id', p.id)
         .eq('de_tipo', 'proveedor')
+        .eq('usuario_email', currentUser.email)
         .eq('leido', false)
         .then(() => {});
     } else {
