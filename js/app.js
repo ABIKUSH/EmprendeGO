@@ -1622,9 +1622,9 @@ async function checkSession() {
         if (prov.plan === 'pro' && prov.plan_hasta) {
           const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
           if (hasta < new Date()) {
-            await sb.from('proveedores').update({ plan: 'gratis', plan_desde: null, plan_hasta: null }).eq('id', prov.id);
+            await sb.from('proveedores').update({ plan: 'gratis', plan_desde: null }).eq('id', prov.id);
             prov.plan = 'gratis'; prov.plan_desde = null;
-            // plan_hasta kept intentionally so verificarExpiracionPlan can detect the expired date
+            // plan_hasta se deja en DB para que verificarExpiracionPlan lo detecte en sesiones futuras
           }
         }
         handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
