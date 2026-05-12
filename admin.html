@@ -544,8 +544,6 @@ tr:hover td{background:#fafbff}
 <div class="toast" id="toast"></div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-const ADMIN_EMAILS = ['abikushjafif2004@icloud.com', 'abrahamjafifjob@gmail.com'];
-
 let pendingAction = null;
 
 async function tryLogin(){
@@ -564,7 +562,8 @@ async function tryLogin(){
     setTimeout(()=>document.getElementById('login-error').style.display='none',3000);
     return;
   }
-  if(!ADMIN_EMAILS.includes(data.session.user.email?.toLowerCase())){
+  const { data: adminRow } = await sb.from('admins').select('email').eq('email', data.session.user.email.toLowerCase()).maybeSingle();
+  if(!adminRow){
     await sb.auth.signOut();
     document.getElementById('login-error').textContent='❌ No tenés permisos de administrador';
     document.getElementById('login-error').style.display='block';
