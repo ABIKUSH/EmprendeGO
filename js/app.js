@@ -1419,6 +1419,12 @@ async function abrirChatDirecto(id) {
         nombre: m.de_tipo === 'proveedor' ? p.nombre : null
       }));
       renderChat();
+      // Marcar mensajes del proveedor como leídos (fire-and-forget)
+      sb.from('mensajes').update({ leido: true })
+        .eq('proveedor_id', p.id)
+        .eq('de_tipo', 'proveedor')
+        .eq('leido', false)
+        .then(() => {});
     } else {
       chatMsgs = [{ tipo: 'recv', texto: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', hora: '', nombre: p.nombre }];
       renderChat();
@@ -1430,7 +1436,12 @@ async function abrirChatDirecto(id) {
 
   iniciarChatPolling(p.id);
 }
-function volverChat() { detenerChatPolling(); goBack('buscar'); }
+function volverChat() {
+  detenerChatPolling();
+  goBack('buscar');
+  // Refrescar lista de conversaciones para que desaparezca el badge
+  setTimeout(() => cargarMisConversaciones(), 150);
+}
 
 // ===== MENSAJES USUARIO (buyer) =====
 async function cargarMensajesUsuario() {
@@ -1961,6 +1972,12 @@ async function cargarHistorial() {
   await cargarMisConversaciones();
 }
 
+function leerConvUsuario(row, provId) {
+  const badge = row.querySelector('[id^="conv-badge-"]');
+  if (badge) badge.remove();
+  abrirChatDirecto(provId);
+}
+
 async function cargarMisConversaciones() {
   const el = document.getElementById('mis-conversaciones-list');
   if (!el || !currentUser) return;
@@ -2027,12 +2044,13 @@ async function cargarMisConversaciones() {
     el.innerHTML = convs.map((c, i) => {
       const ini = escHtml(c.provNombre.substring(0, 2).toUpperCase());
       const preview = escHtml((c.ultimoMsg || '').split(String.fromCharCode(10)).join(' ').substring(0, 45) + ((c.ultimoMsg || '').length > 45 ? '...' : ''));
-      return `<div class="hist-item" onclick="abrirChatDirecto('${escHtml(String(c.provId))}')" style="position:relative">` +
+      const badgeId = `conv-badge-${c.provId}`;
+      return `<div class="hist-item" onclick="leerConvUsuario(this,'${escHtml(String(c.provId))}')" style="position:relative">` +
         `<div class="hist-logo" style="background:${bgs[i % bgs.length]};color:white">${ini}</div>` +
         `<div class="hist-info"><strong>${escHtml(c.provNombre)}</strong><span>${preview}</span></div>` +
         `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">` +
         `<span class="hist-time">${escHtml(timeAgo(new Date(c.ultimaFecha)))}</span>` +
-        (c.noLeidos > 0 ? `<span style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
+        (c.noLeidos > 0 ? `<span id="${escHtml(badgeId)}" style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
         '</div></div>';
     }).join('');
   } catch (e) {
