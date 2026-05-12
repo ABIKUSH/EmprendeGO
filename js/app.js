@@ -1582,6 +1582,18 @@ async function sendMsg() {
         texto: txt,
         leido: false
       });
+
+      // Notificar al proveedor por email (fire-and-forget)
+      fetch('/api/notificar-mensaje', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proveedor_id: provActual.id,
+          de_nombre: currentUser.name,
+          texto: txt
+        })
+      }).catch(() => {});
+
     } catch (e) { }
   }
 
