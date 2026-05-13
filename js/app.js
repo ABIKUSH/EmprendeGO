@@ -3004,6 +3004,14 @@ function switchBuscarTab(tab, el) {
     filterProvs();
   }
 }
+function heroSearch(text) {
+  goTo('buscar');
+  if (text && text.trim()) {
+    const inp = document.getElementById('searchInput');
+    if (inp) { inp.value = text.trim(); applySearchInput(); }
+  }
+}
+
 function applySearchInput() {
   const val = document.getElementById('searchInput')?.value || '';
   showSearchDropdown(val);
@@ -4272,16 +4280,16 @@ async function cargarHeroStats() {
     const e1 = document.getElementById('hero-stat-provs');
     const e2 = document.getElementById('hero-stat-prods');
     const e3 = document.getElementById('hero-stat-rubros');
-    if (e1) animarContador(e1, numProvs, '+');
-    if (e2) animarContador(e2, numProds, '+');
-    if (e3) animarContador(e3, numRubros, '+');
+    if (e1) { e1.classList.remove('stat-loading'); animarContador(e1, numProvs, '+'); }
+    if (e2) { e2.classList.remove('stat-loading'); animarContador(e2, numProds, '+'); }
+    if (e3) { e3.classList.remove('stat-loading'); animarContador(e3, numRubros, '+'); }
   } catch (e) {
     const e1 = document.getElementById('hero-stat-provs');
     const e2 = document.getElementById('hero-stat-prods');
     const e3 = document.getElementById('hero-stat-rubros');
-    if (e1) e1.textContent = '—';
-    if (e2) e2.textContent = '—';
-    if (e3) e3.textContent = '—';
+    if (e1) { e1.classList.remove('stat-loading'); e1.textContent = '—'; }
+    if (e2) { e2.classList.remove('stat-loading'); e2.textContent = '—'; }
+    if (e3) { e3.classList.remove('stat-loading'); e3.textContent = '—'; }
   }
 }
 
