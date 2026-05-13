@@ -362,6 +362,14 @@ function checkReveal() {
 window.addEventListener('scroll', checkReveal, { passive: true });
 // También al cargar
 document.addEventListener('DOMContentLoaded', () => {
+  // Push a dummy state so popstate fires on Android back button
+  history.pushState(null, '', window.location.pathname);
+  window.addEventListener('popstate', () => {
+    goBack('inicio');
+    // Re-push so the next back press also fires popstate
+    history.pushState(null, '', window.location.pathname);
+  });
+
   setTimeout(checkReveal, 200);
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
@@ -428,10 +436,9 @@ let pantallaAnteriorProd = 'inicio'; // kept for legacy callers — mirrors navS
 const navStack = []; // navigation history stack
 
 function goBack(fallback) {
-  const dest = navStack.length > 1 ? navStack[navStack.length - 2] : (fallback || 'inicio');
-  // Pop current screen off stack before navigating so goTo pushes correctly
-  if (navStack.length > 1) navStack.splice(navStack.length - 2, 1);
-  goTo(dest);
+  navStack.pop(); // remove current screen
+  const dest = navStack.length > 0 ? navStack.pop() : (fallback || 'inicio');
+  goTo(dest); // goTo re-pushes dest onto stack
 }
 let provDetalleMostrarTodos = false;
 let _searchDebounceTimer = null;
