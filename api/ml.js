@@ -150,7 +150,6 @@ async function handleBulkImport(req, res) {
 
   const isNumeric = /^\d+$/.test(cleanNickname);
   if (!isNumeric) {
-    // Scrapear la página pública del vendedor para obtener su seller_id numérico
     const pagesToTry = [
       `https://listado.mercadolibre.com.ar/pagina/${cleanNickname.toLowerCase()}/`,
       `https://www.mercadolibre.com.ar/perfil/${cleanNickname}`,
@@ -159,14 +158,22 @@ async function handleBulkImport(req, res) {
       if (sellerId) break;
       try {
         const r = await fetch(pageUrl, { headers: scrapeHeaders, redirect: 'follow' });
+        console.log(`[ml-bulk] scrape ${pageUrl} → ${r.status} finalUrl=${r.url}`);
         if (!r.ok) continue;
         const html = await r.text();
+        console.log(`[ml-bulk] html snippet: ${html.substring(0, 500)}`);
         const m = html.match(/"seller_id"\s*:\s*"?(\d+)"?/)
           || html.match(/"sellerId"\s*:\s*"?(\d+)"?/)
           || html.match(/[?&]seller_id=(\d+)/)
+          || html.match(/"SELLER_ID"\s*:\s*"?(\d+)"?/)
+          || html.match(/data-seller-id="(\d+)"/)
+          || html.match(/"seller":\{"id":(\d+)/)
           || html.match(/"id"\s*:\s*(\d{7,})/);
+        console.log(`[ml-bulk] seller_id match: ${m ? m[1] : 'none'}`);
         if (m) sellerId = m[1];
-      } catch {}
+      } catch (e) {
+        console.log(`[ml-bulk] scrape error: ${e.message}`);
+      }
     }
 
     if (!sellerId) {
