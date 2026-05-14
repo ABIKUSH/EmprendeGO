@@ -386,19 +386,6 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   }
 
-  const mlParam = new URLSearchParams(window.location.search).get('ml_connected');
-  if (mlParam === '1') {
-    history.replaceState({}, '', window.location.pathname + '#perfil');
-    setTimeout(() => { showToast('MercadoLibre conectado. Sincronizá tus productos desde tu perfil.'); goTo('perfil'); }, 800);
-  }
-  const mlErrorParam = new URLSearchParams(window.location.search).get('ml_error');
-  if (mlErrorParam === '1') {
-    const ec = new URLSearchParams(window.location.search).get('ec') || '';
-    const em = new URLSearchParams(window.location.search).get('em') || '';
-    history.replaceState({}, '', window.location.pathname);
-    setTimeout(() => showToast(`Error ML${ec ? ' ('+ec+')' : ''}: ${em || 'Intentá de nuevo.'}`), 800);
-  }
-
   const pagoParam = new URLSearchParams(window.location.search).get('pago');
   if (pagoParam === 'ok') {
     history.replaceState({}, '', window.location.pathname);
@@ -1786,7 +1773,6 @@ function updatePerfilUI() {
     calcularCompletitudPerfil();
     renderBannerProDashboard();
     renderTiendaNubeSection();
-    renderMLSection();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -4599,101 +4585,6 @@ async function confirmarMapeoTN(btn) {
   cargarProductosProveedor();
   btn.disabled = false;
   btn.textContent = 'Confirmar categorías';
-}
-
-// ===== MERCADOLIBRE BULK IMPORT =====
-async function renderMLSection() {
-  const card = document.getElementById('ml-card');
-  const statusLabel = document.getElementById('ml-status-label');
-  const btnArea = document.getElementById('ml-btn-area');
-  if (!card || !statusLabel || !btnArea) return;
-
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
-
-  if (!esProvPro()) {
-    card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
-    statusLabel.textContent = 'Disponible en Plan Pro';
-    statusLabel.style.color = 'rgba(255,255,255,.7)';
-    btnArea.innerHTML = `<button onclick="showModalPro('MercadoLibre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Solo Plan Pro</button>`;
-    return;
-  }
-
-  const { data } = await sb.from('proveedores').select('ml_user_id,ml_nickname,ml_connected').eq('id', proveedorId).single();
-  const mlNickname = data?.ml_nickname || null;
-  const mlConnected = !!(data?.ml_connected);
-  if (currentUser.provData) {
-    currentUser.provData.ml_nickname = mlNickname;
-    currentUser.provData.ml_user_id = data?.ml_user_id || null;
-    currentUser.provData.ml_connected = mlConnected;
-  }
-
-  if (mlConnected) {
-    card.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
-    statusLabel.textContent = mlNickname ? 'Conectado · @' + mlNickname : 'MercadoLibre conectado';
-    statusLabel.style.color = 'rgba(0,0,0,.65)';
-    btnArea.innerHTML = `<button type="button" onclick="sincronizarML(this)" style="width:100%;background:rgba(0,0,0,.12);color:#1a1a1a;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
-  } else {
-    card.style.background = 'linear-gradient(135deg,#F5C200,#FFE600)';
-    statusLabel.textContent = 'Conectá tu cuenta de MercadoLibre para importar tus productos';
-    statusLabel.style.color = 'rgba(0,0,0,.55)';
-    btnArea.innerHTML = `<button type="button" onclick="conectarConML(this)" style="width:100%;background:rgba(0,0,0,.82);color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
-  }
-}
-
-async function conectarConML(btn) {
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) {
-    showToast('Error: recargá la página e iniciá sesión nuevamente.');
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = '⏳ Redirigiendo a MercadoLibre...';
-  try {
-    const res = await fetch(`/api/ml?auth=1&proveedor_id=${proveedorId}`);
-    let data;
-    try { data = await res.json(); } catch { data = {}; }
-    if (data.url) {
-      window.location.href = data.url;
-    } else {
-      const msg = data.error || 'Error al obtener URL de MercadoLibre.';
-      showToast(msg);
-      btn.disabled = false;
-      btn.textContent = 'Conectar con MercadoLibre';
-    }
-  } catch (e) {
-    showToast('Error de conexión: ' + (e?.message || 'intentá de nuevo'));
-    btn.disabled = false;
-    btn.textContent = 'Conectar con MercadoLibre';
-  }
-}
-
-async function sincronizarML(btn) {
-  const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) { showToast('Error: recargá la página e iniciá sesión nuevamente.'); return; }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Sincronizando...';
-
-  try {
-    const res = await fetch('/api/ml', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proveedor_id: proveedorId, nickname: 'sync' })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      showToast(`✅ ${data.importados} productos sincronizados de MercadoLibre`);
-      cargarProductosProveedor();
-    } else {
-      showToast(data.error || 'Error al sincronizar.');
-    }
-  } catch {
-    showToast('Error de conexión. Intentá más tarde.');
-  }
-
-  btn.disabled = false;
-  btn.textContent = 'Sincronizar productos';
 }
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====
