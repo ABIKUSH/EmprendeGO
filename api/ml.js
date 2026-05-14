@@ -119,12 +119,13 @@ async function handleBulkImport(req, res) {
   const { proveedor_id, nickname } = req.body || {};
   if (!proveedor_id || !nickname) return res.status(400).json({ error: 'Faltan parámetros' });
 
-  const cleanNickname = String(nickname).trim().replace(/\s+/g, '').toUpperCase();
-  if (!cleanNickname) return res.status(400).json({ error: 'Nickname inválido' });
-
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'Configuración Supabase faltante' });
+
+  if (!process.env.ML_APP_ID || !process.env.ML_APP_SECRET) {
+    return res.status(500).json({ error: 'Credenciales de MercadoLibre no configuradas en el servidor.' });
+  }
 
   const verifyRes = await fetch(
     `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}&select=id`,
@@ -135,102 +136,107 @@ async function handleBulkImport(req, res) {
     return res.status(400).json({ error: 'Proveedor no encontrado' });
   }
 
-  const scrapeHeaders = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-    'Accept-Language': 'es-AR,es;q=0.9',
-  };
-
-  const limit = 50;
-  const maxProducts = 500;
-  let offset = 0;
-  let totalML = Infinity;
-  let sellerId = null;
-  let allItems = [];
-
-  const isNumeric = /^\d+$/.test(cleanNickname);
-  if (!isNumeric) {
-    const pagesToTry = [
-      `https://listado.mercadolibre.com.ar/pagina/${cleanNickname.toLowerCase()}/`,
-      `https://www.mercadolibre.com.ar/perfil/${cleanNickname}`,
-    ];
-    for (const pageUrl of pagesToTry) {
-      if (sellerId) break;
-      try {
-        const r = await fetch(pageUrl, { headers: scrapeHeaders, redirect: 'follow' });
-        // ML redirige el perfil a una URL que contiene _CustId_{seller_id}
-        const custIdM = r.url.match(/_CustId_(\d+)/i)
-          || decodeURIComponent(r.url).match(/_CustId_(\d+)/i);
-        if (custIdM) { sellerId = custIdM[1]; break; }
-      } catch {}
-    }
-
-    if (!sellerId) {
-      return res.status(502).json({ error: 'No se encontró ese usuario en MercadoLibre. Verificá tu nombre de usuario.' });
-    }
+  // Paso 1: obtener access token
+  let accessToken;
+  try {
+    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=client_credentials&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}`,
+    });
+    if (!tokenRes.ok) return res.status(502).json({ error: 'Error al autenticar con MercadoLibre.' });
+    ({ access_token: accessToken } = await tokenRes.json());
+  } catch {
+    return res.status(502).json({ error: 'Error de conexión con MercadoLibre.' });
   }
 
-  const searchId = isNumeric ? cleanNickname : sellerId;
+  const mlAuth = { Authorization: `Bearer ${accessToken}` };
 
-  while (offset < totalML && offset < maxProducts) {
-    const mlUrl = `https://api.mercadolibre.com/sites/MLA/search?seller_id=${searchId}&limit=${limit}&offset=${offset}`;
-    const mlRes = await fetch(mlUrl, { headers: { 'User-Agent': 'EmprendeGO/1.0 (soporte@emprendego.com.ar)' } });
+  // Paso 2: identificar al dueño de la app
+  let mlUserId, mlNickname;
+  try {
+    const meRes = await fetch('https://api.mercadolibre.com/users/me', { headers: mlAuth });
+    if (!meRes.ok) return res.status(502).json({ error: 'No se pudo identificar el usuario de MercadoLibre.' });
+    const me = await meRes.json();
+    mlUserId = String(me.id || '');
+    mlNickname = String(me.nickname || '').toUpperCase();
+    console.log(`[ml-bulk] app owner: ${mlNickname} (${mlUserId})`);
+  } catch {
+    return res.status(502).json({ error: 'Error al obtener datos del usuario de MercadoLibre.' });
+  }
 
-    if (!mlRes.ok) {
-      if (offset === 0) {
-        return res.status(502).json({ error: 'No se encontró ese usuario en MercadoLibre. Verificá tu nombre de usuario.' });
-      }
-      break;
-    }
+  if (!mlUserId) return res.status(502).json({ error: 'No se pudo obtener el ID de usuario de MercadoLibre.' });
 
-    const mlData = await mlRes.json();
-    if (!sellerId && mlData.seller?.id) sellerId = String(mlData.seller.id);
-    totalML = mlData.paging?.total ?? 0;
+  // Paso 3: obtener IDs de publicaciones activas
+  const maxItems = 500;
+  const limit = 100;
+  let offset = 0;
+  let allItemIds = [];
+  let totalItems = Infinity;
 
-    const items = mlData.results || [];
-    if (!items.length) break;
-    allItems = allItems.concat(items);
+  while (offset < totalItems && allItemIds.length < maxItems) {
+    const searchRes = await fetch(
+      `https://api.mercadolibre.com/users/${mlUserId}/items/search?status=active&limit=${limit}&offset=${offset}`,
+      { headers: mlAuth }
+    );
+    if (!searchRes.ok) { console.log(`[ml-bulk] items/search error: ${searchRes.status}`); break; }
+    const searchData = await searchRes.json();
+    const ids = searchData.results || [];
+    if (!ids.length) break;
+    allItemIds = allItemIds.concat(ids);
+    totalItems = searchData.paging?.total ?? 0;
     offset += limit;
   }
 
-  if (!allItems.length) {
-    return res.status(200).json({ importados: 0, total: 0, seller_id: sellerId, nickname: cleanNickname });
+  console.log(`[ml-bulk] total IDs encontrados: ${allItemIds.length}`);
+
+  if (!allItemIds.length) {
+    return res.status(200).json({ importados: 0, total: 0, seller_id: mlUserId, nickname: mlNickname });
   }
 
+  // Paso 4: traer detalles de items en lotes de 20
+  const allItems = [];
+  for (let i = 0; i < allItemIds.length; i += 20) {
+    const batch = allItemIds.slice(i, i + 20).join(',');
+    try {
+      const itemsRes = await fetch(
+        `https://api.mercadolibre.com/items?ids=${batch}&attributes=id,title,price,thumbnail`,
+        { headers: mlAuth }
+      );
+      if (!itemsRes.ok) continue;
+      const entries = await itemsRes.json();
+      for (const e of entries) {
+        if (e.code === 200 && e.body) allItems.push(e.body);
+      }
+    } catch {}
+  }
+
+  // Paso 5: upsert en Supabase en un solo request
+  const rows = allItems
+    .map(item => ({
+      proveedor_id,
+      ml_item_id: String(item.id || ''),
+      nombre: String(item.title || 'Sin nombre').substring(0, 255),
+      precio: typeof item.price === 'number' ? item.price : 0,
+      imagen_url: item.thumbnail ? item.thumbnail.replace(/-I\.(jpg|webp)$/, '-O.$1') : null,
+      categoria_principal: 'Otro',
+    }))
+    .filter(r => r.ml_item_id);
+
   let importados = 0;
-  for (const item of allItems) {
-    const mlItemId = String(item.id || '');
-    if (!mlItemId) continue;
-
-    const nombre = String(item.title || 'Sin nombre').substring(0, 255);
-    const precio = typeof item.price === 'number' ? item.price : 0;
-    const imagen_url = item.thumbnail
-      ? item.thumbnail.replace(/-I\.(jpg|webp)$/, '-O.$1')
-      : null;
-
+  if (rows.length > 0) {
     const upsertRes = await fetch(`${supabaseUrl}/rest/v1/productos`, {
       method: 'POST',
       headers: {
         apikey: supabaseKey,
         Authorization: `Bearer ${supabaseKey}`,
         'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates,return=minimal'
+        Prefer: 'resolution=merge-duplicates,return=minimal',
       },
-      body: JSON.stringify({
-        proveedor_id,
-        ml_item_id: mlItemId,
-        nombre,
-        precio,
-        imagen_url,
-        categoria_principal: 'Otro'
-      })
+      body: JSON.stringify(rows),
     });
-
-    if (upsertRes.ok || upsertRes.status === 201) importados++;
+    if (upsertRes.ok || upsertRes.status === 201) importados = rows.length;
   }
-
-  const patchBody = { ml_nickname: cleanNickname };
-  if (sellerId) patchBody.ml_user_id = sellerId;
 
   await fetch(`${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}`, {
     method: 'PATCH',
@@ -238,11 +244,11 @@ async function handleBulkImport(req, res) {
       apikey: supabaseKey,
       Authorization: `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
-      Prefer: 'return=minimal'
+      Prefer: 'return=minimal',
     },
-    body: JSON.stringify(patchBody)
+    body: JSON.stringify({ ml_nickname: mlNickname, ml_user_id: mlUserId }),
   });
 
-  console.log(`[ml-bulk] proveedor=${proveedor_id} nickname=${cleanNickname} importados=${importados}/${allItems.length}`);
-  return res.status(200).json({ importados, total: allItems.length, seller_id: sellerId, nickname: cleanNickname });
+  console.log(`[ml-bulk] proveedor=${proveedor_id} nickname=${mlNickname} importados=${importados}/${allItems.length}`);
+  return res.status(200).json({ importados, total: allItems.length, seller_id: mlUserId, nickname: mlNickname });
 }
