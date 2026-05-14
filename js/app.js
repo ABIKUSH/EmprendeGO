@@ -4626,9 +4626,9 @@ async function renderMLSection() {
     currentUser.provData.ml_connected = mlConnected;
   }
 
-  if (mlConnected && mlNickname) {
+  if (mlConnected) {
     card.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
-    statusLabel.textContent = 'Conectado · @' + mlNickname;
+    statusLabel.textContent = mlNickname ? 'Conectado · @' + mlNickname : 'MercadoLibre conectado';
     statusLabel.style.color = 'rgba(0,0,0,.65)';
     btnArea.innerHTML = `<button onclick="sincronizarML(this)" style="width:100%;background:rgba(0,0,0,.12);color:#1a1a1a;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {

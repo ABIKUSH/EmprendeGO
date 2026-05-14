@@ -35,7 +35,7 @@ async function handleAuthUrl(req, res) {
   if (!proveedor_id || !process.env.ML_APP_ID) {
     return res.status(400).json({ error: 'Parámetros faltantes' });
   }
-  const url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${process.env.ML_APP_ID}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}&state=${proveedor_id}`;
+  const url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${process.env.ML_APP_ID}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}&state=${proveedor_id}&scope=read_items+offline_access+public`;
   return res.status(200).json({ url });
 }
 
@@ -250,6 +250,19 @@ async function handleBulkImport(req, res) {
   }
 
   const mlAuth = { Authorization: `Bearer ${accessToken}` };
+
+  // Fetch nickname/userId if missing
+  if (!mlNickname || !mlUserId) {
+    try {
+      const meRes = await fetch('https://api.mercadolibre.com/users/me', { headers: mlAuth });
+      if (meRes.ok) {
+        const me = await meRes.json();
+        if (!mlNickname) mlNickname = String(me.nickname || '').toUpperCase();
+        if (!mlUserId) mlUserId = String(me.id || '');
+      }
+    } catch {}
+  }
+
   console.log(`[ml-bulk] usando token OAuth de ${mlNickname} (${mlUserId})`);
 
   // Paso 3: obtener IDs de publicaciones activas
