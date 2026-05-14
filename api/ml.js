@@ -135,25 +135,10 @@ async function handleBulkImport(req, res) {
     return res.status(400).json({ error: 'Proveedor no encontrado' });
   }
 
-  // Obtener access token si hay credenciales configuradas
-  let accessToken = null;
-  if (process.env.ML_APP_ID && process.env.ML_APP_SECRET) {
-    try {
-      const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `grant_type=client_credentials&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}`,
-      });
-      if (tokenRes.ok) {
-        const tokenData = await tokenRes.json();
-        accessToken = tokenData.access_token || null;
-      }
-    } catch {}
-  }
-
-  const mlHeaders = {
-    'User-Agent': 'EmprendeGO/1.0 (soporte@emprendego.com.ar)',
-    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  const scrapeHeaders = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    'Accept-Language': 'es-AR,es;q=0.9',
   };
 
   const limit = 50;
@@ -163,27 +148,37 @@ async function handleBulkImport(req, res) {
   let sellerId = null;
   let allItems = [];
 
-  // Si el nickname no es numérico, intentar resolver el seller_id primero
   const isNumeric = /^\d+$/.test(cleanNickname);
-  if (!isNumeric && !sellerId) {
-    try {
-      const userRes = await fetch(
-        `https://api.mercadolibre.com/users/search?nickname=${encodeURIComponent(cleanNickname)}`,
-        { headers: mlHeaders }
-      );
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        if (userData?.results?.[0]?.id) sellerId = String(userData.results[0].id);
-      }
-    } catch {}
+  if (!isNumeric) {
+    // Scrapear la página pública del vendedor para obtener su seller_id numérico
+    const pagesToTry = [
+      `https://listado.mercadolibre.com.ar/pagina/${cleanNickname.toLowerCase()}/`,
+      `https://www.mercadolibre.com.ar/perfil/${cleanNickname}`,
+    ];
+    for (const pageUrl of pagesToTry) {
+      if (sellerId) break;
+      try {
+        const r = await fetch(pageUrl, { headers: scrapeHeaders, redirect: 'follow' });
+        if (!r.ok) continue;
+        const html = await r.text();
+        const m = html.match(/"seller_id"\s*:\s*"?(\d+)"?/)
+          || html.match(/"sellerId"\s*:\s*"?(\d+)"?/)
+          || html.match(/[?&]seller_id=(\d+)/)
+          || html.match(/"id"\s*:\s*(\d{7,})/);
+        if (m) sellerId = m[1];
+      } catch {}
+    }
+
+    if (!sellerId) {
+      return res.status(502).json({ error: 'No se encontró ese usuario en MercadoLibre. Verificá tu nombre de usuario.' });
+    }
   }
 
-  while (offset < totalML && offset < maxProducts) {
-    const mlUrl = (isNumeric || sellerId)
-      ? `https://api.mercadolibre.com/sites/MLA/search?seller_id=${isNumeric ? cleanNickname : sellerId}&limit=${limit}&offset=${offset}`
-      : `https://api.mercadolibre.com/sites/MLA/search?nickname=${encodeURIComponent(cleanNickname)}&limit=${limit}&offset=${offset}`;
+  const searchId = isNumeric ? cleanNickname : sellerId;
 
-    const mlRes = await fetch(mlUrl, { headers: mlHeaders });
+  while (offset < totalML && offset < maxProducts) {
+    const mlUrl = `https://api.mercadolibre.com/sites/MLA/search?seller_id=${searchId}&limit=${limit}&offset=${offset}`;
+    const mlRes = await fetch(mlUrl, { headers: { 'User-Agent': 'EmprendeGO/1.0 (soporte@emprendego.com.ar)' } });
 
     if (!mlRes.ok) {
       if (offset === 0) {
