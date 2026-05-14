@@ -158,22 +158,11 @@ async function handleBulkImport(req, res) {
       if (sellerId) break;
       try {
         const r = await fetch(pageUrl, { headers: scrapeHeaders, redirect: 'follow' });
-        console.log(`[ml-bulk] scrape ${pageUrl} → ${r.status} finalUrl=${r.url}`);
-        if (!r.ok) continue;
-        const html = await r.text();
-        console.log(`[ml-bulk] html snippet: ${html.substring(0, 500)}`);
-        const m = html.match(/"seller_id"\s*:\s*"?(\d+)"?/)
-          || html.match(/"sellerId"\s*:\s*"?(\d+)"?/)
-          || html.match(/[?&]seller_id=(\d+)/)
-          || html.match(/"SELLER_ID"\s*:\s*"?(\d+)"?/)
-          || html.match(/data-seller-id="(\d+)"/)
-          || html.match(/"seller":\{"id":(\d+)/)
-          || html.match(/"id"\s*:\s*(\d{7,})/);
-        console.log(`[ml-bulk] seller_id match: ${m ? m[1] : 'none'}`);
-        if (m) sellerId = m[1];
-      } catch (e) {
-        console.log(`[ml-bulk] scrape error: ${e.message}`);
-      }
+        // ML redirige el perfil a una URL que contiene _CustId_{seller_id}
+        const custIdM = r.url.match(/_CustId_(\d+)/i)
+          || decodeURIComponent(r.url).match(/_CustId_(\d+)/i);
+        if (custIdM) { sellerId = custIdM[1]; break; }
+      } catch {}
     }
 
     if (!sellerId) {
