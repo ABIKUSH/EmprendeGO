@@ -4632,32 +4632,37 @@ async function renderMLSection() {
     card.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
     statusLabel.textContent = mlNickname ? 'Conectado · @' + mlNickname : 'MercadoLibre conectado';
     statusLabel.style.color = 'rgba(0,0,0,.65)';
-    btnArea.innerHTML = `<button onclick="sincronizarML(this)" style="width:100%;background:rgba(0,0,0,.12);color:#1a1a1a;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+    btnArea.innerHTML = `<button type="button" onclick="sincronizarML(this)" style="width:100%;background:rgba(0,0,0,.12);color:#1a1a1a;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
     card.style.background = 'linear-gradient(135deg,#F5C200,#FFE600)';
     statusLabel.textContent = 'Conectá tu cuenta de MercadoLibre para importar tus productos';
     statusLabel.style.color = 'rgba(0,0,0,.55)';
-    btnArea.innerHTML = `<button onclick="conectarConML(this)" style="width:100%;background:rgba(0,0,0,.82);color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
+    btnArea.innerHTML = `<button type="button" onclick="conectarConML(this)" style="width:100%;background:rgba(0,0,0,.82);color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
   }
 }
 
 async function conectarConML(btn) {
   const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
+  if (!proveedorId) {
+    showToast('Error: recargá la página e iniciá sesión nuevamente.');
+    return;
+  }
   btn.disabled = true;
-  btn.textContent = '⏳ Redirigiendo...';
+  btn.textContent = '⏳ Redirigiendo a MercadoLibre...';
   try {
     const res = await fetch(`/api/ml?auth=1&proveedor_id=${proveedorId}`);
-    const data = await res.json();
+    let data;
+    try { data = await res.json(); } catch { data = {}; }
     if (data.url) {
       window.location.href = data.url;
     } else {
-      showToast('Error al obtener URL de MercadoLibre.');
+      const msg = data.error || 'Error al obtener URL de MercadoLibre.';
+      showToast(msg);
       btn.disabled = false;
       btn.textContent = 'Conectar con MercadoLibre';
     }
-  } catch {
-    showToast('Error de conexión.');
+  } catch (e) {
+    showToast('Error de conexión: ' + (e?.message || 'intentá de nuevo'));
     btn.disabled = false;
     btn.textContent = 'Conectar con MercadoLibre';
   }
@@ -4665,7 +4670,7 @@ async function conectarConML(btn) {
 
 async function sincronizarML(btn) {
   const proveedorId = currentUser?.proveedorId;
-  if (!proveedorId) return;
+  if (!proveedorId) { showToast('Error: recargá la página e iniciá sesión nuevamente.'); return; }
 
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';
