@@ -57,7 +57,10 @@ async function handleOAuthCallback(req, res) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: `grant_type=authorization_code&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}&code=${code}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}`,
     });
-    if (!tokenRes.ok) return res.redirect('https://emprendego.com.ar/?ml_error=1#perfil');
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text().catch(() => '');
+      return res.redirect(`https://emprendego.com.ar/?ml_error=1&ec=${tokenRes.status}&em=${encodeURIComponent(errText.substring(0,100))}#perfil`);
+    }
     const t = await tokenRes.json();
     accessToken = t.access_token;
     refreshToken = t.refresh_token;

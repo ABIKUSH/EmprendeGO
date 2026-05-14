@@ -393,8 +393,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   const mlErrorParam = new URLSearchParams(window.location.search).get('ml_error');
   if (mlErrorParam === '1') {
+    const ec = new URLSearchParams(window.location.search).get('ec') || '';
+    const em = new URLSearchParams(window.location.search).get('em') || '';
     history.replaceState({}, '', window.location.pathname);
-    setTimeout(() => showToast('Error al conectar MercadoLibre. Intentá de nuevo.'), 800);
+    setTimeout(() => showToast(`Error ML${ec ? ' ('+ec+')' : ''}: ${em || 'Intentá de nuevo.'}`), 800);
   }
 
   const pagoParam = new URLSearchParams(window.location.search).get('pago');
