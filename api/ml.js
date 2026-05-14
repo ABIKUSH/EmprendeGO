@@ -135,6 +135,27 @@ async function handleBulkImport(req, res) {
     return res.status(400).json({ error: 'Proveedor no encontrado' });
   }
 
+  // Obtener access token si hay credenciales configuradas
+  let accessToken = null;
+  if (process.env.ML_APP_ID && process.env.ML_APP_SECRET) {
+    try {
+      const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=client_credentials&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}`,
+      });
+      if (tokenRes.ok) {
+        const tokenData = await tokenRes.json();
+        accessToken = tokenData.access_token || null;
+      }
+    } catch {}
+  }
+
+  const mlHeaders = {
+    'User-Agent': 'EmprendeGO/1.0 (soporte@emprendego.com.ar)',
+    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  };
+
   const limit = 50;
   const maxProducts = 500;
   let offset = 0;
@@ -142,15 +163,27 @@ async function handleBulkImport(req, res) {
   let sellerId = null;
   let allItems = [];
 
+  // Si el nickname no es numérico, intentar resolver el seller_id primero
+  const isNumeric = /^\d+$/.test(cleanNickname);
+  if (!isNumeric && !sellerId) {
+    try {
+      const userRes = await fetch(
+        `https://api.mercadolibre.com/users/search?nickname=${encodeURIComponent(cleanNickname)}`,
+        { headers: mlHeaders }
+      );
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        if (userData?.results?.[0]?.id) sellerId = String(userData.results[0].id);
+      }
+    } catch {}
+  }
+
   while (offset < totalML && offset < maxProducts) {
-    const isNumeric = /^\d+$/.test(cleanNickname);
-    const mlUrl = isNumeric
-      ? `https://api.mercadolibre.com/sites/MLA/search?seller_id=${cleanNickname}&limit=${limit}&offset=${offset}`
+    const mlUrl = (isNumeric || sellerId)
+      ? `https://api.mercadolibre.com/sites/MLA/search?seller_id=${isNumeric ? cleanNickname : sellerId}&limit=${limit}&offset=${offset}`
       : `https://api.mercadolibre.com/sites/MLA/search?nickname=${encodeURIComponent(cleanNickname)}&limit=${limit}&offset=${offset}`;
 
-    const mlRes = await fetch(mlUrl, {
-      headers: { 'User-Agent': 'EmprendeGO/1.0 (soporte@emprendego.com.ar)' }
-    });
+    const mlRes = await fetch(mlUrl, { headers: mlHeaders });
 
     if (!mlRes.ok) {
       if (offset === 0) {
