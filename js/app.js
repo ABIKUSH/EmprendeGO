@@ -4654,7 +4654,7 @@ async function conectarML(btn) {
   btn.textContent = '⏳ Conectando...';
 
   try {
-    const res = await fetch('/api/ml-bulk', {
+    const res = await fetch('/api/ml', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ proveedor_id: proveedorId, nickname })
@@ -4689,7 +4689,7 @@ async function sincronizarML(btn) {
   btn.textContent = '⏳ Sincronizando...';
 
   try {
-    const res = await fetch('/api/ml-bulk', {
+    const res = await fetch('/api/ml', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ proveedor_id: proveedorId, nickname })
