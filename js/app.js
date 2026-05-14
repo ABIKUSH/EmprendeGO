@@ -4617,9 +4617,9 @@ async function renderMLSection() {
     return;
   }
 
-  const { data } = await sb.from('proveedores').select('ml_user_id,ml_nickname,ml_access_token').eq('id', proveedorId).single();
+  const { data } = await sb.from('proveedores').select('ml_user_id,ml_nickname,ml_connected').eq('id', proveedorId).single();
   const mlNickname = data?.ml_nickname || null;
-  const mlConnected = !!(data?.ml_access_token);
+  const mlConnected = !!(data?.ml_connected);
   if (currentUser.provData) {
     currentUser.provData.ml_nickname = mlNickname;
     currentUser.provData.ml_user_id = data?.ml_user_id || null;

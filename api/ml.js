@@ -97,6 +97,7 @@ async function handleOAuthCallback(req, res) {
       ml_access_token: accessToken,
       ml_refresh_token: refreshToken,
       ml_token_expires_at: expiresAt,
+      ml_connected: true,
     }),
   });
 
