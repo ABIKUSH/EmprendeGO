@@ -386,6 +386,17 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   }
 
+  const mlParam = new URLSearchParams(window.location.search).get('ml_connected');
+  if (mlParam === '1') {
+    history.replaceState({}, '', window.location.pathname + '#perfil');
+    setTimeout(() => { showToast('MercadoLibre conectado. Sincronizá tus productos desde tu perfil.'); goTo('perfil'); }, 800);
+  }
+  const mlErrorParam = new URLSearchParams(window.location.search).get('ml_error');
+  if (mlErrorParam === '1') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => showToast('Error al conectar MercadoLibre. Intentá de nuevo.'), 800);
+  }
+
   const pagoParam = new URLSearchParams(window.location.search).get('pago');
   if (pagoParam === 'ok') {
     history.replaceState({}, '', window.location.pathname);
@@ -4606,84 +4617,53 @@ async function renderMLSection() {
     return;
   }
 
-  const { data } = await sb.from('proveedores').select('ml_user_id,ml_nickname').eq('id', proveedorId).single();
+  const { data } = await sb.from('proveedores').select('ml_user_id,ml_nickname,ml_access_token').eq('id', proveedorId).single();
   const mlNickname = data?.ml_nickname || null;
+  const mlConnected = !!(data?.ml_access_token);
   if (currentUser.provData) {
     currentUser.provData.ml_nickname = mlNickname;
     currentUser.provData.ml_user_id = data?.ml_user_id || null;
+    currentUser.provData.ml_connected = mlConnected;
   }
 
-  if (mlNickname) {
+  if (mlConnected && mlNickname) {
     card.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
     statusLabel.textContent = 'Conectado · @' + mlNickname;
     statusLabel.style.color = 'rgba(0,0,0,.65)';
     btnArea.innerHTML = `<button onclick="sincronizarML(this)" style="width:100%;background:rgba(0,0,0,.12);color:#1a1a1a;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
     card.style.background = 'linear-gradient(135deg,#F5C200,#FFE600)';
-    statusLabel.textContent = 'Importá todos tus productos de ML de un click';
+    statusLabel.textContent = 'Conectá tu cuenta de MercadoLibre para importar tus productos';
     statusLabel.style.color = 'rgba(0,0,0,.55)';
-    btnArea.innerHTML = `
-      <input id="ml-nickname-input" type="text" placeholder="Tu usuario de ML (ej: MI-TIENDA)" autocomplete="off" style="width:100%;border:none;border-radius:10px;padding:10px 12px;font-size:.82rem;color:#111;background:rgba(255,255,255,.85);box-sizing:border-box;margin-bottom:8px;outline:none">
-      <button onclick="conectarML(this)" style="width:100%;background:rgba(0,0,0,.82);color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Importar mis productos de ML</button>`;
+    btnArea.innerHTML = `<button onclick="conectarConML(this)" style="width:100%;background:rgba(0,0,0,.82);color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con MercadoLibre</button>`;
   }
 }
 
-function extraerMLNickname(input) {
-  const s = input.trim();
-  const perfilM = s.match(/\/perfil\/([^/?&\s]+)/i);
-  if (perfilM) return perfilM[1].trim().toUpperCase();
-  const custIdM = s.match(/_CustId_(\d+)/i);
-  if (custIdM) return custIdM[1]; // numérico → el server lo trata como seller_id
-  if (s.includes('mercadolibre.com')) return null; // URL de ML no reconocida
-  return s.replace(/\s+/g, '').toUpperCase() || null;
-}
-
-async function conectarML(btn) {
-  const input = document.getElementById('ml-nickname-input');
-  if (!input) return;
-  const rawInput = input.value.trim();
-  if (!rawInput) { showToast('Ingresá tu usuario de MercadoLibre'); return; }
-
-  const nickname = extraerMLNickname(rawInput);
-  if (!nickname) { showToast('Formato inválido. Ingresá solo tu usuario de ML.'); return; }
-
+async function conectarConML(btn) {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
-
   btn.disabled = true;
-  btn.textContent = '⏳ Conectando...';
-
+  btn.textContent = '⏳ Redirigiendo...';
   try {
-    const res = await fetch('/api/ml', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proveedor_id: proveedorId, nickname })
-    });
+    const res = await fetch(`/api/ml?auth=1&proveedor_id=${proveedorId}`);
     const data = await res.json();
-    if (res.ok) {
-      if (currentUser.provData) {
-        currentUser.provData.ml_nickname = data.nickname || nickname;
-        currentUser.provData.ml_user_id = data.seller_id || null;
-      }
-      showToast(`✅ ${data.importados} productos importados de MercadoLibre`);
-      cargarProductosProveedor();
-      renderMLSection();
+    if (data.url) {
+      window.location.href = data.url;
     } else {
-      showToast(data.error || 'Error al conectar con MercadoLibre.');
+      showToast('Error al obtener URL de MercadoLibre.');
       btn.disabled = false;
-      btn.textContent = 'Importar mis productos de ML';
+      btn.textContent = 'Conectar con MercadoLibre';
     }
   } catch {
-    showToast('Error de conexión. Intentá más tarde.');
+    showToast('Error de conexión.');
     btn.disabled = false;
-    btn.textContent = 'Importar mis productos de ML';
+    btn.textContent = 'Conectar con MercadoLibre';
   }
 }
 
 async function sincronizarML(btn) {
   const proveedorId = currentUser?.proveedorId;
-  const nickname = currentUser?.provData?.ml_nickname;
-  if (!proveedorId || !nickname) return;
+  if (!proveedorId) return;
 
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';
@@ -4692,21 +4672,21 @@ async function sincronizarML(btn) {
     const res = await fetch('/api/ml', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ proveedor_id: proveedorId, nickname })
+      body: JSON.stringify({ proveedor_id: proveedorId, nickname: 'sync' })
     });
     const data = await res.json();
     if (res.ok) {
       showToast(`✅ ${data.importados} productos sincronizados de MercadoLibre`);
       cargarProductosProveedor();
     } else {
-      showToast(data.error || 'Error al sincronizar con MercadoLibre.');
+      showToast(data.error || 'Error al sincronizar.');
     }
   } catch {
     showToast('Error de conexión. Intentá más tarde.');
   }
 
   btn.disabled = false;
-  btn.textContent = '🔄 Sincronizar productos';
+  btn.textContent = 'Sincronizar productos';
 }
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====

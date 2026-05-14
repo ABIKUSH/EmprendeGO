@@ -14,13 +14,93 @@ function setCors(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
+const ML_REDIRECT_URI = 'https://emprendego.com.ar/api/ml';
+
 export default async function handler(req, res) {
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method === 'POST') return handleBulkImport(req, res);
-  if (req.method === 'GET') return handleSingleProduct(req, res);
+  if (req.method === 'GET') {
+    if (req.query.code !== undefined) return handleOAuthCallback(req, res);
+    if (req.query.auth !== undefined) return handleAuthUrl(req, res);
+    return handleSingleProduct(req, res);
+  }
   return res.status(405).json({ error: 'Método no permitido' });
+}
+
+// ===== GET ?auth=1&proveedor_id=ID → devuelve URL de autorización ML =====
+async function handleAuthUrl(req, res) {
+  const { proveedor_id } = req.query;
+  if (!proveedor_id || !process.env.ML_APP_ID) {
+    return res.status(400).json({ error: 'Parámetros faltantes' });
+  }
+  const url = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${process.env.ML_APP_ID}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}&state=${proveedor_id}`;
+  return res.status(200).json({ url });
+}
+
+// ===== GET ?code=CODE&state=PROVEEDOR_ID → callback OAuth ML =====
+async function handleOAuthCallback(req, res) {
+  const { code, state: proveedor_id, error } = req.query;
+  if (error || !code || !proveedor_id) {
+    return res.redirect('https://emprendego.com.ar/?ml_error=1#perfil');
+  }
+
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  // Intercambiar code por token
+  let accessToken, refreshToken, expiresIn, mlUserId;
+  try {
+    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `grant_type=authorization_code&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}&code=${code}&redirect_uri=${encodeURIComponent(ML_REDIRECT_URI)}`,
+    });
+    if (!tokenRes.ok) return res.redirect('https://emprendego.com.ar/?ml_error=1#perfil');
+    const t = await tokenRes.json();
+    accessToken = t.access_token;
+    refreshToken = t.refresh_token;
+    expiresIn = t.expires_in || 21600;
+    mlUserId = String(t.user_id || '');
+  } catch {
+    return res.redirect('https://emprendego.com.ar/?ml_error=1#perfil');
+  }
+
+  // Obtener nickname
+  let mlNickname = '';
+  try {
+    const meRes = await fetch('https://api.mercadolibre.com/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (meRes.ok) {
+      const me = await meRes.json();
+      mlNickname = String(me.nickname || '').toUpperCase();
+      if (!mlUserId) mlUserId = String(me.id || '');
+    }
+  } catch {}
+
+  const expiresAt = new Date(Date.now() + expiresIn * 1000).toISOString();
+
+  // Guardar token en Supabase
+  await fetch(`${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: supabaseKey,
+      Authorization: `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify({
+      ml_nickname: mlNickname,
+      ml_user_id: mlUserId,
+      ml_access_token: accessToken,
+      ml_refresh_token: refreshToken,
+      ml_token_expires_at: expiresAt,
+    }),
+  });
+
+  return res.redirect('https://emprendego.com.ar/?ml_connected=1#perfil');
 }
 
 // ===== GET: producto individual por ID =====
@@ -123,10 +203,6 @@ async function handleBulkImport(req, res) {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseKey) return res.status(500).json({ error: 'Configuración Supabase faltante' });
 
-  if (!process.env.ML_APP_ID || !process.env.ML_APP_SECRET) {
-    return res.status(500).json({ error: 'Credenciales de MercadoLibre no configuradas en el servidor.' });
-  }
-
   const verifyRes = await fetch(
     `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}&select=id`,
     { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
@@ -136,36 +212,45 @@ async function handleBulkImport(req, res) {
     return res.status(400).json({ error: 'Proveedor no encontrado' });
   }
 
-  // Paso 1: obtener access token
-  let accessToken;
-  try {
-    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `grant_type=client_credentials&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}`,
-    });
-    if (!tokenRes.ok) return res.status(502).json({ error: 'Error al autenticar con MercadoLibre.' });
-    ({ access_token: accessToken } = await tokenRes.json());
-  } catch {
-    return res.status(502).json({ error: 'Error de conexión con MercadoLibre.' });
+  // Paso 1: obtener token OAuth del proveedor desde Supabase
+  const provRes = await fetch(
+    `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}&select=ml_access_token,ml_refresh_token,ml_token_expires_at,ml_user_id,ml_nickname`,
+    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+  );
+  const [prov] = await provRes.json();
+
+  if (!prov?.ml_access_token) {
+    return res.status(403).json({ error: 'Primero conectá tu cuenta de MercadoLibre desde tu perfil.' });
+  }
+
+  let accessToken = prov.ml_access_token;
+  let mlUserId = prov.ml_user_id;
+  let mlNickname = prov.ml_nickname || '';
+
+  // Renovar token si está por vencer (menos de 1 hora)
+  const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+  if (!expiresAt || expiresAt - Date.now() < 3600000) {
+    try {
+      const refreshRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `grant_type=refresh_token&client_id=${process.env.ML_APP_ID}&client_secret=${process.env.ML_APP_SECRET}&refresh_token=${prov.ml_refresh_token}`,
+      });
+      if (refreshRes.ok) {
+        const t = await refreshRes.json();
+        accessToken = t.access_token;
+        const newExpires = new Date(Date.now() + (t.expires_in || 21600) * 1000).toISOString();
+        await fetch(`${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedor_id}`, {
+          method: 'PATCH',
+          headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify({ ml_access_token: t.access_token, ml_refresh_token: t.refresh_token, ml_token_expires_at: newExpires }),
+        });
+      }
+    } catch {}
   }
 
   const mlAuth = { Authorization: `Bearer ${accessToken}` };
-
-  // Paso 2: identificar al dueño de la app
-  let mlUserId, mlNickname;
-  try {
-    const meRes = await fetch('https://api.mercadolibre.com/users/me', { headers: mlAuth });
-    if (!meRes.ok) return res.status(502).json({ error: 'No se pudo identificar el usuario de MercadoLibre.' });
-    const me = await meRes.json();
-    mlUserId = String(me.id || '');
-    mlNickname = String(me.nickname || '').toUpperCase();
-    console.log(`[ml-bulk] app owner: ${mlNickname} (${mlUserId})`);
-  } catch {
-    return res.status(502).json({ error: 'Error al obtener datos del usuario de MercadoLibre.' });
-  }
-
-  if (!mlUserId) return res.status(502).json({ error: 'No se pudo obtener el ID de usuario de MercadoLibre.' });
+  console.log(`[ml-bulk] usando token OAuth de ${mlNickname} (${mlUserId})`);
 
   // Paso 3: obtener IDs de publicaciones activas
   const maxItems = 500;
