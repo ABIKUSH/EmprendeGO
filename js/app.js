@@ -4104,7 +4104,30 @@ function ordenarMisProds(tipo) {
   if (tipo === 'viejo') sorted.sort((a, b) => (a.id || '').localeCompare(b.id || ''));
   const el = document.getElementById('misProductosList');
   if (!el) return;
-  if (!sorted.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">No tenés productos aún.</div>'; return; }
+  if (!sorted.length) {
+    el.innerHTML = `<div style="padding:20px 0">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:1.8rem;margin-bottom:6px">📦</div>
+        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;color:#333;margin-bottom:4px">Todavía no tenés productos</div>
+        <div style="font-size:.78rem;color:#999">¿Cómo querés cargar tu catálogo?</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button onclick="openAddProduct()" style="background:#006039;color:white;border:none;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Agregar uno por uno</div><div style="font-size:.72rem;opacity:.75">Manual, con foto y precio</div></div>
+        </button>
+        <button onclick="openAddProduct();switchAddTab('excel')" style="background:white;color:#1a1a1a;border:1.5px solid #E8F2EE;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
+          <div style="width:36px;height:36px;background:#E8F2EE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Importar desde Excel o Tienda Nube</div><div style="font-size:.72rem;color:#999">Subí tu lista y la importamos automáticamente</div></div>
+        </button>
+        <button onclick="openAddProduct();switchAddTab('ml')" style="background:white;color:#1a1a1a;border:1.5px solid #fff3b0;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
+          <div style="width:36px;height:36px;background:#FFF9C4;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b58a00" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Importar desde MercadoLibre</div><div style="font-size:.72rem;color:#999">Pegá el link y traemos los datos</div></div>
+        </button>
+      </div>
+    </div>`;
+    return;
+  }
   el.innerHTML = sorted.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url

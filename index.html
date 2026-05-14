@@ -1021,7 +1021,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
       <div style="font-size:4rem;margin-bottom:16px">🎉</div>
       <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
-      <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:24px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
+      <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:20px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
+      <div style="background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:24px;text-align:left">
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#111;margin-bottom:12px">¿Qué pasa después?</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:24px;height:24px;border-radius:50%;background:#006039;color:white;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+            <div style="font-size:.82rem;color:#555;line-height:1.5">Revisamos y aprobamos tu cuenta</div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:24px;height:24px;border-radius:50%;background:#006039;color:white;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+            <div style="font-size:.82rem;color:#555;line-height:1.5">Te avisamos por <strong>WhatsApp</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:12px">
+            <div style="width:24px;height:24px;border-radius:50%;background:#006039;color:white;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+            <div style="font-size:.82rem;color:#555;line-height:1.5">Entrás al dashboard y cargás tus productos con <strong>Excel, Tienda Nube o MercadoLibre</strong></div>
+          </div>
+        </div>
+      </div>
       <button class="submit-btn" onclick="goTo('buscar')">Explorar proveedores mientras tanto →</button>
     </div>
   </div>
