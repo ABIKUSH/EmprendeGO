@@ -1050,7 +1050,7 @@ function renderProvs(list) {
     const cats = RUBROS_LISTA.slice(0, 6).map(r =>
       `<button onclick="filterCat('${r}')" style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid #E2E8F8;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;white-space:nowrap">${RUBROS_ICONS[r] || ''} ${escHtml(r)}</button>`
     ).join('');
-    el.innerHTML = `<div style="text-align:center;padding:40px 24px">
+    el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:40px 24px">
       <div style="font-size:3rem;margin-bottom:14px">🔍</div>
       <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px">${cats}</div>
