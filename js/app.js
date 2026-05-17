@@ -1073,7 +1073,7 @@ function renderProvs(list) {
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;word-break:break-word;line-height:1.2">${escHtml(p.nombre)}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avg.toFixed(1)} ★</div>` : ''}
@@ -1081,7 +1081,6 @@ function renderProvs(list) {
       <div style="padding:0 14px 13px">
         <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${escHtml(p.desc || '')}</p>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
-          <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#EEF2FF;color:#1847C8">${escHtml(p.rubro || 'General')}</span>
           ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
