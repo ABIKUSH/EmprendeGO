@@ -29,6 +29,12 @@ export default async function handler(req, res) {
     return handleMLOAuthStart(req, res);
   }
 
+  // Sincronizar productos desde ML al catalogo del proveedor.
+  // POST /api/ml?action=sync  body: { proveedor_id }
+  if (req.method === 'POST' && req.query.action === 'sync') {
+    return handleMLSync(req, res);
+  }
+
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -264,4 +270,235 @@ async function handleMLOAuthCallback(req, res) {
 
   console.log(`[ml-callback] proveedor ${proveedorId} conectado a ML user ${user_id}`);
   return res.redirect(302, 'https://emprendego.com.ar/?ml=ok');
+}
+
+// ============================================================
+// Sincronizacion de productos desde Mercado Libre
+// ============================================================
+async function handleMLSync(req, res) {
+  const body = await readJsonBody(req);
+  const proveedorId = body.proveedor_id;
+  if (!proveedorId) return res.status(400).json({ error: 'Falta proveedor_id' });
+
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: 'Credenciales Supabase no configuradas' });
+  }
+
+  // 1) Leer proveedor (plan + credenciales ML + mapeo de categorias)
+  const provRes = await fetch(
+    `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}&select=id,plan,plan_hasta,ml_user_id,ml_access_token,ml_refresh_token,ml_token_expires_at,ml_categoria_map,ml_connected`,
+    { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+  );
+  if (!provRes.ok) {
+    console.error('[ml-sync] no se pudo leer proveedor:', provRes.status);
+    return res.status(500).json({ error: 'Error leyendo proveedor' });
+  }
+  const provs = await provRes.json();
+  if (!provs.length) return res.status(404).json({ error: 'Proveedor no encontrado' });
+  const prov = provs[0];
+
+  // 2) Validar Plan Pro en backend (no confiamos en la UI)
+  const ahora = new Date();
+  const planActivo = prov.plan === 'pro' &&
+    (!prov.plan_hasta || new Date(prov.plan_hasta + 'T23:59:59Z') > ahora);
+  if (!planActivo) {
+    return res.status(403).json({ error: 'La integración con Mercado Libre requiere Plan Pro activo' });
+  }
+
+  // 3) Validar que esté conectado a ML
+  if (!prov.ml_access_token || !prov.ml_user_id) {
+    return res.status(400).json({ error: 'Conectá tu cuenta de Mercado Libre antes de sincronizar' });
+  }
+
+  // 4) Refrescar token si está a menos de 5 min de vencer
+  let accessToken = prov.ml_access_token;
+  const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+  const margenMs = 5 * 60 * 1000;
+  if (!expiresAt || expiresAt.getTime() < Date.now() + margenMs) {
+    console.log('[ml-sync] token vencido o por vencer — refrescando');
+    const refreshed = await refreshMLToken(prov.ml_refresh_token, proveedorId, supabaseUrl, supabaseKey);
+    if (!refreshed) {
+      return res.status(401).json({ error: 'No se pudo refrescar el token. Reconectá tu cuenta de Mercado Libre.' });
+    }
+    accessToken = refreshed.access_token;
+  }
+
+  // 5) Listar todos los items activos del usuario ML (paginado)
+  const allItemIds = [];
+  let offset = 0;
+  const pageSize = 50;
+  const maxItems = 1000; // tope de seguridad
+  while (offset < maxItems) {
+    const searchUrl = `https://api.mercadolibre.com/users/${prov.ml_user_id}/items/search?status=active&limit=${pageSize}&offset=${offset}`;
+    const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!sr.ok) {
+      const errTxt = await sr.text();
+      console.error('[ml-sync] error listar items:', sr.status, errTxt);
+      return res.status(502).json({ error: 'Error consultando productos en Mercado Libre' });
+    }
+    const data = await sr.json();
+    const ids = data.results || [];
+    allItemIds.push(...ids);
+    if (ids.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  console.log(`[ml-sync] proveedor ${proveedorId} — ${allItemIds.length} items encontrados`);
+
+  if (!allItemIds.length) {
+    return res.status(200).json({ importados: 0, total: 0, categorias_ml: [] });
+  }
+
+  // 6) Traer detalles de items en batches de 20 (limite de multi-get de ML)
+  const items = [];
+  for (let i = 0; i < allItemIds.length; i += 20) {
+    const batch = allItemIds.slice(i, i + 20);
+    const detailUrl = `https://api.mercadolibre.com/items?ids=${batch.join(',')}&attributes=id,title,price,available_quantity,thumbnail,pictures,status,category_id`;
+    const dr = await fetch(detailUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!dr.ok) {
+      console.error('[ml-sync] error detalle batch:', dr.status);
+      continue;
+    }
+    const detailData = await dr.json();
+    for (const w of detailData) {
+      if (w && w.code === 200 && w.body) items.push(w.body);
+    }
+  }
+
+  // 7) Resolver nombres de categorias ML (cache en memoria por sync)
+  const categoryIds = [...new Set(items.map(it => it.category_id).filter(Boolean))];
+  const categoryNames = {};
+  await Promise.all(categoryIds.map(async cid => {
+    try {
+      const cr = await fetch(`https://api.mercadolibre.com/categories/${cid}`);
+      if (cr.ok) {
+        const c = await cr.json();
+        categoryNames[cid] = c.name || cid;
+      } else {
+        categoryNames[cid] = cid;
+      }
+    } catch {
+      categoryNames[cid] = cid;
+    }
+  }));
+
+  // 8) Construir filas para upsert
+  const catMap = prov.ml_categoria_map || {};
+  const rows = items
+    .filter(it => it.status === 'active')
+    .map(it => {
+      const categoriaML = it.category_id ? categoryNames[it.category_id] || null : null;
+      const pic = it.pictures?.[0]?.secure_url || it.pictures?.[0]?.url || it.thumbnail || '';
+      return {
+        proveedor_id: proveedorId,
+        ml_item_id: String(it.id),
+        nombre: it.title || 'Sin nombre',
+        precio: parseFloat(it.price) || 0,
+        stock: parseInt(it.available_quantity, 10) || 0,
+        imagen_url: pic.replace(/^http:/, 'https:'),
+        categoria_ml: categoriaML,
+        categoria_principal: (categoriaML && catMap[categoriaML]) || 'Otros',
+        visible: true
+      };
+    });
+
+  // 9) Upsert por chunks (Supabase REST acepta payloads grandes, pero limitamos por las dudas)
+  let importados = 0;
+  for (let i = 0; i < rows.length; i += 100) {
+    const chunk = rows.slice(i, i + 100);
+    const upsertRes = await fetch(`${supabaseUrl}/rest/v1/productos?on_conflict=proveedor_id,ml_item_id`, {
+      method: 'POST',
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify(chunk)
+    });
+    if (!upsertRes.ok) {
+      const errTxt = await upsertRes.text();
+      console.error('[ml-sync] error upsert chunk:', upsertRes.status, errTxt);
+    } else {
+      importados += chunk.length;
+    }
+  }
+
+  const categoriasML = [...new Set(rows.map(r => r.categoria_ml).filter(Boolean))];
+  console.log(`[ml-sync] proveedor ${proveedorId} — importados ${importados}/${rows.length}`);
+
+  return res.status(200).json({
+    importados,
+    total: rows.length,
+    categorias_ml: categoriasML
+  });
+}
+
+// Refrescar access_token usando el refresh_token. Guarda los nuevos tokens en Supabase.
+async function refreshMLToken(refreshToken, proveedorId, supaUrl, supaKey) {
+  if (!refreshToken) return null;
+  let data;
+  try {
+    const r = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: process.env.ML_APP_ID,
+        client_secret: process.env.ML_APP_SECRET,
+        refresh_token: refreshToken
+      }).toString()
+    });
+    if (!r.ok) {
+      console.error('[ml-refresh] fallo:', r.status, await r.text());
+      return null;
+    }
+    data = await r.json();
+  } catch (e) {
+    console.error('[ml-refresh] fetch error:', e.message);
+    return null;
+  }
+
+  const expiresAt = new Date(Date.now() + (Number(data.expires_in) || 21600) * 1000).toISOString();
+
+  const patchRes = await fetch(`${supaUrl}/rest/v1/proveedores?id=eq.${proveedorId}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: supaKey,
+      Authorization: `Bearer ${supaKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify({
+      ml_access_token: data.access_token,
+      ml_refresh_token: data.refresh_token || refreshToken,
+      ml_token_expires_at: expiresAt
+    })
+  });
+  if (!patchRes.ok) {
+    console.error('[ml-refresh] no se pudo guardar token refrescado:', patchRes.status);
+  }
+  return data;
+}
+
+// Lee body JSON (Vercel parsea automaticamente si Content-Type es application/json,
+// pero esto cubre el caso en que el body llega como stream sin parsear).
+async function readJsonBody(req) {
+  if (req.body && typeof req.body === 'object') return req.body;
+  if (typeof req.body === 'string') {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
+  return new Promise(resolve => {
+    let raw = '';
+    req.on('data', c => { raw += c; });
+    req.on('end', () => {
+      try { resolve(JSON.parse(raw)); } catch { resolve({}); }
+    });
+    req.on('error', () => resolve({}));
+  });
 }
