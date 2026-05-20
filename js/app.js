@@ -3155,14 +3155,26 @@ function abrirDetalleProd(id) {
   document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
   document.getElementById('prod-det-min').textContent = p.pedido_minimo;
   document.getElementById('prod-det-cat').textContent = p.cat;
+  const prov = (proveedoresDB).find(x => String(x.id) === String(p.provId));
   const pav = document.getElementById('prod-det-pav');
-  if (pav) { pav.style.background = p.provColor; pav.textContent = p.provNombre.substring(0, 2).toUpperCase(); }
+  if (pav) {
+    if (prov && prov.logo_url) {
+      pav.style.background = 'none';
+      pav.style.padding = '0';
+      pav.style.overflow = 'hidden';
+      pav.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
+    } else {
+      pav.style.background = p.provColor;
+      pav.style.padding = '';
+      pav.style.overflow = '';
+      pav.textContent = p.provNombre.substring(0, 2).toUpperCase();
+    }
+  }
   document.getElementById('prod-det-pname').textContent = p.provNombre;
   document.getElementById('prod-det-psub').textContent = p.provRubro;
   const vc = document.getElementById('pdcalc-venta'), cc = document.getElementById('pdcalc-cant');
   if (vc) vc.value = ''; if (cc) cc.value = '';
   const rc = document.getElementById('pdcalc-result'); if (rc) rc.style.display = 'none';
-  const prov = (proveedoresDB).find(x => String(x.id) === String(p.provId));
   const waBtn = document.getElementById('prod-det-wa-btn');
   if (waBtn) waBtn.style.display = (prov && prov.pro && prov.whatsapp) ? 'flex' : 'none';
   goTo('detalle-producto');
