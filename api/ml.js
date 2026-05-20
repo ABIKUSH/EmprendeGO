@@ -23,6 +23,12 @@ export default async function handler(req, res) {
     return handleMLOAuthCallback(req, res);
   }
 
+  // Inicio de OAuth: dashboard del proveedor pide conectar su cuenta de ML.
+  // GET /api/ml?proveedor_id=<uuid>  -> redirige a la pantalla de autorizacion de ML.
+  if (req.method === 'GET' && req.query.proveedor_id && !req.query.id) {
+    return handleMLOAuthStart(req, res);
+  }
+
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -119,6 +125,29 @@ async function scrapeProductPage(id) {
   const pictures = [...imgSet].slice(0, 5).map(u => ({ url: u }));
 
   return { title, price, thumbnail, pictures, subtitle };
+}
+
+// ============================================================
+// OAuth Mercado Libre — inicio (proveedor pide conectar)
+// ============================================================
+function handleMLOAuthStart(req, res) {
+  const proveedorId = req.query.proveedor_id;
+  console.log('[ml-auth] proveedor_id recibido:', proveedorId);
+
+  const appId = process.env.ML_APP_ID;
+  if (!appId) return res.status(500).json({ error: 'ML_APP_ID no configurado' });
+
+  const redirectUri = process.env.ML_REDIRECT_URI || 'https://emprendego.com.ar/api/ml';
+
+  const authUrl =
+    `https://auth.mercadolibre.com.ar/authorization` +
+    `?response_type=code` +
+    `&client_id=${encodeURIComponent(appId)}` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&state=${encodeURIComponent(proveedorId)}`;
+
+  console.log('[ml-auth] redirigiendo a:', authUrl);
+  return res.redirect(302, authUrl);
 }
 
 // ============================================================
