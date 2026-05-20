@@ -4671,13 +4671,17 @@ async function sincronizarMercadoLibre(btn) {
     });
     const data = await res.json();
     if (res.ok) {
-      showToast(`✅ ${data.importados} productos importados de Mercado Libre`);
+      const extra = data.ocultados > 0 ? ` · ${data.ocultados} ocultados (pausados en ML)` : '';
+      showToast(`✅ ${data.importados} productos importados${extra}`);
       cargarProductosProveedor();
       if (data.categorias_ml && data.categorias_ml.length > 0) {
         mostrarMapeoML(data.categorias_ml);
       }
     } else {
       showToast(data.error || 'Error al sincronizar productos.');
+      // 401 = token revocado o expirado: el backend ya marco ml_connected=false.
+      // Re-renderizamos para que aparezca el boton "Conectar" otra vez.
+      if (res.status === 401) renderMercadoLibreSection();
     }
   } catch {
     showToast('Error de conexión. Intentá más tarde.');

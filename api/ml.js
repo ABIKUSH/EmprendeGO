@@ -429,16 +429,49 @@ async function handleMLSync(req, res) {
   const categoriasML = [...new Set(rows.map(r => r.categoria_ml).filter(Boolean))];
   console.log(`[ml-sync] proveedor ${proveedorId} — importados ${importados}/${rows.length}`);
 
+  // 10) Ocultar productos cuyo ml_item_id ya no este en la lista activa de ML
+  //     (pausados, finalizados o dados de baja en Mercado Libre).
+  let ocultados = 0;
+  const activeIds = rows.map(r => r.ml_item_id);
+  if (activeIds.length > 0) {
+    // PostgREST: not.in.(a,b,c) — coma-separados sin comillas para strings simples
+    const notInList = activeIds.join(',');
+    const hideRes = await fetch(
+      `${supabaseUrl}/rest/v1/productos?proveedor_id=eq.${proveedorId}&ml_item_id=not.is.null&ml_item_id=not.in.(${notInList})&visible=eq.true`,
+      {
+        method: 'PATCH',
+        headers: {
+          apikey: supabaseKey,
+          Authorization: `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation'
+        },
+        body: JSON.stringify({ visible: false })
+      }
+    );
+    if (hideRes.ok) {
+      try { ocultados = (await hideRes.json()).length || 0; } catch { ocultados = 0; }
+    } else {
+      console.error('[ml-sync] error ocultando inactivos:', hideRes.status);
+    }
+  }
+
   return res.status(200).json({
     importados,
     total: rows.length,
+    ocultados,
     categorias_ml: categoriasML
   });
 }
 
 // Refrescar access_token usando el refresh_token. Guarda los nuevos tokens en Supabase.
+// Si ML rechaza el refresh (token revocado o vencido), marca ml_connected=false para
+// que la UI le pida al proveedor reconectarse.
 async function refreshMLToken(refreshToken, proveedorId, supaUrl, supaKey) {
-  if (!refreshToken) return null;
+  if (!refreshToken) {
+    await marcarMLDesconectado(proveedorId, supaUrl, supaKey);
+    return null;
+  }
   let data;
   try {
     const r = await fetch('https://api.mercadolibre.com/oauth/token', {
@@ -456,6 +489,10 @@ async function refreshMLToken(refreshToken, proveedorId, supaUrl, supaKey) {
     });
     if (!r.ok) {
       console.error('[ml-refresh] fallo:', r.status, await r.text());
+      // 400/401 de ML = refresh_token invalido. Marcamos desconectado.
+      if (r.status === 400 || r.status === 401) {
+        await marcarMLDesconectado(proveedorId, supaUrl, supaKey);
+      }
       return null;
     }
     data = await r.json();
@@ -484,6 +521,26 @@ async function refreshMLToken(refreshToken, proveedorId, supaUrl, supaKey) {
     console.error('[ml-refresh] no se pudo guardar token refrescado:', patchRes.status);
   }
   return data;
+}
+
+// Marca al proveedor como desconectado de ML (token revocado/expirado).
+// La UI volvera a mostrar el boton "Conectar Mercado Libre".
+async function marcarMLDesconectado(proveedorId, supaUrl, supaKey) {
+  try {
+    await fetch(`${supaUrl}/rest/v1/proveedores?id=eq.${proveedorId}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: supaKey,
+        Authorization: `Bearer ${supaKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify({ ml_connected: false })
+    });
+    console.log(`[ml-refresh] proveedor ${proveedorId} marcado como desconectado`);
+  } catch (e) {
+    console.error('[ml-refresh] no se pudo marcar desconectado:', e.message);
+  }
 }
 
 // Lee body JSON (Vercel parsea automaticamente si Content-Type es application/json,
