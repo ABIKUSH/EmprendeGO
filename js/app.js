@@ -387,6 +387,16 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   }
 
+  const mlParam = new URLSearchParams(window.location.search).get('ml');
+  if (mlParam === 'ok') {
+    setTimeout(() => showToast('Mercado Libre conectado. Ya podés sincronizar tus productos.'), 1200);
+    history.replaceState({}, '', window.location.pathname);
+  } else if (mlParam === 'error') {
+    const reason = new URLSearchParams(window.location.search).get('reason');
+    setTimeout(() => showToast(reason ? `Error al conectar Mercado Libre (${reason}). Intentá de nuevo.` : 'Error al conectar Mercado Libre. Intentá de nuevo.'), 1200);
+    history.replaceState({}, '', window.location.pathname);
+  }
+
   const pagoParam = new URLSearchParams(window.location.search).get('pago');
   if (pagoParam === 'ok') {
     history.replaceState({}, '', window.location.pathname);
@@ -1635,7 +1645,7 @@ async function checkSession() {
       const picture = user.user_metadata?.avatar_url || '';
       // Guardar/actualizar usuario en la tabla usuarios
       await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id').eq('email', email.toLowerCase().trim());
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         if (prov.plan === 'pro' && prov.plan_hasta) {
@@ -1773,6 +1783,7 @@ function updatePerfilUI() {
     calcularCompletitudPerfil();
     renderBannerProDashboard();
     renderTiendaNubeSection();
+    renderMercadoLibreSection();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -4581,6 +4592,138 @@ async function confirmarMapeoTN(btn) {
   if (currentUser.provData) currentUser.provData.tn_categoria_map = map;
 
   document.getElementById('tnMapeoModal').classList.remove('open');
+  showToast('Categorías actualizadas');
+  cargarProductosProveedor();
+  btn.disabled = false;
+  btn.textContent = 'Confirmar categorías';
+}
+
+// ===== MERCADO LIBRE (mismo patron que Tienda Nube) =====
+async function renderMercadoLibreSection() {
+  const btnArea = document.getElementById('ml-btn-area');
+  const statusLabel = document.getElementById('ml-status-label');
+  const card = document.getElementById('ml-card');
+  if (!btnArea || !statusLabel || !card) return;
+
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+
+  const titulo = document.getElementById('ml-title');
+
+  // Si no es Pro -> tarjeta gris bloqueada
+  if (!esProvPro()) {
+    card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+    statusLabel.textContent = 'Disponible en Plan Pro';
+    statusLabel.style.color = 'rgba(255,255,255,.75)';
+    if (titulo) titulo.style.color = 'white';
+    btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar Mercado Libre · Solo Pro</button>`;
+    return;
+  }
+
+  // Query fresca para obtener estado actual de ML
+  const { data } = await sb.from('proveedores').select('ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('id', proveedorId).single();
+  const conectado = !!(data?.ml_connected && data?.ml_user_id);
+
+  // Actualizar provData en memoria
+  if (currentUser.provData) {
+    currentUser.provData.ml_connected = data?.ml_connected || false;
+    currentUser.provData.ml_user_id = data?.ml_user_id || null;
+    currentUser.provData.ml_nickname = data?.ml_nickname || null;
+    currentUser.provData.ml_categoria_map = data?.ml_categoria_map || null;
+  }
+
+  // Restaurar colores ML (por si venía del estado gris al volver a Pro)
+  if (titulo) titulo.style.color = '#1a1a1a';
+
+  if (conectado) {
+    card.style.background = 'linear-gradient(135deg,#F5C200,#E8A800)';
+    statusLabel.textContent = data.ml_nickname ? `Conectada · @${data.ml_nickname}` : 'Conectada';
+    statusLabel.style.color = 'rgba(0,0,0,.7)';
+    btnArea.innerHTML = `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+  } else {
+    card.style.background = 'linear-gradient(135deg,#FFE600,#F5C200)';
+    statusLabel.textContent = 'Importá tus publicaciones automáticamente';
+    statusLabel.style.color = 'rgba(0,0,0,.6)';
+    btnArea.innerHTML = `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`;
+  }
+}
+
+function conectarMercadoLibre(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = 'Redirigiendo...';
+  // El endpoint /api/ml detecta proveedor_id y redirige a auth.mercadolibre.com.ar
+  window.location.href = '/api/ml?proveedor_id=' + encodeURIComponent(proveedorId);
+}
+
+async function sincronizarMercadoLibre(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  const labelOriginal = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = '⏳ Sincronizando...';
+  try {
+    const res = await fetch('/api/ml?action=sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ proveedor_id: proveedorId })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showToast(`✅ ${data.importados} productos importados de Mercado Libre`);
+      cargarProductosProveedor();
+      if (data.categorias_ml && data.categorias_ml.length > 0) {
+        mostrarMapeoML(data.categorias_ml);
+      }
+    } else {
+      showToast(data.error || 'Error al sincronizar productos.');
+    }
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+  }
+  btn.disabled = false;
+  btn.innerHTML = labelOriginal;
+}
+
+function mostrarMapeoML(categorias_ml) {
+  const list = document.getElementById('ml-mapeo-list');
+  if (!list) return;
+  const mapaActual = currentUser?.provData?.ml_categoria_map || {};
+  list.innerHTML = categorias_ml.map(cat => {
+    const opts = TN_CATEGORIAS_EG.map(c =>
+      `<option value="${c}" ${(mapaActual[cat] || 'Otros') === c ? 'selected' : ''}>${c}</option>`
+    ).join('');
+    return `<div style="background:#FFFBEA;border-radius:10px;padding:12px 14px">
+      <div style="font-size:.78rem;font-weight:700;color:#444;margin-bottom:6px">ML: <span style="color:#E8A800">${escHtml(cat)}</span></div>
+      <select class="ml-mapeo-select" data-ml-cat="${escHtml(cat)}" style="width:100%;border:1.5px solid #FDE68A;border-radius:8px;padding:8px 10px;font-size:.82rem;color:#111;background:white;appearance:none">${opts}</select>
+    </div>`;
+  }).join('');
+  document.getElementById('mlMapeoModal').classList.add('open');
+}
+
+async function confirmarMapeoML(btn) {
+  const proveedorId = currentUser?.proveedorId;
+  if (!proveedorId) return;
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+
+  const selects = document.querySelectorAll('.ml-mapeo-select');
+  const map = {};
+  selects.forEach(s => { map[s.dataset.mlCat] = s.value; });
+
+  // Actualizar categoria_principal de cada grupo por categoria_ml
+  const updates = Object.entries(map).map(([mlCat, catPrincipal]) =>
+    sb.from('productos').update({ categoria_principal: catPrincipal })
+      .eq('proveedor_id', proveedorId).eq('categoria_ml', mlCat)
+  );
+  await Promise.all(updates);
+
+  // Persistir mapa para futuras sincronizaciones
+  await sb.from('proveedores').update({ ml_categoria_map: map }).eq('id', proveedorId);
+  if (currentUser.provData) currentUser.provData.ml_categoria_map = map;
+
+  document.getElementById('mlMapeoModal').classList.remove('open');
   showToast('Categorías actualizadas');
   cargarProductosProveedor();
   btn.disabled = false;
