@@ -17,6 +17,12 @@ function setCors(req, res) {
 }
 
 export default async function handler(req, res) {
+  // Callback de OAuth Mercado Libre (proveedor conectando su cuenta).
+  // Detectamos por state + (code | error) — siempre llega por GET desde mercadolibre.com
+  if (req.method === 'GET' && req.query.state && (req.query.code || req.query.error)) {
+    return handleMLOAuthCallback(req, res);
+  }
+
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -113,4 +119,120 @@ async function scrapeProductPage(id) {
   const pictures = [...imgSet].slice(0, 5).map(u => ({ url: u }));
 
   return { title, price, thumbnail, pictures, subtitle };
+}
+
+// ============================================================
+// OAuth Mercado Libre — callback (proveedor conecta su cuenta)
+// ============================================================
+async function handleMLOAuthCallback(req, res) {
+  const { code, state, error, error_description } = req.query;
+  const proveedorId = state;
+
+  console.log('[ml-callback] params:', { code: code ? '***' : null, error, state });
+
+  if (error) {
+    console.error('[ml-callback] error desde ML:', error, error_description);
+    return res.redirect(302, `https://emprendego.com.ar/?ml=error&reason=${encodeURIComponent(error)}`);
+  }
+
+  if (!code || !proveedorId) {
+    return res.status(400).send('Parámetros inválidos');
+  }
+
+  const appId = process.env.ML_APP_ID;
+  const clientSecret = process.env.ML_APP_SECRET;
+  const redirectUri = process.env.ML_REDIRECT_URI || 'https://emprendego.com.ar/api/ml';
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!appId || !clientSecret) {
+    console.error('[ml-callback] ML_APP_ID o ML_APP_SECRET no configurados');
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=server');
+  }
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('[ml-callback] credenciales Supabase no configuradas');
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=server');
+  }
+
+  // Intercambiar code por access_token + refresh_token
+  let tokenData;
+  try {
+    const tokenRes = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: appId,
+        client_secret: clientSecret,
+        code,
+        redirect_uri: redirectUri
+      }).toString()
+    });
+
+    if (!tokenRes.ok) {
+      const errTxt = await tokenRes.text();
+      console.error('[ml-callback] error token ML:', tokenRes.status, errTxt);
+      return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=token');
+    }
+    tokenData = await tokenRes.json();
+  } catch (e) {
+    console.error('[ml-callback] fetch token fallo:', e.message);
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=network');
+  }
+
+  const { access_token, refresh_token, expires_in, user_id } = tokenData;
+  console.log('[ml-callback] token ML ok — user_id:', user_id, '| expires_in:', expires_in);
+
+  if (!access_token || !refresh_token || !user_id) {
+    console.error('[ml-callback] respuesta ML incompleta:', JSON.stringify(tokenData));
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=token');
+  }
+
+  const expiresAt = new Date(Date.now() + (Number(expires_in) || 21600) * 1000).toISOString();
+
+  // Pedir nickname (opcional, mejora UX en el dashboard)
+  let nickname = null;
+  try {
+    const userRes = await fetch(`https://api.mercadolibre.com/users/${user_id}`, {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+    if (userRes.ok) {
+      const u = await userRes.json();
+      nickname = u.nickname || null;
+    }
+  } catch (e) {
+    console.warn('[ml-callback] no se pudo obtener nickname:', e.message);
+  }
+
+  // Guardar credenciales en proveedores
+  const patchUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}`;
+  const patchRes = await fetch(patchUrl, {
+    method: 'PATCH',
+    headers: {
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({
+      ml_user_id: String(user_id),
+      ml_access_token: access_token,
+      ml_refresh_token: refresh_token,
+      ml_token_expires_at: expiresAt,
+      ml_nickname: nickname,
+      ml_connected: true
+    })
+  });
+
+  if (!patchRes.ok) {
+    const errBody = await patchRes.text();
+    console.error('[ml-callback] error PATCH Supabase:', patchRes.status, errBody);
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=save');
+  }
+
+  console.log(`[ml-callback] proveedor ${proveedorId} conectado a ML user ${user_id}`);
+  return res.redirect(302, 'https://emprendego.com.ar/?ml=ok');
 }
