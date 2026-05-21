@@ -1662,7 +1662,7 @@ async function checkSession() {
         handleLogin({ name, email, picture, type: 'user' });
       }
     }
-  } catch (e) { }
+  } catch (e) { console.error('[checkSession]', e); }
 }
 function handleLogin(user) {
   currentUser = user;
@@ -1697,7 +1697,8 @@ function mostrarAvisoPlanProximo(fechaVence) {
     <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
   </div>`;
 }
-function logout() {
+async function logout() {
+  try { await sb.auth.signOut(); } catch (e) { }
   currentUser = null; historial = [];
   try { localStorage.removeItem('eg_historial'); } catch (e) { }
   document.getElementById('perfil-login').style.display = 'block';
@@ -4471,6 +4472,13 @@ initOnboarding();
 
 renderQuestion();
 checkSession();
+// Fallback: captura el SIGNED_IN que dispara Supabase después de procesar
+// el hash OAuth — cubre el caso donde checkSession() corre antes del redirect.
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session && !currentUser) {
+    await checkSession();
+  }
+});
 cargarHeroStats();
 renderRecienLlegados();
 cargarProductosReales();
