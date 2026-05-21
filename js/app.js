@@ -3210,10 +3210,21 @@ function abrirDetalleProd(id) {
   document.getElementById('prod-det-psub').textContent = p.provRubro;
   const vc = document.getElementById('pdcalc-venta'), cc = document.getElementById('pdcalc-cant');
   if (vc) vc.value = ''; if (cc) cc.value = '';
-  const rc = document.getElementById('pdcalc-result'); if (rc) rc.style.display = 'none';
+  const rc = document.getElementById('pdcalc-result'); if (rc) { rc.style.display = 'none'; rc.textContent = ''; }
+  const calcBody = document.getElementById('pdcalc-body'); if (calcBody) calcBody.style.display = 'none';
+  const calcCaret = document.getElementById('pdcalc-caret'); if (calcCaret) calcCaret.innerHTML = '&#9662;';
   const waBtn = document.getElementById('prod-det-wa-btn');
   if (waBtn) waBtn.style.display = (prov && prov.pro && prov.whatsapp) ? 'flex' : 'none';
   goTo('detalle-producto');
+}
+function togglePdCalc() {
+  const body = document.getElementById('pdcalc-body');
+  const caret = document.getElementById('pdcalc-caret');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (caret) caret.innerHTML = open ? '&#9662;' : '&#9652;';
+  if (!open) { const v = document.getElementById('pdcalc-venta'); if (v) v.focus(); }
 }
 function volverDetProd() { goBack('inicio'); }
 function irAProveedorDesdeProd() { if (productoActual) abrirDetalle(productoActual.provId); }
@@ -3224,14 +3235,15 @@ function calcProdDet() {
   const venta = parseFloat(document.getElementById('pdcalc-venta').value);
   const cant = parseFloat(document.getElementById('pdcalc-cant').value);
   const resEl = document.getElementById('pdcalc-result');
-  if (!venta || !cant || cant <= 0 || venta <= 0) { if (resEl) resEl.style.display = 'none'; return; }
+  if (!resEl) return;
+  if (!venta || !cant || cant <= 0 || venta <= 0) { resEl.style.display = 'none'; resEl.textContent = ''; return; }
   const inv = costo * cant, tot = venta * cant, gan = tot - inv;
-  const mrg = inv > 0 ? ((gan / inv) * 100).toFixed(0) : 0;
-  document.getElementById('pdcalc-inv').textContent = '$' + inv.toLocaleString('es-AR');
-  document.getElementById('pdcalc-gan').textContent = '$' + gan.toLocaleString('es-AR');
-  document.getElementById('pdcalc-mrg').textContent = mrg + '%';
-  document.getElementById('pdcalc-tot').textContent = '$' + tot.toLocaleString('es-AR');
-  if (resEl) resEl.style.display = 'grid';
+  const mrg = inv > 0 ? Math.round((gan / inv) * 100) : 0;
+  const cantTxt = cant === 1 ? '1 unidad' : (cant.toLocaleString('es-AR') + ' unidades');
+  const ganColor = gan >= 0 ? 'var(--green)' : '#B91C1C';
+  const ganTxt = (gan >= 0 ? '$' : '-$') + Math.abs(gan).toLocaleString('es-AR');
+  resEl.innerHTML = 'Vendiendo ' + cantTxt + ' a $' + venta.toLocaleString('es-AR') + ' cada una te quedan <strong style="color:' + ganColor + '">' + ganTxt + '</strong> de ganancia <span style="color:var(--gray)">(margen ' + mrg + '%)</span>.';
+  resEl.style.display = 'block';
 }
 
 // ===== CHAT REAL PROVEEDOR =====

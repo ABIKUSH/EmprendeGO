@@ -744,15 +744,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <div style="flex:1"><div class="prod-det-pname" id="prod-det-pname">Proveedor</div><div class="prod-det-psub" id="prod-det-psub">Rubro</div></div>
       <span style="color:var(--gray);font-size:1.1rem">&#8250;</span>
     </div>
-    <div class="calc-box">
-      <div class="calc-title">&#129518; Calculadora de ganancia</div>
-      <div class="calc-row"><label>Precio de venta $</label><input type="number" id="pdcalc-venta" placeholder="5000" oninput="calcProdDet()"></div>
-      <div class="calc-row"><label>Cantidad unidades</label><input type="number" id="pdcalc-cant" placeholder="10" oninput="calcProdDet()"></div>
-      <div class="calc-result" id="pdcalc-result" style="display:none">
-        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-inv">-</div><div class="calc-result-label">Inversion</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-gan">-</div><div class="calc-result-label">Ganancia</div></div>
-        <div class="calc-result-item"><div class="calc-result-val" id="pdcalc-mrg">-</div><div class="calc-result-label">Margen %</div></div>
-        <div class="calc-result-item"><div class="calc-result-val green" id="pdcalc-tot">-</div><div class="calc-result-label">Total</div></div>
+    <div id="pdcalc-wrap" style="margin:4px 0 18px">
+      <button type="button" id="pdcalc-toggle" onclick="togglePdCalc()" style="background:none;border:none;padding:0;color:var(--gray);font-family:'DM Sans',sans-serif;font-size:.82rem;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span style="text-decoration:underline;text-decoration-color:rgba(0,0,0,.18);text-underline-offset:3px">¿Cuánto te queda de ganancia? Calculalo</span><span id="pdcalc-caret" style="font-size:.7rem;color:var(--gray)">&#9662;</span></button>
+      <div id="pdcalc-body" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div style="display:flex;gap:10px;margin-bottom:10px">
+          <div style="flex:1;min-width:0"><label for="pdcalc-venta" style="display:block;font-size:.74rem;color:var(--gray);margin-bottom:4px;font-family:'DM Sans',sans-serif">Lo vendés a $</label><input type="number" id="pdcalc-venta" placeholder="5000" oninput="calcProdDet()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;background:white;box-sizing:border-box"></div>
+          <div style="flex:1;min-width:0"><label for="pdcalc-cant" style="display:block;font-size:.74rem;color:var(--gray);margin-bottom:4px;font-family:'DM Sans',sans-serif">Cantidad</label><input type="number" id="pdcalc-cant" placeholder="10" oninput="calcProdDet()" style="width:100%;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;background:white;box-sizing:border-box"></div>
+        </div>
+        <div id="pdcalc-result" style="display:none;font-size:.85rem;color:var(--navy);line-height:1.45;font-family:'DM Sans',sans-serif"></div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
