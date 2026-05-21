@@ -1631,12 +1631,31 @@ async function sendMsg() {
 // ===== AUTH =====
 async function simulateGoogleLogin() {
   try {
+    // Limpia cualquier sesion previa o residuo de localStorage (PKCE code_verifier huerfano, etc.)
+    try { await sb.auth.signOut(); } catch (e) { }
+    try {
+      Object.keys(localStorage).forEach(k => {
+        if (k.startsWith('sb-') && k.includes('-auth-token-code-verifier')) localStorage.removeItem(k);
+      });
+    } catch (e) { }
     const { data, error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     if (error) throw error;
   } catch (e) { showToast('Error al iniciar sesion. Intenta de nuevo.'); }
 }
 async function checkSession() {
   try {
+    // Red de seguridad: si Supabase no procesa automaticamente el hash OAuth, lo hacemos manualmente
+    if (window.location.hash && window.location.hash.includes('access_token=')) {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const access_token = params.get('access_token');
+      const refresh_token = params.get('refresh_token');
+      if (access_token && refresh_token) {
+        try {
+          await sb.auth.setSession({ access_token, refresh_token });
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        } catch (e) { console.error('[setSession fallback]', e); }
+      }
+    }
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       const user = session.user;
