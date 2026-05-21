@@ -3214,7 +3214,12 @@ function abrirDetalleProd(id) {
   const calcBody = document.getElementById('pdcalc-body'); if (calcBody) calcBody.style.display = 'none';
   const calcCaret = document.getElementById('pdcalc-caret'); if (calcCaret) calcCaret.innerHTML = '&#9662;';
   const waBtn = document.getElementById('prod-det-wa-btn');
-  if (waBtn) waBtn.style.display = (prov && prov.pro && prov.whatsapp) ? 'flex' : 'none';
+  const chatBtn = document.getElementById('prod-det-chat-btn');
+  const proConWA = !!(prov && prov.pro && prov.whatsapp);
+  if (waBtn) {
+    waBtn.style.cssText = 'width:100%;padding:15px;border-radius:14px;background:#006039;color:white;border:none;font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.18);display:' + (proConWA ? 'flex' : 'none');
+  }
+  if (chatBtn) chatBtn.style.display = proConWA ? 'none' : 'flex';
   goTo('detalle-producto');
 }
 function togglePdCalc() {
