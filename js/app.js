@@ -1667,8 +1667,8 @@ async function checkSession() {
 function handleLogin(user) {
   currentUser = user;
   if (user.type === 'user') cargarHistorialLocal(user.email);
-  updatePerfilUI();
   updateTopbar();
+  try { updatePerfilUI(); } catch (e) { console.error('[updatePerfilUI]', e); }
 }
 
 function verificarExpiracionPlan(prov) {
