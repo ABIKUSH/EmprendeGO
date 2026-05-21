@@ -4475,7 +4475,7 @@ checkSession();
 // Fallback: captura el SIGNED_IN que dispara Supabase después de procesar
 // el hash OAuth — cubre el caso donde checkSession() corre antes del redirect.
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session && !currentUser) {
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
     await checkSession();
   }
 });
