@@ -2548,6 +2548,10 @@ async function guardarEdicionProducto() {
 // ===== NAV =====
 function goTo(s) {
   haptic('light');
+  if (s === 'registro' && !currentUser) {
+    showToast('Iniciá sesión antes de registrarte como proveedor');
+    s = 'perfil';
+  }
   // Push to navigation stack (avoid consecutive duplicates)
   if (navStack[navStack.length - 1] !== s) {
     navStack.push(s);
@@ -2591,6 +2595,18 @@ function switchTab(tab, el) {
 
 // ===== REGISTRO =====
 function showRegStep(step) {
+  if (step === 1 && currentUser?.email) {
+    setTimeout(() => {
+      const emailInput = document.querySelector('#reg-step1 input[type="email"]');
+      if (emailInput) {
+        emailInput.value = currentUser.email;
+        emailInput.readOnly = true;
+        emailInput.style.background = '#f5f5f5';
+        emailInput.style.color = '#999';
+        emailInput.style.cursor = 'not-allowed';
+      }
+    }, 0);
+  }
   if (step === 2) {
     const n = document.querySelector('#reg-step1 input[type="text"]')?.value?.trim();
     const e = document.querySelector('#reg-step1 input[type="email"]')?.value?.trim();
