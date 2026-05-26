@@ -1746,8 +1746,8 @@ async function checkSession() {
       const name = user.user_metadata?.full_name || user.email.split('@')[0];
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
-      // Guardar/actualizar usuario en la tabla usuarios
-      await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' });
+      // Guardar/actualizar usuario en la tabla usuarios (error no bloquea login)
+      try { await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' }); } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
@@ -4606,7 +4606,10 @@ if (!window.location.hash.includes('access_token=')) {
   checkSession();
 }
 sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
+  if (event === 'SIGNED_IN' && session) {
+    // Siempre re-chequear en un nuevo login (no bloquear con !currentUser)
+    await checkSession();
+  } else if ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
     await checkSession();
   }
 });
