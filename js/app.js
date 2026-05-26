@@ -4629,6 +4629,7 @@ const _cbSearch = window.location.search;
 
 async function handleOAuthCallbackIfPresent() {
   const params = new URLSearchParams(_cbSearch);
+  console.log('[auth] callback hash:', _cbHash.substring(0, 40), 'search:', _cbSearch);
 
   if (params.has('error')) {
     const msg = params.get('error_description') || params.get('error') || 'Error en autenticación';
@@ -4639,25 +4640,43 @@ async function handleOAuthCallbackIfPresent() {
   }
 
   if (_cbHash.includes('access_token=')) {
-    // Procesar manualmente para no depender del order localStorage→hash del SDK
     const hp = new URLSearchParams(_cbHash.replace(/^#/, ''));
     const access_token = hp.get('access_token');
     const refresh_token = hp.get('refresh_token') || '';
+    console.log('[auth] token found, calling setSession...');
     if (access_token) {
       try {
-        const { error } = await sb.auth.setSession({ access_token, refresh_token });
-        if (error) console.warn('[auth] setSession:', error.message);
+        const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+        console.log('[auth] setSession result:', !!data?.session, error?.message);
+        if (data?.session) {
+          history.replaceState({}, document.title, window.location.pathname);
+          await checkSession();
+          return;
+        }
       } catch (e) { console.warn('[auth] setSession exc:', e); }
-      history.replaceState({}, document.title, window.location.pathname);
     }
   }
 
+  // Fallback: dejar que el SDK haya procesado el hash via detectSessionInUrl
+  const { data: { session: sdkSession } } = await sb.auth.getSession();
+  console.log('[auth] getSession fallback:', !!sdkSession);
+  if (sdkSession) {
+    history.replaceState({}, document.title, window.location.pathname);
+  } else if (_cbHash.includes('access_token=')) {
+    // El SDK no procesó el hash — recargar la página limpia para reintentar
+    console.warn('[auth] SDK no procesó el hash, recargando...');
+    history.replaceState({}, document.title, window.location.pathname);
+    window.location.reload();
+    return;
+  }
   await checkSession();
 }
 handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('[auth]', event, !!session);
-  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
+  if (event === 'SIGNED_IN' && session) {
+    await checkSession();
+  } else if (event === 'INITIAL_SESSION' && session && !currentUser) {
     await checkSession();
   }
 });
