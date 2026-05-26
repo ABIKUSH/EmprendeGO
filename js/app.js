@@ -4591,6 +4591,14 @@ initOnboarding();
 })();
 
 renderQuestion();
+// iOS Safari bfcache fix: cuando Safari restaura la página desde caché después del
+// redirect OAuth, el JS no se re-ejecuta y los tokens en el hash no se procesan.
+// pageshow con persisted=true detecta ese caso y fuerza una carga limpia.
+window.addEventListener('pageshow', e => {
+  if (e.persisted && window.location.hash.includes('access_token=')) {
+    window.location.reload();
+  }
+});
 // Si hay tokens OAuth en el hash, dejar que detectSessionInUrl los procese primero;
 // onAuthStateChange disparará checkSession cuando la sesión esté lista.
 // Si no hay hash OAuth, correr checkSession ahora para restaurar sesión persistida.
