@@ -70,7 +70,7 @@ const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_Zt5ujgTHG5WKrhyMx4nYSg_g6pxYyBA';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {
-    flowType: 'pkce',
+    flowType: 'implicit',
     detectSessionInUrl: true,
     persistSession: true,
     autoRefreshToken: true

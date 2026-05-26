@@ -4619,46 +4619,20 @@ window.addEventListener('pageshow', e => {
   }
 });
 
-// Maneja explícitamente el callback OAuth. En PKCE el SDK debería intercambiar
-// el ?code= automáticamente vía detectSessionInUrl, pero en incógnito (Safari sobre
-// todo) ese intercambio puede fallar silenciosamente. Lo hacemos a mano como red de
-// seguridad — si el SDK ya lo intercambió, exchangeCodeForSession devuelve error
-// "code not found" / "already exchanged" que toleramos.
+// Implicit flow: el SDK procesa el #access_token= automáticamente via detectSessionInUrl.
+// Aquí solo manejamos el caso de error OAuth (cuando Supabase redirige con ?error=)
+// y el arranque normal de la app (sin callback).
 async function handleOAuthCallbackIfPresent() {
   const params = new URLSearchParams(window.location.search);
-  const hasCode = params.has('code');
   const hasError = params.has('error');
 
   if (hasError) {
     const msg = params.get('error_description') || params.get('error') || 'Error en autenticación';
     showToast(decodeURIComponent(msg.replace(/\+/g, ' ')));
     history.replaceState({}, document.title, window.location.pathname);
-    await checkSession();
-    return;
   }
 
-  if (!hasCode && !window.location.hash.includes('access_token=')) {
-    await checkSession();
-    return;
-  }
-
-  try {
-    if (hasCode) {
-      const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
-      // Si el SDK ya hizo el intercambio (race con detectSessionInUrl), getSession
-      // va a devolver la sesión igual. Solo logueamos errores "reales".
-      if (error && !/already|not\s*found|invalid/i.test(error.message || '')) {
-        throw error;
-      }
-    }
-    await checkSession();
-    history.replaceState({}, document.title, window.location.pathname);
-  } catch (e) {
-    console.error('[auth callback]', e);
-    showToast('No pudimos iniciar sesión. Intentá de nuevo.');
-    history.replaceState({}, document.title, window.location.pathname);
-    await checkSession();
-  }
+  await checkSession();
 }
 handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
