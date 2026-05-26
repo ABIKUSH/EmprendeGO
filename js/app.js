@@ -4636,8 +4636,6 @@ window.addEventListener('pageshow', e => {
 const _cbHash = window.location.hash;
 const _cbSearch = window.location.search;
 
-function _hasOAuthHash() { return _cbHash.includes('access_token='); }
-
 async function handleOAuthCallbackIfPresent() {
   const params = new URLSearchParams(_cbSearch);
   console.log('[auth] callback check — hash:', _cbHash.substring(0, 40), 'search:', _cbSearch);
@@ -4649,12 +4647,26 @@ async function handleOAuthCallbackIfPresent() {
     return;
   }
 
-  if (_hasOAuthHash()) {
-    // SDK procesa automáticamente via detectSessionInUrl.
-    // onAuthStateChange SIGNED_IN disparará y llamará checkSession(session).
-    // Solo limpiamos la URL para que no queden tokens visibles.
-    console.log('[auth] access_token en hash — SDK lo procesa, limpiando URL');
+  if (_cbHash.includes('access_token=')) {
+    const hp = new URLSearchParams(_cbHash.replace(/^#/, ''));
+    const access_token = hp.get('access_token');
+    const refresh_token = hp.get('refresh_token') || '';
+    // Limpiamos URL antes de setSession para que el SDK no procese el hash
+    // en paralelo via detectSessionInUrl (evita doble-procesamiento).
     history.replaceState({}, document.title, window.location.pathname);
+    console.log('[auth] access_token en hash, llamando setSession...');
+    if (access_token) {
+      try {
+        const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+        console.log('[auth] setSession:', !!data?.session, error?.message);
+        // NO llamamos checkSession aquí — onAuthStateChange SIGNED_IN lo hace
+        // pasando la session directamente, evitando el lock de getSession().
+        if (error && !data?.session) {
+          console.warn('[auth] setSession falló, recargando...');
+          window.location.reload();
+        }
+      } catch (e) { console.warn('[auth] setSession exc:', e); }
+    }
     return;
   }
 
@@ -4665,7 +4677,8 @@ handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
   console.log('[auth]', event, !!session, session?.user?.email);
   if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-    // Pasamos la session directamente para evitar llamar getSession() dentro del lock del SDK
+    // session viene directamente del evento — no llamamos getSession() para evitar
+    // bloqueo de lock si setSession() todavía no liberó el mutex interno del SDK.
     await checkSession(session);
   }
 });
