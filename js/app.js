@@ -4674,12 +4674,16 @@ async function handleOAuthCallbackIfPresent() {
   await checkSession();
 }
 handleOAuthCallbackIfPresent();
-sb.auth.onAuthStateChange(async (event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
   console.log('[auth]', event, !!session, session?.user?.email);
   if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
-    // session viene directamente del evento — no llamamos getSession() para evitar
-    // bloqueo de lock si setSession() todavía no liberó el mutex interno del SDK.
-    await checkSession(session);
+    // setTimeout(0): el callback debe ser síncrono y retornar de inmediato.
+    // setSession() mantiene el lock interno de GoTrue MIENTRAS llama a los
+    // suscriptores. Si hacemos await aquí, cualquier llamada a Supabase DB
+    // (que internamente llama getSession() → intenta adquirir el mismo lock)
+    // produce un deadlock garantizado. Con setTimeout salimos del stack del
+    // lock y checkSession() corre después de que setSession() lo libera.
+    setTimeout(() => checkSession(session), 0);
   }
 });
 cargarHeroStats();
