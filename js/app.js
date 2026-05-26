@@ -1642,6 +1642,89 @@ async function simulateGoogleLogin() {
     if (error) throw error;
   } catch (e) { showToast('Error al iniciar sesion. Intenta de nuevo.'); }
 }
+
+// ===== AUTH EMAIL + CONTRASEÑA =====
+let authMode = 'login'; // 'login' | 'signup'
+
+function toggleAuthMode(e) {
+  if (e) e.preventDefault();
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  const isLogin = authMode === 'login';
+  const $ = id => document.getElementById(id);
+  $('login-title').textContent = isLogin ? 'Ingresá a tu cuenta' : 'Creá tu cuenta';
+  $('auth-submit-btn').textContent = isLogin ? 'Iniciar sesión' : 'Crear cuenta';
+  $('auth-toggle-question').textContent = isLogin ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?';
+  $('auth-toggle-link').textContent = isLogin ? 'Registrate' : 'Iniciá sesión';
+  $('auth-password').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+  hideAuthError();
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function hideAuthError() {
+  const el = document.getElementById('auth-error');
+  if (el) { el.style.display = 'none'; el.textContent = ''; }
+}
+
+function traducirErrorAuth(error) {
+  const msg = (error && error.message ? error.message : String(error || '')).toLowerCase();
+  if (msg.includes('invalid login credentials')) return 'Email o contraseña incorrectos.';
+  if (msg.includes('user already registered')) return 'Este email ya está registrado. Iniciá sesión.';
+  if (msg.includes('rate limit')) return 'Demasiados intentos. Esperá un momento e intentá de nuevo.';
+  if (msg.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
+  if (msg.includes('unable to validate email') || msg.includes('invalid email') || msg.includes('email address') && msg.includes('invalid')) return 'El email no es válido.';
+  if (msg.includes('email not confirmed')) return 'Tenés que confirmar tu email antes de ingresar. Revisá tu casilla.';
+  if (msg.includes('failed to fetch') || msg.includes('network')) return 'No pudimos conectar. Revisá tu conexión e intentá de nuevo.';
+  if (msg.includes('signup') && msg.includes('disabled')) return 'El registro está temporalmente deshabilitado.';
+  return 'Algo salió mal. Intentá de nuevo.';
+}
+
+async function submitAuthForm(e) {
+  e.preventDefault();
+  hideAuthError();
+  const emailEl = document.getElementById('auth-email');
+  const passEl = document.getElementById('auth-password');
+  const btn = document.getElementById('auth-submit-btn');
+  if (!emailEl || !passEl || !btn) return;
+  const email = emailEl.value.trim().toLowerCase();
+  const password = passEl.value;
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAuthError('Ingresá un email válido.'); return; }
+  if (password.length < 6) { showAuthError('La contraseña debe tener al menos 6 caracteres.'); return; }
+
+  const txtOrig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? 'Ingresando...' : 'Creando cuenta...';
+  try {
+    let result;
+    if (authMode === 'login') {
+      result = await sb.auth.signInWithPassword({ email, password });
+    } else {
+      result = await sb.auth.signUp({ email, password });
+    }
+    if (result.error) {
+      showAuthError(traducirErrorAuth(result.error));
+      btn.disabled = false; btn.textContent = txtOrig;
+      return;
+    }
+    // Si "Confirm email" está activo en Supabase, signUp devuelve user pero sin session.
+    if (authMode === 'signup' && !result.data?.session) {
+      showAuthError('Te enviamos un email de confirmación. Revisá tu casilla (también spam) y volvé a ingresar.');
+      btn.disabled = false; btn.textContent = txtOrig;
+      return;
+    }
+    // Éxito: onAuthStateChange dispara checkSession() automáticamente. Limpiamos el form.
+    passEl.value = '';
+  } catch (err) {
+    showAuthError(traducirErrorAuth(err));
+    btn.disabled = false; btn.textContent = txtOrig;
+  }
+}
+
 async function checkSession() {
   try {
     // Red de seguridad: si Supabase no procesa automaticamente el hash OAuth, lo hacemos manualmente
