@@ -1740,18 +1740,6 @@ async function submitAuthForm(e) {
 
 async function checkSession() {
   try {
-    // Red de seguridad: si Supabase no procesa automaticamente el hash OAuth, lo hacemos manualmente
-    if (window.location.hash && window.location.hash.includes('access_token=')) {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const access_token = params.get('access_token');
-      const refresh_token = params.get('refresh_token');
-      if (access_token && refresh_token) {
-        try {
-          await sb.auth.setSession({ access_token, refresh_token });
-          history.replaceState(null, '', window.location.pathname + window.location.search);
-        } catch (e) { console.error('[setSession fallback]', e); }
-      }
-    }
     const { data: { session } } = await sb.auth.getSession();
     if (session && session.user) {
       const user = session.user;
@@ -4603,11 +4591,14 @@ initOnboarding();
 })();
 
 renderQuestion();
-checkSession();
-// Fallback: captura el SIGNED_IN que dispara Supabase después de procesar
-// el hash OAuth — cubre el caso donde checkSession() corre antes del redirect.
+// Si hay tokens OAuth en el hash, dejar que detectSessionInUrl los procese primero;
+// onAuthStateChange disparará checkSession cuando la sesión esté lista.
+// Si no hay hash OAuth, correr checkSession ahora para restaurar sesión persistida.
+if (!window.location.hash.includes('access_token=')) {
+  checkSession();
+}
 sb.auth.onAuthStateChange(async (event, session) => {
-  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
     await checkSession();
   }
 });
