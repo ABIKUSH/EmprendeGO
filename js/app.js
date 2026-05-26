@@ -1672,7 +1672,26 @@ function toggleAuthMode(e) {
   $('auth-toggle-question').textContent = isLogin ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?';
   $('auth-toggle-link').textContent = isLogin ? 'Registrate' : 'Iniciá sesión';
   $('auth-password').setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+  const fw = $('auth-forgot-wrap');
+  if (fw) fw.style.display = isLogin ? '' : 'none';
   hideAuthError();
+}
+
+async function solicitarRecuperarContrasena(e) {
+  e.preventDefault();
+  const email = (document.getElementById('auth-email')?.value || '').trim();
+  if (!email) { showAuthError('Ingresá tu email primero para recuperar la contraseña.'); return; }
+  const btn = document.getElementById('auth-submit-btn');
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://emprendego.com.ar' });
+    if (error) throw error;
+    showAuthSuccess('Te enviamos un link para restablecer tu contraseña. Revisá tu casilla (también spam).');
+  } catch (err) {
+    showAuthError('No pudimos enviar el email. Verificá que la dirección sea correcta.');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 function showAuthError(msg) {
