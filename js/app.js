@@ -1663,6 +1663,19 @@ function showAuthError(msg) {
   const el = document.getElementById('auth-error');
   if (!el) return;
   el.textContent = msg;
+  el.style.background = '#fef2f2';
+  el.style.border = '1px solid #fecaca';
+  el.style.color = '#b91c1c';
+  el.style.display = 'block';
+}
+
+function showAuthSuccess(msg) {
+  const el = document.getElementById('auth-error');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.background = '#f0fdf4';
+  el.style.border = '1px solid #86efac';
+  el.style.color = '#15803d';
   el.style.display = 'block';
 }
 
@@ -1713,7 +1726,7 @@ async function submitAuthForm(e) {
     }
     // Si "Confirm email" está activo en Supabase, signUp devuelve user pero sin session.
     if (authMode === 'signup' && !result.data?.session) {
-      showAuthError('Te enviamos un email de confirmación. Revisá tu casilla (también spam) y volvé a ingresar.');
+      showAuthSuccess('Te enviamos un email de confirmación. Revisá tu casilla (también spam) y volvé a ingresar.');
       btn.disabled = false; btn.textContent = txtOrig;
       return;
     }
