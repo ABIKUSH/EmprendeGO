@@ -1640,14 +1640,16 @@ async function simulateGoogleLogin(btnEl) {
   const txtOrig = btn?.innerHTML;
   if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'wait'; btn.innerHTML = 'Redirigiendo a Google…'; }
   try {
-    // Limpia code_verifiers huérfanos (no llamamos signOut: es lento e innecesario,
-    // el nuevo login va a sobreescribir la sesión de todas formas).
+    // Limpiar TODA la auth data de Supabase en localStorage antes de iniciar OAuth.
+    // Si quedan entradas viejas (sesiones vencidas, code_verifiers huérfanos), el SDK
+    // las encuentra primero al volver del callback, intenta refrescarlas, falla, y
+    // nunca llega a procesar el #access_token= del hash → usuario queda sin sesión.
     try {
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith('sb-') && k.includes('-auth-token-code-verifier')) localStorage.removeItem(k);
-      });
+      Object.keys(localStorage)
+        .filter(k => k.startsWith('sb-seubtijmyoahnyspvidq-'))
+        .forEach(k => localStorage.removeItem(k));
     } catch (e) { }
-    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: 'https://emprendego.com.ar' } });
     if (error) throw error;
     // No reseteamos el flag: la página está por navegar a Google.
   } catch (e) {
@@ -4608,8 +4610,7 @@ renderQuestion();
 // Detección de callback OAuth: PKCE usa ?code= en query, implicit usaba #access_token=
 function _hasOAuthCallback() {
   const p = new URLSearchParams(window.location.search);
-  return window.location.hash.includes('access_token=') ||
-         p.has('code') || p.has('error');
+  return window.location.hash.includes('access_token=') || p.has('code') || p.has('error');
 }
 // iOS Safari bfcache fix: cuando Safari restaura la página desde caché después del
 // redirect OAuth, el JS no se re-ejecuta y los tokens no se procesan.
@@ -4619,27 +4620,44 @@ window.addEventListener('pageshow', e => {
   }
 });
 
-// Implicit flow: el SDK procesa el #access_token= automáticamente via detectSessionInUrl.
-// Aquí solo manejamos el caso de error OAuth (cuando Supabase redirige con ?error=)
-// y el arranque normal de la app (sin callback).
-async function handleOAuthCallbackIfPresent() {
-  const params = new URLSearchParams(window.location.search);
-  const hasError = params.has('error');
+// Captura síncrona de hash y search ANTES de cualquier código async.
+// El SDK de Supabase puede no leer el #access_token= si hay basura en localStorage
+// (lee localStorage primero, falla el refresh, y nunca llega al hash).
+// Lo parseamos a mano y usamos setSession() como garantía de que siempre se procesa.
+const _cbHash = window.location.hash;
+const _cbSearch = window.location.search;
 
-  if (hasError) {
+async function handleOAuthCallbackIfPresent() {
+  const params = new URLSearchParams(_cbSearch);
+
+  if (params.has('error')) {
     const msg = params.get('error_description') || params.get('error') || 'Error en autenticación';
     showToast(decodeURIComponent(msg.replace(/\+/g, ' ')));
     history.replaceState({}, document.title, window.location.pathname);
+    await checkSession();
+    return;
+  }
+
+  if (_cbHash.includes('access_token=')) {
+    // Procesar manualmente para no depender del order localStorage→hash del SDK
+    const hp = new URLSearchParams(_cbHash.replace(/^#/, ''));
+    const access_token = hp.get('access_token');
+    const refresh_token = hp.get('refresh_token') || '';
+    if (access_token) {
+      try {
+        const { error } = await sb.auth.setSession({ access_token, refresh_token });
+        if (error) console.warn('[auth] setSession:', error.message);
+      } catch (e) { console.warn('[auth] setSession exc:', e); }
+      history.replaceState({}, document.title, window.location.pathname);
+    }
   }
 
   await checkSession();
 }
 handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session) {
-    // Siempre re-chequear en un nuevo login (no bloquear con !currentUser)
-    await checkSession();
-  } else if ((event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') && session && !currentUser) {
+  console.log('[auth]', event, !!session);
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !currentUser) {
     await checkSession();
   }
 });
