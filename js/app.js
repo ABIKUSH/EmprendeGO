@@ -1754,17 +1754,25 @@ async function submitAuthForm(e) {
   }
 }
 
-async function checkSession() {
+async function checkSession(sessionOverride) {
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    let session;
+    if (sessionOverride === undefined) {
+      const { data } = await sb.auth.getSession();
+      session = data?.session ?? null;
+      console.log('[checkSession] getSession:', !!session, session?.user?.email);
+    } else {
+      session = sessionOverride;
+      console.log('[checkSession] session from caller:', !!session, session?.user?.email);
+    }
     if (session && session.user) {
       const user = session.user;
       const name = user.user_metadata?.full_name || user.email.split('@')[0];
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
-      // Guardar/actualizar usuario en la tabla usuarios (error no bloquea login)
       try { await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' }); } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
+      console.log('[checkSession] provList:', provList?.length, provList?.[0]?.estado);
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
         if (prov.plan === 'pro' && prov.plan_hasta) {
@@ -1772,7 +1780,6 @@ async function checkSession() {
           if (hasta < new Date()) {
             await sb.from('proveedores').update({ plan: 'gratis', plan_desde: null }).eq('id', prov.id);
             prov.plan = 'gratis'; prov.plan_desde = null;
-            // plan_hasta se deja en DB para que verificarExpiracionPlan lo detecte en sesiones futuras
           }
         }
         handleLogin({ name: prov.nombre || name, email, picture, type: 'proveedor', proveedorId: prov.id, provData: prov });
@@ -1780,6 +1787,9 @@ async function checkSession() {
       } else {
         handleLogin({ name, email, picture, type: 'user' });
       }
+      console.log('[checkSession] handleLogin done, type:', prov && prov.estado === 'aprobado' ? 'proveedor' : 'user');
+    } else {
+      console.log('[checkSession] no session/user — login skipped');
     }
   } catch (e) { console.error('[checkSession]', e); }
 }
@@ -4620,64 +4630,43 @@ window.addEventListener('pageshow', e => {
   }
 });
 
-// Captura síncrona de hash y search ANTES de cualquier código async.
-// El SDK de Supabase puede no leer el #access_token= si hay basura en localStorage
-// (lee localStorage primero, falla el refresh, y nunca llega al hash).
-// Lo parseamos a mano y usamos setSession() como garantía de que siempre se procesa.
+// Captura síncrona del hash ANTES de cualquier código async.
+// simulateGoogleLogin limpia el localStorage de Supabase antes de redirigir,
+// así que detectSessionInUrl siempre procesa el #access_token= sin interferencia.
 const _cbHash = window.location.hash;
 const _cbSearch = window.location.search;
 
+function _hasOAuthHash() { return _cbHash.includes('access_token='); }
+
 async function handleOAuthCallbackIfPresent() {
   const params = new URLSearchParams(_cbSearch);
-  console.log('[auth] callback hash:', _cbHash.substring(0, 40), 'search:', _cbSearch);
+  console.log('[auth] callback check — hash:', _cbHash.substring(0, 40), 'search:', _cbSearch);
 
   if (params.has('error')) {
     const msg = params.get('error_description') || params.get('error') || 'Error en autenticación';
     showToast(decodeURIComponent(msg.replace(/\+/g, ' ')));
     history.replaceState({}, document.title, window.location.pathname);
-    await checkSession();
     return;
   }
 
-  if (_cbHash.includes('access_token=')) {
-    const hp = new URLSearchParams(_cbHash.replace(/^#/, ''));
-    const access_token = hp.get('access_token');
-    const refresh_token = hp.get('refresh_token') || '';
-    console.log('[auth] token found, calling setSession...');
-    if (access_token) {
-      try {
-        const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
-        console.log('[auth] setSession result:', !!data?.session, error?.message);
-        if (data?.session) {
-          history.replaceState({}, document.title, window.location.pathname);
-          await checkSession();
-          return;
-        }
-      } catch (e) { console.warn('[auth] setSession exc:', e); }
-    }
-  }
-
-  // Fallback: dejar que el SDK haya procesado el hash via detectSessionInUrl
-  const { data: { session: sdkSession } } = await sb.auth.getSession();
-  console.log('[auth] getSession fallback:', !!sdkSession);
-  if (sdkSession) {
+  if (_hasOAuthHash()) {
+    // SDK procesa automáticamente via detectSessionInUrl.
+    // onAuthStateChange SIGNED_IN disparará y llamará checkSession(session).
+    // Solo limpiamos la URL para que no queden tokens visibles.
+    console.log('[auth] access_token en hash — SDK lo procesa, limpiando URL');
     history.replaceState({}, document.title, window.location.pathname);
-  } else if (_cbHash.includes('access_token=')) {
-    // El SDK no procesó el hash — recargar la página limpia para reintentar
-    console.warn('[auth] SDK no procesó el hash, recargando...');
-    history.replaceState({}, document.title, window.location.pathname);
-    window.location.reload();
     return;
   }
+
+  // Carga normal (no es callback OAuth) — verificar sesión persistida
   await checkSession();
 }
 handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
-  console.log('[auth]', event, !!session);
-  if (event === 'SIGNED_IN' && session) {
-    await checkSession();
-  } else if (event === 'INITIAL_SESSION' && session && !currentUser) {
-    await checkSession();
+  console.log('[auth]', event, !!session, session?.user?.email);
+  if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+    // Pasamos la session directamente para evitar llamar getSession() dentro del lock del SDK
+    await checkSession(session);
   }
 });
 cargarHeroStats();
