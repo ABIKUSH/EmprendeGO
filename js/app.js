@@ -4605,20 +4605,62 @@ initOnboarding();
 })();
 
 renderQuestion();
+// Detección de callback OAuth: PKCE usa ?code= en query, implicit usaba #access_token=
+function _hasOAuthCallback() {
+  const p = new URLSearchParams(window.location.search);
+  return window.location.hash.includes('access_token=') ||
+         p.has('code') || p.has('error');
+}
 // iOS Safari bfcache fix: cuando Safari restaura la página desde caché después del
-// redirect OAuth, el JS no se re-ejecuta y los tokens en el hash no se procesan.
-// pageshow con persisted=true detecta ese caso y fuerza una carga limpia.
+// redirect OAuth, el JS no se re-ejecuta y los tokens no se procesan.
 window.addEventListener('pageshow', e => {
-  if (e.persisted && window.location.hash.includes('access_token=')) {
+  if (e.persisted && _hasOAuthCallback()) {
     window.location.reload();
   }
 });
-// Si hay tokens OAuth en el hash, dejar que detectSessionInUrl los procese primero;
-// onAuthStateChange disparará checkSession cuando la sesión esté lista.
-// Si no hay hash OAuth, correr checkSession ahora para restaurar sesión persistida.
-if (!window.location.hash.includes('access_token=')) {
-  checkSession();
+
+// Maneja explícitamente el callback OAuth. En PKCE el SDK debería intercambiar
+// el ?code= automáticamente vía detectSessionInUrl, pero en incógnito (Safari sobre
+// todo) ese intercambio puede fallar silenciosamente. Lo hacemos a mano como red de
+// seguridad — si el SDK ya lo intercambió, exchangeCodeForSession devuelve error
+// "code not found" / "already exchanged" que toleramos.
+async function handleOAuthCallbackIfPresent() {
+  const params = new URLSearchParams(window.location.search);
+  const hasCode = params.has('code');
+  const hasError = params.has('error');
+
+  if (hasError) {
+    const msg = params.get('error_description') || params.get('error') || 'Error en autenticación';
+    showToast(decodeURIComponent(msg.replace(/\+/g, ' ')));
+    history.replaceState({}, document.title, window.location.pathname);
+    await checkSession();
+    return;
+  }
+
+  if (!hasCode && !window.location.hash.includes('access_token=')) {
+    await checkSession();
+    return;
+  }
+
+  try {
+    if (hasCode) {
+      const { error } = await sb.auth.exchangeCodeForSession(window.location.href);
+      // Si el SDK ya hizo el intercambio (race con detectSessionInUrl), getSession
+      // va a devolver la sesión igual. Solo logueamos errores "reales".
+      if (error && !/already|not\s*found|invalid/i.test(error.message || '')) {
+        throw error;
+      }
+    }
+    await checkSession();
+    history.replaceState({}, document.title, window.location.pathname);
+  } catch (e) {
+    console.error('[auth callback]', e);
+    showToast('No pudimos iniciar sesión. Intentá de nuevo.');
+    history.replaceState({}, document.title, window.location.pathname);
+    await checkSession();
+  }
 }
+handleOAuthCallbackIfPresent();
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session) {
     // Siempre re-chequear en un nuevo login (no bloquear con !currentUser)
