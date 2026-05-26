@@ -1629,18 +1629,32 @@ async function sendMsg() {
 }
 
 // ===== AUTH =====
-async function simulateGoogleLogin() {
+let _googleLoginInFlight = false;
+async function simulateGoogleLogin(btnEl) {
+  // Guard contra múltiples clicks: cada signInWithOAuth genera un state nuevo
+  // que sobreescribe el anterior en localStorage. Si el usuario hace doble-click,
+  // el callback de Google viene con un state que ya no coincide → falla silenciosamente.
+  if (_googleLoginInFlight) return;
+  _googleLoginInFlight = true;
+  const btn = btnEl || (typeof event !== 'undefined' && event?.currentTarget) || document.querySelector('button.google-btn');
+  const txtOrig = btn?.innerHTML;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.style.cursor = 'wait'; btn.innerHTML = 'Redirigiendo a Google…'; }
   try {
-    // Limpia cualquier sesion previa o residuo de localStorage (PKCE code_verifier huerfano, etc.)
-    try { await sb.auth.signOut(); } catch (e) { }
+    // Limpia code_verifiers huérfanos (no llamamos signOut: es lento e innecesario,
+    // el nuevo login va a sobreescribir la sesión de todas formas).
     try {
       Object.keys(localStorage).forEach(k => {
         if (k.startsWith('sb-') && k.includes('-auth-token-code-verifier')) localStorage.removeItem(k);
       });
     } catch (e) { }
-    const { data, error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
+    const { error } = await sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } });
     if (error) throw error;
-  } catch (e) { showToast('Error al iniciar sesion. Intenta de nuevo.'); }
+    // No reseteamos el flag: la página está por navegar a Google.
+  } catch (e) {
+    _googleLoginInFlight = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.cursor = ''; btn.innerHTML = txtOrig; }
+    showToast('Error al iniciar sesion. Intenta de nuevo.');
+  }
 }
 
 // ===== AUTH EMAIL + CONTRASEÑA =====
