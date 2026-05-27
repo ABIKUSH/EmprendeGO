@@ -1694,6 +1694,46 @@ async function solicitarRecuperarContrasena(e) {
   }
 }
 
+function mostrarModalNuevaContrasena() {
+  const el = document.getElementById('nuevaPasswordModal');
+  if (!el) return;
+  document.getElementById('nueva-password-input').value = '';
+  document.getElementById('nueva-password-confirm').value = '';
+  document.getElementById('nueva-password-error').style.display = 'none';
+  document.getElementById('nueva-password-btn').textContent = 'Guardar contraseña';
+  document.getElementById('nueva-password-btn').disabled = false;
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function cerrarNuevaPasswordModal(e) {
+  if (e.target === document.getElementById('nuevaPasswordModal')) {
+    document.getElementById('nuevaPasswordModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+async function submitNuevaContrasena(e) {
+  e.preventDefault();
+  const pass = (document.getElementById('nueva-password-input')?.value || '');
+  const confirm = (document.getElementById('nueva-password-confirm')?.value || '');
+  const errEl = document.getElementById('nueva-password-error');
+  const btn = document.getElementById('nueva-password-btn');
+  const showErr = msg => { errEl.textContent = msg; errEl.style.display = 'block'; };
+  errEl.style.display = 'none';
+  if (pass.length < 6) { showErr('La contraseña debe tener al menos 6 caracteres.'); return; }
+  if (pass !== confirm) { showErr('Las contraseñas no coinciden.'); return; }
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const { error } = await sb.auth.updateUser({ password: pass });
+    if (error) throw error;
+    document.getElementById('nuevaPasswordModal').classList.remove('open');
+    document.body.style.overflow = '';
+    showToast('Contraseña actualizada correctamente.');
+  } catch (err) {
+    showErr('No se pudo actualizar la contraseña. Intentá de nuevo.');
+    btn.disabled = false; btn.textContent = 'Guardar contraseña';
+  }
+}
+
 function showAuthError(msg) {
   const el = document.getElementById('auth-error');
   if (!el) return;
@@ -4670,19 +4710,20 @@ async function handleOAuthCallbackIfPresent() {
     const hp = new URLSearchParams(_cbHash.replace(/^#/, ''));
     const access_token = hp.get('access_token');
     const refresh_token = hp.get('refresh_token') || '';
+    const tokenType = hp.get('type') || '';
     // Limpiamos URL antes de setSession para que el SDK no procese el hash
     // en paralelo via detectSessionInUrl (evita doble-procesamiento).
     history.replaceState({}, document.title, window.location.pathname);
-    console.log('[auth] access_token en hash, llamando setSession...');
+    console.log('[auth] access_token en hash, type:', tokenType, 'llamando setSession...');
     if (access_token) {
       try {
         const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
         console.log('[auth] setSession:', !!data?.session, error?.message);
-        // NO llamamos checkSession aquí — onAuthStateChange SIGNED_IN lo hace
-        // pasando la session directamente, evitando el lock de getSession().
         if (error && !data?.session) {
           console.warn('[auth] setSession falló, recargando...');
           window.location.reload();
+        } else if (tokenType === 'recovery' && data?.session) {
+          setTimeout(() => mostrarModalNuevaContrasena(), 0);
         }
       } catch (e) { console.warn('[auth] setSession exc:', e); }
     }
