@@ -14,6 +14,20 @@ function toggleSidebar() {
   localStorage.setItem('eg_sidebar_collapsed', collapsed ? '1' : '0');
 }
 
+// ===== ANALYTICS =====
+function trackEvent(name, params) {
+  if (typeof gtag === 'function') gtag('event', name, params || {});
+}
+let _lastSearchTracked = '', _searchTrackTimer = null;
+function trackSearch(q, resultCount) {
+  clearTimeout(_searchTrackTimer);
+  _searchTrackTimer = setTimeout(() => {
+    if (q.length < 2 || q === _lastSearchTracked) return;
+    _lastSearchTracked = q;
+    trackEvent('search', { search_term: q, results: resultCount });
+  }, 800);
+}
+
 // ===== VIBRACIÓN HÁPTICA =====
 function haptic(type) {
   if (!navigator.vibrate) return;
@@ -698,6 +712,7 @@ function setResenaRating(val) {
 }
 
 async function submitResena() {
+  if (!currentUser) { showToast('Iniciá sesión para dejar una reseña'); return; }
   if (!resenaRatingActual) { showToast('Por favor calificá primero'); return; }
   const autor = document.getElementById('resena-autor-input').value.trim() || 'Anónimo';
   const texto = document.getElementById('resena-texto-input').value.trim();
@@ -1157,6 +1172,7 @@ function filterProvs() {
     result = result.slice().sort((a, b) => String(b.id).localeCompare(String(a.id)));
   }
   renderProvs(result);
+  if (q) trackSearch(q, result.length);
 }
 
 function setChip(el, cat) {
@@ -1199,6 +1215,7 @@ function abrirWA(num, msg) {
   const n = (num || '').replace(/[^0-9]/g, '');
   if (!n) { showToast('WhatsApp no disponible'); return; }
   const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
+  trackEvent('contact_whatsapp', { provider_id: String(provActual?.id || ''), provider_name: provActual?.nombre || '', provider_rubro: provActual?.rubro || '' });
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
 }
 
@@ -1325,6 +1342,7 @@ function abrirDetalle(id) {
   provActual = p;
   provDetalleMostrarTodos = false;
   addToHistorial(p);
+  trackEvent('view_provider', { provider_id: String(p.id), provider_name: p.nombre, provider_rubro: p.rubro, is_pro: !!p.pro });
 
   const detLogoEl = document.getElementById('det-logo');
   const detIni = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
@@ -2325,7 +2343,8 @@ async function cargarProductosProveedor() {
   if (countEl) countEl.textContent = productos.length + (productos.length === 1 ? ' publicado' : ' publicados');
 }
 async function deleteProduct(id) {
-  try { await sb.from('productos').delete().eq('id', id); } catch (e) { }
+  if (!currentUser?.proveedorId) return;
+  try { await sb.from('productos').delete().eq('id', id).eq('proveedor_id', currentUser.proveedorId); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid();
   const modal = document.getElementById('misProductosModal');
@@ -2333,9 +2352,10 @@ async function deleteProduct(id) {
   showToast('Producto eliminado');
 }
 async function toggleVisibleProduct(id, estaOculto) {
+  if (!currentUser?.proveedorId) return;
   const nuevoVisible = estaOculto;
   try {
-    await sb.from('productos').update({ visible: nuevoVisible }).eq('id', id);
+    await sb.from('productos').update({ visible: nuevoVisible }).eq('id', id).eq('proveedor_id', currentUser.proveedorId);
     const idx = productos.findIndex(p => String(p.id) === String(id));
     if (idx >= 0) productos[idx].visible = nuevoVisible;
     renderProdGrid();
@@ -2615,6 +2635,7 @@ function closeAddProduct() { document.getElementById('addProdModal').classList.r
 function closeAddProductOnBg(e) { if (e.target === document.getElementById('addProdModal')) closeAddProduct(); }
 
 async function addProduct() {
+  if (!currentUser?.proveedorId) { showToast('Solo proveedores pueden agregar productos'); return; }
   const name = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
   const stock = document.getElementById('new-prod-stock').value;
@@ -2727,7 +2748,7 @@ async function guardarEdicionProducto() {
       categoria_principal: catPrincipal,
       subcategoria: catSub || null,
       imagen_url: imgUrl || undefined
-    }).eq('id', id);
+    }).eq('id', id).eq('proveedor_id', currentUser?.proveedorId);
     const idx = productos.findIndex(p => String(p.id) === String(id));
     if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: catSub || catPrincipal, categoria_principal: catPrincipal };
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
@@ -2770,8 +2791,14 @@ function goTo(s) {
   if (s === 'mensajes') cargarMensajesUsuario();
   const fab = document.getElementById('soporte-fab');
   if (fab) fab.style.display = s === 'perfil' ? 'flex' : 'none';
+  const guiaFab = document.getElementById('guia-prod-fab');
+  if (guiaFab) {
+    const dismissed = localStorage.getItem('eg_guia_prod_dismissed');
+    guiaFab.style.display = (s === 'perfil' && !dismissed && currentUser?.type === 'proveedor') ? 'flex' : 'none';
+  }
   window.scrollTo(0, 0);
   setTimeout(checkReveal, 100);
+  trackEvent('screen_view', { screen_name: s });
 }
 function switchTab(tab, el) {
   document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
@@ -2895,6 +2922,7 @@ async function showRegSuccess() {
   ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
   document.getElementById('reg-success').style.display = 'block';
   window.scrollTo(0, 0);
+  trackEvent('sign_up', { method: 'proveedor_registro' });
 }
 
 function showToast(msg) {
@@ -3177,6 +3205,73 @@ function renderProdBuscar(filtro, query = '') {
         ${prods.map(p => renderProdBuscarCard(p)).join('')}
       </div>
     </div>`).join('');
+}
+
+// ===== GUIA CARGA PRODUCTOS =====
+function abrirGuiaCarga() {
+  const overlay = document.getElementById('guia-overlay');
+  const sheet = document.getElementById('guia-sheet');
+  if (!overlay || !sheet) return;
+  const esPro = esProvPro();
+  [
+    { id: 'guia-btn-excel', proLabel: 'Usar', freeLabel: 'Activar' },
+    { id: 'guia-btn-tn',    proLabel: 'Ir',   freeLabel: 'Activar' },
+    { id: 'guia-btn-ml',    proLabel: 'Ir',   freeLabel: 'Activar' },
+  ].forEach(({ id, proLabel, freeLabel }) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = esPro ? proLabel : freeLabel;
+    btn.style.background = esPro ? '#006039' : '#F0F0F0';
+    btn.style.color = esPro ? 'white' : '#555';
+  });
+  overlay.style.display = 'block';
+  sheet.style.display = 'block';
+  sheet.style.animation = 'guiaSlideUp .25s ease';
+  document.body.style.overflow = 'hidden';
+  haptic('light');
+}
+function cerrarGuiaCarga() {
+  const overlay = document.getElementById('guia-overlay');
+  const sheet = document.getElementById('guia-sheet');
+  if (overlay) overlay.style.display = 'none';
+  if (sheet) sheet.style.display = 'none';
+  document.body.style.overflow = '';
+}
+function noMostrarGuiaCarga() {
+  localStorage.setItem('eg_guia_prod_dismissed', '1');
+  cerrarGuiaCarga();
+  const fab = document.getElementById('guia-prod-fab');
+  if (fab) fab.style.display = 'none';
+  haptic('light');
+}
+function guiaUsarManual() {
+  cerrarGuiaCarga();
+  setTimeout(() => openAddProduct(), 220);
+}
+function guiaUsarMulti() {
+  cerrarGuiaCarga();
+  setTimeout(() => { openAddProduct(); setTimeout(() => switchAddTab('multi'), 160); }, 220);
+}
+function guiaActivarExcel() {
+  cerrarGuiaCarga();
+  setTimeout(() => {
+    if (esProvPro()) { openAddProduct(); setTimeout(() => switchAddTab('excel'), 160); }
+    else showModalPro('Importar por Excel');
+  }, 220);
+}
+function guiaActivarTN() {
+  cerrarGuiaCarga();
+  setTimeout(() => {
+    if (esProvPro()) { const el = document.getElementById('tn-section'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    else showModalPro('Tienda Nube');
+  }, 220);
+}
+function guiaActivarML() {
+  cerrarGuiaCarga();
+  setTimeout(() => {
+    if (esProvPro()) { const el = document.getElementById('ml-section'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    else showModalPro('Mercado Libre');
+  }, 220);
 }
 
 function _drawBuscarGrid(el) {
