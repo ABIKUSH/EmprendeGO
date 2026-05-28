@@ -2853,7 +2853,7 @@ async function showRegSuccess() {
 
   const email = (document.querySelector('#reg-step1 input[type="email"]')?.value || '').toLowerCase().trim();
   const datos = {
-    nombre: document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '',
+    nombre: document.querySelector('#reg-step1 input[type="text"]')?.value || '',
     cuit: document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value || '',
     email,
     whatsapp: document.querySelector('#reg-step1 input[type="tel"]')?.value || '',
