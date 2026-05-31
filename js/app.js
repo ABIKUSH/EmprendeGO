@@ -1442,7 +1442,7 @@ async function abrirChatDirecto(id) {
     const { data } = await sb.from('mensajes')
       .select('*')
       .eq('proveedor_id', p.id)
-      .or(`usuario_email.eq.${currentUser.email},de_tipo.eq.proveedor`)
+      .eq('usuario_email', currentUser.email)
       .order('created_at', { ascending: true });
 
     if (data && data.length) {
@@ -1582,7 +1582,7 @@ function iniciarChatPolling(provId) {
       const { data } = await sb.from('mensajes')
         .select('*')
         .eq('proveedor_id', provId)
-        .or(`usuario_email.eq.${currentUser.email},de_tipo.eq.proveedor`)
+        .eq('usuario_email', currentUser.email)
         .order('created_at', { ascending: true });
       if (!data || !data.length) return;
       const hayNuevos = data.some(m => !chatMsgs.some(cm => cm.dbId === m.id));
@@ -2228,10 +2228,11 @@ async function cargarMisConversaciones() {
       provNombres[pid] = prov ? prov.nombre : 'Proveedor';
     });
 
-    // Paso 3: traer TODOS los mensajes de esas conversaciones
+    // Paso 3: traer los mensajes de estas conversaciones filtrados por este usuario
     const { data: todosLosMsgs } = await sb.from('mensajes')
       .select('proveedor_id, texto, created_at, de_tipo, leido')
       .in('proveedor_id', provIds)
+      .eq('usuario_email', currentUser.email)
       .order('created_at', { ascending: false });
 
     if (!todosLosMsgs || !todosLosMsgs.length) {
@@ -3587,20 +3588,21 @@ async function abrirConvProveedor(nombre) {
   document.getElementById('provChatModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   try {
-    // Traer TODOS los mensajes de esta conversacion (usuario + proveedor)
+    // Traer mensajes del usuario en esta conversacion
     const { data: msgsUsuario } = await sb.from('mensajes').select('*')
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_nombre', nombre)
       .eq('de_tipo', 'usuario')
       .order('created_at', { ascending: true });
 
+    // Guardar email del usuario para filtrar solo sus respuestas
+    convActual.usuarioEmail = msgsUsuario?.[0]?.usuario_email || null;
+
     const { data: msgsProveedor } = await sb.from('mensajes').select('*')
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_tipo', 'proveedor')
+      .eq('usuario_email', convActual.usuarioEmail)
       .order('created_at', { ascending: true });
-
-    // Guardar email del usuario para taguear las respuestas del proveedor
-    convActual.usuarioEmail = msgsUsuario?.[0]?.usuario_email || null;
 
     // Combinar y ordenar por fecha
     const todos = [...(msgsUsuario || []), ...(msgsProveedor || [])];
