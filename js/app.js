@@ -1831,6 +1831,20 @@ async function submitAuthForm(e) {
   }
 }
 
+async function notificarAdmin(tipo, datos) {
+  try {
+    const esProveedor = tipo === 'proveedor';
+    const title = esProveedor ? 'Nueva solicitud de proveedor' : 'Nuevo usuario registrado';
+    const body = esProveedor
+      ? `${datos.nombre} | ${datos.whatsapp} | ${datos.rubro} | ${datos.provincia}`
+      : `${datos.nombre} | ${datos.email}`;
+    await fetch('https://ntfy.sh/emprendego-admin-x9k2', {
+      method: 'POST', body,
+      headers: { 'Title': title, 'Priority': 'high', 'Tags': esProveedor ? 'office' : 'bust_in_silhouette' }
+    });
+  } catch (e) {}
+}
+
 async function checkSession(sessionOverride) {
   try {
     let session;
@@ -1847,7 +1861,12 @@ async function checkSession(sessionOverride) {
       const name = user.user_metadata?.full_name || user.email.split('@')[0];
       const email = user.email;
       const picture = user.user_metadata?.avatar_url || '';
-      try { await sb.from('usuarios').upsert({ email: email.toLowerCase().trim(), nombre: name, foto_url: picture }, { onConflict: 'email' }); } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
+      try {
+        const emailNorm = email.toLowerCase().trim();
+        const { data: existingUser } = await sb.from('usuarios').select('id').eq('email', emailNorm).maybeSingle();
+        await sb.from('usuarios').upsert({ email: emailNorm, nombre: name, foto_url: picture }, { onConflict: 'email' });
+        if (!existingUser) notificarAdmin('usuario', { nombre: name, email: emailNorm });
+      } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
       const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
       console.log('[checkSession] provList:', provList?.length, provList?.[0]?.estado);
       const prov = provList && provList.length > 0 ? provList[0] : null;
@@ -2914,6 +2933,7 @@ async function showRegSuccess() {
     if (btn) btn.textContent = 'Enviando...';
     const { error } = await sb.from('proveedores').insert({ ...datos, plan: 'gratis', estado: 'pendiente' });
     if (error) throw error;
+    notificarAdmin('proveedor', datos);
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
     showToast('Error al enviar: ' + (e.message || 'intentá de nuevo'));
