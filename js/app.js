@@ -1092,30 +1092,30 @@ function renderProvs(list) {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const { avg, count } = getProvRating(pid);
     const enComp = comparadorList.some(x => String(x.id) === pid);
-    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;overflow:hidden;cursor:pointer">
-      <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
+    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;overflow:hidden;cursor:pointer;display:flex;flex-direction:column">
+      <div style="display:flex;align-items:flex-start;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
         ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;word-break:break-word;line-height:1.2">${escHtml(p.nombre)}</div>
-          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
+          <div style="font-size:.72rem;color:#6B7A99;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</div>
         </div>
-        ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avg.toFixed(1)} ★</div>` : ''}
+        ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0;margin-top:2px">${avg.toFixed(1)} ★</div>` : ''}
       </div>
-      <div style="padding:0 14px 13px">
-        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${escHtml(p.desc || '')}</p>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">
+      <div style="padding:0 14px 13px;display:flex;flex-direction:column;flex:1">
+        <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:0">${escHtml(p.desc || '')}</p>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:auto;padding-top:9px;margin-bottom:8px">
           ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
           ${p.pro
-        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 WhatsApp</button>`
-        : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer">💬 Chat</button>`}
+        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="background:#25d366;color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1">💬 WhatsApp</button>`
+        : `<button data-chatid="${pid}" style="background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1">💬 Chat</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
-          <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem">${enComp ? '✓' : '⚖'}</button>
+          <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem;flex-shrink:0">${enComp ? '✓' : '⚖'}</button>
         </div>
       </div>
     </div>`;
