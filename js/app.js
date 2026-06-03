@@ -3091,8 +3091,18 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').or('visible.eq.true,visible.is.null').order('created_at', { ascending: false }).limit(500);
-    if (!error && data && data.length > 0) {
+    // Catálogo completo paginado. El filtrado/búsqueda de la pantalla Buscar es
+    // client-side sobre productosReales; un límite fijo dejaba afuera en silencio
+    // a las categorías más antiguas cuando el catálogo supera ese tope.
+    const PAGE = 1000;
+    let data = [];
+    for (let desde = 0; desde < 50000; desde += PAGE) {
+      const { data: page, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').or('visible.eq.true,visible.is.null').order('created_at', { ascending: false }).range(desde, desde + PAGE - 1);
+      if (error) break;
+      if (page && page.length) data = data.concat(page);
+      if (!page || page.length < PAGE) break;
+    }
+    if (data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
       const mapped = data.map((p, i) => ({
         id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
