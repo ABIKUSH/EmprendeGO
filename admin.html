@@ -546,6 +546,10 @@ tr:hover td{background:#fafbff}
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 let pendingAction = null;
 
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 async function tryLogin(){
   const email = document.getElementById('email-input').value.trim().toLowerCase();
   const pw = document.getElementById('pw-input').value;
@@ -718,7 +722,7 @@ async function cargarDashboard(){
     const maxBusq = topRubros[0]?.[1] || 1;
     const chartBusq = document.getElementById('chart-busquedas');
     chartBusq.innerHTML = topRubros.length ? topRubros.map(([r,n])=>
-      `<div class="bar-row"><span class="bar-label">${r}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxBusq*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+      `<div class="bar-row"><span class="bar-label">${escHtml(r)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxBusq*100)}%"></div></div><span class="bar-val">${n}</span></div>`
     ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin búsquedas registradas aún</div>';
 
     // Chart provincias
@@ -728,13 +732,13 @@ async function cargarDashboard(){
     const maxProv = topProvs[0]?.[1] || 1;
     const chartProv = document.getElementById('chart-provincias');
     chartProv.innerHTML = topProvs.length ? topProvs.map(([p,n])=>
-      `<div class="bar-row"><span class="bar-label">${p}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxProv*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+      `<div class="bar-row"><span class="bar-label">${escHtml(p)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxProv*100)}%"></div></div><span class="bar-val">${n}</span></div>`
     ).join('') : '<div style="color:var(--gray);font-size:.85rem;padding:8px 0">Sin proveedores aprobados aún</div>';
 
     // Actividad reciente
     const actividad = [];
-    ultProvs?.forEach(p=>actividad.push({icon:'🏭',color:'blue',texto:`Nuevo proveedor: <strong>${p.nombre}</strong>`,time:p.created_at}));
-    ultUsers?.forEach(u=>actividad.push({icon:'👤',color:'blue',texto:`Nuevo usuario: <strong>${u.nombre||u.email}</strong>`,time:u.created_at}));
+    ultProvs?.forEach(p=>actividad.push({icon:'🏭',color:'blue',texto:`Nuevo proveedor: <strong>${escHtml(p.nombre)}</strong>`,time:p.created_at}));
+    ultUsers?.forEach(u=>actividad.push({icon:'👤',color:'blue',texto:`Nuevo usuario: <strong>${escHtml(u.nombre||u.email)}</strong>`,time:u.created_at}));
     actividad.sort((a,b)=>new Date(b.time)-new Date(a.time));
     const actHTML = actividad.length ? actividad.slice(0,8).map(a=>`
       <div class="activity-item"><div class="a-icon ${a.color}">${a.icon}</div>
@@ -764,16 +768,16 @@ async function cargarProveedoresPendientes(){
     }
     tbody.innerHTML = data.map(p=>`
       <tr>
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${p.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${p.email}</span></div></div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
-        <td>${p.provincia||'—'}</td>
+        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>
+          <div><strong>${escHtml(p.nombre)}</strong><br><span style="font-size:.72rem;color:var(--gray)">${escHtml(p.email)}</span></div></div></td>
+        <td>${escHtml(p.cuit||'—')}</td>
+        <td>${escHtml(p.rubro||'—')}</td>
+        <td>${escHtml(p.provincia||'—')}</td>
         <td>${timeAgoAdmin(p.created_at)}</td>
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁 Ver</button>
-          <button class="tbl-btn approve" onclick="aprobarProveedor('${p.id}','${p.nombre}',this)">✓ Aprobar</button>
-          <button class="tbl-btn reject" onclick="rechazarProveedor('${p.id}','${p.nombre}',this)">✗ Rechazar</button>
+          <button class="tbl-btn approve" data-id="${p.id}" data-nombre="${escHtml(p.nombre)}" onclick="aprobarProveedor(this.dataset.id,this.dataset.nombre,this)">✓ Aprobar</button>
+          <button class="tbl-btn reject" data-id="${p.id}" data-nombre="${escHtml(p.nombre)}" onclick="rechazarProveedor(this.dataset.id,this.dataset.nombre,this)">✗ Rechazar</button>
         </div></td>
       </tr>`).join('');
   } catch(e){
@@ -828,22 +832,23 @@ async function cargarTodosProveedores(){
       } else {
         planBadge = `<span class="status-badge free">Gratis</span>`;
       }
+      const nombreEsc = escHtml(p.nombre||'');
       return `
       <tr data-plan-status="${ps}">
-        <td><div class="avatar-cell"><div class="cell-avatar">${p.nombre.substring(0,2).toUpperCase()}</div>${p.nombre}</div></td>
-        <td>${p.cuit||'—'}</td>
-        <td>${p.rubro||'—'}</td>
+        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${nombreEsc}</div></td>
+        <td>${escHtml(p.cuit||'—')}</td>
+        <td>${escHtml(p.rubro||'—')}</td>
         <td>${planBadge}</td>
         <td>—</td>
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
           ${p.plan==='pro'
-            ? `<button class="tbl-btn warn" onclick="quitarPlanPro('${p.id}','${nombreSafe}')">⭐ Quitar</button>`
-            : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" onclick="darPlanPro('${p.id}','${nombreSafe}')">⭐ Dar Pro</button>`}
+            ? `<button class="tbl-btn warn" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="quitarPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Quitar</button>`
+            : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="darPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Dar Pro</button>`}
           <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
           <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
-          <button class="tbl-btn reject" style="background:#fee2e2" onclick="eliminarProveedor('${p.id}','${nombreSafe}')">🗑</button>
+          <button class="tbl-btn reject" style="background:#fee2e2" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="eliminarProveedor(this.dataset.id,this.dataset.nombre)">🗑</button>
         </div></td>
       </tr>`;
     }).join('');
@@ -873,10 +878,10 @@ async function cargarUsuarios(){
     tbody.innerHTML = data.map(u=>`
       <tr>
         <td><div class="avatar-cell">
-          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${u.nombre.substring(0,2).toUpperCase()}</div>
-          <div><strong>${u.nombre}</strong><br><span style="font-size:.72rem;color:var(--gray)">${u.email}</span></div>
+          <div class="cell-avatar" style="background:#dce9ff;color:var(--blue)">${escHtml((u.nombre||'').substring(0,2).toUpperCase())}</div>
+          <div><strong>${escHtml(u.nombre)}</strong><br><span style="font-size:.72rem;color:var(--gray)">${escHtml(u.email)}</span></div>
         </div></td>
-        <td>${u.provincia||'—'}</td>
+        <td>${escHtml(u.provincia||'—')}</td>
         <td>${timeAgoAdmin(u.created_at)}</td>
         <td>—</td>
         <td>—</td>
@@ -932,7 +937,7 @@ async function verProveedor(id){
 
   const prodsEl = document.getElementById('prov-productos-list');
   prodsEl.innerHTML = prods?.length
-    ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${p.imagen_url}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${p.nombre||'Sin nombre'}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${p.precio}</span>`:''}</div>`).join('')
+    ? prods.map(p=>`<div class="prov-producto-item">${p.imagen_url?`<img src="${escHtml(p.imagen_url)}" style="width:32px;height:32px;object-fit:cover;border-radius:6px">`:'📦'} <span>${escHtml(p.nombre||'Sin nombre')}</span>${p.precio?`<span style="margin-left:auto;font-weight:700;color:var(--green)">$${escHtml(String(p.precio))}</span>`:''}</div>`).join('')
     : '<div style="color:var(--gray);font-size:.82rem">Sin productos cargados</div>';
 }
 
@@ -1159,14 +1164,14 @@ async function cargarPlanes(){
       const desde = p.plan_desde ? new Date(p.plan_desde+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const hasta = p.plan_hasta ? new Date(p.plan_hasta+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '—';
       const activo = p.plan_hasta && new Date(p.plan_hasta+'T03:00:00Z') >= hoy;
-      const nombreSafe = (p.nombre||'').replace(/'/g,"\\'");
+      const nombreEsc = escHtml(p.nombre||'');
       return `<tr>
-        <td>${p.nombre||'—'}</td>
-        <td style="font-size:.78rem;color:var(--gray)">${p.email||'—'}</td>
+        <td>${nombreEsc||'—'}</td>
+        <td style="font-size:.78rem;color:var(--gray)">${escHtml(p.email||'—')}</td>
         <td>${desde}</td>
         <td>${hasta}</td>
         <td><span class="status-badge ${activo?'approved':'rejected'}">${activo?'● Activo':'✗ Vencido'}</span></td>
-        <td><button class="tbl-btn reject" onclick="quitarPlanPro('${p.id}','${nombreSafe}')">Quitar</button></td>
+        <td><button class="tbl-btn reject" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="quitarPlanPro(this.dataset.id,this.dataset.nombre)">Quitar</button></td>
       </tr>`;
     }).join('');
   } catch(e){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando datos</td></tr>'; }
@@ -1182,11 +1187,11 @@ async function cargarBusquedas(){
     const maxV = sorted[0]?.[1] || 1;
     const chartEl = document.getElementById('busq-chart-top');
     chartEl.innerHTML = sorted.length ? sorted.slice(0,10).map(([t,n])=>
-      `<div class="bar-row"><span class="bar-label" title="${t}">${t.length>12?t.slice(0,12)+'…':t}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxV*100)}%"></div></div><span class="bar-val">${n}</span></div>`
+      `<div class="bar-row"><span class="bar-label" title="${escHtml(t)}">${escHtml(t.length>12?t.slice(0,12)+'…':t)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.round(n/maxV*100)}%"></div></div><span class="bar-val">${n}</span></div>`
     ).join('') : '<div style="color:var(--gray);font-size:.85rem">Sin búsquedas registradas aún</div>';
     const tbody = document.getElementById('busq-table');
     tbody.innerHTML = sorted.length ? sorted.map(([t,n])=>
-      `<tr><td>${t}</td><td>${n}</td></tr>`
+      `<tr><td>${escHtml(t)}</td><td>${n}</td></tr>`
     ).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--gray);padding:20px">Sin búsquedas registradas aún</td></tr>';
   } catch(e){ console.log('busquedas error',e); }
 }

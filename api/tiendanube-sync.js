@@ -95,7 +95,8 @@ export default async function handler(req, res) {
           stock,
           imagen_url,
           categoria_tn,
-          categoria_principal
+          categoria_principal,
+          visible: true
         })
       }
     );

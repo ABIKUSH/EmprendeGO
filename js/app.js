@@ -2532,6 +2532,8 @@ async function guardarProductoML() {
     precio,
     stock,
     categoria: cat,
+    categoria_principal: cat,
+    visible: true,
     imagen_url: mlProductoImportado.foto,
     proveedor_id: currentUser?.proveedorId || null
   };
@@ -2615,7 +2617,7 @@ async function addProductosMultiples() {
     const stock = parseInt(document.querySelector(`[data-field="stock"][data-id="${id}"]`)?.value || '0') || null;
     const cat = document.querySelector(`[data-field="cat"][data-id="${id}"]`)?.value || 'General';
     if (!nombre || !precio) { hayError = true; return; }
-    prods.push({ nombre, precio, stock, categoria: cat, proveedor_id: currentUser?.proveedorId || null });
+    prods.push({ nombre, precio, stock, categoria: cat, categoria_principal: cat, visible: true, proveedor_id: currentUser?.proveedorId || null });
   });
   if (hayError) { showToast('Completá nombre y precio en todas las filas'); return; }
   if (!prods.length) { showToast('No hay productos para guardar'); return; }
@@ -2684,6 +2686,7 @@ async function addProduct() {
     categoria: catSub || catPrincipal,
     categoria_principal: catPrincipal,
     subcategoria: catSub || null,
+    visible: true,
     imagen_url: imgUrl,
     proveedor_id: currentUser?.proveedorId || null
   };
@@ -3088,7 +3091,7 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
-    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').eq('visible', true).order('created_at', { ascending: false }).limit(500);
+    const { data, error } = await sb.from('productos').select('*, proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').or('visible.eq.true,visible.is.null').order('created_at', { ascending: false }).limit(500);
     if (!error && data && data.length > 0) {
       const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
       const mapped = data.map((p, i) => ({
@@ -4373,6 +4376,7 @@ async function importarDesdeExcel() {
       descripcion: desc,
       categoria: categoria_principal,
       categoria_principal,
+      visible: true,
       proveedor_id: currentUser?.proveedorId || null
     });
   });

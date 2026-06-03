@@ -145,11 +145,14 @@ function handleMLOAuthStart(req, res) {
 
   const redirectUri = process.env.ML_REDIRECT_URI || 'https://emprendego.com.ar/api/ml';
 
+  // Solo pedimos los scopes mínimos: leer publicaciones + acceso offline para refresh tokens.
+  // Esto limita los permisos que ve el proveedor al autorizar, reduciendo fricción.
   const authUrl =
     `https://auth.mercadolibre.com.ar/authorization` +
     `?response_type=code` +
     `&client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent('read offline_access')}` +
     `&state=${encodeURIComponent(proveedorId)}`;
 
   console.log('[ml-auth] redirigiendo a:', authUrl);
