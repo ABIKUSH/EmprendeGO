@@ -1210,9 +1210,27 @@ function toggleMasRubros(btn) {
     : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg> Menos`;
 }
 
+// Normaliza un teléfono al formato internacional que requiere wa.me (Argentina).
+// Si el número se guardó sin código de país, WhatsApp interpreta el "1" inicial
+// como +1 (EE.UU.) y lo rechaza como inválido. Acá garantizamos el prefijo 549.
+function normalizarWAArg(num) {
+  let n = (num || '').replace(/[^0-9]/g, '');
+  if (!n) return '';
+  if (n.startsWith('00')) n = n.slice(2);            // prefijo internacional 00 → quitar
+  if (n.startsWith('54')) {                          // ya trae código de país AR
+    let resto = n.slice(2);
+    if (resto.startsWith('0')) resto = resto.slice(1);   // 54 0xx... → 54 xx...
+    if (!resto.startsWith('9')) resto = '9' + resto;     // asegurar el 9 de celular
+    return '54' + resto;
+  }
+  if (n.startsWith('0')) n = n.slice(1);             // formato nacional 011... → 11...
+  if (n.startsWith('9') && n.length >= 11) return '54' + n;  // ya tiene el 9 de celular
+  return '549' + n;                                  // número local sin país
+}
+
 function abrirWA(num, msg) {
   haptic('success');
-  const n = (num || '').replace(/[^0-9]/g, '');
+  const n = normalizarWAArg(num);
   if (!n) { showToast('WhatsApp no disponible'); return; }
   const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
   trackEvent('contact_whatsapp', { provider_id: String(provActual?.id || ''), provider_name: provActual?.nombre || '', provider_rubro: provActual?.rubro || '' });
@@ -2879,7 +2897,7 @@ async function showRegSuccess() {
     nombre: document.querySelector('#reg-step1 input[type="text"]')?.value || '',
     cuit: document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value || '',
     email,
-    whatsapp: document.querySelector('#reg-step1 input[type="tel"]')?.value || '',
+    whatsapp: normalizarWAArg(document.querySelector('#reg-step1 input[type="tel"]')?.value || ''),
     rubro: getRubrosSeleccionados('reg-rubros-picker').join(', '),
     provincia: document.querySelector('#reg-step1 select')?.value || '',
     descripcion: document.querySelector('#reg-step2 textarea')?.value || '',
@@ -3878,7 +3896,7 @@ async function guardarPedido() {
 function enviarPedidoPorWA() {
   const item0 = carrito[0];
   if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
-  const num = item0.provWA.replace(/[^0-9]/g, '');
+  const num = normalizarWAArg(item0.provWA);
   const msg = generarMensajePedido();
   guardarPedido();
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
@@ -4174,7 +4192,7 @@ async function guardarCambiosPerfil() {
   if (!currentUser?.proveedorId) return;
   const nombre = (document.getElementById('edit-nombre')?.value || '').trim();
   const desc = (document.getElementById('edit-desc')?.value || '').trim();
-  const wa = (document.getElementById('edit-wa')?.value || '').trim();
+  const wa = normalizarWAArg((document.getElementById('edit-wa')?.value || '').trim());
   const ig = (document.getElementById('edit-instagram')?.value || '').trim();
   const rubro = getRubrosSeleccionados('edit-rubros-picker').join(', ') || (currentUser.provData?.rubro || '');
   if (!nombre) { showToast('El nombre no puede estar vacío'); return; }
