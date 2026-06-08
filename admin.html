@@ -247,6 +247,7 @@ tr:hover td{background:#fafbff}
     <button class="mobile-nav-btn" onclick="showPage('proveedores',this)">🏭 Proveedores</button>
     <button class="mobile-nav-btn" onclick="showPage('usuarios',this)">👥 Usuarios</button>
     <button class="mobile-nav-btn" onclick="showPage('reportes',this)">🚨 Reportes</button>
+    <button class="mobile-nav-btn" onclick="showPage('avisos',this)">📣 Avisos</button>
     <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
     <button class="mobile-nav-btn" onclick="showPage('config',this)">⚙️ Config</button>
   </div>
@@ -264,6 +265,7 @@ tr:hover td{background:#fafbff}
         <div class="nav-link" onclick="showPage('proveedores',this)"><span class="ni">🏭</span>Proveedores<span class="nav-badge" id="nav-badge-prov">0</span></div>
         <div class="nav-link" onclick="showPage('usuarios',this)"><span class="ni">👥</span>Usuarios</div>
         <div class="nav-link" onclick="showPage('planes',this)"><span class="ni">⭐</span>Planes & Pagos</div>
+        <div class="nav-link" onclick="showPage('avisos',this)"><span class="ni">📣</span>Avisos WhatsApp<span class="nav-badge" id="nav-badge-avisos" style="background:var(--green)">0</span></div>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Contenido</div>
@@ -421,6 +423,56 @@ tr:hover td{background:#fafbff}
             <tbody id="planes-table">
               <tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AVISOS WHATSAPP -->
+      <div class="page" id="page-avisos">
+        <div class="page-title">Avisos por WhatsApp</div>
+        <div class="page-sub">Detección automática de proveedores para contactar. El envío es con un clic: se abre WhatsApp con el mensaje ya escrito y se registra para no repetirlo.</div>
+
+        <!-- POR VENCER -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">🟠 Pro por vencer (≤ 7 días) <span id="count-por_vencer" style="background:#fef3c7;color:#d97706;font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
+          </div>
+          <table>
+            <thead><tr><th>Negocio</th><th>Vence</th><th>Último aviso</th><th>Acción</th></tr></thead>
+            <tbody id="avisos-por_vencer"><tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- RECIÉN VENCIDO -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">🔴 Pro recién vencido (últimos 3 días) <span id="count-vencido" style="background:#fee2e2;color:#dc2626;font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
+          </div>
+          <table>
+            <thead><tr><th>Negocio</th><th>Venció</th><th>Último aviso</th><th>Acción</th></tr></thead>
+            <tbody id="avisos-vencido"><tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- GRATIS ESTANCADO -->
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">🔵 Gratis estancado (+30 días, nunca Pro) <span id="count-gratis_estancado" style="background:var(--blue-light);color:var(--blue);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
+          </div>
+          <table>
+            <thead><tr><th>Negocio</th><th>Registrado</th><th>Último aviso</th><th>Acción</th></tr></thead>
+            <tbody id="avisos-gratis_estancado"><tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- DIFUSIÓN -->
+        <div class="table-card">
+          <div class="table-title" style="margin-bottom:12px">📢 Difusión a todos los proveedores</div>
+          <p style="font-size:.8rem;color:var(--gray);margin-bottom:10px">Escribí una novedad y mandala con un clic a cada proveedor. Usá <strong>{nombre}</strong> y se reemplaza por el nombre del negocio.</p>
+          <textarea id="difusion-text" style="width:100%;min-height:90px;border:1.5px solid #e0e7ff;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;resize:vertical;box-sizing:border-box">¡Hola {nombre}! 👋 Te escribimos desde el equipo de EmprendeGO con novedades de la plataforma: </textarea>
+          <table style="margin-top:14px">
+            <thead><tr><th>Negocio</th><th>Último envío</th><th>Acción</th></tr></thead>
+            <tbody id="avisos-difusion"><tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -588,6 +640,7 @@ async function tryLogin(){
   cargarUsuarios();
   cargarReportes();
   cargarConfig();
+  cargarAvisos();
 }
 
 async function adminLogout(){
@@ -1223,6 +1276,7 @@ function showPage(name, el){
   if(name==='planes') cargarPlanes();
   if(name==='busquedas') cargarBusquedas();
   if(name==='rubros') cargarRubros();
+  if(name==='avisos') cargarAvisos();
 }
 
 function filterTable(input, tableId){
@@ -1250,6 +1304,179 @@ function filtrarPorPlanStatus(val){
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ===== AVISOS POR WHATSAPP (Fase 1: detección automática + envío con 1 clic) =====
+
+// Normaliza un teléfono al formato internacional que requiere wa.me (Argentina).
+// Mismo criterio que el normalizarWAArg del frontend público (js/app.js).
+function normalizarWAArgAdmin(num){
+  let n = (num || '').replace(/[^0-9]/g, '');
+  if (!n) return '';
+  if (n.startsWith('00')) n = n.slice(2);
+  if (n.startsWith('54')) {
+    let resto = n.slice(2);
+    if (resto.startsWith('0')) resto = resto.slice(1);
+    if (!resto.startsWith('9')) resto = '9' + resto;
+    return '54' + resto;
+  }
+  if (n.startsWith('0')) n = n.slice(1);
+  if (n.startsWith('9') && n.length >= 11) return '54' + n;
+  return '549' + n;
+}
+
+const MS_DIA = 86400000;
+// Ventana de días en la que NO se repite el mismo tipo de aviso al mismo proveedor.
+const AVISO_VENTANA = { por_vencer: 7, vencido: 30, gratis_estancado: 30 };
+
+function fechaCortaAR(fechaStr){
+  if(!fechaStr) return '';
+  return new Date(fechaStr + 'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'});
+}
+
+function mensajeAviso(tipo, prov){
+  const nombre = prov.nombre || 'tu negocio';
+  const fecha = fechaCortaAR(prov.plan_hasta);
+  if (tipo === 'por_vencer')
+    return `¡Hola ${nombre}! 👋 Te escribimos del equipo de EmprendeGO. Tu Plan Pro vence el ${fecha}. Renovalo para no perder la sincronización de tu catálogo ni la prioridad en las búsquedas 🚀 ¿Te ayudamos a renovarlo?`;
+  if (tipo === 'vencido')
+    return `Hola ${nombre}, te escribimos desde el equipo de EmprendeGO. Te informamos que tu suscripción al Plan Pro finalizó el ${fecha}. Si querés reactivar la sincronización de tu catálogo y recuperar la prioridad en las búsquedas, podés renovarla cuando lo desees. Quedamos a tu disposición para acompañarte en el proceso. Saludos cordiales, Equipo EmprendeGO.`;
+  if (tipo === 'gratis_estancado')
+    return `¡Hola ${nombre}! 🙌 Vimos que sos parte de EmprendeGO hace un tiempo. ¿Sabías que con el Plan Pro sincronizás tu catálogo de Mercado Libre / Tienda Nube y aparecés primero en las búsquedas? Te lo contamos sin compromiso 😊`;
+  return '';
+}
+
+function botonWA(prov, tipo){
+  const tieneWA = !!normalizarWAArgAdmin(prov.whatsapp);
+  if (!tieneWA) return '<span style="font-size:.75rem;color:var(--gray)">Sin WhatsApp</span>';
+  const safe = encodeURIComponent(JSON.stringify({ id: prov.id, nombre: prov.nombre || '', whatsapp: prov.whatsapp || '', plan_hasta: prov.plan_hasta || null })).replace(/'/g, '%27');
+  return `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarAvisoWA("${tipo}", decodeURIComponent("${safe}"))'>📲 Enviar WhatsApp</button>`;
+}
+
+async function cargarAvisos(){
+  const tbodies = {
+    por_vencer: document.getElementById('avisos-por_vencer'),
+    vencido: document.getElementById('avisos-vencido'),
+    gratis_estancado: document.getElementById('avisos-gratis_estancado'),
+    difusion: document.getElementById('avisos-difusion')
+  };
+  try {
+    // 1) Proveedores aprobados + 2) historial de avisos (degradado si la tabla aún no existe)
+    const [{ data: provs, error: provErr }, notifRes] = await Promise.all([
+      sb.from('proveedores').select('id,nombre,whatsapp,plan,plan_desde,plan_hasta,created_at,estado').eq('estado','aprobado'),
+      sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at')
+    ]);
+    if (provErr) throw provErr;
+    const notifs = notifRes.error ? [] : (notifRes.data || []);
+
+    // último aviso por (proveedor, tipo)
+    const ultimo = {}; // ultimo[provId][tipo] = Date
+    notifs.forEach(n => {
+      ultimo[n.proveedor_id] = ultimo[n.proveedor_id] || {};
+      const prev = ultimo[n.proveedor_id][n.tipo];
+      const d = new Date(n.enviado_at);
+      if (!prev || d > prev) ultimo[n.proveedor_id][n.tipo] = d;
+    });
+
+    const hoy = new Date();
+    const segmentos = { por_vencer: [], vencido: [], gratis_estancado: [] };
+
+    (provs || []).forEach(p => {
+      const dias = p.plan_hasta ? Math.ceil((new Date(p.plan_hasta + 'T03:00:00Z') - hoy) / MS_DIA) : null;
+      if (p.plan === 'pro' && dias !== null && dias >= 0 && dias <= 7) {
+        segmentos.por_vencer.push({ ...p, _dias: dias });
+      } else if (dias !== null && dias < 0 && dias >= -3) {
+        segmentos.vencido.push({ ...p, _dias: dias });
+      }
+      const diasAlta = p.created_at ? Math.floor((hoy - new Date(p.created_at)) / MS_DIA) : 0;
+      if (p.plan !== 'pro' && !p.plan_desde && diasAlta >= 30) {
+        segmentos.gratis_estancado.push({ ...p, _diasAlta: diasAlta });
+      }
+    });
+
+    let badgeTotal = 0;
+    ['por_vencer','vencido','gratis_estancado'].forEach(tipo => {
+      const ventana = AVISO_VENTANA[tipo];
+      let pendientes = 0;
+      const rows = segmentos[tipo].map(p => {
+        const ult = ultimo[p.id]?.[tipo] || null;
+        const diasDesdeUlt = ult ? Math.floor((hoy - ult) / MS_DIA) : null;
+        const yaAvisado = ult && diasDesdeUlt < ventana;
+        if (!yaAvisado) pendientes++;
+        const col2 = tipo === 'gratis_estancado'
+          ? `hace ${p._diasAlta} días`
+          : fechaCortaAR(p.plan_hasta);
+        const ultCol = ult
+          ? `<span style="font-size:.75rem;color:${yaAvisado?'#16a34a':'var(--gray)'}">${yaAvisado?'✓ ':''}hace ${diasDesdeUlt}d</span>`
+          : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
+        const accion = yaAvisado
+          ? '<span style="font-size:.75rem;color:#16a34a;font-weight:700">✓ Ya avisado</span>'
+          : botonWA(p, tipo);
+        return `<tr>
+          <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
+          <td style="font-size:.82rem">${escHtml(col2)}</td>
+          <td>${ultCol}</td>
+          <td>${accion}</td>
+        </tr>`;
+      }).join('');
+      tbodies[tipo].innerHTML = rows || `<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">Nadie en este segmento ✓</td></tr>`;
+      const countEl = document.getElementById('count-' + tipo);
+      if (countEl) countEl.textContent = pendientes;
+      badgeTotal += pendientes;
+    });
+
+    const navBadge = document.getElementById('nav-badge-avisos');
+    if (navBadge) navBadge.textContent = badgeTotal;
+
+    // Difusión: todos los aprobados con WhatsApp
+    const conWA = (provs || []).filter(p => normalizarWAArgAdmin(p.whatsapp));
+    tbodies.difusion.innerHTML = conWA.length ? conWA.map(p => {
+      const ult = ultimo[p.id]?.difusion || null;
+      const ultCol = ult ? `hace ${Math.floor((hoy - ult)/MS_DIA)}d` : '—';
+      const safe = encodeURIComponent(JSON.stringify({ id: p.id, nombre: p.nombre || '', whatsapp: p.whatsapp || '' })).replace(/'/g, '%27');
+      return `<tr>
+        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
+        <td style="font-size:.75rem;color:var(--gray)">${ultCol}</td>
+        <td><button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarDifusion(decodeURIComponent("${safe}"))'>📲 Enviar</button></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores con WhatsApp cargado</td></tr>';
+
+  } catch(e){
+    console.log('avisos error', e);
+    Object.values(tbodies).forEach(tb => { if(tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);padding:20px">Error cargando avisos</td></tr>'; });
+  }
+}
+
+async function registrarAviso(provId, tipo){
+  try { await sb.from('notificaciones_proveedores').insert({ proveedor_id: provId, tipo, canal: 'wa_manual' }); }
+  catch(e){ console.log('registrar aviso error', e); }
+}
+
+function enviarAvisoWA(tipo, provJson){
+  let prov; try { prov = JSON.parse(provJson); } catch(e){ return; }
+  const n = normalizarWAArgAdmin(prov.whatsapp);
+  if (!n) { showToast('Este proveedor no tiene WhatsApp válido'); return; }
+  const msg = mensajeAviso(tipo, prov);
+  // Abrir primero (gesto del usuario) para evitar el bloqueo de pop-ups
+  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
+  registrarAviso(prov.id, tipo).then(() => {
+    showToast('✓ Aviso enviado a ' + (prov.nombre || 'proveedor'));
+    cargarAvisos();
+  });
+}
+
+function enviarDifusion(provJson){
+  let prov; try { prov = JSON.parse(provJson); } catch(e){ return; }
+  const n = normalizarWAArgAdmin(prov.whatsapp);
+  if (!n) { showToast('Este proveedor no tiene WhatsApp válido'); return; }
+  const plantilla = document.getElementById('difusion-text').value.trim();
+  if (!plantilla) { showToast('Escribí el mensaje de difusión primero'); return; }
+  const msg = plantilla.replace(/\{nombre\}/g, prov.nombre || 'tu negocio');
+  window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(msg), '_blank');
+  registrarAviso(prov.id, 'difusion').then(() => {
+    showToast('✓ Difusión enviada a ' + (prov.nombre || 'proveedor'));
+    cargarAvisos();
+  });
 }
 </script>
 
