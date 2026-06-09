@@ -442,6 +442,13 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
     setTimeout(() => showToast('Tu pago está pendiente de acreditación. Te avisaremos cuando se confirme.'), 800);
   }
+
+  // Deep-link a la pantalla de planes (ej: link de renovación enviado por WhatsApp).
+  const irParam = new URLSearchParams(window.location.search).get('ir');
+  if (irParam === 'planes') {
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => { try { goTo('planes'); } catch (e) { } }, 600);
+  }
 });
 setTimeout(checkReveal, 500);
 

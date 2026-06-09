@@ -1337,8 +1337,17 @@ function fechaCortaAR(fechaStr){
 function mensajeAviso(tipo, prov){
   const nombre = prov.nombre || 'tu negocio';
   const fecha = fechaCortaAR(prov.plan_hasta);
-  if (tipo === 'por_vencer')
-    return `¡Hola ${nombre}! 👋 Te escribimos del equipo de EmprendeGO. Tu Plan Pro vence el ${fecha}. Renovalo para no perder la sincronización de tu catálogo ni la prioridad en las búsquedas 🚀 ¿Te ayudamos a renovarlo?`;
+  if (tipo === 'por_vencer') {
+    // Frase de vencimiento adaptada a los días restantes (el grupo abarca ≤7 días).
+    const MS_DIA = 86400000;
+    const dias = prov.plan_hasta ? Math.ceil((new Date(prov.plan_hasta + 'T03:00:00Z') - new Date()) / MS_DIA) : null;
+    let cuando;
+    if (dias === null) cuando = `está por vencer`;
+    else if (dias <= 0) cuando = `se vence hoy (${fecha})`;
+    else if (dias === 1) cuando = `se vence mañana (${fecha})`;
+    else cuando = `se vence en ${dias} días (${fecha})`;
+    return `¡Hola ${nombre}! 👋 Soy del equipo de EmprendeGO 🧡\n\nTe escribo porque tu Plan Pro ${cuando} y no quería que te tome por sorpresa 🙌\n\nSi no se renueva, tu cuenta pasa al plan gratuito y eso significa:\n❌ Solo se muestran 30 de tus productos (el resto deja de aparecer en las búsquedas)\n❌ Se corta la sincronización automática de tu catálogo\n❌ Perdés la prioridad para aparecer primero\n\nCon el Pro seguís con tu catálogo COMPLETO, sincronizado y arriba en los resultados — que es justo lo que te trae los pedidos 🚀\n\n👉 Renovalo en 1 minuto desde acá: https://emprendego.com.ar/?ir=planes\n\nCualquier duda la vemos juntos 💬`;
+  }
   if (tipo === 'vencido')
     return `Hola ${nombre}, te escribimos desde el equipo de EmprendeGO. Te informamos que tu suscripción al Plan Pro finalizó el ${fecha}. Si querés reactivar la sincronización de tu catálogo y recuperar la prioridad en las búsquedas, podés renovarla cuando lo desees. Quedamos a tu disposición para acompañarte en el proceso. Saludos cordiales, Equipo EmprendeGO.`;
   if (tipo === 'gratis_estancado')
@@ -1346,11 +1355,15 @@ function mensajeAviso(tipo, prov){
   return '';
 }
 
-function botonWA(prov, tipo){
+function botonWA(prov, tipo, reenviar){
   const tieneWA = !!normalizarWAArgAdmin(prov.whatsapp);
   if (!tieneWA) return '<span style="font-size:.75rem;color:var(--gray)">Sin WhatsApp</span>';
   const safe = encodeURIComponent(JSON.stringify({ id: prov.id, nombre: prov.nombre || '', whatsapp: prov.whatsapp || '', plan_hasta: prov.plan_hasta || null })).replace(/'/g, '%27');
-  return `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarAvisoWA("${tipo}", decodeURIComponent("${safe}"))'>📲 Enviar WhatsApp</button>`;
+  const estilo = reenviar
+    ? 'background:#f1f5f9;color:#475569;font-weight:700'
+    : 'background:#dcfce7;color:#16a34a;font-weight:700';
+  const label = reenviar ? '🔁 Reenviar' : '📲 Enviar WhatsApp';
+  return `<button class="tbl-btn" style="${estilo}" onclick='enviarAvisoWA("${tipo}", decodeURIComponent("${safe}"))'>${label}</button>`;
 }
 
 async function cargarAvisos(){
@@ -1410,7 +1423,7 @@ async function cargarAvisos(){
           ? `<span style="font-size:.75rem;color:${yaAvisado?'#16a34a':'var(--gray)'}">${yaAvisado?'✓ ':''}hace ${diasDesdeUlt}d</span>`
           : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
         const accion = yaAvisado
-          ? '<span style="font-size:.75rem;color:#16a34a;font-weight:700">✓ Ya avisado</span>'
+          ? `<span style="font-size:.72rem;color:#16a34a;font-weight:700;margin-right:8px">✓ Ya avisado</span>${botonWA(p, tipo, true)}`
           : botonWA(p, tipo);
         return `<tr>
           <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
