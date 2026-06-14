@@ -1737,6 +1737,19 @@ async function solicitarRecuperarContrasena(e) {
   }
 }
 
+async function reenviarConfirmacion(e) {
+  if (e) e.preventDefault();
+  const email = (document.getElementById('auth-email')?.value || '').trim().toLowerCase();
+  if (!email) { showAuthError('Ingresá tu email primero.'); return; }
+  try {
+    const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: 'https://emprendego.com.ar' } });
+    if (error) throw error;
+    showAuthSuccess('Reenviamos el email de confirmación. Revisá tu casilla (también spam).');
+  } catch (err) {
+    showAuthError('No pudimos reenviar el email. Intentá en unos minutos.');
+  }
+}
+
 function mostrarModalNuevaContrasena() {
   const el = document.getElementById('nuevaPasswordModal');
   if (!el) return;
@@ -1800,11 +1813,13 @@ function showAuthSuccess(msg) {
 function hideAuthError() {
   const el = document.getElementById('auth-error');
   if (el) { el.style.display = 'none'; el.textContent = ''; }
+  const rw = document.getElementById('auth-resend-wrap');
+  if (rw) rw.style.display = 'none';
 }
 
 function traducirErrorAuth(error) {
   const msg = (error && error.message ? error.message : String(error || '')).toLowerCase();
-  if (msg.includes('invalid login credentials')) return 'Email o contraseña incorrectos.';
+  if (msg.includes('invalid login credentials')) return 'Email o contraseña incorrectos. Si te registraste con Google, ingresá con el botón "Continuar con Google".';
   if (msg.includes('user already registered')) return 'Este email ya está registrado. Iniciá sesión.';
   if (msg.includes('rate limit')) return 'Demasiados intentos. Esperá un momento e intentá de nuevo.';
   if (msg.includes('password should be at least')) return 'La contraseña debe tener al menos 6 caracteres.';
@@ -1835,15 +1850,30 @@ async function submitAuthForm(e) {
     if (authMode === 'login') {
       result = await sb.auth.signInWithPassword({ email, password });
     } else {
-      result = await sb.auth.signUp({ email, password });
+      result = await sb.auth.signUp({ email, password, options: { emailRedirectTo: 'https://emprendego.com.ar' } });
     }
     if (result.error) {
       showAuthError(traducirErrorAuth(result.error));
+      // Si el email no está confirmado, ofrecer reenviar el mail de confirmación.
+      const emsg = (result.error.message || '').toLowerCase();
+      if (emsg.includes('email not confirmed')) {
+        const rw = document.getElementById('auth-resend-wrap');
+        if (rw) rw.style.display = 'block';
+      }
       btn.disabled = false; btn.textContent = txtOrig;
       return;
     }
     // Si "Confirm email" está activo en Supabase, signUp devuelve user pero sin session.
     if (authMode === 'signup' && !result.data?.session) {
+      // Supabase ofusca el "email ya registrado": devuelve user con identities = [] y NO
+      // manda ningún mail. Sin esto, mostraríamos "te enviamos un email" que nunca llega.
+      const identities = result.data?.user?.identities;
+      if (Array.isArray(identities) && identities.length === 0) {
+        toggleAuthMode(); // pasa a modo login dejando el email cargado (limpia el error y reetiqueta el botón)
+        showAuthError('Este email ya está registrado. Iniciá sesión con tu contraseña. Si la olvidaste, tocá "¿Olvidaste tu contraseña?".');
+        btn.disabled = false; // toggleAuthMode ya dejó el botón como "Iniciar sesión"
+        return;
+      }
       showAuthSuccess('Te enviamos un email de confirmación. Revisá tu casilla (también spam) y volvé a ingresar.');
       btn.disabled = false; btn.textContent = txtOrig;
       return;
