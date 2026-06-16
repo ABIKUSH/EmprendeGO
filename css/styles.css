@@ -528,7 +528,7 @@ body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width
 .carrito-total-box{background:linear-gradient(135deg,#f0fdf8,#eef2ff);border:1.5px solid #a7f3d0;border-radius:14px;padding:14px;margin:12px 0}
 .carrito-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;font-size:.82rem;color:var(--gray)}
 .carrito-total-val{font-family:'Fraunces',serif;font-size:1.3rem;font-weight:900;color:var(--navy)}
-.carrito-wa-btn{width:100%;background:#25d366;color:white;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.carrito-wa-btn{width:100%;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;box-shadow:0 2px 10px rgba(18,140,126,.3)}
 .carrito-chat-btn{width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:14px;padding:14px;font-family:'Fraunces',serif;font-size:.97rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px}
 .pro-lock{background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px;text-align:center;margin-top:8px}
 .pro-lock-text{font-size:.8rem;color:#92400e;margin-bottom:8px;line-height:1.5}
