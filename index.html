@@ -165,7 +165,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
       <span>Mapa</span>
     </div>
-    <div class="drawer-item" id="dnav-mensajes" onclick="drawerNavTo('mensajes')">
+    <div class="drawer-item" id="dnav-mensajes" onclick="drawerNavTo('mensajes')" style="display:none">
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       <span>Mensajes</span>
     </div>
@@ -650,7 +650,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <button id="det-wa-btn" onclick="detWA()" style="display:none;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(18,140,126,.32)">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Contactar por WhatsApp
       </button>
-      <button onclick="detChat()" style="background:#F0F7F4;color:#006039;border:2px solid #D1FAE5;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+      <button onclick="detChat()" style="display:none;background:#F0F7F4;color:#006039;border:2px solid #D1FAE5;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;align-items:center;justify-content:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Enviar mensaje interno
       </button>
     </div>
@@ -757,7 +757,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
       <button class="add-carrito-btn" onclick="agregarAlCarrito()">Agregar al pedido</button>
       <button id="prod-det-wa-btn" style="display:none" onclick="detWAProd()"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Contactar por WhatsApp</button>
-      <button id="prod-det-chat-btn" onclick="detChatProd()" style="width:100%;padding:15px;border-radius:14px;background:#F0F7F4;color:#006039;border:2px solid #006039;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.13)">Enviar mensaje</button>
+      <button id="prod-det-chat-btn" onclick="detChatProd()" style="width:100%;padding:15px;border-radius:14px;background:#F0F7F4;color:#006039;border:2px solid #006039;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.13)">Enviar mensaje</button>
     </div>
   </div>
 </div>
@@ -1269,6 +1269,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <p id="dash-rubro-label" style="color:rgba(255,255,255,.55);font-size:.78rem;margin-bottom:6px">Rubro · Argentina</p>
           <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">⭐ PRO</span>
         </div>
+      </div>
+
+      <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
+      <div style="background:linear-gradient(135deg,#25D366,#128C7E);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(18,140,126,.28)">
+        <div style="min-width:0">
+          <div style="font-family:'Sora',sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.92)">Consultas por WhatsApp</div>
+          <div style="font-size:.7rem;color:rgba(255,255,255,.78);margin-top:2px">Compradores que te tocaron "Contactar"</div>
+        </div>
+        <div id="stat-consultas" style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:white;flex-shrink:0;margin-left:12px">0</div>
       </div>
 
       <!-- ===== STATS REALES ===== -->

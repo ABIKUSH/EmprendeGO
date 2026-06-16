@@ -1015,8 +1015,8 @@ function renderProvCardMini(p, i) {
   const faved = esFav(pid);
   const heartFill = faved ? '#EF4444' : 'none';
   const heartStroke = faved ? '#EF4444' : '#CBD5E1';
-  const actionBtn = (p.pro && p.whatsapp)
-    ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation()" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25D366;color:white;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
+  const actionBtn = (p.whatsapp)
+    ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation();registrarConsulta('${pid}')" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#25D366;color:white;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
     : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#F5F7FF;border:1.5px solid #E2E8F8;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;margin-top:8px">Ver perfil</button>`;
   return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
@@ -1118,9 +1118,9 @@ function renderProvs(list) {
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
-          ${p.pro
-        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>WhatsApp</button>`
-        : `<button data-chatid="${pid}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>Chat</button>`}
+          ${p.whatsapp
+        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-pid="${pid}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>WhatsApp</button>`
+        : `<button style="display:flex;align-items:center;justify-content:center;gap:6px;background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Ver perfil</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem;flex-shrink:0">${enComp ? '✓' : '⚖'}</button>
         </div>
@@ -1134,7 +1134,7 @@ function renderProvs(list) {
     const compb = e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
     if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb) { e.stopPropagation(); abrirWA(wb.dataset.wa, mensajeWAProv({ nombre: wb.dataset.nombre, rubro: wb.dataset.rubro })); return; }
+    if (wb) { e.stopPropagation(); registrarConsulta(wb.dataset.pid); abrirWA(wb.dataset.wa, mensajeWAProv({ nombre: wb.dataset.nombre, rubro: wb.dataset.rubro })); return; }
     if (cb) { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
     if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
     if (card) abrirDetalle(card.dataset.id);
@@ -1242,6 +1242,18 @@ function abrirWA(num, msg) {
   const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
   trackEvent('contact_whatsapp', { provider_id: String(provActual?.id || ''), provider_name: provActual?.nombre || '', provider_rubro: provActual?.rubro || '' });
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
+}
+
+// Registra una consulta (clic a "Contactar por WhatsApp") para el proveedor.
+// Dedupe por dispositivo/proveedor/dia para no inflar el numero. Espejo de increment_visitas.
+function registrarConsulta(id) {
+  if (!id) return;
+  try {
+    const k = `eg_consulta_${id}`, t = parseInt(localStorage.getItem(k) || '0');
+    if (Date.now() - t < 86400000) return;
+    localStorage.setItem(k, Date.now());
+    sb.rpc('increment_consultas', { proveedor_id: id }).then(() => {}).catch(() => {});
+  } catch (e) { }
 }
 
 function mensajeWAProv(prov) {
@@ -1389,7 +1401,7 @@ function abrirDetalle(id) {
   document.getElementById('det-instagram').textContent = p.instagram || '-';
   document.getElementById('det-pro-badge').style.display = p.pro ? 'inline-flex' : 'none';
   document.getElementById('det-fav-btn').textContent = esFav(p.id) ? '❤️' : '♡';
-  document.getElementById('det-wa-btn').style.display = (p.pro && p.whatsapp) ? 'flex' : 'none';
+  document.getElementById('det-wa-btn').style.display = (p.whatsapp) ? 'flex' : 'none';
 
   // Reseñas solo para plan Pro
   const resenasSection = document.getElementById('det-resenas-section');
@@ -1417,7 +1429,7 @@ function abrirDetalle(id) {
 }
 
 function volverDetalle() { goBack('buscar'); }
-function detWA() { if (provActual && provActual.whatsapp) abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); else showToast('WhatsApp no disponible'); }
+function detWA() { if (provActual && provActual.whatsapp) { registrarConsulta(provActual.id); abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); } else showToast('WhatsApp no disponible'); }
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
 // ===== CALCULADORA =====
@@ -2169,8 +2181,11 @@ async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
   const esPro = esProvPro();
   try {
-    const { data: prov } = await sb.from('proveedores').select('visitas').eq('id', currentUser.proveedorId).single();
+    const { data: prov } = await sb.from('proveedores').select('visitas,consultas').eq('id', currentUser.proveedorId).single();
     if (prov) {
+      // Consultas por WhatsApp: visible siempre (free y Pro) — es la prueba de valor.
+      const elC = document.getElementById('stat-consultas');
+      if (elC) elC.textContent = prov.consultas || 0;
       const el = document.getElementById('stat-visitas');
       if (el) {
         if (esPro) {
@@ -3568,11 +3583,11 @@ function abrirDetalleProd(id) {
   const calcCaret = document.getElementById('pdcalc-caret'); if (calcCaret) calcCaret.innerHTML = '&#9662;';
   const waBtn = document.getElementById('prod-det-wa-btn');
   const chatBtn = document.getElementById('prod-det-chat-btn');
-  const proConWA = !!(prov && prov.pro && prov.whatsapp);
+  const proConWA = !!(prov && prov.whatsapp);
   if (waBtn) {
     waBtn.style.cssText = 'width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(18,140,126,.28);display:' + (proConWA ? 'flex' : 'none');
   }
-  if (chatBtn) chatBtn.style.display = proConWA ? 'none' : 'flex';
+  if (chatBtn) chatBtn.style.display = 'none';
   goTo('detalle-producto');
 }
 function togglePdCalc() {
@@ -3586,7 +3601,7 @@ function togglePdCalc() {
 }
 function volverDetProd() { goBack('inicio'); }
 function irAProveedorDesdeProd() { if (productoActual) abrirDetalle(productoActual.provId); }
-function detWAProd() { if (!productoActual) return; const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId)); if (prov && prov.whatsapp) abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov)); else showToast('WhatsApp no disponible'); }
+function detWAProd() { if (!productoActual) return; const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId)); if (prov && prov.whatsapp) { registrarConsulta(productoActual.provId); abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov)); } else showToast('WhatsApp no disponible'); }
 function detChatProd() { if (productoActual) abrirChatDirecto(productoActual.provId); }
 function calcProdDet() {
   const costo = productoActual ? productoActual.precio : 0;
@@ -3873,21 +3888,12 @@ function renderCarrito() {
 
   // Botones según plan
   const actionsEl = document.getElementById('carrito-actions');
-  const esPro = item0.provPro;
   const tieneWA = item0.provWA && item0.provWA.trim() !== '';
 
-  if (esPro && tieneWA) {
+  if (tieneWA) {
     actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA()"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Enviar pedido por WhatsApp</button>`;
-  } else if (!esPro) {
-    actionsEl.innerHTML = `
-      <button class="carrito-chat-btn" onclick="enviarPedidoPorChat()">💬 Enviar pedido por chat</button>
-      <div class="pro-lock">
-        <div class="pro-lock-text">🔒 El proveedor necesita el <strong>Plan PRO</strong> para recibir pedidos por WhatsApp directo.</div>
-        <button class="pro-lock-btn" onclick="closeCarrito();goTo('planes')">Ver Plan PRO →</button>
-      </div>`;
   } else {
-    // Es PRO pero no tiene WA cargado
-    actionsEl.innerHTML = `<button class="carrito-chat-btn" onclick="enviarPedidoPorChat()">💬 Enviar pedido por chat</button>`;
+    actionsEl.innerHTML = `<div class="pro-lock"><div class="pro-lock-text">Este proveedor todavía no tiene WhatsApp configurado. Probá con otro proveedor o volvé más tarde.</div></div>`;
   }
 }
 
@@ -3936,6 +3942,7 @@ function enviarPedidoPorWA() {
   const num = normalizarWAArg(item0.provWA);
   const msg = generarMensajePedido();
   guardarPedido();
+  registrarConsulta(item0.provId);
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   closeCarrito();
 }
