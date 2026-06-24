@@ -484,13 +484,21 @@ tr:hover td{background:#fafbff}
         <div class="page-title">Informe semanal</div>
         <div class="page-sub">Enviá a cada proveedor su resumen de visitas y consultas con un clic. El mismo mensaje para todos, sin importar el plan: se abre WhatsApp con el texto y los números ya cargados.</div>
 
+        <div class="table-card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
+          <div style="min-width:200px;flex:1">
+            <div class="table-title" style="margin-bottom:4px">📸 Foto de la semana</div>
+            <p style="font-size:.78rem;color:var(--gray);margin:0">Tocá esto <strong>una vez por semana</strong> (por ejemplo cada lunes). Guarda los totales de hoy para poder mostrar el "+X esta semana" en los próximos informes. <span id="informe-ultima-foto" style="font-weight:700;color:var(--navy)"></span></p>
+          </div>
+          <button class="tbl-btn" style="background:var(--navy);color:white;font-weight:700;padding:10px 18px;font-size:.85rem" onclick="tomarFotoSemanal()">📸 Tomar foto de la semana</button>
+        </div>
+
         <div class="table-card">
           <div class="table-title" style="margin-bottom:12px">✍️ Mensaje del informe</div>
-          <p style="font-size:.8rem;color:var(--gray);margin-bottom:10px">Podés editar el texto. Se reemplazan automáticamente <strong>{nombre}</strong>, <strong>{visitas}</strong> y <strong>{consultas}</strong> por los datos de cada proveedor.</p>
-          <textarea id="informe-text" style="width:100%;min-height:170px;border:1.5px solid #e0e7ff;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;resize:vertical;box-sizing:border-box">Estimados de {nombre}, les acercamos su informe de actividad en EmprendeGO 📊
+          <p style="font-size:.8rem;color:var(--gray);margin-bottom:10px">Podés editar el texto. Se reemplazan automáticamente <strong>{nombre}</strong>, <strong>{visitas}</strong>, <strong>{consultas}</strong>, <strong>{visitas_semana}</strong> y <strong>{consultas_semana}</strong> por los datos de cada proveedor.</p>
+          <textarea id="informe-text" style="width:100%;min-height:185px;border:1.5px solid #e0e7ff;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;resize:vertical;box-sizing:border-box">Estimados de {nombre}, les acercamos su informe de actividad en EmprendeGO 📊
 
-👀 Visitas a su perfil: {visitas}
-💬 Consultas por WhatsApp: {consultas}
+👀 Visitas a su perfil: {visitas} (+{visitas_semana} esta semana)
+💬 Consultas por WhatsApp: {consultas} (+{consultas_semana} esta semana)
 
 Estos números reflejan el interés real de los compradores en su catálogo. Recuerden que cargar más productos aumenta su visibilidad en las búsquedas y, con ello, las consultas que reciben.
 
@@ -503,8 +511,8 @@ Equipo EmprendeGO.</textarea>
             <div class="table-title">📊 Proveedores aprobados <span id="count-informe" style="background:var(--blue-light);color:var(--blue);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
           </div>
           <table>
-            <thead><tr><th>Negocio</th><th>👀 Visitas</th><th>💬 Consultas</th><th>Último envío</th><th>Acción</th></tr></thead>
-            <tbody id="informe-table"><tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+            <thead><tr><th>Negocio</th><th>👀 Visitas</th><th>💬 Consultas</th><th>📈 Esta semana</th><th>Último envío</th><th>Acción</th></tr></thead>
+            <tbody id="informe-table"><tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1530,12 +1538,14 @@ async function cargarInforme(){
   const tb = document.getElementById('informe-table');
   if (!tb) return;
   try {
-    const [{ data: provs, error: provErr }, notifRes] = await Promise.all([
+    const [{ data: provs, error: provErr }, notifRes, snapRes] = await Promise.all([
       sb.from('proveedores').select('id,nombre,whatsapp,visitas,consultas,estado').eq('estado','aprobado'),
-      sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at')
+      sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at'),
+      sb.from('informe_snapshots').select('proveedor_id,visitas,consultas,tomado_at')
     ]);
     if (provErr) throw provErr;
     const notifs = notifRes.error ? [] : (notifRes.data || []);
+    const snaps = (snapRes && !snapRes.error) ? (snapRes.data || []) : [];
 
     // último envío de informe por proveedor
     const ultimo = {};
@@ -1544,6 +1554,21 @@ async function cargarInforme(){
       const d = new Date(n.enviado_at);
       if (!ultimo[n.proveedor_id] || d > ultimo[n.proveedor_id]) ultimo[n.proveedor_id] = d;
     });
+
+    // baseline = última foto semanal por proveedor (para el delta "+X esta semana")
+    const baseline = {};
+    let ultimaFoto = null;
+    snaps.forEach(s => {
+      const d = new Date(s.tomado_at);
+      if (!baseline[s.proveedor_id] || d > baseline[s.proveedor_id]._d) {
+        baseline[s.proveedor_id] = { visitas: s.visitas || 0, consultas: s.consultas || 0, _d: d };
+      }
+      if (!ultimaFoto || d > ultimaFoto) ultimaFoto = d;
+    });
+    const fotoLabel = document.getElementById('informe-ultima-foto');
+    if (fotoLabel) fotoLabel.textContent = ultimaFoto
+      ? `Última foto: hace ${Math.floor((new Date() - ultimaFoto) / MS_DIA)}d.`
+      : 'Todavía no tomaste ninguna foto.';
 
     const hoy = new Date();
     // Orden por desempeño: refuerza el "competí por el primer lugar"
@@ -1555,12 +1580,18 @@ async function cargarInforme(){
 
     tb.innerHTML = lista.length ? lista.map(p => {
       const visitas = p.visitas || 0, consultas = p.consultas || 0;
+      const base = baseline[p.id] || null;
+      const dv = base ? Math.max(0, visitas - base.visitas) : null;
+      const dc = base ? Math.max(0, consultas - base.consultas) : null;
+      const semanaCol = base
+        ? `<span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dv}</span> <span style="font-size:.7rem;color:var(--gray)">vis</span> · <span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dc}</span> <span style="font-size:.7rem;color:var(--gray)">cons</span>`
+        : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
       const ult = ultimo[p.id] || null;
       const ultCol = ult
         ? `<span style="font-size:.75rem;color:var(--gray)">hace ${Math.floor((hoy - ult) / MS_DIA)}d</span>`
         : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
       const tieneWA = !!normalizarWAArgAdmin(p.whatsapp);
-      const safe = encodeURIComponent(JSON.stringify({ id: p.id, nombre: p.nombre || '', whatsapp: p.whatsapp || '', visitas, consultas })).replace(/'/g, '%27');
+      const safe = encodeURIComponent(JSON.stringify({ id: p.id, nombre: p.nombre || '', whatsapp: p.whatsapp || '', visitas, consultas, vsem: dv != null ? dv : 0, csem: dc != null ? dc : 0 })).replace(/'/g, '%27');
       const accion = tieneWA
         ? `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarInforme(decodeURIComponent("${safe}"))'>📲 Enviar</button>`
         : '<span style="font-size:.75rem;color:var(--gray)">Sin WhatsApp</span>';
@@ -1568,13 +1599,14 @@ async function cargarInforme(){
         <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
         <td style="font-size:.85rem;font-weight:700;color:var(--navy)">${visitas}</td>
         <td style="font-size:.85rem;font-weight:700;color:var(--navy)">${consultas}</td>
+        <td>${semanaCol}</td>
         <td>${ultCol}</td>
         <td>${accion}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados</td></tr>';
+    }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados</td></tr>';
   } catch (e) {
     console.log('informe error', e);
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Error cargando informe</td></tr>';
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando informe</td></tr>';
   }
 }
 
@@ -1586,6 +1618,8 @@ function enviarInforme(provJson){
   if (!plantilla) { showToast('Escribí el mensaje del informe primero'); return; }
   const msg = plantilla
     .replace(/\{nombre\}/g, prov.nombre || 'tu negocio')
+    .replace(/\{visitas_semana\}/g, prov.vsem != null ? prov.vsem : 0)
+    .replace(/\{consultas_semana\}/g, prov.csem != null ? prov.csem : 0)
     .replace(/\{visitas\}/g, prov.visitas != null ? prov.visitas : 0)
     .replace(/\{consultas\}/g, prov.consultas != null ? prov.consultas : 0);
   // Abrir primero (gesto del usuario) para evitar el bloqueo de pop-ups
@@ -1594,6 +1628,24 @@ function enviarInforme(provJson){
     showToast('✓ Informe enviado a ' + (prov.nombre || 'proveedor'));
     cargarInforme();
   });
+}
+
+// Guarda los totales actuales de todos los proveedores aprobados (base para el "+X esta semana").
+async function tomarFotoSemanal(){
+  if (!confirm('¿Tomar la foto de la semana? Guarda los totales de hoy para medir el crecimiento de los próximos días.')) return;
+  try {
+    const { data: provs, error } = await sb.from('proveedores').select('id,visitas,consultas').eq('estado','aprobado');
+    if (error) throw error;
+    const filas = (provs || []).map(p => ({ proveedor_id: p.id, visitas: p.visitas || 0, consultas: p.consultas || 0 }));
+    if (!filas.length) { showToast('No hay proveedores para registrar'); return; }
+    const { error: insErr } = await sb.from('informe_snapshots').insert(filas);
+    if (insErr) throw insErr;
+    showToast('📸 Foto de la semana guardada (' + filas.length + ' proveedores)');
+    cargarInforme();
+  } catch (e) {
+    console.log('foto semanal error', e);
+    showToast('No se pudo guardar la foto');
+  }
 }
 </script>
 
