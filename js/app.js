@@ -3664,7 +3664,7 @@ function abrirDetalleProd(id) {
   productoActual = p;
   const _boxIcon = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const _heartFilled = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
-  const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
+  const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.9"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const _shareIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1847C8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
   const _imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : (p.imgUrl ? [p.imgUrl] : []);
   document.getElementById('prod-det-emoji').innerHTML = `${_imgs.length ? `<img id="prod-det-main-img" src="${escHtml(_imgs[0])}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : _boxIcon}
@@ -4092,7 +4092,18 @@ function renderCarrito() {
   // Info proveedor
   const avatarEl = document.getElementById('carrito-prov-avatar');
   const nameEl = document.getElementById('carrito-prov-name');
-  if (avatarEl) { avatarEl.textContent = item0.provNombre.substring(0, 2).toUpperCase(); avatarEl.style.background = bgs[0]; }
+  if (avatarEl) {
+    const prov = (proveedoresDB || []).find(x => String(x.id) === String(item0.provId));
+    if (prov && prov.logo_url) {
+      avatarEl.style.background = 'none';
+      avatarEl.style.overflow = 'hidden';
+      avatarEl.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`;
+    } else {
+      avatarEl.innerHTML = '';
+      avatarEl.textContent = item0.provNombre.substring(0, 2).toUpperCase();
+      avatarEl.style.background = bgs[0];
+    }
+  }
   if (nameEl) nameEl.textContent = item0.provNombre;
 
   // Items
