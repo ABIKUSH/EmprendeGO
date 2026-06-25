@@ -735,6 +735,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <button class="prod-det-fav" id="prod-det-fav-btn">&#9825;</button>
   </div>
   <div class="prod-det-body">
+    <div id="prod-det-thumbs" style="display:none;gap:8px;overflow-x:auto;padding:10px 0 2px;margin:0 0 6px;-webkit-overflow-scrolling:touch"></div>
+    <div id="prod-det-breadcrumb" style="font-size:.74rem;line-height:1.4;margin-bottom:10px;font-family:'DM Sans',sans-serif"></div>
     <div class="prod-det-name" id="prod-det-name">Producto</div>
     <div class="prod-det-price" id="prod-det-price">$0</div>
     <div class="prod-det-min" id="prod-det-min">Pedido minimo: consultar</div>
@@ -1613,6 +1615,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           </div>
           <input type="file" id="foto-input" accept="image/*" style="display:none" onchange="previewFoto(this)">
           <p style="font-size:.72rem;color:#999;margin-top:6px;line-height:1.4">📷 Tamaño recomendado: 800x800px · Máximo 2MB · JPG o PNG</p>
+          <div style="margin-top:14px">
+            <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">🖼️ Más fotos (opcional)</label>
+            <div id="foto-extra-strip" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+            <input type="file" id="foto-extra-input" accept="image/*" multiple style="display:none" onchange="addFotosExtra(this)">
+          </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:12px">
           <div class="form-group"><label>Nombre del producto *</label><input type="text" id="new-prod-name" placeholder="Ej: Funda iPhone 15 Pro"></div>
@@ -1781,6 +1788,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
   <input type="file" id="edit-foto-input" accept="image/*" style="display:none" onchange="previewEditFoto(this)">
   <p style="font-size:.72rem;color:#999;margin-top:6px;line-height:1.4">📷 Tamaño recomendado: 800x800px · Máximo 2MB · JPG o PNG</p>
+  <div style="margin-top:14px">
+    <label style="font-size:.82rem;font-weight:700;color:var(--navy);display:block;margin-bottom:8px">🖼️ Más fotos (opcional)</label>
+    <div id="edit-foto-extra-strip" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <input type="file" id="edit-foto-extra-input" accept="image/*" multiple style="display:none" onchange="addEditFotosExtra(this)">
+  </div>
 </div>
         <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios ✓</button>
       </div>

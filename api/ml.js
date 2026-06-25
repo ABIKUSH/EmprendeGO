@@ -393,14 +393,20 @@ async function handleMLSync(req, res) {
     .filter(it => it.status === 'active')
     .map(it => {
       const categoriaML = it.category_id ? categoryNames[it.category_id] || null : null;
-      const pic = it.pictures?.[0]?.secure_url || it.pictures?.[0]?.url || it.thumbnail || '';
+      const pics = (it.pictures || [])
+        .map(x => (x.secure_url || x.url || ''))
+        .filter(Boolean)
+        .map(u => u.replace(/^http:/, 'https:'))
+        .slice(0, 8);
+      const pic = pics[0] || (it.thumbnail || '').replace(/^http:/, 'https:');
       return {
         proveedor_id: proveedorId,
         ml_item_id: String(it.id),
         nombre: it.title || 'Sin nombre',
         precio: parseFloat(it.price) || 0,
         stock: parseInt(it.available_quantity, 10) || 0,
-        imagen_url: pic.replace(/^http:/, 'https:'),
+        imagen_url: pic,
+        imagenes: pics.length ? pics : null,
         categoria_ml: categoriaML,
         categoria_principal: (categoriaML && catMap[categoriaML]) || 'Otros',
         visible: true

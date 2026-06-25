@@ -464,6 +464,9 @@ let provActual = null;
 let chatMsgs = [];
 let buscarTab = 'productos';
 let productoActual = null;
+// Deep-link a un producto via ?p=<id>. Se captura al cargar el módulo (antes de que
+// el setup de popstate normalice la URL) para poder abrir el producto una vez cargado el catálogo.
+let _deepLinkProd = (() => { try { return new URLSearchParams(window.location.search).get('p'); } catch (e) { return null; } })();
 let pantallaAnteriorProd = 'inicio'; // kept for legacy callers — mirrors navStack
 const navStack = []; // navigation history stack
 
@@ -2501,6 +2504,52 @@ async function subirFotoStorage(file, provId) {
   return urlData.publicUrl;
 }
 
+// ===== FOTOS EXTRA (galería manual) =====
+// Aditivo: la foto principal sigue usando el flujo de siempre (fotoFile / editFotoFile).
+// Acá solo manejamos las fotos adicionales de la galería.
+const MAX_FOTOS_GALERIA = 8; // 1 principal + hasta 7 extra
+let fotoFilesExtra = [];      // alta: nuevas fotos extra (File)
+let editFotoFilesExtra = [];  // edición: nuevas fotos extra (File)
+let editFotoExisting = [];    // edición: URLs de galería existentes a conservar (sin la principal)
+
+function _fotoTile(src, removeCall) {
+  return `<div style="position:relative;width:60px;height:60px;flex:0 0 auto"><img src="${escHtml(src)}" style="width:60px;height:60px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb" onerror="this.style.display='none'"><button type="button" onclick="${removeCall}" aria-label="Quitar" style="position:absolute;top:-6px;right:-6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;line-height:1;cursor:pointer;padding:0">✕</button></div>`;
+}
+function _fotoAddTile(inputId) {
+  return `<div onclick="document.getElementById('${inputId}').click()" style="width:60px;height:60px;flex:0 0 auto;border:2px dashed #c7d4f8;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--blue);font-size:1.5rem;font-weight:300">+</div>`;
+}
+function _pushFotos(input, arr, existingCount) {
+  const files = Array.from(input.files || []);
+  for (const f of files) {
+    if (f.size > 5 * 1024 * 1024) { showToast('Una foto supera 5MB y se omitió'); continue; }
+    if (existingCount + arr.length >= MAX_FOTOS_GALERIA - 1) { showToast('Máximo ' + MAX_FOTOS_GALERIA + ' fotos por producto'); break; }
+    arr.push(f);
+  }
+  input.value = '';
+}
+
+// --- Alta ---
+function renderFotoExtraStrip() {
+  const strip = document.getElementById('foto-extra-strip');
+  if (!strip) return;
+  strip.innerHTML = fotoFilesExtra.map((f, i) => _fotoTile(URL.createObjectURL(f), `removeFotoExtra(${i})`)).join('') + _fotoAddTile('foto-extra-input');
+}
+function addFotosExtra(input) { _pushFotos(input, fotoFilesExtra, 0); renderFotoExtraStrip(); }
+function removeFotoExtra(i) { fotoFilesExtra.splice(i, 1); renderFotoExtraStrip(); }
+function resetFotosExtra() { fotoFilesExtra = []; renderFotoExtraStrip(); }
+
+// --- Edición ---
+function renderEditFotoExtraStrip() {
+  const strip = document.getElementById('edit-foto-extra-strip');
+  if (!strip) return;
+  const ex = editFotoExisting.map((u, i) => _fotoTile(u, `removeEditFotoExisting(${i})`)).join('');
+  const nw = editFotoFilesExtra.map((f, i) => _fotoTile(URL.createObjectURL(f), `removeEditFotoExtra(${i})`)).join('');
+  strip.innerHTML = ex + nw + _fotoAddTile('edit-foto-extra-input');
+}
+function addEditFotosExtra(input) { _pushFotos(input, editFotoFilesExtra, editFotoExisting.length); renderEditFotoExtraStrip(); }
+function removeEditFotoExtra(i) { editFotoFilesExtra.splice(i, 1); renderEditFotoExtraStrip(); }
+function removeEditFotoExisting(i) { editFotoExisting.splice(i, 1); renderEditFotoExtraStrip(); }
+
 // ===== TABS MODAL ===
 function switchAddTab(tab) {
   // Ocultar todos los paneles
@@ -2558,12 +2607,14 @@ async function importarDesdeML() {
     const data = await r.json();
     if (!data || !data.title) throw new Error('No se encontró el producto');
 
-    const foto = data.thumbnail || data.pictures?.[0]?.url || '';
+    const fotos = (data.pictures || []).map(x => (x.url || x.secure_url || '')).filter(Boolean).slice(0, 8);
+    const foto = data.thumbnail || fotos[0] || '';
 
     mlProductoImportado = {
       nombre: data.title,
       precio: data.price || 0,
       foto,
+      fotos,
       desc: data.subtitle || '',
       cat: 'General'
     };
@@ -2611,6 +2662,7 @@ async function guardarProductoML() {
     categoria_principal: cat,
     visible: true,
     imagen_url: mlProductoImportado.foto,
+    imagenes: (mlProductoImportado.fotos && mlProductoImportado.fotos.length) ? mlProductoImportado.fotos : null,
     proveedor_id: currentUser?.proveedorId || null
   };
 
@@ -2720,6 +2772,7 @@ function openAddProduct() {
   }
   fotoFile = null;
   removeFoto();
+  resetFotosExtra();
   document.getElementById('addProdModal').classList.add('open');
   document.body.style.overflow = 'hidden';
   switchAddTab('uno');
@@ -2745,15 +2798,18 @@ async function addProduct() {
   const btn = document.getElementById('add-btn-text');
   if (btn) btn.textContent = 'Guardando...';
 
-  let imgUrl = null;
-  // Subir foto si eligió una
-  if (fotoFile && currentUser?.proveedorId) {
-    try {
-      imgUrl = await subirFotoStorage(fotoFile, currentUser.proveedorId);
-    } catch (e) {
-      showToast('No se pudo subir la foto, se guardó sin imagen');
+  // Subir foto principal + fotos extra de la galería
+  const imgUrls = [];
+  if (currentUser?.proveedorId) {
+    if (fotoFile) {
+      try { const u = await subirFotoStorage(fotoFile, currentUser.proveedorId); if (u) imgUrls.push(u); }
+      catch (e) { showToast('No se pudo subir la foto principal'); }
+    }
+    for (const f of fotoFilesExtra) {
+      try { const u = await subirFotoStorage(f, currentUser.proveedorId); if (u) imgUrls.push(u); } catch (e) { }
     }
   }
+  const imgUrl = imgUrls[0] || null;
 
   const newProd = {
     nombre: name, precio: parseFloat(price),
@@ -2764,6 +2820,7 @@ async function addProduct() {
     subcategoria: catSub || null,
     visible: true,
     imagen_url: imgUrl,
+    imagenes: imgUrls.length > 1 ? imgUrls : null,
     proveedor_id: currentUser?.proveedorId || null
   };
   try {
@@ -2779,6 +2836,12 @@ async function addProduct() {
 }
 function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
   document.getElementById('edit-prod-id').value = id;
+  // Reset foto principal + cargar galería existente (todas menos la principal)
+  editFotoFile = null; removeEditFoto();
+  editFotoFilesExtra = [];
+  const _row = productos.find(x => String(x.id) === String(id));
+  editFotoExisting = _normImgs(_row && _row.imagenes, _row && _row.imagen_url).slice(1);
+  renderEditFotoExtraStrip();
   document.getElementById('edit-prod-name').value = nombre;
   document.getElementById('edit-prod-price').value = precio;
   document.getElementById('edit-prod-stock').value = stock;
@@ -2836,20 +2899,37 @@ async function guardarEdicionProducto() {
   const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otro';
   const catSub = document.getElementById('edit-prod-cat-sub')?.value || '';
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
-  let imgUrl = null;
+  // Foto principal: si eligió una nueva, reemplaza; si no, se conserva la actual.
+  let mainUrl;
   if (editFotoFile && currentUser?.proveedorId) {
-    try { imgUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch (e) { }
+    try { mainUrl = await subirFotoStorage(editFotoFile, currentUser.proveedorId); } catch (e) { }
   }
+  // Subir las fotos extra nuevas
+  const nuevasExtra = [];
+  if (currentUser?.proveedorId) {
+    for (const f of editFotoFilesExtra) {
+      try { const u = await subirFotoStorage(f, currentUser.proveedorId); if (u) nuevasExtra.push(u); } catch (e) { }
+    }
+  }
+  const _row = productos.find(x => String(x.id) === String(id));
+  const primary = mainUrl || (_row && _row.imagen_url) || editFotoExisting[0] || null;
+  // Galería final: principal + extras conservadas + extras nuevas, sin duplicados
+  let galeria = [];
+  if (primary) galeria.push(primary);
+  galeria = galeria.concat(editFotoExisting, nuevasExtra).filter(Boolean);
+  galeria = [...new Set(galeria)];
   try {
-    await sb.from('productos').update({
+    const upd = {
       nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null,
       categoria: catSub || catPrincipal,
       categoria_principal: catPrincipal,
       subcategoria: catSub || null,
-      imagen_url: imgUrl || undefined
-    }).eq('id', id).eq('proveedor_id', currentUser?.proveedorId);
+      imagenes: galeria.length > 1 ? galeria : null
+    };
+    if (mainUrl) upd.imagen_url = mainUrl; // solo tocar la principal si cambió
+    await sb.from('productos').update(upd).eq('id', id).eq('proveedor_id', currentUser?.proveedorId);
     const idx = productos.findIndex(p => String(p.id) === String(id));
-    if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: catSub || catPrincipal, categoria_principal: catPrincipal };
+    if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: catSub || catPrincipal, categoria_principal: catPrincipal, imagenes: upd.imagenes, ...(mainUrl ? { imagen_url: mainUrl } : {}) };
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
   } catch (e) { showToast('Error al guardar'); }
 }
@@ -2857,6 +2937,7 @@ async function guardarEdicionProducto() {
 // ===== NAV =====
 function goTo(s) {
   haptic('light');
+  if (s !== 'detalle-producto') _resetProdSEO();
   if (s === 'registro' && !currentUser) {
     showToast('Iniciá sesión antes de registrarte como proveedor');
     s = 'perfil';
@@ -3163,6 +3244,20 @@ const catColors = {
 function getEmojiCat(cat) { return ''; }
 function getProdLista() { return productosReales; }
 
+// Normaliza la galería de un producto a un array de URLs válidas, con la foto
+// principal (imagen_url) siempre primera y sin duplicados. Acepta jsonb (array
+// ya parseado), string JSON, o null. Si no hay nada, devuelve [].
+function _normImgs(imagenes, imagenUrl) {
+  let arr = [];
+  if (Array.isArray(imagenes)) arr = imagenes;
+  else if (typeof imagenes === 'string') { try { const j = JSON.parse(imagenes); if (Array.isArray(j)) arr = j; } catch (e) { } }
+  arr = arr.map(u => (typeof u === 'string' ? u.trim() : '')).filter(Boolean);
+  if (imagenUrl) arr = [imagenUrl, ...arr.filter(u => u !== imagenUrl)];
+  const seen = new Set(); const out = [];
+  for (const u of arr) { if (!seen.has(u)) { seen.add(u); out.push(u); } }
+  return out;
+}
+
 async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
@@ -3187,7 +3282,7 @@ async function cargarProductosReales() {
         provId: String(p.proveedor_id),
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
-        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '',
+        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '', imagenes: _normImgs(p.imagenes, p.imagen_url),
         whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro' && (!p.proveedores?.plan_hasta || new Date(p.proveedores.plan_hasta + 'T03:00:00Z') > new Date())
       }));
       // Round-robin interleave by provider so no single provider dominates the feed.
@@ -3208,6 +3303,18 @@ async function cargarProductosReales() {
   homeProductosPage = 0;
   renderHomeGrid();
   renderProdBuscar();
+  abrirDeepLinkProd();
+}
+
+// Abre el producto indicado por ?p=<id> una sola vez, ya cargado el catálogo.
+// Acepta tanto el id interno ('real_<uuid>') como el id crudo de la base (<uuid>).
+function abrirDeepLinkProd() {
+  if (!_deepLinkProd) return;
+  const wanted = String(_deepLinkProd);
+  _deepLinkProd = null;
+  const p = productosReales.find(x => String(x.id) === wanted || String(x.idReal) === wanted);
+  if (!p) return;
+  setTimeout(() => { try { abrirDetalleProd(p.id); } catch (e) { } }, 60);
 }
 
 function renderHomeGrid() {
@@ -3558,9 +3665,13 @@ function abrirDetalleProd(id) {
   const _boxIcon = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const _heartFilled = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
-  document.getElementById('prod-det-emoji').innerHTML = `${p.imgUrl ? `<img src="${p.imgUrl}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : _boxIcon}
+  const _shareIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1847C8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+  const _imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : (p.imgUrl ? [p.imgUrl] : []);
+  document.getElementById('prod-det-emoji').innerHTML = `${_imgs.length ? `<img id="prod-det-main-img" src="${escHtml(_imgs[0])}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">` : _boxIcon}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
+    <button onclick="event.stopPropagation();shareProducto();" aria-label="Compartir" style="position:absolute;top:14px;right:58px;background:rgba(255,255,255,.9);border:none;border-radius:10px;padding:7px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center">${_shareIcon}</button>
     <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? _heartFilled : _heartEmpty}</button>`;
+  renderProdThumbs(_imgs);
   document.getElementById('prod-det-name').textContent = p.nombre;
   document.getElementById('prod-det-price').textContent = '$' + p.precio.toLocaleString('es-AR') + ' por unidad';
   document.getElementById('prod-det-min').textContent = p.pedido_minimo;
@@ -3595,7 +3706,92 @@ function abrirDetalleProd(id) {
   }
   if (chatBtn) chatBtn.style.display = 'none';
   renderProdRelacionados(p);
+  renderProdBreadcrumb(p);
+  _setProdSEO(p);
   goTo('detalle-producto');
+}
+
+// ===== Deep-link / SEO / Compartir de producto =====
+// Guarda los valores originales del <head> para poder restaurarlos al salir.
+const _SEO_DEFAULTS = (() => {
+  const get = sel => { const el = document.head.querySelector(sel); return el ? el.getAttribute('content') : null; };
+  return {
+    title: document.title,
+    desc: get('meta[name="description"]'),
+    ogTitle: get('meta[property="og:title"]'), ogDesc: get('meta[property="og:description"]'),
+    ogUrl: get('meta[property="og:url"]'), ogImg: get('meta[property="og:image"]'),
+    twTitle: get('meta[name="twitter:title"]'), twDesc: get('meta[name="twitter:description"]'), twImg: get('meta[name="twitter:image"]')
+  };
+})();
+let _prodSEOactive = false;
+function _setMeta(sel, val) { if (val == null) return; const el = document.head.querySelector(sel); if (el) el.setAttribute('content', val); }
+function _prodUrl(p) { return location.origin + '/?p=' + encodeURIComponent(p.idReal || p.id); }
+function _setProdSEO(p) {
+  try {
+    history.replaceState(null, '', '/?p=' + encodeURIComponent(p.idReal || p.id));
+    const titulo = `${p.nombre} — ${p.provNombre} | EmprendeGO`;
+    const desc = `${p.nombre} · $${Number(p.precio || 0).toLocaleString('es-AR')} — ${p.provNombre}. Contactá directo por WhatsApp en EmprendeGO.`;
+    document.title = titulo;
+    _setMeta('meta[name="description"]', desc);
+    _setMeta('meta[property="og:title"]', titulo); _setMeta('meta[property="og:description"]', desc);
+    _setMeta('meta[property="og:url"]', _prodUrl(p)); if (p.imgUrl) _setMeta('meta[property="og:image"]', p.imgUrl);
+    _setMeta('meta[name="twitter:title"]', titulo); _setMeta('meta[name="twitter:description"]', desc);
+    if (p.imgUrl) _setMeta('meta[name="twitter:image"]', p.imgUrl);
+    _prodSEOactive = true;
+  } catch (e) { }
+}
+function _resetProdSEO() {
+  if (!_prodSEOactive) return;
+  _prodSEOactive = false;
+  try {
+    document.title = _SEO_DEFAULTS.title;
+    _setMeta('meta[name="description"]', _SEO_DEFAULTS.desc);
+    _setMeta('meta[property="og:title"]', _SEO_DEFAULTS.ogTitle); _setMeta('meta[property="og:description"]', _SEO_DEFAULTS.ogDesc);
+    _setMeta('meta[property="og:url"]', _SEO_DEFAULTS.ogUrl); _setMeta('meta[property="og:image"]', _SEO_DEFAULTS.ogImg);
+    _setMeta('meta[name="twitter:title"]', _SEO_DEFAULTS.twTitle); _setMeta('meta[name="twitter:description"]', _SEO_DEFAULTS.twDesc);
+    _setMeta('meta[name="twitter:image"]', _SEO_DEFAULTS.twImg);
+    if (location.search) history.replaceState(null, '', location.pathname);
+  } catch (e) { }
+}
+// Galería: tira de miniaturas + swap de la imagen principal por índice (evita
+// problemas de comillas en URLs). Si hay <2 imágenes, la tira queda oculta.
+let _prodGalleryImgs = [];
+function renderProdThumbs(imgs) {
+  _prodGalleryImgs = Array.isArray(imgs) ? imgs : [];
+  const cont = document.getElementById('prod-det-thumbs');
+  if (!cont) return;
+  if (_prodGalleryImgs.length < 2) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
+  cont.innerHTML = _prodGalleryImgs.slice(0, 8).map((u, i) =>
+    `<img class="pd-thumb" data-i="${i}" src="${escHtml(u)}" onclick="setProdMainImgByIdx(${i}, this)" style="width:54px;height:54px;flex:0 0 auto;object-fit:cover;border-radius:9px;border:2px solid ${i === 0 ? '#1847C8' : 'transparent'};cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)" onerror="this.style.display='none'">`
+  ).join('');
+  cont.style.display = 'flex';
+}
+function setProdMainImgByIdx(i, el) {
+  const url = _prodGalleryImgs[i];
+  if (!url) return;
+  const main = document.getElementById('prod-det-main-img');
+  if (main) { main.src = url; main.style.display = 'block'; }
+  document.querySelectorAll('#prod-det-thumbs .pd-thumb').forEach(t => { t.style.borderColor = 'transparent'; });
+  if (el) el.style.borderColor = '#1847C8';
+}
+function renderProdBreadcrumb(p) {
+  const el = document.getElementById('prod-det-breadcrumb');
+  if (!el) return;
+  el.innerHTML = `<span onclick="goTo('inicio')" style="color:#1847C8;cursor:pointer;font-weight:600">Inicio</span>`
+    + `<span style="color:#cbd5e1;margin:0 6px">›</span>`
+    + `<span style="color:var(--gray)">${escHtml(p.cat || 'Productos')}</span>`
+    + `<span style="color:#cbd5e1;margin:0 6px">›</span>`
+    + `<span style="color:var(--navy);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px;display:inline-block;vertical-align:bottom">${escHtml(p.nombre)}</span>`;
+}
+async function shareProducto() {
+  if (!productoActual) return;
+  const p = productoActual;
+  const url = _prodUrl(p);
+  try {
+    if (navigator.share) { await navigator.share({ title: `${p.nombre} — ${p.provNombre}`, text: `${p.nombre} en EmprendeGO`, url }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(url); showToast('🔗 Link copiado'); }
+  catch (e) { showToast('Copiá el link: ' + url); }
 }
 function renderProdRelacionados(p) {
   const cont = document.getElementById('prod-det-relacionados');

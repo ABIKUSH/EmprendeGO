@@ -59,7 +59,9 @@ export default async function handler(req, res) {
     const variant = product.variants?.[0];
     const precio = variant?.price ? parseFloat(variant.price) : 0;
     const stock = variant?.stock ?? null;
-    const imagen_url = product.images?.[0]?.src || null;
+    const imagenesArr = (product.images || []).map(im => im?.src).filter(Boolean).slice(0, 8);
+    const imagen_url = imagenesArr[0] || null;
+    const imagenes = imagenesArr.length ? imagenesArr : null;
     const tn_product_id = String(product.id);
 
     // Extraer categoría de TN
@@ -94,6 +96,7 @@ export default async function handler(req, res) {
           precio,
           stock,
           imagen_url,
+          imagenes,
           categoria_tn,
           categoria_principal,
           visible: true
