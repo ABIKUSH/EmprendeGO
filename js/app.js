@@ -531,7 +531,7 @@ function renderFavs() {
   const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
   el.innerHTML = favs.map((p, i) => {
     const pid = String(p.id);
-    const bg = bgs[i % bgs.length];
+    const bg = _monoColor(p.id);
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const avgR = getProvRating(pid).avg.toFixed(1);
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
@@ -1011,7 +1011,7 @@ function clearMapaFilter() {
 
 function renderProvCardMini(p, i) {
   const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
-  const bg = bgs[i % bgs.length];
+  const bg = _monoColor(p.id);
   const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   const { avg, count } = getProvRating(p.id);
   const pid = String(p.id);
@@ -1101,7 +1101,7 @@ function renderProvs(list) {
   el.innerHTML = list.map((p, i) => {
     const pid = String(p.id);
     const fav = esFav(pid);
-    const bg = bgs[i % bgs.length];
+    const bg = _monoColor(p.id);
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const { avg, count } = getProvRating(pid);
     const enComp = comparadorList.some(x => String(x.id) === pid);
@@ -1306,7 +1306,7 @@ async function cargarProductosDetalle(proveedorId) {
           emoji: getEmojiCat(p.categoria_principal || p.categoria),
           provId: String(p.proveedor_id), provNombre: provActual?.nombre || 'Proveedor',
           provRubro: (provActual?.rubro || '') + (provActual?.provincia ? ' · ' + provActual.provincia : ''),
-          provColor: bgsColores[i % bgsColores.length], imgUrl: p.imagen_url || '',
+          provColor: _monoColor(p.proveedor_id), imgUrl: p.imagen_url || '',
           whatsapp: provActual?.whatsapp || '', esPro: provDetalleEsPro
         });
       }
@@ -2281,7 +2281,7 @@ async function cargarHistorial() {
       <div style="font-size:.7rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px">${label}</div>
       ${items.map((p, i) => {
       const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
-      const bg = bgs[Number(p.id || i) % bgs.length];
+      const bg = _monoColor(p.id);
       return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
           ? `<div class="hist-logo" style="background:none;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
@@ -2371,7 +2371,7 @@ async function cargarMisConversaciones() {
       const preview = escHtml((c.ultimoMsg || '').split(String.fromCharCode(10)).join(' ').substring(0, 45) + ((c.ultimoMsg || '').length > 45 ? '...' : ''));
       const badgeId = `conv-badge-${c.provId}`;
       return `<div class="hist-item" onclick="leerConvUsuario(this,'${escHtml(String(c.provId))}')" style="position:relative">` +
-        `<div class="hist-logo" style="background:${bgs[i % bgs.length]};color:white">${ini}</div>` +
+        `<div class="hist-logo" style="background:${_monoColor(c.provId)};color:white">${ini}</div>` +
         `<div class="hist-info"><strong>${escHtml(c.provNombre)}</strong><span>${preview}</span></div>` +
         `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">` +
         `<span class="hist-time">${escHtml(timeAgo(new Date(c.ultimaFecha)))}</span>` +
@@ -3244,6 +3244,16 @@ const catColors = {
 function getEmojiCat(cat) { return ''; }
 function getProdLista() { return productosReales; }
 
+// Color determinístico por proveedor para el monograma cuando no hay logo:
+// el mismo proveedor siempre obtiene el mismo color (se ve intencional, no random).
+const _MONO_PALETTE = ['#1847C8', '#0E7C5A', '#B45309', '#6D28D9', '#0F766E', '#9D174D', '#1E3A8A', '#3F6212'];
+function _monoColor(seed) {
+  const s = String(seed == null ? '' : seed);
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return _MONO_PALETTE[h % _MONO_PALETTE.length];
+}
+
 // Normaliza la galería de un producto a un array de URLs válidas, con la foto
 // principal (imagen_url) siempre primera y sin duplicados. Acepta jsonb (array
 // ya parseado), string JSON, o null. Si no hay nada, devuelve [].
@@ -3282,7 +3292,7 @@ async function cargarProductosReales() {
         provId: String(p.proveedor_id),
         provNombre: p.proveedores?.nombre || 'Proveedor',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
-        provColor: bgs[i % bgs.length], imgUrl: p.imagen_url || '', imagenes: _normImgs(p.imagenes, p.imagen_url),
+        provColor: _monoColor(p.proveedor_id), imgUrl: p.imagen_url || '', imagenes: _normImgs(p.imagenes, p.imagen_url),
         whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro' && (!p.proveedores?.plan_hasta || new Date(p.proveedores.plan_hasta + 'T03:00:00Z') > new Date())
       }));
       // Round-robin interleave by provider so no single provider dominates the feed.
@@ -4101,7 +4111,7 @@ function renderCarrito() {
     } else {
       avatarEl.innerHTML = '';
       avatarEl.textContent = item0.provNombre.substring(0, 2).toUpperCase();
-      avatarEl.style.background = bgs[0];
+      avatarEl.style.background = _monoColor(item0.provId);
     }
   }
   if (nameEl) nameEl.textContent = item0.provNombre;
@@ -4915,7 +4925,7 @@ function renderProvDestacados() {
     .slice(0, 6);
   lista.innerHTML = top.map((p, i) => {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
-    const bg = bgs[i % bgs.length];
+    const bg = _monoColor(p.id);
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
@@ -4951,7 +4961,7 @@ async function renderRecienLlegados() {
     const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED'];
     lista.innerHTML = data.map((p, i) => {
       const ini = p.nombre.substring(0, 2).toUpperCase();
-      const bg = bgs[i % bgs.length];
+      const bg = _monoColor(p.id);
       const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
       const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
       return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">

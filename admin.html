@@ -614,6 +614,8 @@ Equipo EmprendeGO.</textarea>
     <div id="prov-productos-list" style="margin-bottom:16px"></div>
     <div class="prov-modal-actions">
       <button class="tbl-btn view" id="btn-editar-prov" onclick="toggleEditProv()">✏️ Editar datos</button>
+      <button class="tbl-btn view" id="btn-logo-prov" onclick="document.getElementById('admin-logo-input').click()">📷 Subir logo</button>
+      <input type="file" id="admin-logo-input" accept="image/*" style="display:none" onchange="subirLogoAdmin(this)">
       <button class="tbl-btn approve" id="btn-guardar-prov" style="display:none" onclick="guardarProveedor()">💾 Guardar</button>
       <button class="tbl-btn reject" id="btn-eliminar-prov" onclick="eliminarProveedorDesdeModal()">🗑 Eliminar</button>
       <button class="modal-btn cancel" onclick="closeProvModal()">Cerrar</button>
@@ -1006,7 +1008,7 @@ async function verProveedor(id){
   if(!prov){ showToast('Error al cargar proveedor'); return; }
   provEditando = prov;
 
-  document.getElementById('prov-avatar').textContent = prov.nombre?.substring(0,2).toUpperCase()||'??';
+  setProvAvatar(prov);
   document.getElementById('prov-modal-nombre').textContent = prov.nombre||'Sin nombre';
   document.getElementById('prov-modal-estado').textContent = `${prov.estado?.toUpperCase()} · Plan ${prov.plan?.toUpperCase()} · ${prov.rubro||'Sin rubro'}`;
 
@@ -1078,6 +1080,42 @@ async function guardarProveedor(){
 }
 
 function closeProvModal(){ document.getElementById('provModal').classList.remove('open'); }
+
+// Muestra el logo del proveedor en el avatar del modal, o sus iniciales si no tiene.
+function setProvAvatar(prov){
+  const el = document.getElementById('prov-avatar');
+  if(!el) return;
+  if(prov && prov.logo_url){
+    el.style.background='none'; el.style.overflow='hidden';
+    el.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`;
+  } else {
+    el.style.overflow=''; el.innerHTML='';
+    el.textContent = (prov && prov.nombre ? prov.nombre.substring(0,2).toUpperCase() : '??');
+  }
+}
+
+// Sube un logo a Storage (bucket Avatares) y lo guarda en proveedores.logo_url.
+async function subirLogoAdmin(input){
+  const file = input.files && input.files[0];
+  if(!file || !provEditando){ if(input) input.value=''; return; }
+  if(file.size > 5*1024*1024){ showToast('La imagen supera 5MB'); input.value=''; return; }
+  showToast('Subiendo logo...');
+  try {
+    const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
+    const path = `proveedores/${provEditando.id}-${Date.now()}.${ext}`;
+    const { error: upErr } = await sb.storage.from('Avatares').upload(path, file, { upsert:true });
+    if(upErr) throw upErr;
+    const { data: urlData } = sb.storage.from('Avatares').getPublicUrl(path);
+    const url = urlData.publicUrl;
+    const { error } = await sb.from('proveedores').update({ logo_url: url }).eq('id', provEditando.id);
+    if(error) throw error;
+    provEditando.logo_url = url;
+    setProvAvatar(provEditando);
+    showToast('✓ Logo actualizado');
+    try { cargarTodosProveedores(); } catch(e){}
+  } catch(e){ showToast('Error al subir el logo'); }
+  input.value='';
+}
 
 // ===== ADMIN: DAR / QUITAR PLAN PRO =====
 function darPlanPro(id, nombre) {
