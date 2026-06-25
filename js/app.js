@@ -3594,7 +3594,39 @@ function abrirDetalleProd(id) {
     waBtn.style.cssText = 'width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(18,140,126,.28);display:' + (proConWA ? 'flex' : 'none');
   }
   if (chatBtn) chatBtn.style.display = 'none';
+  renderProdRelacionados(p);
   goTo('detalle-producto');
+}
+function renderProdRelacionados(p) {
+  const cont = document.getElementById('prod-det-relacionados');
+  if (!cont) return;
+  const lista = getProdLista().filter(x => String(x.provId) === String(p.provId) && String(x.id) !== String(p.id));
+  if (!lista.length) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
+  const items = lista.slice(0, 6);
+  const _boxIcon = `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
+  const cards = items.map(pp => {
+    const imgHtml = pp.imgUrl
+      ? `<img src="${escHtml(pp.imgUrl)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
+      : _boxIcon;
+    return `<div onclick="abrirDetalleProd('${escHtml(String(pp.id))}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
+      ${imgHtml}
+      <div style="padding:8px 9px 10px">
+        <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(pp.nombre)}</div>
+        <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:4px">$${Number(pp.precio || 0).toLocaleString('es-AR')}</div>
+      </div>
+    </div>`;
+  }).join('');
+  cont.innerHTML = `
+    <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px">
+        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Más de ${escHtml(p.provNombre)}</div>
+        <button onclick="irAProveedorDesdeProd()" style="background:none;border:none;padding:0;color:#1847C8;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver toda la tienda →</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${cards}
+      </div>
+    </div>`;
+  cont.style.display = 'block';
 }
 function togglePdCalc() {
   const body = document.getElementById('pdcalc-body');
