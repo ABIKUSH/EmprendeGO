@@ -1086,7 +1086,7 @@ function setProvAvatar(prov){
   const el = document.getElementById('prov-avatar');
   if(!el) return;
   if(prov && prov.logo_url){
-    el.style.background='none'; el.style.overflow='hidden';
+    el.style.background='#fff'; el.style.overflow='hidden';
     el.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`;
   } else {
     el.style.overflow=''; el.innerHTML='';

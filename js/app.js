@@ -1392,8 +1392,11 @@ function abrirDetalle(id) {
   const detLogoEl = document.getElementById('det-logo');
   const detIni = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   if (p.logo_url) {
+    detLogoEl.style.background = '#fff';
     detLogoEl.innerHTML = `<img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
   } else {
+    detLogoEl.style.background = '';
+    detLogoEl.innerHTML = '';
     detLogoEl.textContent = detIni;
   }
   document.getElementById('det-nombre').textContent = p.nombre;
@@ -2284,7 +2287,7 @@ async function cargarHistorial() {
       const bg = _monoColor(p.id);
       return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
-          ? `<div class="hist-logo" style="background:none;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
           : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
         }
           <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro || ''}${p.pro ? ' · PRO' : ''}</span></div>
@@ -3690,7 +3693,7 @@ function abrirDetalleProd(id) {
   const pav = document.getElementById('prod-det-pav');
   if (pav) {
     if (prov && prov.logo_url) {
-      pav.style.background = 'none';
+      pav.style.background = '#fff';
       pav.style.padding = '0';
       pav.style.overflow = 'hidden';
       pav.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
@@ -4105,7 +4108,7 @@ function renderCarrito() {
   if (avatarEl) {
     const prov = (proveedoresDB || []).find(x => String(x.id) === String(item0.provId));
     if (prov && prov.logo_url) {
-      avatarEl.style.background = 'none';
+      avatarEl.style.background = '#fff';
       avatarEl.style.overflow = 'hidden';
       avatarEl.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="">`;
     } else {
