@@ -1102,18 +1102,19 @@ async function subirLogoAdmin(input){
   showToast('Subiendo logo...');
   try {
     const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
-    const path = `proveedores/${provEditando.id}-${Date.now()}.${ext}`;
-    const { error: upErr } = await sb.storage.from('Avatares').upload(path, file, { upsert:true });
-    if(upErr) throw upErr;
+    // Mismo patrón que el panel del proveedor: nombre único, sin upsert.
+    const path = 'proveedores/' + Math.random().toString(36).substring(2) + '_' + Date.now() + '.' + ext;
+    const { error: upErr } = await sb.storage.from('Avatares').upload(path, file);
+    if(upErr){ console.error('Storage error:', upErr); showToast('Error al subir: ' + (upErr.message || 'reintentá')); input.value=''; return; }
     const { data: urlData } = sb.storage.from('Avatares').getPublicUrl(path);
     const url = urlData.publicUrl;
     const { error } = await sb.from('proveedores').update({ logo_url: url }).eq('id', provEditando.id);
-    if(error) throw error;
+    if(error){ console.error('Update error:', error); showToast('Logo subido pero no se guardó: ' + (error.message || '')); input.value=''; return; }
     provEditando.logo_url = url;
     setProvAvatar(provEditando);
     showToast('✓ Logo actualizado');
     try { cargarTodosProveedores(); } catch(e){}
-  } catch(e){ showToast('Error al subir el logo'); }
+  } catch(e){ showToast('Error al subir el logo: ' + (e && e.message ? e.message : '')); }
   input.value='';
 }
 
