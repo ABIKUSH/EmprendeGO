@@ -467,6 +467,9 @@ let productoActual = null;
 // Deep-link a un producto via ?p=<id>. Se captura al cargar el módulo (antes de que
 // el setup de popstate normalice la URL) para poder abrir el producto una vez cargado el catálogo.
 let _deepLinkProd = (() => { try { return new URLSearchParams(window.location.search).get('p'); } catch (e) { return null; } })();
+// Deep-link a un proveedor via ?prov=<id> (mismo patrón que ?p=, para que las URLs
+// de proveedor del sitemap aterricen en su ficha).
+let _deepLinkProv = (() => { try { return new URLSearchParams(window.location.search).get('prov'); } catch (e) { return null; } })();
 let pantallaAnteriorProd = 'inicio'; // kept for legacy callers — mirrors navStack
 const navStack = []; // navigation history stack
 
@@ -3750,7 +3753,25 @@ function _setProdSEO(p) {
     _setMeta('meta[property="og:url"]', _prodUrl(p)); if (p.imgUrl) _setMeta('meta[property="og:image"]', p.imgUrl);
     _setMeta('meta[name="twitter:title"]', titulo); _setMeta('meta[name="twitter:description"]', desc);
     if (p.imgUrl) _setMeta('meta[name="twitter:image"]', p.imgUrl);
+    _setProdLD(p);
     _prodSEOactive = true;
+  } catch (e) { }
+}
+// Datos estructurados (schema.org/Product) para resultados enriquecidos en Google.
+function _setProdLD(p) {
+  try {
+    let el = document.getElementById('ld-prod');
+    if (!el) { el = document.createElement('script'); el.type = 'application/ld+json'; el.id = 'ld-prod'; document.head.appendChild(el); }
+    const imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : (p.imgUrl ? [p.imgUrl] : undefined);
+    const data = {
+      '@context': 'https://schema.org', '@type': 'Product',
+      name: p.nombre,
+      image: imgs,
+      description: p.descripcion || undefined,
+      brand: { '@type': 'Brand', name: p.provNombre },
+      offers: { '@type': 'Offer', price: Number(p.precio || 0), priceCurrency: 'ARS', availability: 'https://schema.org/InStock', url: _prodUrl(p) }
+    };
+    el.textContent = JSON.stringify(data);
   } catch (e) { }
 }
 function _resetProdSEO() {
@@ -3763,6 +3784,7 @@ function _resetProdSEO() {
     _setMeta('meta[property="og:url"]', _SEO_DEFAULTS.ogUrl); _setMeta('meta[property="og:image"]', _SEO_DEFAULTS.ogImg);
     _setMeta('meta[name="twitter:title"]', _SEO_DEFAULTS.twTitle); _setMeta('meta[name="twitter:description"]', _SEO_DEFAULTS.twDesc);
     _setMeta('meta[name="twitter:image"]', _SEO_DEFAULTS.twImg);
+    const ld = document.getElementById('ld-prod'); if (ld) ld.remove();
     if (location.search) history.replaceState(null, '', location.pathname);
   } catch (e) { }
 }
@@ -5090,7 +5112,16 @@ cargarProveedores().then(() => {
   renderProvDestacados();
   const lpStat = document.getElementById('lp-stat-provs');
   if (lpStat) lpStat.textContent = (proveedoresDB.length > 0 ? proveedoresDB.length : 50) + '+';
+  abrirDeepLinkProv();
 });
+
+// Abre la ficha del proveedor indicado por ?prov=<id> una sola vez, ya cargados los proveedores.
+function abrirDeepLinkProv() {
+  if (!_deepLinkProv) return;
+  const wanted = String(_deepLinkProv);
+  _deepLinkProv = null;
+  setTimeout(() => { try { abrirDetalle(wanted); } catch (e) { } }, 60);
+}
 
 // ===== CARRUSEL TESTIMONIOS =====
 (function initTestimonios() {
