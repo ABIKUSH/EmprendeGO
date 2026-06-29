@@ -1986,7 +1986,7 @@ function verificarExpiracionPlan(prov) {
   const hasta = new Date(prov.plan_hasta + 'T03:00:00Z');
   if (hasta >= new Date()) return; // plan todavía activo
   banner.style.display = 'block';
-  banner.innerHTML = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
+  banner.innerHTML = `<div style="background:#fef2f2;border:1.5px solid #fecaca;border-radius:14px;padding:14px 16px;margin:0 0 10px;box-shadow:0 3px 12px rgba(0,0,0,.18)">
     <div style="font-size:.82rem;font-weight:800;color:#dc2626;margin-bottom:4px">⚠️ Tu Plan Pro venció</div>
     <div style="font-size:.78rem;color:#b91c1c;line-height:1.5">Solo se muestran 30 de tus productos.</div>
     <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#dc2626;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Pagar ahora →</button>
@@ -1998,7 +1998,7 @@ function mostrarAvisoPlanProximo(fechaVence) {
   if (!banner) return;
   const fechaStr = fechaVence.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
   banner.style.display = 'block';
-  banner.innerHTML = `<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:14px 16px;margin:12px 16px 0">
+  banner.innerHTML = `<div style="background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:14px 16px;margin:0 0 10px;box-shadow:0 3px 12px rgba(0,0,0,.18)">
     <div style="font-size:.82rem;font-weight:800;color:#b45309;margin-bottom:4px">⚡ Tu Plan Pro vence el ${fechaStr}</div>
     <div style="font-size:.78rem;color:#92400e;line-height:1.5">¡Renová ahora para no perder visibilidad!</div>
     <button onclick="iniciarPagoPro(this)" style="margin-top:10px;background:#d97706;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Renovar ahora →</button>
@@ -2096,13 +2096,19 @@ function updatePerfilUI() {
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
       const planHasta = pd2.plan_hasta ? new Date(pd2.plan_hasta + 'T03:00:00Z') : null;
+      const vence = document.getElementById('dash-pro-vence');
       if (pd2.plan === 'pro' && planHasta && planHasta > new Date()) {
-        badge.textContent = '⭐ PRO · hasta ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+        badge.textContent = '⭐ PRO';
         badge.style.display = 'inline-flex';
+        if (vence) {
+          vence.textContent = '⭐ Plan Pro activo hasta el ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+          vence.style.display = 'block';
+        }
         const diasRestantes = Math.ceil((planHasta - new Date()) / 86400000);
         if (diasRestantes <= 7) mostrarAvisoPlanProximo(planHasta);
       } else {
         badge.style.display = 'none';
+        if (vence) vence.style.display = 'none';
       }
     }
   } else {

@@ -1268,12 +1268,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div class="avatar-edit-badge">📷</div>
         </div>
         <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
-        <div style="flex:1">
-          <h3 id="dash-nombre" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:3px">Mi Negocio</h3>
-          <p id="dash-rubro-label" style="color:rgba(255,255,255,.55);font-size:.78rem;margin-bottom:6px">Rubro · Argentina</p>
-          <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">⭐ PRO</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
+            <h3 id="dash-nombre" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin:0;line-height:1.15">Mi Negocio</h3>
+            <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">⭐ PRO</span>
+          </div>
+          <p id="dash-rubro-label" style="color:rgba(255,255,255,.55);font-size:.78rem;margin:0">Rubro · Argentina</p>
+          <p id="dash-pro-vence" style="display:none;color:rgba(255,255,255,.72);font-size:.7rem;font-weight:600;margin:4px 0 0">⭐ Plan Pro activo</p>
         </div>
       </div>
+
+      <!-- ===== BANNER RENOVACIÓN PRO (próximo a vencer / vencido) — sobre Consultas ===== -->
+      <div id="pro-expiry-banner" style="display:none"></div>
 
       <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
       <div style="background:linear-gradient(135deg,#25D366,#128C7E);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(18,140,126,.28)">
@@ -1388,7 +1394,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <!-- ===== BANNER PRO (renderizado dinámicamente por renderBannerProDashboard()) ===== -->
     <div style="padding:16px 16px 0">
       <div id="pro-dashboard-banner"></div>
-      <div id="pro-expiry-banner" style="display:none"></div>
     </div>
 
     <!-- ===== AYUDA ===== -->
