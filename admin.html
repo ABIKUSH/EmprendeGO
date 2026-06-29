@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EmprendeGo — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
@@ -495,15 +495,32 @@ tr:hover td{background:#fafbff}
         <div class="table-card">
           <div class="table-title" style="margin-bottom:12px">✍️ Mensaje del informe</div>
           <p style="font-size:.8rem;color:var(--gray);margin-bottom:10px">Podés editar el texto. Se reemplazan automáticamente <strong>{nombre}</strong>, <strong>{visitas}</strong>, <strong>{consultas}</strong>, <strong>{visitas_semana}</strong> y <strong>{consultas_semana}</strong> por los datos de cada proveedor.</p>
-          <textarea id="informe-text" style="width:100%;min-height:185px;border:1.5px solid #e0e7ff;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;resize:vertical;box-sizing:border-box">Estimados de {nombre}, les acercamos su informe de actividad en EmprendeGO 📊
+          <textarea id="informe-text" style="width:100%;min-height:185px;border:1.5px solid #e0e7ff;border-radius:10px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;resize:vertical;box-sizing:border-box">Hola, equipo de {nombre}:
 
-👀 Visitas a su perfil: {visitas} (+{visitas_semana} esta semana)
-💬 Consultas por WhatsApp: {consultas} (+{consultas_semana} esta semana)
+Les compartimos el resumen de actividad de su perfil en EmprendeGO correspondiente a esta semana.
 
-Estos números reflejan el interés real de los compradores en su catálogo. Recuerden que cargar más productos aumenta su visibilidad en las búsquedas y, con ello, las consultas que reciben.
+• Visitas al perfil: {visitas} (+{visitas_semana} esta semana)
+• Consultas por WhatsApp: {consultas} (+{consultas_semana} esta semana)
 
-¡Sigan compitiendo por el primer lugar! 🏆
-Equipo EmprendeGO.</textarea>
+Adjuntamos el reporte oficial con el detalle. Estos datos reflejan el interés concreto de compradores mayoristas en su catálogo.
+
+Recomendación de la semana: mantener el catálogo actualizado y responder las consultas con agilidad mejora de forma directa el posicionamiento en las búsquedas.
+
+Quedamos a disposición por cualquier consulta.
+
+Saludos cordiales,
+Equipo EmprendeGO
+emprendego.com.ar
+        </div>
+
+        <div class="table-card" style="background:var(--blue-light);border:1px solid #cdeede">
+          <div class="table-title" style="margin-bottom:8px">✅ Cómo enviar el informe a cada proveedor</div>
+          <ol style="margin:0;padding-left:20px;font-size:.84rem;color:var(--navy);line-height:1.7">
+            <li><strong>Una vez por semana</strong> (ej: lunes) apretá <strong>📸 Tomar foto de la semana</strong> arriba. Esto fija el punto de partida para medir el crecimiento. <em>La primera vez el informe muestra solo los totales; el "+X esta semana" aparece a partir del lunes siguiente.</em></li>
+            <li>En la fila de cada proveedor, tocá <strong>🖼️ Tarjeta</strong> → se descarga la imagen con SUS números reales.</li>
+            <li>Tocá <strong>📲 Enviar</strong> → se abre el WhatsApp de ese proveedor con el texto ya escrito.</li>
+            <li><strong>Adjuntá la imagen</strong> que se descargó y enviá. La columna "Último envío" te marca a quién ya le mandaste.</li>
+          </ol>
         </div>
 
         <div class="table-card">
@@ -1606,10 +1623,11 @@ async function cargarInforme(){
     });
     const fotoLabel = document.getElementById('informe-ultima-foto');
     if (fotoLabel) fotoLabel.textContent = ultimaFoto
-      ? `Última foto: hace ${Math.floor((new Date() - ultimaFoto) / MS_DIA)}d.`
+      ? `Última foto: ${ultimaFoto.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})} (hace ${Math.floor((new Date() - ultimaFoto) / MS_DIA)}d).`
       : 'Todavía no tomaste ninguna foto.';
 
     const hoy = new Date();
+    const fmtCorta = d => d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
     // Orden por desempeño: refuerza el "competí por el primer lugar"
     const lista = (provs || []).slice().sort((a, b) =>
       ((b.consultas || 0) - (a.consultas || 0)) || ((b.visitas || 0) - (a.visitas || 0)));
@@ -1623,7 +1641,7 @@ async function cargarInforme(){
       const dv = base ? Math.max(0, visitas - base.visitas) : null;
       const dc = base ? Math.max(0, consultas - base.consultas) : null;
       const semanaCol = base
-        ? `<span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dv}</span> <span style="font-size:.7rem;color:var(--gray)">vis</span> · <span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dc}</span> <span style="font-size:.7rem;color:var(--gray)">cons</span>`
+        ? `<span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dv}</span> <span style="font-size:.7rem;color:var(--gray)">vis</span> · <span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dc}</span> <span style="font-size:.7rem;color:var(--gray)">cons</span><br><span style="font-size:.68rem;color:var(--gray)">${fmtCorta(base._d)} → ${fmtCorta(hoy)}</span>`
         : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
       const ult = ultimo[p.id] || null;
       const ultCol = ult
@@ -1654,8 +1672,15 @@ function enviarInforme(provJson){
   let prov; try { prov = JSON.parse(provJson); } catch(e){ return; }
   const n = normalizarWAArgAdmin(prov.whatsapp);
   if (!n) { showToast('Este proveedor no tiene WhatsApp válido'); return; }
-  const plantilla = document.getElementById('informe-text').value.trim();
+  let plantilla = document.getElementById('informe-text').value.trim();
   if (!plantilla) { showToast('Escribí el mensaje del informe primero'); return; }
+  // Sin foto previa (prov.desde nulo) no hay "esta semana": sacamos el paréntesis "(+X esta semana)"
+  // para no mandar un feo "(+0 esta semana)" en el primer envío.
+  if (!prov.desde) {
+    plantilla = plantilla
+      .replace(/\s*\(\+?\{visitas_semana\}[^)]*\)/g, '')
+      .replace(/\s*\(\+?\{consultas_semana\}[^)]*\)/g, '');
+  }
   const msg = plantilla
     .replace(/\{nombre\}/g, prov.nombre || 'tu negocio')
     .replace(/\{visitas_semana\}/g, prov.vsem != null ? prov.vsem : 0)
@@ -1705,70 +1730,158 @@ function _tjTrunc(ctx, txt, maxW){
   while (t.length > 3 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
   return t + '…';
 }
-function _tjPeriodo(p){
+// Paleta de marca EmprendeGO (verde #006039 + acento naranja)
+const TJ_GREEN = '#006039', TJ_GREEN_LT = '#0E9F6E', TJ_DARK = '#0B3325', TJ_ORANGE = '#FF6B00', TJ_MUTE = '#8FB8A6';
+function _tjGrad(ctx, x, y, w, h){
+  const g = ctx.createLinearGradient(x, y, x + w, y + h);
+  g.addColorStop(0, TJ_GREEN_LT); g.addColorStop(1, TJ_GREEN); return g;
+}
+// Texto con tracking (espaciado entre letras) para el "eyebrow"
+function _tjSpaced(ctx, txt, x, y, sp){
+  let cx = x;
+  for (const ch of txt){ ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; }
+}
+// Pre-carga las fuentes web para que el canvas no caiga a Arial
+async function _tjEnsureFonts(){
+  if (!document.fonts || !document.fonts.load) return;
+  try {
+    await Promise.all([
+      document.fonts.load('800 100px Sora'),
+      document.fonts.load('800 70px Sora'),
+      document.fonts.load('700 40px Fraunces'),
+      document.fonts.load('700 30px "DM Sans"'),
+      document.fonts.load('600 26px "DM Sans"'),
+      document.fonts.load('500 30px "DM Sans"'),
+      document.fonts.load('400 26px "DM Sans"')
+    ]);
+    await document.fonts.ready;
+  } catch(e){}
+}
+// Ícono "ojo" (visitas) dibujado como vector
+function _tjIconEye(ctx, cx, cy, s, color){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = s*0.16; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy);
+  ctx.quadraticCurveTo(cx, cy - s*0.78, cx + s, cy);
+  ctx.quadraticCurveTo(cx, cy + s*0.78, cx - s, cy);
+  ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(cx, cy, s*0.34, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+// Ícono "globo de chat" (consultas) dibujado como vector
+function _tjIconChat(ctx, cx, cy, s, color){
+  ctx.save();
+  ctx.strokeStyle = color; ctx.lineWidth = s*0.16; ctx.lineJoin = 'round';
+  const w = s*2.0, h = s*1.55, x = cx - w/2, y = cy - h/2 - s*0.18, r = s*0.42;
+  _tjRR(ctx, x, y, w, h, r); ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x + w*0.28, y + h - 1);
+  ctx.lineTo(x + w*0.20, y + h + s*0.52);
+  ctx.lineTo(x + w*0.50, y + h - 1);
+  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
+  ctx.fillStyle = color;
+  [-1, 0, 1].forEach(i => { ctx.beginPath(); ctx.arc(cx + i*s*0.46, y + h/2, s*0.12, 0, Math.PI*2); ctx.fill(); });
+  ctx.restore();
+}
+function _tjPeriodoBadge(p){
   const hoy = new Date();
-  const fmt = d => d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
-  if (p.desde){
-    const d = new Date(p.desde + 'T03:00:00Z');
-    return 'Semana del ' + d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' }) + ' al ' + fmt(hoy);
+  const f = d => d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+  if (p.desde){ const d = new Date(p.desde + 'T03:00:00Z'); return f(d) + ' – ' + f(hoy); }
+  return 'al ' + f(hoy);
+}
+// Tarjeta de estadística (panel claro sobre fondo navy)
+function _tjStat(ctx, x, y, w, h, type, num, label, delta){
+  const MUTE = '#5B6B8C';
+  _tjRR(ctx, x, y, w, h, 30); ctx.fillStyle = '#F7F9FD'; ctx.fill();
+  ctx.strokeStyle = '#E5EBF6'; ctx.lineWidth = 2; ctx.stroke();
+  const px = x + 46;
+  // badge de ícono con gradiente de marca
+  const bw = 88, byy = y + 46;
+  _tjRR(ctx, px, byy, bw, bw, 24); ctx.fillStyle = _tjGrad(ctx, px, byy, bw, bw); ctx.fill();
+  const icx = px + bw/2, icy = byy + bw/2;
+  if (type === 'eye') _tjIconEye(ctx, icx, icy, 27, '#FFFFFF');
+  else _tjIconChat(ctx, icx, icy, 22, '#FFFFFF');
+  // pill de crecimiento (arriba a la derecha)
+  if (delta){
+    ctx.font = '700 27px "DM Sans", Arial, sans-serif';
+    const tw = ctx.measureText(delta).width;
+    const pillW = tw + 64, pillH = 48, plx = x + w - 46 - pillW, ply = byy + 18;
+    _tjRR(ctx, plx, ply, pillW, pillH, 24); ctx.fillStyle = '#E7F9F0'; ctx.fill();
+    const ax = plx + 28, ay = ply + pillH/2;
+    ctx.strokeStyle = '#0E9F6E'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); ctx.moveTo(ax, ay + 7); ctx.lineTo(ax, ay - 8);
+    ctx.moveTo(ax - 7, ay - 1); ctx.lineTo(ax, ay - 9); ctx.lineTo(ax + 7, ay - 1); ctx.stroke();
+    ctx.fillStyle = '#0E9F6E'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+    ctx.fillText(delta, ax + 22, ay + 1); ctx.textBaseline = 'alphabetic';
   }
-  return 'Datos al ' + fmt(hoy);
+  // número grande
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = TJ_DARK; ctx.font = '800 100px Sora, Arial, sans-serif';
+  ctx.fillText(num, px, y + h - 92);
+  // etiqueta
+  ctx.fillStyle = MUTE; ctx.font = '500 30px "DM Sans", Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, label, w - 92), px, y + h - 48);
 }
-function _tjStat(ctx, x, y, w, h, emoji, num, label, sub, GREEN, DARK){
-  _tjRR(ctx, x, y, w, h, 24); ctx.fillStyle = '#F4F7FF'; ctx.fill();
-  ctx.textAlign = 'center';
-  ctx.fillStyle = DARK; ctx.font = '400 60px Arial, sans-serif';
-  ctx.fillText(emoji, x + w/2, y + 70);
-  ctx.fillStyle = GREEN; ctx.font = '800 104px Arial, sans-serif';
-  ctx.fillText(num, x + w/2, y + 158);
-  ctx.fillStyle = DARK; ctx.font = '700 30px Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, label, w - 30), x + w/2, y + 222);
-  if (sub){ ctx.fillStyle = GREEN; ctx.font = '700 28px Arial, sans-serif'; ctx.fillText(sub, x + w/2, y + 262); }
-}
-function generarTarjetaInforme(provJson){
+async function generarTarjetaInforme(provJson){
   let p; try { p = JSON.parse(provJson); } catch(e){ return; }
-  const W = 1080, H = 1080, m = 60;
-  const GREEN = '#006039', DARK = '#0D1B3E', GRAY = '#6B7A99';
+  await _tjEnsureFonts();
+  const W = 1080, H = 1080, m = 72;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  ctx.textBaseline = 'middle';
 
-  // fondo + tarjeta blanca
-  ctx.fillStyle = '#E8EEFB'; ctx.fillRect(0, 0, W, H);
-  _tjRR(ctx, m, m, W-2*m, H-2*m, 36); ctx.fillStyle = '#FFFFFF'; ctx.fill();
+  // fondo verde de marca con degradé + glows
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0A5236'); bg.addColorStop(1, '#03291B');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  const glow1 = ctx.createRadialGradient(W - 120, 90, 0, W - 120, 90, 560);
+  glow1.addColorStop(0, 'rgba(255,107,0,0.28)'); glow1.addColorStop(1, 'rgba(255,107,0,0)');
+  ctx.fillStyle = glow1; ctx.fillRect(0, 0, W, H);
+  const glow2 = ctx.createRadialGradient(70, H - 70, 0, 70, H - 70, 500);
+  glow2.addColorStop(0, 'rgba(14,159,110,0.40)'); glow2.addColorStop(1, 'rgba(14,159,110,0)');
+  ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
 
-  // header verde
-  ctx.save();
-  _tjRR(ctx, m, m, W-2*m, 200, 36); ctx.clip();
-  ctx.fillStyle = GREEN; ctx.fillRect(m, m, W-2*m, 220);
-  ctx.restore();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.textAlign = 'left'; ctx.font = '700 62px Georgia, "Times New Roman", serif';
-  ctx.fillText('EmprendeGO', m + 50, m + 100);
-  ctx.textAlign = 'right'; ctx.font = '700 28px Arial, sans-serif';
-  ctx.fillText('INFORME DE ACTIVIDAD', W - m - 50, m + 100);
+  // ---- Header: marca + badge de período ----
+  ctx.textBaseline = 'alphabetic';
+  _tjRR(ctx, m, m + 4, 36, 36, 12); ctx.fillStyle = _tjGrad(ctx, m, m + 4, 36, 36); ctx.fill();
+  ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'left'; ctx.font = '700 40px Fraunces, Georgia, serif';
+  ctx.fillText('EmprendeGO', m + 52, m + 34);
+  const per = _tjPeriodoBadge(p);
+  ctx.font = '600 26px "DM Sans", Arial, sans-serif';
+  const pw = ctx.measureText(per).width + 52;
+  const bx = W - m - pw, by = m - 2, bh = 52;
+  _tjRR(ctx, bx, by, pw, bh, 26); ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.20)'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = '#CDE7DB'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(per, bx + 26, by + bh/2 + 1); ctx.textBaseline = 'alphabetic';
 
-  // nombre + período
+  // ---- Hero: eyebrow + nombre ----
+  ctx.fillStyle = TJ_MUTE; ctx.font = '700 26px "DM Sans", Arial, sans-serif';
+  _tjSpaced(ctx, 'INFORME DE ACTIVIDAD', m, m + 168, 6);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = '800 70px Sora, Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', W - 2*m), m, m + 252);
+
+  // ---- Tarjetas de estadística ----
+  const gap = 36;
+  const cardW = (W - 2*m - gap) / 2;
+  const cardH = 396;
+  const cardY = m + 320;
+  _tjStat(ctx, m, cardY, cardW, cardH, 'eye', String(p.visitas != null ? p.visitas : 0), 'Visitas a tu perfil', p.vsem ? ('+' + p.vsem) : '');
+  _tjStat(ctx, m + cardW + gap, cardY, cardW, cardH, 'chat', String(p.consultas != null ? p.consultas : 0), 'Consultas por WhatsApp', p.csem ? ('+' + p.csem) : '');
+
+  // ---- Footer ----
+  const fy = cardY + cardH + 64;
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(m, fy); ctx.lineTo(W - m, fy); ctx.stroke();
+  ctx.textAlign = 'left'; ctx.fillStyle = '#FFFFFF'; ctx.font = '700 30px "DM Sans", Arial, sans-serif';
+  ctx.fillText('Datos oficiales de tu panel', m, fy + 54);
+  ctx.fillStyle = TJ_MUTE; ctx.font = '400 26px "DM Sans", Arial, sans-serif';
+  ctx.fillText('Verificalos ingresando a tu cuenta', m, fy + 92);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#CDE7DB'; ctx.font = '700 28px "DM Sans", Arial, sans-serif';
+  ctx.fillText('emprendego.com.ar', W - m, fy + 74);
   ctx.textAlign = 'left';
-  ctx.fillStyle = DARK; ctx.font = '800 56px Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', W - 2*m - 100), m + 50, m + 310);
-  ctx.fillStyle = GRAY; ctx.font = '400 32px Arial, sans-serif';
-  ctx.fillText(_tjPeriodo(p), m + 50, m + 370);
-
-  // stat boxes
-  const boxY = m + 440, boxH = 290, gap = 40;
-  const boxW = (W - 2*m - 100 - gap) / 2;
-  const bx1 = m + 50, bx2 = bx1 + boxW + gap;
-  _tjStat(ctx, bx1, boxY, boxW, boxH, '👀', String(p.visitas != null ? p.visitas : 0), 'Visitas al perfil', p.vsem ? ('+' + p.vsem + ' esta semana') : '', GREEN, DARK);
-  _tjStat(ctx, bx2, boxY, boxW, boxH, '💬', String(p.consultas != null ? p.consultas : 0), 'Consultas por WhatsApp', p.csem ? ('+' + p.csem + ' esta semana') : '', GREEN, DARK);
-
-  // footer
-  ctx.textAlign = 'center';
-  ctx.fillStyle = DARK; ctx.font = '700 30px Arial, sans-serif';
-  ctx.fillText('Datos oficiales de tu panel en EmprendeGO', W/2, H - m - 135);
-  ctx.fillStyle = GRAY; ctx.font = '400 26px Arial, sans-serif';
-  ctx.fillText('Verificalos ingresando a tu cuenta · emprendego.com.ar', W/2, H - m - 92);
 
   cv.toBlob(function(blob){
     if (!blob) { showToast('No se pudo generar la tarjeta'); return; }
