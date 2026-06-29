@@ -134,6 +134,7 @@ tr:hover td{background:#fafbff}
 .tbl-btn.ban{background:#fee2e2;color:var(--red)}
 .avatar-cell{display:flex;align-items:center;gap:8px}
 .cell-avatar{width:30px;height:30px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:.75rem;color:var(--blue);flex-shrink:0}
+.cell-avatar-img{width:30px;height:30px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#fff;border:1px solid #eef}
 
 /* REPORTS */
 .report-card{background:white;border-radius:var(--radius);padding:18px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:12px}
@@ -908,12 +909,20 @@ function calcPlanStatus(p) {
   return dias <= 7 ? 'porvencer' : 'proactivo';
 }
 
+// Avatar de proveedor: usa el logo cargado en la app si existe, si no las iniciales.
+function avatarHtml(nombre, logoUrl){
+  const ini = escHtml((nombre||'').substring(0,2).toUpperCase());
+  return logoUrl
+    ? `<img src="${escHtml(logoUrl)}" alt="" class="cell-avatar-img">`
+    : `<div class="cell-avatar">${ini}</div>`;
+}
+
 async function cargarTodosProveedores(){
   const tbody = document.getElementById('prov-table');
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at')
+      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at,logo_url')
       .eq('estado','aprobado')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -926,7 +935,8 @@ async function cargarTodosProveedores(){
     const sortOrder = {vencido:0, porvencer:1, proactivo:2, gratis:3};
     const sorted = data
       .map(p => ({...p, _ps: calcPlanStatus(p)}))
-      .sort((a,b) => (sortOrder[a._ps]||9) - (sortOrder[b._ps]||9));
+      .sort((a,b) => (sortOrder[a._ps]||9) - (sortOrder[b._ps]||9)
+        || (a.nombre||'').localeCompare(b.nombre||'', 'es', {sensitivity:'base'}));
 
     tbody.innerHTML = sorted.map(p => {
       const ps = p._ps;
@@ -947,7 +957,7 @@ async function cargarTodosProveedores(){
       const nombreEsc = escHtml(p.nombre||'');
       return `
       <tr data-plan-status="${ps}">
-        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${nombreEsc}</div></td>
+        <td><div class="avatar-cell">${avatarHtml(p.nombre, p.logo_url)}${nombreEsc}</div></td>
         <td>${escHtml(p.cuit||'—')}</td>
         <td>${escHtml(p.rubro||'—')}</td>
         <td>${planBadge}</td>
