@@ -1,3 +1,5 @@
+import { applyRateLimit, esUUID } from './_ratelimit.js';
+
 const ALLOWED_ORIGINS = [
   'https://emprendego.com.ar',
   'https://www.emprendego.com.ar',
@@ -37,6 +39,9 @@ export default async function handler(req, res) {
 
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Anti-flood del proxy público de productos ML.
+  if (!applyRateLimit(req, res, { bucket: 'ml-proxy', limit: 30, windowMs: 60000 })) return;
 
   const { id } = req.query;
   if (!id) return res.status(400).json({ error: 'Falta el ID' });
@@ -173,7 +178,7 @@ async function handleMLOAuthCallback(req, res) {
     return res.redirect(302, `https://emprendego.com.ar/?ml=error&reason=${encodeURIComponent(error)}`);
   }
 
-  if (!code || !proveedorId) {
+  if (!code || !esUUID(proveedorId)) {
     return res.status(400).send('Parámetros inválidos');
   }
 
@@ -279,9 +284,12 @@ async function handleMLOAuthCallback(req, res) {
 // Sincronizacion de productos desde Mercado Libre
 // ============================================================
 async function handleMLSync(req, res) {
+  // Sync es una operación pesada: limitar para que no se pueda abusar.
+  if (!applyRateLimit(req, res, { bucket: 'ml-sync', limit: 10, windowMs: 60000 })) return;
+
   const body = await readJsonBody(req);
   const proveedorId = body.proveedor_id;
-  if (!proveedorId) return res.status(400).json({ error: 'Falta proveedor_id' });
+  if (!esUUID(proveedorId)) return res.status(400).json({ error: 'proveedor_id inválido' });
 
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

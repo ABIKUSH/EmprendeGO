@@ -1,3 +1,5 @@
+import { applyRateLimit, esUUID } from './_ratelimit.js';
+
 const ALLOWED_ORIGINS = [
   'https://emprendego.com.ar',
   'https://www.emprendego.com.ar',
@@ -21,6 +23,9 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
+  // Anti-flood: crear pagos no debería pasar de unas pocas veces por minuto por IP.
+  if (!applyRateLimit(req, res, { bucket: 'crear-pago', limit: 8, windowMs: 60000 })) return;
+
   const { email, proveedorId } = req.body || {};
   if (!email || !proveedorId) {
     return res.status(400).json({ error: 'Faltan email o proveedorId' });
@@ -31,8 +36,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Email inválido' });
   }
 
-  // Validar que proveedorId sea un UUID válido (string)
-  if (typeof proveedorId !== 'string' || proveedorId.trim().length === 0) {
+  // Validar que proveedorId sea un UUID válido (formato real, no cualquier string)
+  if (!esUUID(proveedorId)) {
     return res.status(400).json({ error: 'proveedorId inválido' });
   }
 

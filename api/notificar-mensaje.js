@@ -1,10 +1,15 @@
+import { applyRateLimit, esUUID, escHtml } from './_ratelimit.js';
+
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
+  // Endpoint público que dispara emails: limitar para evitar spam masivo.
+  if (!applyRateLimit(req, res, { bucket: 'notificar', limit: 10, windowMs: 60000 })) return;
+
   const { proveedor_id, de_nombre, texto } = req.body || {};
-  if (!proveedor_id || !de_nombre || !texto) {
+  if (!esUUID(proveedor_id) || !de_nombre || !texto) {
     return res.status(400).json({ error: 'missing fields' });
   }
 
@@ -40,7 +45,11 @@ export default async function handler(req, res) {
 
     const appUrl = (process.env.APP_URL || 'https://emprendego.vercel.app').replace(/\/$/, '');
     const unsubUrl = `${appUrl}/api/unsub?id=${proveedor_id}`;
-    const textoPreview = texto.length > 300 ? texto.slice(0, 300) + '...' : texto;
+    // Escapar lo que viene del usuario antes de meterlo en el HTML del email
+    // (evita inyección de etiquetas/links de phishing en la casilla del proveedor).
+    const textoPreviewRaw = texto.length > 300 ? texto.slice(0, 300) + '...' : texto;
+    const textoPreview = escHtml(textoPreviewRaw);
+    const deNombreSafe = escHtml(de_nombre);
 
     const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -56,7 +65,7 @@ export default async function handler(req, res) {
           <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f9fafb;border-radius:12px;">
             <div style="background:white;border-radius:10px;padding:28px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
               <h2 style="color:#6366f1;margin:0 0 8px;">Tenés un nuevo mensaje 💬</h2>
-              <p style="color:#374151;margin:0 0 20px;"><strong>${de_nombre}</strong> te escribió en EmprendeGO:</p>
+              <p style="color:#374151;margin:0 0 20px;"><strong>${deNombreSafe}</strong> te escribió en EmprendeGO:</p>
               <div style="background:#f3f4f6;border-left:4px solid #6366f1;padding:14px 18px;border-radius:6px;margin-bottom:24px;">
                 <p style="margin:0;color:#374151;font-style:italic;">"${textoPreview}"</p>
               </div>

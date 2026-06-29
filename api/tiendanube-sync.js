@@ -1,8 +1,13 @@
+import { applyRateLimit, esUUID } from './_ratelimit.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Solo POST' });
 
+  // Sync es pesado: limitar ráfagas por IP.
+  if (!applyRateLimit(req, res, { bucket: 'tn-sync', limit: 10, windowMs: 60000 })) return;
+
   const { proveedor_id } = req.body || {};
-  if (!proveedor_id) return res.status(400).json({ error: 'Falta proveedor_id' });
+  if (!esUUID(proveedor_id)) return res.status(400).json({ error: 'proveedor_id inválido' });
 
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

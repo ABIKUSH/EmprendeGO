@@ -540,12 +540,12 @@ function renderFavs() {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${p.rubro || ''}${p.provincia ? ' · ' + p.provincia : ''}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || '')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         <div style="font-size:.76rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avgR} ★</div>
       </div>
@@ -904,8 +904,8 @@ function renderComparadorModal() {
   comparadorList.forEach((p, i) => {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     thead += `<th><div class="comp-header-cell">
-      <div class="comp-header-ini" style="background:${bgs[i]}">${ini}</div>
-      <div class="comp-header-name">${p.nombre}</div>
+      <div class="comp-header-ini" style="background:${bgs[i]}">${escHtml(ini)}</div>
+      <div class="comp-header-name">${escHtml(p.nombre)}</div>
       ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
     </div></th>`;
   });
@@ -925,7 +925,7 @@ function renderComparadorModal() {
       } else {
         val = p[c.key] || '—';
       }
-      tbody += `<td>${val}</td>`;
+      tbody += `<td>${escHtml(val)}</td>`;
     });
     tbody += '</tr>';
   });
@@ -938,7 +938,7 @@ function renderComparadorModal() {
     <div style="display:flex;flex-direction:column;gap:8px">
       ${comparadorList.map(p => `
         <button onclick="closeComparador();abrirDetalle('${p.id}')" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
-          Ver perfil de ${p.nombre} →
+          Ver perfil de ${escHtml(p.nombre)} →
         </button>`).join('')}
       <button onclick="comparadorList=[];updateComparadorFab();closeComparador();showToast('Comparador limpiado')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:4px">
         Limpiar comparador
@@ -2290,10 +2290,10 @@ async function cargarHistorial() {
       const bg = _monoColor(p.id);
       return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
-          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
-          : `<div class="hist-logo" style="background:${bg}">${ini}</div>`
+          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+          : `<div class="hist-logo" style="background:${bg}">${escHtml(ini)}</div>`
         }
-          <div class="hist-info"><strong>${p.nombre}</strong><span>${p.rubro || ''}${p.pro ? ' · PRO' : ''}</span></div>
+          <div class="hist-info"><strong>${escHtml(p.nombre)}</strong><span>${escHtml(p.rubro || '')}${p.pro ? ' · PRO' : ''}</span></div>
           <span class="hist-time">${timeAgo(new Date(p.visitedAt))}</span>
         </div>`;
     }).join('')}
@@ -4906,7 +4906,7 @@ function renderDetCarousels(prodsDetalle) {
         ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div style="padding:7px 8px 9px">
-        <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${p.nombre}</div>
+        <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(p.nombre)}</div>
         <div style="font-size:.8rem;font-weight:900;color:#006039;margin-top:3px">$${(p.precio || 0).toLocaleString('es-AR')}</div>
       </div>
     </div>`;
@@ -4991,12 +4991,12 @@ async function renderRecienLlegados() {
       const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
       return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
         ${p.logo_url
-          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img src="${p.logo_url}" style="width:100%;height:100%;object-fit:cover"></div>`
-          : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${ini}</div>`
+          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+          : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
         }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.nombre}</div>
-          <div style="font-size:.73rem;color:#6B7A99;margin-top:1px">${p.rubro || 'General'}${p.provincia ? ' · ' + p.provincia : ''}</div>
+          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-size:.73rem;color:#6B7A99;margin-top:1px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <span style="font-size:.62rem;font-weight:800;background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:20px">${badge}</span>
