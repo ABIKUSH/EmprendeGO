@@ -1115,7 +1115,10 @@ function renderProvs(list) {
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
+          <div style="display:flex;align-items:flex-start;gap:6px">
+            <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
+            ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em;flex-shrink:0;margin-top:1px">PRO</span>' : ''}
+          </div>
           <div style="font-size:.72rem;color:#6B7A99;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</div>
         </div>
         ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0;margin-top:2px">${avg.toFixed(1)} ★</div>` : ''}
@@ -1123,7 +1126,6 @@ function renderProvs(list) {
       <div style="padding:0 14px 13px;display:flex;flex-direction:column;flex:1">
         <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:0">${escHtml(p.desc || '')}</p>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:auto;padding-top:9px;margin-bottom:8px">
-          ${p.pro ? '<span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em">PRO</span>' : ''}
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
