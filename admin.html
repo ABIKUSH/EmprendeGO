@@ -917,12 +917,27 @@ function avatarHtml(nombre, logoUrl){
     : `<div class="cell-avatar">${ini}</div>`;
 }
 
+// ¿Es una cuenta cargada por nosotros (flujo concierge)? Marca = placeholders de email/cuit.
+function esProveedorConcierge(p){
+  return (p.email||'').startsWith('sin-mail.') || (p.cuit||'').startsWith('PENDIENTE-');
+}
+
+// Abre WhatsApp con el mensaje de presentación. SOLO para cuentas concierge:
+// a los proveedores que se registraron solos NO se les manda (ya saben qué es EmprendeGO).
+function presentarWA(whatsapp, nombre, rubro){
+  const num = normalizarWAArgAdmin(whatsapp);
+  if(!num){ showToast('Este proveedor no tiene WhatsApp cargado'); return; }
+  const r = (rubro||'tu rubro').split(',')[0].trim();
+  const msg = `Hola! 👋 Te escribo de EmprendeGO, un buscador donde emprendedores y revendedores encuentran proveedores mayoristas para comprar.\n\nVi que ${nombre} la rompe en ${r}, así que te armé un perfil gratis en la plataforma — no tenés que hacer nada ni pagar nada.\n\nTe voy a empezar a mandar compradores que buscan ${r}. Te van a llegar consultas por este mismo WhatsApp diciendo "te encontré en EmprendeGO". Esos son clientes que te manda la plataforma.\n\nSi te gusta cómo viene la mano, la cuenta es tuya y la manejás vos. ¿Te parece si te sumo? 🙌`;
+  window.open('https://wa.me/'+num+'?text='+encodeURIComponent(msg), '_blank');
+}
+
 async function cargarTodosProveedores(){
   const tbody = document.getElementById('prov-table');
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at,logo_url')
+      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at,logo_url,whatsapp,email')
       .eq('estado','aprobado')
       .order('created_at',{ascending:false});
     if(error) throw error;
@@ -965,6 +980,9 @@ async function cargarTodosProveedores(){
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
+          ${esProveedorConcierge(p)
+            ? `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-weight:700" data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${nombreEsc}" data-rubro="${escHtml(p.rubro||'')}" onclick="presentarWA(this.dataset.wa,this.dataset.nombre,this.dataset.rubro)" title="Mandar mensaje de presentación (cuenta cargada por nosotros)">📲 Presentar</button>`
+            : ''}
           ${p.plan==='pro'
             ? `<button class="tbl-btn warn" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="quitarPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Quitar</button>`
             : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="darPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Dar Pro</button>`}
