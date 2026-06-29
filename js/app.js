@@ -1250,7 +1250,7 @@ function abrirWA(num, msg) {
   haptic('success');
   const n = normalizarWAArg(num);
   if (!n) { showToast('WhatsApp no disponible'); return; }
-  const texto = msg || '¡Hola! Te encontré en EmprendeGO y me gustaría consultar sobre tus productos.';
+  const texto = msg || '¡Hola! Te encontré en EmprendeGO (el buscador de proveedores mayoristas) y me gustaría consultar sobre tus productos.';
   trackEvent('contact_whatsapp', { provider_id: String(provActual?.id || ''), provider_name: provActual?.nombre || '', provider_rubro: provActual?.rubro || '' });
   window.open('https://wa.me/' + n + '?text=' + encodeURIComponent(texto), '_blank');
 }
