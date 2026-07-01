@@ -3130,42 +3130,62 @@ function showToast(msg) {
 }
 
 // ===== AI TEST =====
+// Recomendador de PROVEEDOR (antes "test de rubro"). Q1 se completa dinámicamente
+// en openTest() con los rubros que realmente tienen proveedores cargados, para no
+// ofrecer rubros vacíos. Cada opción de Q1 lleva un `value` = rubro (o null = "no sé").
 const questions = [
   {
-    text: "En que parte de Argentina estás?", sub: "Tu localidad nos ayuda a sugerirte rubros con demanda real.", options: [
-      { icon: "🏙", label: "Buenos Aires / GBA", sub: "Gran Buenos Aires o CABA" },
-      { icon: "🏔", label: "Córdoba o Rosario", sub: "Grandes ciudades del interior" },
-      { icon: "🏘", label: "Ciudad mediana", sub: "Entre 50.000 y 500.000 hab." },
-      { icon: "🏡", label: "Localidad pequeña", sub: "Menos de 50.000 hab." }
+    dynamic: 'rubro',
+    text: "¿Qué estás buscando?", sub: "Elegí el rubro que querés comprar al por mayor.",
+    options: []   // se llena en openTest() → buildRubroOptions()
+  },
+  {
+    text: "¿Desde dónde comprás?", sub: "Para priorizar quién te envía o está cerca tuyo.", options: [
+      { icon: "🚚", label: "Que me lo envíen", sub: "Compro a distancia" },
+      { icon: "🏙", label: "AMBA (CABA / Bs. As. / GBA)", sub: "Zona metropolitana" },
+      { icon: "🌆", label: "Interior del país", sub: "Otra provincia" }
     ]
   },
   {
-    text: "Con cuánto capital inicial contás?", sub: "Recomendamos rubros alcanzables con lo que tenés hoy.", options: [
-      { icon: "💵", label: "Menos de $50.000", sub: "Empezar muy chico" },
-      { icon: "💰", label: "$50.000 a $200.000", sub: "Capital moderado" },
-      { icon: "💼", label: "$200.000 a $500.000", sub: "Buena base" },
-      { icon: "🎯", label: "Más de $500.000", sub: "Puedo invertir fuerte" }
+    text: "¿Cuánto querés invertir por pedido?", sub: "Para descartar los que te piden un mínimo muy alto.", options: [
+      { icon: "💵", label: "Menos de $50.000", sub: "Arranco chico" },
+      { icon: "💰", label: "$50.000 a $200.000", sub: "Presupuesto moderado" },
+      { icon: "💼", label: "$200.000 a $500.000", sub: "Puedo invertir" },
+      { icon: "🎯", label: "Más de $500.000 / me da igual", sub: "Sin problema con el mínimo" }
     ]
   },
   {
-    text: "Por qué canal vas a vender?", sub: "El canal define qué tipo de producto funciona mejor.", options: [
-      { icon: "📱", label: "Instagram / TikTok", sub: "Redes sociales" },
-      { icon: "🛒", label: "MercadoLibre / Tiendanube", sub: "Marketplaces online" },
-      { icon: "🏪", label: "Local o feria física", sub: "Venta presencial" },
-      { icon: "👥", label: "WhatsApp / conocidos", sub: "Círculo cercano" }
-    ]
-  },
-  {
-    text: "Cuánta experiencia tenés vendiendo?", sub: "Ajustamos la recomendacion a tu nivel.", options: [
-      { icon: "🌱", label: "Ninguna, primera vez", sub: "Empezando desde cero" },
-      { icon: "📦", label: "Vendí algo alguna vez", sub: "Experiencia puntual" },
-      { icon: "📈", label: "Ya vendo regularmente", sub: "Tengo proceso armado" },
-      { icon: "🚀", label: "Vendedor/a experimentado/a", sub: "Busco escalar" }
+    text: "¿Qué es lo más importante para vos?", sub: "Con esto ordenamos cuál te mostramos primero.", options: [
+      { icon: "🏷", label: "Precio y pedido mínimo bajo", sub: "Que me convenga la plata" },
+      { icon: "📦", label: "Que envíe a todo el país", sub: "Necesito envíos" },
+      { icon: "✅", label: "Que sea confiable y verificado", sub: "Comprar tranquilo" },
+      { icon: "🔥", label: "Que muchos ya le compren", sub: "Prueba social" }
     ]
   }
 ];
 let currentStep = 0, answers = [], selectedOption = null;
-function openTest() { resetTest(); document.getElementById('testModal').classList.add('open'); document.body.style.overflow = 'hidden'; }
+// Arma las opciones de la 1ª pregunta con los rubros que SÍ tienen proveedores
+// cargados (ordenados por cantidad). Nunca ofrece un rubro vacío. Cierra con la
+// opción "no lo tengo claro" (value:null) que activa el modo sugerencia.
+function buildRubroOptions() {
+  const cuenta = {};
+  (proveedoresDB || []).forEach(p => { const r = p.rubro || 'Otro'; cuenta[r] = (cuenta[r] || 0) + 1; });
+  const opts = Object.keys(cuenta)
+    .sort((a, b) => cuenta[b] - cuenta[a])
+    .map(r => ({
+      icon: `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${catColors[r] || '#006039'}"></span>`,
+      label: r, sub: cuenta[r] + (cuenta[r] === 1 ? ' proveedor' : ' proveedores'), value: r
+    }));
+  opts.push({ icon: "🤔", label: "Todavía no lo tengo claro", sub: "Ayudame a elegir", value: null });
+  return opts;
+}
+
+function openTest() {
+  questions[0].options = buildRubroOptions();
+  resetTest();
+  document.getElementById('testModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
 function closeTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow = ''; }
 function closeTestOnBg(e) { if (e.target === document.getElementById('testModal')) closeTest(); }
 function resetTest() {
@@ -3204,37 +3224,124 @@ function nextStep() {
   if (currentStep < questions.length - 1) { currentStep++; renderQuestion(); }
   else showResult();
 }
+// Convierte "Desde $100.000+" / "Sin minimo" / "Consultar" a número (0 si no aplica).
+function parseMinimo(txt) {
+  const s = String(txt || '').toLowerCase();
+  if (!s || s.includes('sin') || s.includes('consult') || s.includes('stock')) return 0;
+  const soloNum = s.replace(/[^0-9]/g, '');
+  return soloNum ? parseInt(soloNum, 10) : 0;
+}
+
+// Puntúa TODOS los proveedores según las 4 respuestas y devuelve los mejores.
+// Si el comprador eligió un rubro, filtra por ese rubro; si eligió "no lo tengo
+// claro" (rubro null) rankea sobre todo el padrón y sugerimos el mejor rubro.
+function scoreProveedores(ans) {
+  const rubroSel = questions[0].options[ans[0].a]?.value ?? null; // null = no sabe
+  const loc = ans[1].a;        // 0 envío · 1 AMBA · 2 interior
+  const techo = [50000, 200000, 500000, Infinity][ans[2].a];
+  const prio = ans[3].a;       // 0 precio · 1 envío · 2 verificado · 3 popularidad
+
+  const base = (proveedoresDB || []).filter(p => p.whatsapp || p.id);
+  const cand = rubroSel ? base.filter(p => p.rubro === rubroSel) : base.slice();
+
+  const evaluar = p => {
+    const enviaPais = /pa[ií]s|nacional|todo el/i.test(p.envios || '');
+    const esAMBA = /caba|buenos aires|gba/i.test(p.provincia || '');
+    const minNum = parseMinimo(p.pedido_minimo);
+    const reasons = [];
+    let s = 0;
+
+    // Ubicación / envíos
+    if (loc === 0) { if (enviaPais) { s += 20; reasons.push('envía a todo el país'); } }
+    else {
+      const localMatch = (loc === 1 && esAMBA) || (loc === 2 && !esAMBA && p.provincia);
+      if (localMatch) { s += 18; reasons.push('está en tu zona'); }
+      if (enviaPais) { s += 12; if (!localMatch) reasons.push('envía a todo el país'); }
+    }
+    // Pedido mínimo vs presupuesto
+    if (minNum === 0) { s += 8; }
+    else if (minNum <= techo) { s += 14; reasons.push('pedido mínimo acorde a tu presupuesto'); }
+    else { s -= 12; }
+    // Confianza y popularidad
+    if (p.pro) { s += 10; }
+    s += Math.min(p.visitas || 0, 500) * 0.02;
+    // Prioridad elegida (desempate fuerte)
+    if (prio === 0 && (minNum === 0 || minNum <= techo)) s += 15;
+    if (prio === 1 && enviaPais) s += 15;
+    if (prio === 2 && p.pro) { s += 15; reasons.push('es un proveedor verificado'); }
+    if (prio === 3) s += Math.min(p.visitas || 0, 500) * 0.03;
+
+    return { p, s, reasons };
+  };
+
+  return cand.map(evaluar).sort((a, b) => b.s - a.s).slice(0, 3);
+}
+
+// Pinta las tarjetas de proveedor recomendadas dentro del modal del test.
+function renderRecomendaciones(ranked, rubroSel) {
+  const cont = document.getElementById('recoResults');
+  const head = document.getElementById('reco-heading');
+  if (!cont) return;
+
+  if (!ranked.length) {
+    head.innerHTML = '';
+    cont.innerHTML = `<div style="text-align:center;padding:8px 4px 4px;color:#6B7A99;font-size:.9rem">
+      No encontramos un proveedor que encaje justo con eso todavía.</div>
+      <button onclick="closeTest();${rubroSel ? `filterCat('${rubroSel.replace(/'/g, "\\'")}')` : "goTo('buscar')"}" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-top:6px">Ver todos los proveedores</button>`;
+    return;
+  }
+
+  const rubroMostrado = rubroSel || ranked[0].p.rubro;
+  head.innerHTML = rubroSel
+    ? `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Tu mejor match en ${escHtml(rubroMostrado)}</div>`
+    : `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Te recomendamos empezar por ${escHtml(rubroMostrado)}</div>
+       <div style="font-size:.8rem;color:#6B7A99;margin-bottom:12px">Es donde más y mejores proveedores hay para tu perfil.</div>`;
+
+  cont.innerHTML = ranked.map(({ p, reasons }, i) => {
+    const ini = p.inicial || (p.nombre || '').substring(0, 2).toUpperCase();
+    const bg = _monoColor(p.id);
+    const porque = reasons.length ? 'Te lo recomiendo porque ' + reasons.slice(0, 3).join(', ') + '.' : 'Buen match para lo que buscás.';
+    const wa = normalizarWAArg(p.whatsapp);
+    const waBtn = wa
+      ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarConsulta('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
+      : '';
+    return `<div style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px;position:relative">
+      ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
+      <div style="display:flex;align-items:center;gap:12px;margin-top:${i === 0 ? '6px' : '0'}">
+        ${p.logo_url
+        ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+        : `<div style="width:46px;height:46px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>`}
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+            <span style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
+            ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 6px;border-radius:7px;letter-spacing:.04em">PRO</span>' : ''}
+          </div>
+          <div style="font-size:.72rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro)}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
+        </div>
+      </div>
+      <div style="font-size:.8rem;color:#334155;line-height:1.5;margin:10px 0 12px">${escHtml(porque)}</div>
+      <div style="display:flex;gap:8px">
+        <button onclick="closeTest();abrirDetalle('${p.id}')" style="flex:1;background:#F5F7FF;border:1.5px solid #E2E8F8;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;color:#006039;cursor:pointer">Ver perfil</button>
+        ${waBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
 async function showResult() {
   document.getElementById('progressFill').style.width = '100%';
   document.getElementById('questionsSection').style.display = 'none';
   document.getElementById('resultSection').classList.add('show');
   document.getElementById('resultLoading').style.display = 'block';
   document.getElementById('resultContent').style.display = 'none';
-  const locs = ['Buenos Aires / GBA', 'Córdoba o Rosario', 'Ciudad mediana', 'Localidad pequeña'];
-  const caps = ['menos de $50.000', 'entre $50.000 y $200.000', 'entre $200.000 y $500.000', 'más de $500.000'];
-  const cans = ['Instagram/TikTok', 'MercadoLibre/Tiendanube', 'local o feria física', 'círculo cercano/WhatsApp'];
-  const exps = ['ninguna experiencia', 'algo de experiencia', 'vende regularmente', 'vendedor experimentado'];
-  const prompt = `Sos un asesor de negocios mayoristas en Argentina. Perfil: Localidad: ${locs[answers[0].a]}, Capital: ${caps[answers[1].a]}, Canal: ${cans[answers[2].a]}, Experiencia: ${exps[answers[3].a]}. Recomienda el MEJOR rubro mayorista. Responde SOLO JSON sin backticks: {"rubro":"Indumentaria|Tecnología|Bazar|Hogar y Deco|Alimentos|Belleza y Salud|Deportes|Muebles|Textil y Telas|Marroquinería y Bolsos|Packaging|Mascotas","titulo":"nombre atractivo max 4 palabras","porque":"2-3 oraciones español argentino coloquial","tips":["tip1","tip2","tip3"]}`;
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 800, messages: [{ role: 'user', content: prompt }] }) });
-    const data = await res.json();
-    const parsed = JSON.parse(data.content.map(i => i.text || '').join('').replace(/```json|```/g, '').trim());
-    currentResult = parsed.rubro;
-    document.getElementById('resultRubro').textContent = parsed.titulo;
-    document.getElementById('resultWhy').textContent = parsed.porque;
-    document.getElementById('resultChips').innerHTML = parsed.tips.map(t => `<span class="result-chip">💡 ${t}</span>`).join('');
-  } catch (e) {
-    const fallbacks = [
-      { rubro: 'Indumentaria', titulo: 'Moda y Accesorios', porque: 'La indumentaria es uno de los rubros más accesibles para empezar al por mayor.', tips: ['Empezá con accesorios baratos', 'Usá Instagram para mostrar looks', 'Buscá proveedores en La Salada'] },
-      { rubro: 'Bazar', titulo: 'Bazar del Hogar', porque: 'El bazar tiene alta rotación. Con poco capital armás un catálogo variado.', tips: ['Armá combos de regalo', 'Vendé en ferias locales', 'Artículos de cocina se venden solos'] },
-      { rubro: 'Tecnología', titulo: 'Accesorios Tech', porque: 'Los accesorios tech tienen márgenes muy buenos en MercadoLibre.', tips: ['Fundas y cargadores son lo más vendido', 'Comprá en cantidad', 'MercadoLibre es el mejor canal'] },
-    ];
-    const r = fallbacks[Math.floor(Math.random() * fallbacks.length)];
-    currentResult = r.rubro;
-    document.getElementById('resultRubro').textContent = r.titulo;
-    document.getElementById('resultWhy').textContent = r.porque;
-    document.getElementById('resultChips').innerHTML = r.tips.map(t => `<span class="result-chip">💡 ${t}</span>`).join('');
-  }
+
+  // Pequeña pausa para que se perciba el "análisis" (no hay llamada de red).
+  await new Promise(r => setTimeout(r, 650));
+
+  const rubroSel = questions[0].options[answers[0].a]?.value ?? null;
+  const ranked = scoreProveedores(answers);
+  renderRecomendaciones(ranked, rubroSel);
+
   document.getElementById('resultLoading').style.display = 'none';
   document.getElementById('resultContent').style.display = 'block';
 }
