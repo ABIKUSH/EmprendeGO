@@ -386,6 +386,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   setTimeout(checkReveal, 200);
+  setTimeout(mostrarBurbujaReco, 3000);
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
       hideSearchDropdown();
@@ -3156,27 +3157,35 @@ const questions = [
   },
   {
     text: "¿Qué es lo más importante para vos?", sub: "Con esto ordenamos cuál te mostramos primero.", options: [
-      { icon: "🏷", label: "Precio y pedido mínimo bajo", sub: "Que me convenga la plata" },
+      { icon: "🏷", label: "El precio y pedido mínimo bajo", sub: "Que me convenga la plata" },
       { icon: "📦", label: "Que envíe a todo el país", sub: "Necesito envíos" },
-      { icon: "✅", label: "Que sea confiable y verificado", sub: "Comprar tranquilo" },
-      { icon: "🔥", label: "Que muchos ya le compren", sub: "Prueba social" }
+      { icon: "🔥", label: "Que sea de los más elegidos", sub: "Los que más consultan" },
+      { icon: "✨", label: "Mostrame el mejor en general", sub: "No tengo una preferencia" }
     ]
   }
 ];
 let currentStep = 0, answers = [], selectedOption = null;
-// Arma las opciones de la 1ª pregunta con los rubros que SÍ tienen proveedores
-// cargados (ordenados por cantidad). Nunca ofrece un rubro vacío. Cierra con la
-// opción "no lo tengo claro" (value:null) que activa el modo sugerencia.
+// Rubros tal como aparecen (y en el mismo orden) en los chips del buscador.
+const RUBROS_BUSCADOR = [
+  'Blanquería', 'Indumentaria', 'Bazar', 'Tecnología', 'Packaging', 'Belleza y Salud',
+  'Electrónica', 'Juguetería', 'Limpieza', 'Bebés y Niños', 'Hogar y Deco', 'Textil y Telas',
+  'Lencería', 'Herramientas', 'Muebles', 'Librería y Papelería', 'Ferretería', 'Mascotas',
+  'Alimentos', 'Iluminación', 'Construcción', 'Marroquinería y Bolsos', 'Deportes',
+  'Automotor', 'Servicios', 'Otro'
+];
+
+// Opciones de la 1ª pregunta: "Todavía no lo tengo claro" primero, y luego los
+// rubros del buscador EN SU ORDEN, incluyendo solo los que tienen al menos un
+// proveedor. Un proveedor con varios rubros (coma) cuenta en cada uno (matchesCat).
 function buildRubroOptions() {
-  const cuenta = {};
-  (proveedoresDB || []).forEach(p => { const r = p.rubro || 'Otro'; cuenta[r] = (cuenta[r] || 0) + 1; });
-  const opts = Object.keys(cuenta)
-    .sort((a, b) => cuenta[b] - cuenta[a])
-    .map(r => ({
+  const opts = [{ icon: "🤔", label: "Todavía no lo tengo claro", sub: "Ayudame a elegir", value: null }];
+  RUBROS_BUSCADOR.forEach(r => {
+    const n = (proveedoresDB || []).filter(p => matchesCat(p.rubro, r)).length;
+    if (n > 0) opts.push({
       icon: `<span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${catColors[r] || '#006039'}"></span>`,
-      label: r, sub: cuenta[r] + (cuenta[r] === 1 ? ' proveedor' : ' proveedores'), value: r
-    }));
-  opts.push({ icon: "🤔", label: "Todavía no lo tengo claro", sub: "Ayudame a elegir", value: null });
+      label: r, sub: n + (n === 1 ? ' proveedor' : ' proveedores'), value: r
+    });
+  });
   return opts;
 }
 
@@ -3185,6 +3194,31 @@ function openTest() {
   resetTest();
   document.getElementById('testModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+// Burbuja flotante que invita al recomendador. Aparece 1 vez por sesión, 3s
+// después de entrar, y solo si el usuario está parado en el inicio.
+function mostrarBurbujaReco() {
+  try { if (sessionStorage.getItem('eg_reco_bubble')) return; } catch (e) { }
+  const inicio = document.getElementById('screen-inicio');
+  const bubble = document.getElementById('recoBubble');
+  if (!bubble || !inicio || !inicio.classList.contains('active')) return;
+  try { sessionStorage.setItem('eg_reco_bubble', '1'); } catch (e) { }
+  bubble.style.display = 'block';
+  requestAnimationFrame(() => bubble.classList.add('show'));
+  clearTimeout(window._recoBubbleTO);
+  window._recoBubbleTO = setTimeout(cerrarBurbujaReco, 10000);
+}
+function cerrarBurbujaReco(ev) {
+  if (ev) ev.stopPropagation();
+  const bubble = document.getElementById('recoBubble');
+  if (!bubble) return;
+  bubble.classList.remove('show');
+  setTimeout(() => { bubble.style.display = 'none'; }, 250);
+}
+function abrirTestDesdeBurbuja() {
+  cerrarBurbujaReco();
+  openTest();
 }
 function closeTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow = ''; }
 function closeTestOnBg(e) { if (e.target === document.getElementById('testModal')) closeTest(); }
@@ -3239,10 +3273,12 @@ function scoreProveedores(ans) {
   const rubroSel = questions[0].options[ans[0].a]?.value ?? null; // null = no sabe
   const loc = ans[1].a;        // 0 envío · 1 AMBA · 2 interior
   const techo = [50000, 200000, 500000, Infinity][ans[2].a];
-  const prio = ans[3].a;       // 0 precio · 1 envío · 2 verificado · 3 popularidad
+  const prio = ans[3].a;       // 0 precio · 1 envío · 2 popularidad · 3 sin preferencia
 
   const base = (proveedoresDB || []).filter(p => p.whatsapp || p.id);
-  const cand = rubroSel ? base.filter(p => p.rubro === rubroSel) : base.slice();
+  // matchesCat contempla rubros múltiples (coma) y nombres legacy: un proveedor
+  // en 2 rubros aparece en ambos, igual que en el buscador.
+  const cand = rubroSel ? base.filter(p => matchesCat(p.rubro, rubroSel)) : base.slice();
 
   const evaluar = p => {
     const enviaPais = /pa[ií]s|nacional|todo el/i.test(p.envios || '');
@@ -3262,14 +3298,13 @@ function scoreProveedores(ans) {
     if (minNum === 0) { s += 8; }
     else if (minNum <= techo) { s += 14; reasons.push('pedido mínimo acorde a tu presupuesto'); }
     else { s -= 12; }
-    // Confianza y popularidad
+    // Confianza y popularidad (Pro suma en silencio; todos son verificados)
     if (p.pro) { s += 10; }
     s += Math.min(p.visitas || 0, 500) * 0.02;
-    // Prioridad elegida (desempate fuerte)
+    // Prioridad elegida en Q4 (0 precio · 1 envío · 2 popularidad · 3 sin preferencia)
     if (prio === 0 && (minNum === 0 || minNum <= techo)) s += 15;
     if (prio === 1 && enviaPais) s += 15;
-    if (prio === 2 && p.pro) { s += 15; reasons.push('es un proveedor verificado'); }
-    if (prio === 3) s += Math.min(p.visitas || 0, 500) * 0.03;
+    if (prio === 2) s += Math.min(p.visitas || 0, 500) * 0.03;
 
     return { p, s, reasons };
   };
@@ -3291,7 +3326,7 @@ function renderRecomendaciones(ranked, rubroSel) {
     return;
   }
 
-  const rubroMostrado = rubroSel || ranked[0].p.rubro;
+  const rubroMostrado = rubroSel || (ranked[0].p.rubro || '').split(',')[0].trim() || 'proveedores';
   head.innerHTML = rubroSel
     ? `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Tu mejor match en ${escHtml(rubroMostrado)}</div>`
     : `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Te recomendamos empezar por ${escHtml(rubroMostrado)}</div>
