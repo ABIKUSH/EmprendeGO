@@ -252,6 +252,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" aria-label="Notificaciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot" id="notifDot"></span></button>
       <button class="topbar-btn" id="topbar-login-btn" onclick="goTo('perfil')">&#8594; Ingresar</button>
     </div>
+    <!-- Burbuja flotante del recomendador (se muestra a los 3s, 1 vez por sesión) -->
+    <div id="recoBubble" onclick="abrirTestDesdeBurbuja()" role="button" aria-label="Encontrá tu proveedor ideal">
+      <button class="reco-bubble-x" onclick="cerrarBurbujaReco(event)" aria-label="Cerrar">&times;</button>
+      <div class="reco-bubble-title">¿No sabés a quién comprarle? 🤔</div>
+      <div class="reco-bubble-sub">Respondé 4 preguntas y te encuentro el proveedor ideal.</div>
+    </div>
   </div>
 
   <!-- HERO CON GRADIENTE -->
