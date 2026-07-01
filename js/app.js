@@ -2510,9 +2510,12 @@ function removeFoto() {
 }
 
 async function subirFotoStorage(file, provId) {
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `${provId}/${Date.now()}.${ext}`;
-  const { data, error } = await sb.storage.from('productos').upload(path, file, { upsert: true });
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  // Nombre único (token aleatorio + timestamp) para no depender de upsert.
+  // El bucket 'productos' solo tiene política RLS de INSERT (no UPDATE); usar
+  // upsert:true dispararía un 400 al exigir permiso de UPDATE inexistente.
+  const path = `${provId}/${Math.random().toString(36).substring(2)}_${Date.now()}.${ext}`;
+  const { data, error } = await sb.storage.from('productos').upload(path, file);
   if (error) throw error;
   const { data: urlData } = sb.storage.from('productos').getPublicUrl(path);
   return urlData.publicUrl;
