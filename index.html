@@ -241,6 +241,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
+<!-- ===== DATOS DEL COMPRADOR (INVITADO) ===== -->
+<div class="modal-overlay" id="invitadoModal" onclick="closeInvitadoOnBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Tus datos de contacto</h3><button class="modal-close" onclick="closeInvitadoModal()">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:.85rem;color:var(--gray);margin-bottom:16px">Para que el proveedor pueda confirmarte el pedido, dejale tu nombre y tu WhatsApp.</p>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Tu nombre</label>
+        <input type="text" id="invitado-nombre-input" placeholder="Ej: Martina V." autocomplete="name">
+      </div>
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Tu WhatsApp</label>
+        <input type="tel" id="invitado-wa-input" placeholder="Ej: 11 2345 6789" autocomplete="tel" inputmode="tel">
+      </div>
+      <button onclick="confirmarDatosInvitado()" style="width:100%;background:var(--green,#006039);border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white;cursor:pointer">Continuar con el pedido →</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== INICIO ===== -->
 <div class="screen active" id="screen-inicio">
   <div class="topbar">
@@ -1566,8 +1586,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <p id="resena-rating-label" style="text-align:center;font-size:.82rem;color:var(--gray);margin-bottom:16px">Tocá para calificar</p>
       <div class="form-group" style="margin-bottom:16px">
-        <label>Tu nombre (o apodo)</label>
-        <input type="text" id="resena-autor-input" placeholder="Ej: Martina V.">
+        <label>Publicás como</label>
+        <input type="text" id="resena-autor-input" readonly style="background:#f3f4f6;color:#555;cursor:not-allowed">
+        <div style="font-size:.72rem;color:var(--gray);margin-top:6px;display:flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Tu reseña queda vinculada a tu cuenta para evitar reseñas falsas.</span>
+        </div>
       </div>
       <div class="form-group" style="margin-bottom:20px">
         <label>Tu experiencia</label>

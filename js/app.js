@@ -618,7 +618,8 @@ async function cargarResenas(provId) {
   try {
     const { data, error } = await sb
       .from('resenas')
-      .select('*')
+      // Sin usuario_email: es privado (solo auditoría del dueño), no público.
+      .select('id, proveedor_id, usuario_nombre, estrellas, texto, created_at')
       .eq('proveedor_id', pid)
       .order('created_at', { ascending: false });
     if (error) throw error;
@@ -701,9 +702,12 @@ async function renderRatingSummary(provId) {
 let resenaRatingActual = 0;
 function openResenaModal() {
   if (!provActual) return;
+  if (!currentUser) { showToast('Iniciá sesión para dejar una reseña'); return; }
   resenaRatingActual = 0;
   document.getElementById('resena-prov-name').textContent = provActual.nombre;
-  document.getElementById('resena-autor-input').value = currentUser ? currentUser.name : '';
+  // El nombre queda fijado a la cuenta (no editable) para que no se puedan
+  // firmar reseñas con un nombre falso. El email se guarda para auditar.
+  document.getElementById('resena-autor-input').value = currentUser.name || currentUser.email || 'Mi cuenta';
   document.getElementById('resena-texto-input').value = '';
   document.getElementById('resena-rating-label').textContent = 'Tocá para calificar';
   document.querySelectorAll('#resenaStars .star').forEach(s => s.classList.remove('filled'));
@@ -728,15 +732,18 @@ function setResenaRating(val) {
 async function submitResena() {
   if (!currentUser) { showToast('Iniciá sesión para dejar una reseña'); return; }
   if (!resenaRatingActual) { showToast('Por favor calificá primero'); return; }
-  const autor = document.getElementById('resena-autor-input').value.trim() || 'Anónimo';
   const texto = document.getElementById('resena-texto-input').value.trim();
   if (!texto) { showToast('Escribí tu experiencia'); return; }
 
+  // El nombre lo tomamos de la cuenta logueada, NO del input (que es de solo
+  // lectura). Guardamos también el email para poder rastrear reseñas falsas.
+  const autor = currentUser.name || currentUser.email || 'Usuario';
   const pid = String(provActual.id);
   // Usamos los nombres de columna reales de tu tabla Supabase
   const nuevaResena = {
     proveedor_id: pid,
     usuario_nombre: autor,
+    usuario_email: currentUser.email || '',
     estrellas: resenaRatingActual,
     texto
   };
@@ -4343,14 +4350,73 @@ function generarMensajePedido() {
   msg += `
 💰 Total estimado: $${total.toLocaleString('es-AR')}
 `;
+  const comprador = getCompradorInfo();
+  if (comprador) {
+    msg += `
+👤 ${comprador.nombre}`;
+    if (comprador.whatsapp) msg += ` · 📱 ${comprador.whatsapp}`;
+    msg += `
+`;
+  }
   msg += `
 ¿Podés confirmar disponibilidad y formas de pago? Gracias!`;
   return msg;
 }
 
+// Datos del comprador invitado (sin login), recordados entre pedidos.
+let datosInvitado = null;
+try { datosInvitado = JSON.parse(localStorage.getItem('eg_invitado') || 'null'); } catch (e) { }
+let _pedidoPendiente = null; // función a ejecutar tras cargar datos del invitado
+
+// Devuelve el nombre/email/whatsapp del comprador, o null si falta info.
+function getCompradorInfo() {
+  if (currentUser) {
+    return { nombre: currentUser.name || currentUser.email || 'Comprador', email: currentUser.email || '', whatsapp: '' };
+  }
+  if (datosInvitado && datosInvitado.nombre && datosInvitado.whatsapp) {
+    return { nombre: datosInvitado.nombre, email: '', whatsapp: datosInvitado.whatsapp };
+  }
+  return null;
+}
+
+// Si no tenemos datos del comprador, abre el modal de invitado y guarda la
+// acción pendiente para reintentarla al confirmar. Devuelve true si ya hay datos.
+function asegurarDatosComprador(accion) {
+  if (getCompradorInfo()) return true;
+  _pedidoPendiente = accion;
+  openInvitadoModal();
+  return false;
+}
+
+function openInvitadoModal() {
+  document.getElementById('invitado-nombre-input').value = (datosInvitado && datosInvitado.nombre) || '';
+  document.getElementById('invitado-wa-input').value = (datosInvitado && datosInvitado.whatsapp) || '';
+  document.getElementById('invitadoModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeInvitadoModal() {
+  document.getElementById('invitadoModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closeInvitadoOnBg(e) { if (e.target === document.getElementById('invitadoModal')) closeInvitadoModal(); }
+
+function confirmarDatosInvitado() {
+  const nombre = document.getElementById('invitado-nombre-input').value.trim();
+  const whatsapp = document.getElementById('invitado-wa-input').value.trim();
+  if (!nombre) { showToast('Escribí tu nombre'); return; }
+  if (!whatsapp || whatsapp.replace(/\D/g, '').length < 8) { showToast('Escribí un WhatsApp válido'); return; }
+  datosInvitado = { nombre, whatsapp };
+  try { localStorage.setItem('eg_invitado', JSON.stringify(datosInvitado)); } catch (e) { }
+  closeInvitadoModal();
+  const accion = _pedidoPendiente;
+  _pedidoPendiente = null;
+  if (typeof accion === 'function') accion();
+}
+
 async function guardarPedido() {
   try {
     const item0 = carrito[0];
+    const comprador = getCompradorInfo() || { nombre: 'Anónimo', email: '', whatsapp: '' };
     const total = carrito.reduce((s, i) => s + (i.producto.precio * i.cantidad), 0);
     const items = JSON.stringify(carrito.map(i => ({
       nombre: i.producto.nombre,
@@ -4360,8 +4426,9 @@ async function guardarPedido() {
     })));
     await sb.from('pedidos').insert({
       proveedor_id: String(item0.provId),
-      comprador_nombre: currentUser?.name || 'Anónimo',
-      comprador_email: currentUser?.email || '',
+      comprador_nombre: comprador.nombre,
+      comprador_email: comprador.email,
+      comprador_whatsapp: comprador.whatsapp,
       items,
       total,
       estado: 'pendiente'
@@ -4372,6 +4439,7 @@ async function guardarPedido() {
 function enviarPedidoPorWA() {
   const item0 = carrito[0];
   if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
+  if (!asegurarDatosComprador(enviarPedidoPorWA)) return;
   const num = normalizarWAArg(item0.provWA);
   const msg = generarMensajePedido();
   guardarPedido();
@@ -4382,6 +4450,7 @@ function enviarPedidoPorWA() {
 
 function enviarPedidoPorChat() {
   const item0 = carrito[0];
+  if (!asegurarDatosComprador(enviarPedidoPorChat)) return;
   guardarPedido();
   closeCarrito();
   abrirChatDirecto(item0.provId);
@@ -4480,6 +4549,7 @@ function abrirDetallePedido(idx) {
     <div style="font-size:.7rem;color:#999;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Comprador</div>
     <div style="font-size:.88rem;font-weight:800;color:#111">${p.comprador_nombre || 'Anónimo'}</div>
     ${p.comprador_email ? `<div style="font-size:.75rem;color:#666;margin-top:2px">${p.comprador_email}</div>` : ''}
+    ${p.comprador_whatsapp ? `<a href="https://wa.me/${normalizarWAArg(p.comprador_whatsapp)}" target="_blank" style="display:inline-flex;align-items:center;gap:5px;font-size:.78rem;color:#16A34A;font-weight:800;margin-top:4px;text-decoration:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>${escHtml(p.comprador_whatsapp)}</a>` : ''}
     <div style="font-size:.72rem;color:#999;margin-top:4px">${fecha}</div>
   `;
 
@@ -5163,12 +5233,14 @@ async function renderRecienLlegados() {
 // ===== HERO STATS =====
 async function cargarHeroStats() {
   try {
-    const [{ data: provs }, { data: prods }] = await Promise.all([
+    // Para el total real de productos usamos count exacto: un select normal
+    // trae como mucho 1000 filas (tope de PostgREST) y mostraba "+1000" fijo.
+    const [{ data: provs }, { count: prodsCount }] = await Promise.all([
       sb.from('proveedores').select('id, rubro').eq('estado', 'aprobado'),
-      sb.from('productos').select('id')
+      sb.from('productos').select('id', { count: 'exact', head: true })
     ]);
     const numProvs = provs?.length || 0;
-    const numProds = prods?.length || 0;
+    const numProds = prodsCount || 0;
     const rubros = new Set((provs || []).map(p => p.rubro).filter(Boolean));
     const numRubros = rubros.size;
     const e1 = document.getElementById('hero-stat-provs');
