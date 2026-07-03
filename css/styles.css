@@ -8,6 +8,14 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:#F8F8F8;color:#1A1A1A;max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden}
+
+/* === OVERRIDE TIPOGRÁFICO GLOBAL ===
+   Unifica toda la UI en una fuente común/neutral (estilo Mercado Libre), reemplazando
+   Sora / DM Sans / Outfit / Fraunces sin tocar los estilos inline. Solo estético:
+   los font-weight/tamaños quedan intactos. */
+body, body *{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif !important;
+}
 .screen{display:none;min-height:100vh;padding-bottom:80px;animation:fadeIn .25s ease}
 .screen.active{display:block}
 #screen-prov-chat.active{display:flex!important;flex-direction:column;height:100vh;height:100dvh;padding-bottom:0;min-height:unset;overflow:hidden}
