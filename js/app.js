@@ -2232,6 +2232,15 @@ async function cargarStatsDashboard() {
     const totalMsgs = msgs ? msgs.length : 0;
     const elMsgs = document.getElementById('dash-msgs-count');
     if (elMsgs) elMsgs.textContent = totalMsgs;
+    // Stat "Productos" (reemplaza a la stat muerta de Mensajes — el chat está desactivado)
+    try {
+      const { count: prodCount } = await sb.from('productos')
+        .select('id', { count: 'exact', head: true })
+        .eq('proveedor_id', currentUser.proveedorId)
+        .eq('visible', true);
+      const elProd = document.getElementById('dash-prodstat-count');
+      if (elProd) elProd.textContent = prodCount || 0;
+    } catch (e) { }
     const elLeads = document.getElementById('stat-leads');
     if (elLeads) {
       if (esPro) {
@@ -5307,6 +5316,26 @@ function compartirProveedor() {
   } else {
     try { navigator.clipboard.writeText(texto); showToast('¡Link copiado! Compartilo por WhatsApp 📋'); } catch (e) { showToast('Copiá este link: emprendego.vercel.app'); }
   }
+}
+
+// ===== COMPARTIR / VER MI PERFIL (dashboard proveedor) =====
+function compartirMiPerfil() {
+  const pd = currentUser && currentUser.provData;
+  if (!pd || !pd.id) { showToast('Perfil no disponible'); return; }
+  const url = location.origin + '/?prov=' + encodeURIComponent(pd.id);
+  const texto = `¡Encontrá ${pd.nombre} en EmprendeGO!\n\n${pd.rubro || ''}${pd.provincia ? ' · ' + pd.provincia : ''}\n\n👉 ${url}`;
+  if (navigator.share) {
+    navigator.share({ title: pd.nombre, text: texto, url }).catch(() => { });
+  } else {
+    try { navigator.clipboard.writeText(url); showToast('¡Link copiado! Compartilo por WhatsApp 📋'); }
+    catch (e) { showToast('Copiá tu link: ' + url); }
+  }
+}
+
+function verMiPerfilPublico() {
+  const pd = currentUser && currentUser.provData;
+  if (!pd || !pd.id) { showToast('Perfil no disponible'); return; }
+  abrirDetalle(pd.id);
 }
 
 // ===== LANDING PROVEEDORES =====
