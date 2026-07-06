@@ -105,3 +105,30 @@ A 403 from PostgREST when the frontend reads a column → missing column-level G
 - TN / ML full catalog import: `renderTiendaNubeSection()` / `renderMercadoLibreSection()` paint the dashboard tile in 3 states (not-Pro → gray locked, Pro+disconnected → brand color "Connect", Pro+connected → "Sync"). After sync the category-mapping modal opens if new categories arrived.
 - Pro gate: `esProvPro()` reads `currentUser.provData.plan === 'pro'` and checks `plan_hasta` expiry. The backend re-validates Plan Pro before any sync — never trust the UI gate alone.
 - Approval flow: admin sets `estado='aprobado'` on `proveedores` row
+
+## Analytics y Campañas
+
+### Google Analytics (GA4)
+- Service Account: `emprendego-492422-29430d611f88.json` (en la raíz del proyecto)
+- Property ID: 533955583 (variable GA4_PROPERTY_ID en .env)
+- API: Google Analytics Data API (habilitada en el proyecto GCP emprendego-492422)
+- Usar la librería `googleapis` o llamadas REST para consultar métricas
+- Métricas clave: sesiones, usuarios, páginas vistas, tasa de rebote, fuentes de tráfico, eventos clave (clics WhatsApp, perfiles vistos, búsquedas, registros)
+
+### Meta Ads (Facebook/Instagram)
+- Access Token: variable META_ACCESS_TOKEN en .env
+- Ad Account ID: act_3584672951745350 (variable META_AD_ACCOUNT_ID en .env) — cuenta "Abraham Jafif"
+- También existe act_2549832435467413 (cuenta "EmprendeGo Ads" del Business Manager, sin campañas aún)
+- API: Meta Marketing API v25.0
+- Endpoint base: https://graph.facebook.com/v25.0/
+- Métricas clave: impresiones, alcance, clics, CTR, CPC, CPM, gasto, resultados por campaña
+
+### Cómo responder consultas de analytics
+Cuando me pregunten "cómo vienen las campañas", "cómo viene el tráfico", "cómo viene la página", "cómo viene todo", "dame un reporte" o similar:
+1. Leer las credenciales del .env y el JSON de service account
+2. Consultar GA4 para tráfico, usuarios, fuentes, conversiones de los últimos 30 días
+3. Consultar Meta Ads para rendimiento de campañas pagas de los últimos 30 días
+4. Cruzar datos: ¿el tráfico de Meta se refleja en GA4? ¿Cuál es el costo real por visita?
+5. Dar un resumen ejecutivo en una tabla clara con los números clave y tendencias
+6. Siempre comparar con el período anterior para ver si mejora o empeora
+7. Cerrar con 2-3 recomendaciones accionables
