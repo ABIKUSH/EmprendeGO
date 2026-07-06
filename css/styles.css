@@ -724,3 +724,32 @@ select:focus { outline: none; }
 .rubros-picker-options label.rubros-whole-cat{background:#FFFBF0;border:1.5px dashed #C9A84C;color:#7A5C00;font-weight:700;border-radius:10px;width:100%;margin-bottom:2px}
 .rubros-picker-options label.rubros-whole-cat.checked{background:#FFF3CD;border-color:#A07800;border-style:solid;color:#5C4400}
 .rubros-counter{font-size:.75rem;font-weight:700;color:#888;margin-bottom:10px;display:block;text-align:right}
+
+/* ===== PLANES (rediseño limpio, estilo marketplace) ===== */
+.plans-wrap{padding:20px 18px 32px;display:flex;flex-direction:column;gap:18px}
+.plan-card{background:#fff;border:1px solid #ececec;border-radius:18px;box-shadow:0 2px 16px rgba(0,0,0,.045);overflow:hidden}
+.plan-card--pro{border:1.5px solid #006039;box-shadow:0 6px 24px rgba(0,96,57,.14)}
+.plan-badge{background:#006039;color:#fff;text-align:center;font-size:.72rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;padding:9px 12px;display:flex;align-items:center;justify-content:center;gap:6px}
+.plan-body{padding:24px}
+.plan-eyebrow{font-size:.68rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#9a9a9a;margin-bottom:6px}
+.plan-eyebrow--pro{color:#006039}
+.plan-name{font-size:1.45rem;font-weight:800;color:#1a1a1a;margin-bottom:5px;line-height:1.1}
+.plan-desc{color:#777;font-size:.86rem;line-height:1.45}
+.plan-price-row{display:flex;align-items:flex-end;gap:5px;margin:16px 0 3px}
+.plan-price{font-size:2.4rem;font-weight:800;color:#1a1a1a;line-height:1}
+.plan-price-period{color:#999;font-size:.85rem;padding-bottom:6px}
+.plan-price-note{font-size:.78rem;color:#8a8a8a;margin-bottom:2px}
+.plan-divider{height:1px;background:#eee;margin:18px 0}
+.plan-group{font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#b8b8b8;margin:18px 0 11px}
+.plan-feat{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+.plan-check{flex-shrink:0;width:18px;height:18px;margin-top:1px;color:#006039}
+.plan-feat-title{font-size:.88rem;color:#1a1a1a;font-weight:600;line-height:1.35}
+.plan-feat-sub{font-size:.76rem;color:#8a8a8a;line-height:1.4;margin-top:2px}
+.plan-locked{display:flex;align-items:center;gap:8px;font-size:.8rem;color:#a5a5a5;line-height:1.4}
+.plan-locked svg{flex-shrink:0}
+.plan-soon{display:flex;align-items:center;gap:8px;font-size:.83rem;color:#006039;font-weight:600}
+.plan-cta{width:100%;padding:15px;border-radius:12px;font-size:.95rem;font-weight:800;cursor:pointer;border:none;background:#006039;color:#fff;margin-top:22px;transition:filter .15s,transform .1s}
+.plan-cta:hover{filter:brightness(1.08)}
+.plan-cta:active{transform:scale(.99)}
+.plan-cta--current{background:#f4f4f4;color:#666;cursor:default;font-weight:700}
+.plan-cta--current:hover{filter:none}
