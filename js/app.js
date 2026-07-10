@@ -2096,6 +2096,7 @@ function updatePerfilUI() {
     }
     cargarProductosProveedor();
     cargarStatsDashboard();
+    cargarRankingRubro();
     cargarLogoProveedor();
     cargarPedidosRecientes();
     calcularCompletitudPerfil();
@@ -2217,15 +2218,36 @@ async function cargarStatsDashboard() {
       // Consultas por WhatsApp: visible siempre (free y Pro) — es la prueba de valor.
       const elC = document.getElementById('stat-consultas');
       if (elC) elC.textContent = prov.consultas || 0;
+
+      // ===== MOMENTO MÁGICO: consultas nuevas desde la última visita (solo free) =====
+      // Compara el total actual contra el guardado la última vez que entró.
+      // Solo una vez por carga de página (window._egConsultaChecked) para no parpadear.
+      if (!esPro && !window._egConsultaChecked) {
+        window._egConsultaChecked = true;
+        const key = 'eg_last_consultas_' + currentUser.proveedorId;
+        const raw = localStorage.getItem(key);
+        const ahora = prov.consultas || 0;
+        const banner = document.getElementById('dash-consulta-banner');
+        if (banner && raw !== null) {
+          const prev = parseInt(raw, 10) || 0;
+          const nuevas = ahora - prev;
+          if (nuevas > 0) {
+            banner.style.display = 'block';
+            banner.innerHTML = `<div style="background:linear-gradient(135deg,#F59E0B,#F97316);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 3px 12px rgba(245,158,11,.3)">
+              <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;margin-bottom:4px">🎉 ¡Te contactaron ${nuevas} ${nuevas === 1 ? 'vez' : 'veces'} desde tu última visita!</div>
+              <div style="font-size:.76rem;color:rgba(255,255,255,.92);line-height:1.5;margin-bottom:10px">Los proveedores que aparecen primero reciben hasta 3x más consultas.</div>
+              <button onclick="goTo('planes');haptic('light')" style="background:white;color:#B45309;border:none;border-radius:9px;padding:9px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Aparecer primero →</button>
+            </div>`;
+          }
+        }
+        try { localStorage.setItem(key, String(ahora)); } catch (e) { }
+      }
+
       const el = document.getElementById('stat-visitas');
       if (el) {
-        if (esPro) {
-          el.textContent = prov.visitas || 0;
-          el.style.filter = '';
-        } else {
-          el.textContent = '??';
-          el.style.cssText += ';filter:blur(6px);user-select:none';
-        }
+        el.textContent = prov.visitas || 0; // número real siempre; el free lo ve borroso
+        el.style.filter = esPro ? '' : 'blur(6px)';
+        el.style.userSelect = esPro ? '' : 'none';
       }
     }
     const { data: msgs } = await sb.from('mensajes').select('id,leido').eq('proveedor_id', currentUser.proveedorId).eq('de_tipo', 'usuario');
@@ -2243,13 +2265,9 @@ async function cargarStatsDashboard() {
     } catch (e) { }
     const elLeads = document.getElementById('stat-leads');
     if (elLeads) {
-      if (esPro) {
-        elLeads.textContent = totalMsgs;
-        elLeads.style.filter = '';
-      } else {
-        elLeads.textContent = '??';
-        elLeads.style.cssText += ';filter:blur(6px);user-select:none';
-      }
+      elLeads.textContent = totalMsgs; // real siempre; el free lo ve borroso
+      elLeads.style.filter = esPro ? '' : 'blur(6px)';
+      elLeads.style.userSelect = esPro ? '' : 'none';
     }
     const noLeidos = msgs ? msgs.filter(m => !m.leido).length : 0;
     const elNew = document.getElementById('dash-msgs-new');
@@ -2257,20 +2275,74 @@ async function cargarStatsDashboard() {
     // Mostrar candado sobre stats si plan gratis
     const statsGrid = document.getElementById('dash-stats-grid');
     if (statsGrid && !esPro) {
+      statsGrid.style.position = 'relative';
+      // Capa clickeable transparente + candadito en la esquina (deja ver los números borrosos).
       if (!statsGrid.querySelector('.stats-lock-overlay')) {
         const lockDiv = document.createElement('div');
         lockDiv.className = 'stats-lock-overlay';
-        lockDiv.onclick = () => showModalPro('Las estadísticas');
-        lockDiv.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;cursor:pointer;gap:6px;font-size:.75rem;font-weight:700;color:rgba(255,255,255,.85)';
-        lockDiv.innerHTML = '<span style="font-size:1.1rem">🔒</span> Solo Plan Pro';
-        statsGrid.style.position = 'relative';
+        lockDiv.onclick = () => showModalPro('Tus estadísticas');
+        lockDiv.style.cssText = 'position:absolute;inset:0;cursor:pointer';
+        lockDiv.innerHTML = '<span style="position:absolute;top:6px;right:8px;font-size:.9rem">🔒</span>';
         statsGrid.appendChild(lockDiv);
       }
+      // CTA de desbloqueo con los números REALES (lo que más deseo genera).
+      let cta = document.getElementById('dash-unlock-cta');
+      if (!cta && statsGrid.parentNode) {
+        cta = document.createElement('div');
+        cta.id = 'dash-unlock-cta';
+        cta.onclick = () => showModalPro('Tus estadísticas');
+        cta.style.cssText = 'margin-top:8px;text-align:center;cursor:pointer;font-size:.72rem;font-weight:700;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:9px 10px';
+        statsGrid.parentNode.insertBefore(cta, statsGrid.nextSibling);
+      }
+      if (cta) cta.innerHTML = `🔓 Desbloqueá tus <b>${(prov && prov.visitas) || 0} visitas</b> y <b>${totalMsgs} contactos</b> con Pro →`;
     } else if (statsGrid) {
       const lock = statsGrid.querySelector('.stats-lock-overlay');
       if (lock) lock.remove();
+      const cta = document.getElementById('dash-unlock-cta');
+      if (cta) cta.remove();
     }
   } catch (e) { }
+}
+
+// ===== CAMBIO 2: RANKING EN EL RUBRO (vendedor de Pro más potente) =====
+// Calcula el puesto del proveedor dentro de su rubro principal, con el mismo
+// criterio del buscador (Pro primero, luego visitas). Solo lectura, sin columnas nuevas.
+async function cargarRankingRubro() {
+  const card = document.getElementById('dash-ranking-card');
+  if (!card) return;
+  try {
+    if (!currentUser || !currentUser.proveedorId || !currentUser.provData) { card.style.display = 'none'; return; }
+    const miId = String(currentUser.proveedorId);
+    const miRubro = (currentUser.provData.rubro || '').split(',')[0].trim();
+    if (!miRubro) { card.style.display = 'none'; return; }
+    const { data: provs } = await sb.from('proveedores')
+      .select('id,rubro,plan,plan_hasta,visitas').eq('estado', 'aprobado');
+    if (!provs || !provs.length) { card.style.display = 'none'; return; }
+    // Cohorte: proveedores que comparten el rubro principal (contempla rubros múltiples con coma).
+    const cohorte = provs.filter(p => (p.rubro || '').split(',').map(r => r.trim().toLowerCase()).includes(miRubro.toLowerCase()));
+    const esProRow = p => p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date());
+    const score = p => (esProRow(p) ? 100000 : 0) + (p.visitas || 0);
+    cohorte.sort((a, b) => score(b) - score(a));
+    const puesto = cohorte.findIndex(p => String(p.id) === miId) + 1;
+    const total = cohorte.length;
+    if (puesto < 1 || total < 2) { card.style.display = 'none'; return; } // sin competencia no hay pitch
+    card.style.display = 'block';
+    if (esProvPro()) {
+      card.innerHTML = `<div style="text-align:center;padding:4px 0">
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">⭐ Destacado en ${escHtml(miRubro)}</div>
+        <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.85rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
+        <div style="font-size:.74rem;color:#16A34A;margin-top:6px;font-weight:700">Aparecés por encima de los proveedores gratis de tu rubro 🚀</div>
+      </div>`;
+    } else {
+      card.innerHTML = `<div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">📊 Tu posición en ${escHtml(miRubro)}</div>
+        <div style="text-align:center;padding:2px 0 12px">
+          <div style="font-size:.72rem;color:#6B7A99;margin-bottom:2px">Estás en el puesto</div>
+          <div style="font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.9rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
+          <div style="font-size:.74rem;color:#6B7A99;margin-top:8px;line-height:1.5">Los proveedores <b>Pro</b> aparecen en el <b>top 3</b> de cada rubro y reciben más consultas.</div>
+        </div>
+        <button onclick="showModalPro('Aparecer primero en tu rubro')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer">Subir al top 3 con Pro →</button>`;
+    }
+  } catch (e) { card.style.display = 'none'; }
 }
 // ===== HISTORIAL =====
 function guardarHistorialLocal() {

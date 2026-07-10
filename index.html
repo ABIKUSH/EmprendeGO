@@ -1286,6 +1286,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- ===== BANNER RENOVACIÓN PRO (próximo a vencer / vencido) — sobre Consultas ===== -->
       <div id="pro-expiry-banner" style="display:none"></div>
 
+      <!-- ===== MOMENTO MÁGICO: consultas nuevas desde la última visita (solo free) ===== -->
+      <div id="dash-consulta-banner" style="display:none"></div>
+
       <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
       <div style="background:linear-gradient(135deg,#25D366,#128C7E);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(18,140,126,.28)">
         <div style="min-width:0">
@@ -1311,6 +1314,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         </div>
       </div>
     </div>
+
+    <!-- ===== RANKING EN EL RUBRO (vendedor de Pro) ===== -->
+    <div id="dash-ranking-card" style="display:none;background:white;margin:12px 16px;border-radius:14px;padding:16px;border:1.5px solid #E8F2EE"></div>
 
     <!-- ===== COMPLETITUD DEL PERFIL ===== -->
     <div style="background:white;margin:12px 16px;border-radius:14px;padding:14px 16px;border:1.5px solid #E8F2EE" id="perfil-completitud-wrap">
