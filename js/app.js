@@ -22,14 +22,15 @@ let _lastSearchTracked = '', _searchTrackTimer = null;
 function trackSearch(q, resultCount) {
   clearTimeout(_searchTrackTimer);
   _searchTrackTimer = setTimeout(() => {
-    if (q.length < 2 || q === _lastSearchTracked) return;
+    // Salteamos prefijos incompletos: si es igual al último logueado, o el último ya lo contiene (backspace), no se registra.
+    if (q.length < 2 || q === _lastSearchTracked || _lastSearchTracked.startsWith(q)) return;
     _lastSearchTracked = q;
     trackEvent('search', { search_term: q, results: resultCount });
     // Guardar la búsqueda real + cantidad de resultados en la base.
     // Permite ver en el admin qué se busca y, sobre todo, qué se busca SIN resultados (demanda a reclutar).
     // .then() es obligatorio: en supabase-js v2 el insert es "lazy" y sin then/await NO dispara la petición.
     try { sb.from('busquedas').insert({ termino: q, resultados: resultCount }).then(() => {}, () => {}); } catch (e) { }
-  }, 800);
+  }, 1500);
 }
 
 // ===== VIBRACIÓN HÁPTICA =====
@@ -1446,7 +1447,6 @@ function abrirDetalle(id) {
   // Comp button
   updateDetCompBtn();
 
-  try { sb.from('busquedas').insert({ termino: p.nombre }); } catch (e) { }
   const _esDueno = currentUser?.provData && String(currentUser.provData.id) === String(p.id);
   const _vk = `eg_visit_${p.id}`, _vt = parseInt(localStorage.getItem(_vk) || '0');
   if (!_esDueno && Date.now() - _vt > 86400000) {
