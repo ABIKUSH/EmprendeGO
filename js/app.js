@@ -6052,7 +6052,7 @@ async function cargarNovedades(forzar) {
   try {
     const { data, error } = await sb
       .from('novedades')
-      .select('id,tipo,titulo,bajada,imagen,sello,proveedor_id,rubro,minimo,descuento,fecha_evento,publicado_en,created_at')
+      .select('id,tipo,titulo,bajada,cuerpo,imagen,sello,proveedor_id,rubro,minimo,descuento,fecha_evento,publicado_en,created_at')
       .eq('estado', 'publicado')
       .order('created_at', { ascending: false })
       .limit(60);
@@ -6107,7 +6107,19 @@ function renderNovedades() {
     return;
   }
 
-  feed.innerHTML = lista.map(nvTarjeta).join('');
+  const tarjetas = lista.map(nvTarjeta);
+
+  // La caja de publicar también va en el medio: así se entera de que existe
+  // sin tener que scrollear hasta el final. Es una celda más de la grilla,
+  // no cruza a lo ancho (si cruzara dejaría un hueco en escritorio).
+  if (lista.length >= 4) {
+    tarjetas.splice(3, 0,
+      '<section class="nv-publicar nv-publicar-medio nv-sube">' +
+      '<div class="nv-nucleo" id="nv-publicar-nucleo-medio"></div></section>');
+  }
+
+  feed.innerHTML = tarjetas.join('');
+  nvActualizarPublicar();
   nvObservarEntrada();
 }
 
@@ -6170,25 +6182,92 @@ function nvTarjetaProveedor(n) {
     </article>`;
 }
 
+// El cuerpo se procesa LÍNEA por línea: una línea "## " es un subtítulo y
+// termina ahí. Si se partiera por bloques, el subtítulo se tragaría el
+// párrafo que viene abajo cuando no hay renglón en blanco de por medio.
+function nvCuerpoHTML(texto) {
+  const out = [];
+  let parrafo = [];
+
+  const cerrarParrafo = () => {
+    if (parrafo.length) {
+      out.push(`<p>${nvEsc(parrafo.join(' '))}</p>`);
+      parrafo = [];
+    }
+  };
+
+  String(texto).split(/\r?\n/).forEach(linea => {
+    const t = linea.trim();
+    if (!t) { cerrarParrafo(); return; }
+    if (t.startsWith('## ')) {
+      cerrarParrafo();
+      out.push(`<h3>${nvEsc(t.slice(3).trim())}</h3>`);
+      return;
+    }
+    parrafo.push(t);
+  });
+  cerrarParrafo();
+
+  return out.join('');
+}
+
+// Minutos de lectura: 200 palabras por minuto, redondeado hacia arriba.
+function nvMinutos(texto) {
+  const palabras = String(texto || '').trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(palabras / 200));
+}
+
 function nvTarjetaNota(n) {
   const rotulo = n.tipo === 'resumen' ? 'La semana' : 'Guía';
-  const accion = n.tipo === 'resumen'
-    ? `<button class="nv-leer" onclick="goTo('buscar')">Buscar
-         <span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
-       </button>`
+  const flecha = '<span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>';
+
+  // La guía se despliega en el mismo lugar: no hace falta otra pantalla
+  // ni perder el lugar en el feed.
+  const tieneCuerpo = n.tipo === 'nota' && n.cuerpo;
+  const cuerpo = tieneCuerpo
+    ? `<div class="nv-texto" id="nv-texto-${n.id}">
+         <div class="nv-texto-in">${nvCuerpoHTML(n.cuerpo)}</div>
+       </div>`
     : '';
+
+  let accion = '';
+  if (n.tipo === 'resumen') {
+    accion = `<button class="nv-leer" onclick="goTo('buscar')">Buscar ${flecha}</button>`;
+  } else if (tieneCuerpo) {
+    accion = `<button class="nv-leer" id="nv-leer-${n.id}" aria-expanded="false"
+                aria-controls="nv-texto-${n.id}" onclick="nvToggleNota('${n.id}')">
+                <span>Leer</span> ${flecha}
+              </button>`;
+  }
+
+  const meta = n.tipo === 'nota' && n.cuerpo
+    ? `Por el equipo · ${nvMinutos(n.cuerpo)} min`
+    : `Por el equipo · ${nvCuando(n.publicado_en || n.created_at)}`;
+
   return `
-    <article class="nv-bandeja nv-nota nv-sube">
+    <article class="nv-bandeja nv-nota nv-sube" id="nv-art-${n.id}">
       <div class="nv-nucleo">
         <p class="nv-rotulo">${rotulo}</p>
         <h2>${nvEsc(n.titulo)}</h2>
         ${n.bajada ? `<p>${nvEsc(n.bajada)}</p>` : ''}
+        ${cuerpo}
         <div class="nv-firma">
-          <span>Por el equipo · ${nvEsc(nvCuando(n.publicado_en || n.created_at))}</span>
+          <span>${nvEsc(meta)}</span>
           ${accion}
         </div>
       </div>
     </article>`;
+}
+
+function nvToggleNota(id) {
+  haptic('light');
+  const art = document.getElementById('nv-art-' + id);
+  const btn = document.getElementById('nv-leer-' + id);
+  if (!art || !btn) return;
+  const abierta = art.classList.toggle('abierta');
+  btn.setAttribute('aria-expanded', abierta ? 'true' : 'false');
+  btn.querySelector('span').textContent = abierta ? 'Cerrar' : 'Leer';
+  if (abierta) trackEvent('novedad_guia_abierta', { id });
 }
 
 function nvTarjetaFeria(n) {
@@ -6276,20 +6355,22 @@ document.addEventListener('DOMContentLoaded', nvPintarBadge);
 // La caja de publicar la ve TODO el mundo. Al Pro le abre el formulario;
 // al resto le muestra qué se está perdiendo y lo lleva a Planes.
 function nvActualizarPublicar() {
-  const box = document.getElementById('nv-publicar-nucleo');
-  if (!box) return;
+  const cajas = ['nv-publicar-nucleo', 'nv-publicar-nucleo-medio']
+    .map(id => document.getElementById(id))
+    .filter(Boolean);
+  if (!cajas.length) return;
 
   const flechaMas = '<span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>';
   const flechaVa = '<span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>';
 
   if (esProvPro()) {
-    box.classList.remove('bloqueada');
-    box.innerHTML = `
+    const html = `
       <p class="nv-rotulo">Plan Pro</p>
       <h3>Contá qué entró esta semana</h3>
       <p>Tu novedad sale en este feed y la ve todo el que busca tu rubro.</p>
       <button class="nv-cta" onclick="abrirFormNovedad()">Publicar una novedad ${flechaMas}</button>
       <p class="nv-pro-nota">Incluido en tu plan</p>`;
+    cajas.forEach(box => { box.classList.remove('bloqueada'); box.innerHTML = html; });
     return;
   }
 
@@ -6303,8 +6384,7 @@ function nvActualizarPublicar() {
     ? 'Contá cuándo entra mercadería o liquidás stock, y aparecés en este feed frente a los que buscan tu rubro.'
     : '¿Vendés al por mayor? Con el Plan Pro publicás tus ingresos y liquidaciones en este feed.';
 
-  box.classList.add('bloqueada');
-  box.innerHTML = `
+  const html = `
     <p class="nv-rotulo">
       <svg class="nv-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
       Solo Plan Pro
@@ -6313,6 +6393,7 @@ function nvActualizarPublicar() {
     <p>${bajada}</p>
     <button class="nv-cta nv-cta-pro" onclick="haptic('light');goTo('planes')">Ver el Plan Pro ${flechaVa}</button>
     <p class="nv-pro-nota">Publicá cuantas novedades quieras</p>`;
+  cajas.forEach(box => { box.classList.add('bloqueada'); box.innerHTML = html; });
 }
 
 function abrirFormNovedad() {

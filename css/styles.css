@@ -1023,6 +1023,27 @@ select:focus { outline: none; }
   position:relative;font-size:.885rem;line-height:1.6;
   color:rgba(255,255,255,.66);margin-top:11px;max-width:32ch;
 }
+/* Cuerpo de la guía: se despliega en el mismo lugar.
+   grid-template-rows 0fr→1fr en vez de animar height: no dispara reflow. */
+#screen-novedades .nv-texto{
+  position:relative;
+  display:grid;grid-template-rows:0fr;
+  opacity:0;
+  transition:grid-template-rows 460ms var(--nv-masa),opacity 320ms var(--nv-masa);
+}
+#screen-novedades .nv-nota.abierta .nv-texto{grid-template-rows:1fr;opacity:1}
+#screen-novedades .nv-texto-in{overflow:hidden;min-height:0}
+#screen-novedades .nv-texto h3{
+  font-family:'Fraunces',serif !important;
+  font-size:1.02rem;font-weight:800;letter-spacing:-.015em;
+  color:#fff;margin:18px 0 0;
+}
+#screen-novedades .nv-texto p{
+  font-size:.875rem;line-height:1.68;color:rgba(255,255,255,.74);
+  margin-top:9px;max-width:38ch;
+}
+#screen-novedades .nv-texto > .nv-texto-in > *:first-child{margin-top:16px}
+
 #screen-novedades .nv-firma{
   position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.11);
