@@ -3709,6 +3709,8 @@ function renderProdBuscar(filtro, query = '') {
   });
   if (q) lista = lista.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.cat || '').toLowerCase().includes(q) || (p.provNombre || '').toLowerCase().includes(q));
   if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
+  // Loguear la búsqueda de productos (incluye las de 0 resultados = demanda a reclutar)
+  if (q) trackSearch(q, lista.length);
   if (!lista.length) {
     el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#999;font-size:.88rem">🔎 No encontramos productos con esos filtros.</div>';
     el.style.display = 'block';
