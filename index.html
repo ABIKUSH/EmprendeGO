@@ -62,7 +62,7 @@
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260713-nov6">
+<link rel="stylesheet" href="css/styles.css?v=20260713-nov7">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -647,6 +647,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
   </div>
 
+  <!-- Sólo lo ve el proveedor Pro: sus propias novedades, con su estado. -->
+  <section class="nv-mias" id="nv-mias" style="display:none"></section>
+
   <main class="nv-feed" id="nv-feed"></main>
 
   <!-- Lo ve todo el mundo. Al que no es Pro le sirve de invitación. -->
@@ -663,6 +666,33 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <button class="nv-modal-x" onclick="cerrarFormNovedad()" aria-label="Cerrar">&times;</button>
     </div>
     <div class="nv-modal-body">
+      <!-- Atajo: traer un producto ya cargado en vez de escribir todo de cero -->
+      <div class="nv-desde-catalogo" id="nv-desde-catalogo">
+        <button type="button" class="nv-elegir-btn" onclick="abrirSelectorProducto()">
+          <span class="nv-elegir-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </span>
+          <span class="nv-elegir-txt">
+            <strong>Traer un producto de tu catálogo</strong>
+            <small>Usa su foto y su nombre. Después lo retocás.</small>
+          </span>
+          <span class="nv-elegir-flecha" aria-hidden="true">›</span>
+        </button>
+        <div class="nv-elegido" id="nv-elegido" style="display:none">
+          <img id="nv-elegido-img" alt="">
+          <span id="nv-elegido-nombre"></span>
+          <button type="button" onclick="quitarProductoElegido()" aria-label="Quitar el producto">&times;</button>
+        </div>
+      </div>
+
+      <div class="nv-selector" id="nv-selector" style="display:none">
+        <div class="nv-selector-head">
+          <strong>Elegí un producto</strong>
+          <button type="button" onclick="cerrarSelectorProducto()" aria-label="Cerrar">&times;</button>
+        </div>
+        <div class="nv-selector-lista" id="nv-selector-lista"></div>
+      </div>
+
       <div class="form-group">
         <label for="nv-f-titulo">¿Qué pasó?</label>
         <input id="nv-f-titulo" type="text" maxlength="120" placeholder="Entró frisa rústica en nueve colores">
@@ -2194,7 +2224,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260713-nov6"></script>
+<script src="js/app.js?v=20260713-nov7"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

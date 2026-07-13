@@ -3146,6 +3146,7 @@ function goTo(s) {
     nvInitRiel();
     nvActualizarPublicar();
     cargarNovedades();
+    cargarMisNovedades();
     nvMarcarVisto();
   }
   if (s === 'planes') renderPlanes();
@@ -5187,6 +5188,9 @@ function buscarMisProds(query) {
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        ${(esProvPro() && !oculto)
+          ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
+          : ''}
       </div>
     </div>`;
   }).join('');
@@ -5246,6 +5250,9 @@ function ordenarMisProds(tipo) {
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
         <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
         <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        ${(esProvPro() && !oculto)
+          ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
+          : ''}
       </div>
     </div>`;
   }).join('');
@@ -6406,6 +6413,87 @@ function renderPlanes() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// TUS NOVEDADES — el proveedor ve las suyas y las puede bajar.
+// Si se le acabó el stock, tiene que poder sacar la oferta solo,
+// sin esperar al admin.
+// ═══════════════════════════════════════════════════════════════
+const NV_ESTADO_CHIP = {
+  pendiente: { txt: 'En revisión', clase: 'espera' },
+  publicado: { txt: 'Publicada', clase: 'viva' },
+  rechazado: { txt: 'No salió', clase: 'no' }
+};
+
+async function cargarMisNovedades() {
+  const caja = document.getElementById('nv-mias');
+  if (!caja) return;
+
+  // Al ocultar hay que vaciar: si no, quedan las tarjetas viejas en el DOM
+  // y reaparecen como fantasmas la próxima vez que se muestre la sección.
+  const ocultar = () => { caja.style.display = 'none'; caja.innerHTML = ''; };
+
+  const provId = currentUser?.provData?.id;
+  if (!provId || !esProvPro()) { ocultar(); return; }
+
+  const { data, error } = await sb
+    .from('novedades')
+    .select('id,titulo,estado,imagen,created_at')
+    .eq('proveedor_id', provId)
+    .eq('origen', 'manual')          // las autogeneradas no son "suyas"
+    .order('created_at', { ascending: false })
+    .limit(20);
+
+  if (error || !data || !data.length) { ocultar(); return; }
+
+  caja.style.display = 'block';
+  caja.innerHTML = `
+    <p class="nv-mias-titulo">Tus novedades</p>
+    <div class="nv-mias-lista">
+      ${data.map(n => {
+        const chip = NV_ESTADO_CHIP[n.estado] || NV_ESTADO_CHIP.pendiente;
+        const foto = n.imagen
+          ? `<img src="${nvEsc(imgThumb(n.imagen, 100, 70))}" alt="" loading="lazy">`
+          : '<span class="nv-mia-sinfoto"></span>';
+        return `
+          <div class="nv-mia">
+            ${foto}
+            <div class="nv-mia-txt">
+              <strong>${nvEsc(n.titulo)}</strong>
+              <span class="nv-chip ${chip.clase}">${chip.txt}</span>
+            </div>
+            <button class="nv-mia-borrar" onclick="borrarNovedad('${nvEsc(String(n.id))}')"
+                    aria-label="Borrar esta novedad">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </div>`;
+      }).join('')}
+    </div>`;
+}
+
+async function borrarNovedad(id) {
+  if (!confirm('¿Borrar esta novedad? Sale del feed y no se puede recuperar.')) return;
+
+  const provId = currentUser?.provData?.id;
+  if (!provId) return;
+
+  // El .eq extra es cinturón y tiradores: la RLS ya lo impide del lado del
+  // servidor, pero así el borrado es explícito y no depende sólo de eso.
+  const { error } = await sb.from('novedades')
+    .delete()
+    .eq('id', id)
+    .eq('proveedor_id', provId);
+
+  if (error) { showToast('No pudimos borrarla. Probá de nuevo.'); return; }
+
+  haptic('medium');
+  showToast('Novedad borrada');
+  trackEvent('novedad_borrada', { id });
+
+  novedadesDB = novedadesDB.filter(n => String(n.id) !== String(id));
+  renderNovedades();
+  cargarMisNovedades();
+}
+
 // ── Badge "Nuevo" ────────────────────────────────────────────────
 // Se muestra hasta que la persona entra una vez. Si quedara para siempre
 // dejaría de llamar la atención y pasaría a ser ruido.
@@ -6471,17 +6559,144 @@ function nvActualizarPublicar() {
   cajas.forEach(box => { box.classList.add('bloqueada'); box.innerHTML = html; });
 }
 
-function abrirFormNovedad() {
+// Desde "Mis productos": cerramos ese modal antes de abrir el de novedad.
+// Si no, quedan los dos modales encimados.
+function publicarProductoEnNovedades(id) {
+  document.getElementById('misProductosModal')?.classList.remove('open');
+  abrirFormNovedad(id);
+}
+
+// El producto del catálogo elegido para esta novedad (si eligió alguno).
+let nvProductoElegido = null;
+
+function abrirFormNovedad(productoId) {
   if (!esProvPro()) { showToast('Publicar novedades es parte del Plan Pro'); return goTo('planes'); }
   haptic('light');
   document.getElementById('nv-modal-bg')?.classList.add('open');
   document.body.style.overflow = 'hidden';
-  document.getElementById('nv-f-titulo')?.focus();
+
+  if (productoId) {
+    // Vino desde "Mis productos": lo precargamos.
+    elegirProducto(String(productoId), true);
+  } else {
+    document.getElementById('nv-f-titulo')?.focus();
+  }
 }
 
 function cerrarFormNovedad() {
   document.getElementById('nv-modal-bg')?.classList.remove('open');
   document.body.style.overflow = '';
+  cerrarSelectorProducto();
+}
+
+// ── Traer un producto del catálogo ───────────────────────────────
+async function abrirSelectorProducto() {
+  const caja = document.getElementById('nv-selector');
+  const lista = document.getElementById('nv-selector-lista');
+  if (!caja || !lista) return;
+  haptic('light');
+  caja.style.display = 'block';
+  lista.innerHTML = '<p class="nv-selector-vacio">Buscando tus productos…</p>';
+
+  const provId = currentUser?.provData?.id;
+  if (!provId) { lista.innerHTML = '<p class="nv-selector-vacio">No encontramos tu perfil de proveedor.</p>'; return; }
+
+  const { data, error } = await sb
+    .from('productos')
+    .select('id,nombre,precio,imagen_url,imagenes,visible')
+    .eq('proveedor_id', provId)
+    .order('created_at', { ascending: false })
+    .limit(60);
+
+  if (error) {
+    lista.innerHTML = '<p class="nv-selector-vacio">No pudimos traer tu catálogo. Probá de nuevo.</p>';
+    return;
+  }
+
+  const prods = (data || []).filter(p => p.visible !== false);
+  if (!prods.length) {
+    lista.innerHTML = '<p class="nv-selector-vacio">Todavía no tenés productos cargados. Cargá uno desde tu perfil y después volvé.</p>';
+    return;
+  }
+
+  lista.innerHTML = prods.map(p => {
+    const foto = nvFotoProducto(p);
+    const img = foto
+      ? `<img src="${nvEsc(imgThumb(foto, 120, 70))}" alt="" loading="lazy">`
+      : '<span class="nv-selector-sinfoto"></span>';
+    return `
+      <button type="button" class="nv-selector-item" onclick="elegirProducto('${nvEsc(String(p.id))}')">
+        ${img}
+        <span>
+          <strong>${nvEsc(p.nombre)}</strong>
+          <small>${p.precio ? '$' + Number(p.precio).toLocaleString('es-AR') : 'Sin precio'}</small>
+        </span>
+      </button>`;
+  }).join('');
+}
+
+function cerrarSelectorProducto() {
+  const caja = document.getElementById('nv-selector');
+  if (caja) caja.style.display = 'none';
+}
+
+// El producto puede tener la foto en imagen_url o en el array imagenes.
+function nvFotoProducto(p) {
+  if (p.imagen_url && /^https?:\/\//.test(p.imagen_url)) return p.imagen_url;
+  if (Array.isArray(p.imagenes) && typeof p.imagenes[0] === 'string' &&
+      /^https?:\/\//.test(p.imagenes[0])) return p.imagenes[0];
+  return null;
+}
+
+async function elegirProducto(id, silencioso) {
+  const provId = currentUser?.provData?.id;
+  if (!provId) return;
+
+  const { data, error } = await sb
+    .from('productos')
+    .select('id,nombre,precio,imagen_url,imagenes')
+    .eq('id', id)
+    .eq('proveedor_id', provId)   // sólo un producto propio
+    .maybeSingle();
+
+  if (error || !data) { showToast('No encontramos ese producto'); return; }
+
+  nvProductoElegido = { id: data.id, nombre: data.nombre, foto: nvFotoProducto(data) };
+
+  // Sugerimos un título, pero lo puede reescribir.
+  const inpTitulo = document.getElementById('nv-f-titulo');
+  if (inpTitulo && !inpTitulo.value.trim()) {
+    inpTitulo.value = `Entró ${data.nombre}`.slice(0, 120);
+    document.getElementById('nv-cont-titulo').textContent = `${inpTitulo.value.length}/120`;
+  }
+
+  // Mostramos el producto elegido y limpiamos la foto subida a mano:
+  // si eligió del catálogo, la foto sale del producto.
+  const caja = document.getElementById('nv-elegido');
+  const img = document.getElementById('nv-elegido-img');
+  const nom = document.getElementById('nv-elegido-nombre');
+  if (caja && nom) {
+    nom.textContent = data.nombre;
+    if (img) {
+      if (nvProductoElegido.foto) { img.src = imgThumb(nvProductoElegido.foto, 120, 70); img.style.display = 'block'; }
+      else img.style.display = 'none';
+    }
+    caja.style.display = 'flex';
+  }
+  nvArchivo = null;
+  const inpFile = document.getElementById('nv-f-imagen');
+  if (inpFile) inpFile.value = '';
+  const prev = document.getElementById('nv-preview');
+  if (prev) prev.style.display = 'none';
+
+  cerrarSelectorProducto();
+  if (!silencioso) haptic('light');
+}
+
+function quitarProductoElegido() {
+  nvProductoElegido = null;
+  const caja = document.getElementById('nv-elegido');
+  if (caja) caja.style.display = 'none';
 }
 
 let nvArchivo = null;
@@ -6528,7 +6743,12 @@ async function enviarNovedad() {
 
   try {
     let urlImagen = null;
-    if (nvArchivo) urlImagen = await subirFotoStorage(nvArchivo, provId);
+    if (nvArchivo) {
+      urlImagen = await subirFotoStorage(nvArchivo, provId);
+    } else if (nvProductoElegido?.foto) {
+      // Vino del catálogo: reusamos la foto del producto, no subimos nada.
+      urlImagen = nvProductoElegido.foto;
+    }
 
     // estado/origen los fija la RLS igual; los mandamos explícitos para que
     // el insert falle ruidosamente si alguien manipuló el cliente.
@@ -6543,6 +6763,7 @@ async function enviarNovedad() {
       minimo: minimo || null,
       descuento,
       proveedor_id: provId,
+      producto_id: nvProductoElegido?.id || null,
       rubro: currentUser?.provData?.rubro || null,
       autor_email: currentUser?.email || null
     });
@@ -6559,8 +6780,10 @@ async function enviarNovedad() {
     document.getElementById('nv-f-imagen').value = '';
     document.getElementById('nv-preview').style.display = 'none';
     nvArchivo = null;
+    quitarProductoElegido();
     document.getElementById('nv-cont-titulo').textContent = '0/120';
     document.getElementById('nv-cont-bajada').textContent = '0/280';
+    cargarMisNovedades();
   } catch (e) {
     console.error('[novedades] enviar:', e);
     showToast(e?.message?.includes('row-level security')
