@@ -6091,17 +6091,31 @@ function renderNovedades() {
   const feed = document.getElementById('nv-feed');
   if (!feed) return;
 
-  const lista = novFiltroActual === 'todo'
-    ? novedadesDB
-    : novedadesDB.filter(n => n.tipo === novFiltroActual);
+  let lista;
+  if (novFiltroActual === 'todo') {
+    lista = novedadesDB;
+  } else if (novFiltroActual === 'pro') {
+    // "Proveedores Pro": solo novedades de proveedores con Pro VIGENTE.
+    // Es un beneficio real del plan, no una etiqueta.
+    lista = novedadesDB.filter(n => nvProvEsPro(n._prov));
+  } else {
+    lista = novedadesDB.filter(n => n.tipo === novFiltroActual);
+  }
 
   if (!lista.length) {
+    const vacio = novFiltroActual === 'pro'
+      ? { marca: 'Sin novedades Pro',
+          titulo: 'Ningún proveedor Pro publicó todavía',
+          texto: 'Los proveedores con Plan Pro publican acá sus ingresos y ofertas. Volvé en unos días.' }
+      : { marca: 'Sin novedades',
+          titulo: 'Todavía no hay nada por acá',
+          texto: 'Probá con otro filtro o volvé en unos días: el feed se mueve todas las semanas.' };
     feed.innerHTML = `
       <div class="nv-bandeja nv-vacio">
         <div class="nv-nucleo">
-          <span class="marca">Sin novedades</span>
-          <h3>Todavía no hay nada por acá</h3>
-          <p>Probá con otro filtro o volvé en unos días: el feed se mueve todas las semanas.</p>
+          <span class="marca">${vacio.marca}</span>
+          <h3>${vacio.titulo}</h3>
+          <p>${vacio.texto}</p>
         </div>
       </div>`;
     return;
@@ -6129,11 +6143,17 @@ function nvTarjeta(n) {
   return nvTarjetaProveedor(n);
 }
 
+// Pro VIGENTE. No alcanza con plan==='pro': hay planes vencidos en la base.
+function nvProvEsPro(prov) {
+  if (!prov || prov.plan !== 'pro') return false;
+  if (!prov.plan_hasta) return true;
+  return new Date(prov.plan_hasta + 'T03:00:00Z') > new Date();
+}
+
 function nvTarjetaProveedor(n) {
   const prov = n._prov;
   const nombre = prov ? prov.nombre : 'EmprendeGO';
-  const esPro = prov && prov.plan === 'pro' &&
-    (!prov.plan_hasta || new Date(prov.plan_hasta + 'T03:00:00Z') > new Date());
+  const esPro = nvProvEsPro(prov);
 
   const meta = [nvCuando(n.publicado_en || n.created_at), prov && prov.provincia]
     .filter(Boolean).join(' · ');

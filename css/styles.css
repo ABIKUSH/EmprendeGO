@@ -1048,7 +1048,9 @@ select:focus { outline: none; }
   position:relative;display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.11);
 }
-#screen-novedades .nv-firma span{
+/* Hijo DIRECTO: si no, este color claro le pega también al <span> que va
+   adentro del botón "Leer" y el texto queda blanco sobre blanco. */
+#screen-novedades .nv-firma > span{
   font-family:var(--nv-mono) !important;font-size:.6rem;letter-spacing:.1em;
   text-transform:uppercase;color:rgba(255,255,255,.44);
 }
@@ -1291,22 +1293,38 @@ select:focus { outline: none; }
   #screen-novedades .nv-riel{padding:0 max(16px, calc((100% - 1000px) / 2)) 4px}
   #screen-novedades .nv-riel-in{max-width:max-content}
 
-  /* Grilla uniforme. Nada de tarjetas que cruzan a lo ancho: al no entrar
-     en la fila dejaban una celda vacía y se veía un hueco enorme. */
+  /* Empaquetado tipo revista (column-count), NO grilla.
+     Con grilla, las tarjetas de distinta altura dejaban aire debajo de las
+     cortas y el feed se veía lleno de huecos. Las columnas CSS apilan una
+     debajo de otra sin espacio muerto. */
   #screen-novedades .nv-feed{
-    display:grid;
-    grid-template-columns:repeat(2, minmax(0, 1fr));
-    gap:22px;
-    align-items:start;
+    display:block;
+    column-count:2;
+    column-gap:22px;
     max-width:1000px;
     margin:0 auto;
     padding:30px 16px 0;
   }
+  #screen-novedades .nv-feed > *{
+    display:block;
+    width:100%;
+    margin:0 0 22px;
+    break-inside:avoid;
+    -webkit-column-break-inside:avoid;
+    page-break-inside:avoid;
+  }
   #screen-novedades .nv-nota h2{font-size:1.5rem}
 
-  #screen-novedades .nv-publicar{
-    grid-column:1 / -1;
-    max-width:1000px;
+  /* El vacío no tiene sentido metido en una columna: que cruce y se centre */
+  #screen-novedades .nv-feed > .nv-vacio{
+    column-span:all;
+    max-width:520px;
+    margin:0 auto 22px;
+  }
+
+  /* La caja del final: centrada y acotada, si no queda un cartel gigante */
+  #screen-novedades #nv-publicar{
+    max-width:560px;
     margin:30px auto 0;
   }
   #screen-novedades .nv-centinela{margin-top:-100px}
@@ -1315,12 +1333,11 @@ select:focus { outline: none; }
 /* Tres columnas cuando sobra ancho de verdad */
 @media (min-width:1280px){
   #screen-novedades .nv-feed{
-    grid-template-columns:repeat(3, minmax(0, 1fr));
+    column-count:3;
     max-width:1240px;
   }
   #screen-novedades .nv-hero{padding-left:max(22px, calc((100% - 1240px) / 2));
                              padding-right:max(22px, calc((100% - 1240px) / 2))}
   #screen-novedades .nv-riel{padding-left:max(16px, calc((100% - 1240px) / 2));
                              padding-right:max(16px, calc((100% - 1240px) / 2))}
-  #screen-novedades .nv-publicar{max-width:1240px}
 }

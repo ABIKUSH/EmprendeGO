@@ -62,7 +62,7 @@
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260713-nov3">
+<link rel="stylesheet" href="css/styles.css?v=20260713-nov4">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -633,7 +633,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <section class="nv-hero">
     <span class="nv-eyebrow"><span class="nv-pulso" aria-hidden="true"></span><span id="nv-semana">Esta semana</span></span>
     <h1>Lo que <em>entró</em> esta semana</h1>
-    <p class="nv-bajada">Ingresos, liquidaciones y ferias. Publicado por los mayoristas.</p>
+    <p class="nv-bajada">Ingresos, ofertas y novedades. Publicado por los mayoristas.</p>
   </section>
 
   <div class="nv-centinela" id="nv-centinela" aria-hidden="true"></div>
@@ -642,7 +642,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <button class="nv-filtro" aria-pressed="true"  onclick="filtrarNovedades('todo', this)">Todo</button>
       <button class="nv-filtro" aria-pressed="false" onclick="filtrarNovedades('catalogo', this)">Ingresos</button>
       <button class="nv-filtro" aria-pressed="false" onclick="filtrarNovedades('drop', this)">Ofertas</button>
-      <button class="nv-filtro" aria-pressed="false" onclick="filtrarNovedades('proveedor_nuevo', this)">Proveedores</button>
+      <button class="nv-filtro" aria-pressed="false" onclick="filtrarNovedades('pro', this)">Proveedores Pro</button>
       <button class="nv-filtro" aria-pressed="false" onclick="filtrarNovedades('nota', this)">Guías</button>
     </div>
   </div>
@@ -2156,7 +2156,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260713-nov3"></script>
+<script src="js/app.js?v=20260713-nov4"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.
