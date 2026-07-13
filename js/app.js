@@ -3146,6 +3146,7 @@ function goTo(s) {
     nvInitRiel();
     nvActualizarPublicar();
     cargarNovedades();
+    nvMarcarVisto();
   }
   if (s === 'mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
   if (s === 'mensajes') cargarMensajesUsuario();
@@ -6251,12 +6252,67 @@ function nvInitRiel() {
   novRielIO.observe(cent);
 }
 
+// ── Badge "Nuevo" ────────────────────────────────────────────────
+// Se muestra hasta que la persona entra una vez. Si quedara para siempre
+// dejaría de llamar la atención y pasaría a ser ruido.
+const NV_CLAVE_VISTO = 'eg_novedades_visto';
+
+function nvPintarBadge() {
+  const visto = localStorage.getItem(NV_CLAVE_VISTO) === '1';
+  ['badge-nuevo-drawer', 'badge-nuevo-sidebar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visto ? 'none' : 'inline-block';
+  });
+}
+
+function nvMarcarVisto() {
+  try { localStorage.setItem(NV_CLAVE_VISTO, '1'); } catch (e) {}
+  nvPintarBadge();
+}
+
+document.addEventListener('DOMContentLoaded', nvPintarBadge);
+
 // ── Publicar (sólo Pro) ──────────────────────────────────────────
+// La caja de publicar la ve TODO el mundo. Al Pro le abre el formulario;
+// al resto le muestra qué se está perdiendo y lo lleva a Planes.
 function nvActualizarPublicar() {
-  const box = document.getElementById('nv-publicar');
+  const box = document.getElementById('nv-publicar-nucleo');
   if (!box) return;
-  // El que no es Pro ni se entera de que existe: nunca ve un espacio vacío.
-  box.style.display = esProvPro() ? 'block' : 'none';
+
+  const flechaMas = '<span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>';
+  const flechaVa = '<span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>';
+
+  if (esProvPro()) {
+    box.classList.remove('bloqueada');
+    box.innerHTML = `
+      <p class="nv-rotulo">Plan Pro</p>
+      <h3>Contá qué entró esta semana</h3>
+      <p>Tu novedad sale en este feed y la ve todo el que busca tu rubro.</p>
+      <button class="nv-cta" onclick="abrirFormNovedad()">Publicar una novedad ${flechaMas}</button>
+      <p class="nv-pro-nota">Incluido en tu plan</p>`;
+    return;
+  }
+
+  // Proveedor sin Pro (o vencido) vs. comprador / visitante: cambia el texto,
+  // no el destino. Los dos terminan en Planes.
+  const esProveedor = currentUser?.type === 'proveedor';
+  const titulo = esProveedor
+    ? '¿Querés que te vean acá?'
+    : 'Acá publican los proveedores';
+  const bajada = esProveedor
+    ? 'Contá cuándo entra mercadería o liquidás stock, y aparecés en este feed frente a los que buscan tu rubro.'
+    : '¿Vendés al por mayor? Con el Plan Pro publicás tus ingresos y liquidaciones en este feed.';
+
+  box.classList.add('bloqueada');
+  box.innerHTML = `
+    <p class="nv-rotulo">
+      <svg class="nv-candado" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Solo Plan Pro
+    </p>
+    <h3>${titulo}</h3>
+    <p>${bajada}</p>
+    <button class="nv-cta nv-cta-pro" onclick="haptic('light');goTo('planes')">Ver el Plan Pro ${flechaVa}</button>
+    <p class="nv-pro-nota">Publicá cuantas novedades quieras</p>`;
 }
 
 function abrirFormNovedad() {

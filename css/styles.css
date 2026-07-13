@@ -1093,6 +1093,18 @@ select:focus { outline: none; }
   margin:8px auto 18px;max-width:29ch;
 }
 #screen-novedades .nv-publicar .nv-cta{display:inline-flex;flex:0 1 auto}
+
+/* Variante para el que todavía no es Pro: candado + CTA naranja.
+   El naranja la separa de las acciones verdes del feed: no es "hacer algo",
+   es "desbloquear algo". */
+#screen-novedades .nv-nucleo.bloqueada{
+  background:radial-gradient(70% 60% at 50% 0%,rgba(255,107,0,.07),transparent 72%),var(--nv-carta);
+}
+#screen-novedades .nv-candado{width:12px;height:12px;flex-shrink:0}
+#screen-novedades .nv-cta-pro{
+  background:linear-gradient(145deg,#FF8534,var(--nv-naranja));
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.3),0 6px 18px -8px rgba(255,107,0,.8);
+}
 #screen-novedades .nv-pro-nota{
   font-family:var(--nv-mono) !important;font-size:.58rem;letter-spacing:.14em;
   text-transform:uppercase;color:var(--nv-tinta-3);margin:14px auto 0 !important;
@@ -1145,13 +1157,26 @@ select:focus { outline: none; }
 #screen-novedades.active .nv-hero .nv-bajada{animation-delay:280ms}
 @keyframes nvRevela{to{opacity:1;transform:none;filter:blur(0)}}
 
-/* ── Badge "Nuevo" en el menú lateral ── */
-.drawer-badge{
-  margin-left:auto;
-  font-family:ui-monospace,Menlo,Consolas,monospace !important;
-  font-size:.56rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  color:#fff;background:#FF6B00;border-radius:5px;padding:3px 7px;
+/* ── Badge "Nuevo" en los dos menús. Rojo: es un aviso, no una etiqueta.
+      Se esconde solo cuando la persona ya entró una vez (ver app.js). ── */
+.eg-badge-nuevo{
+  margin-left:auto;flex-shrink:0;
+  font-size:.6rem;font-weight:800;letter-spacing:.06em;
+  color:#fff;background:#E11D48;
+  border-radius:6px;padding:3px 8px;line-height:1.4;
+  box-shadow:0 2px 8px -2px rgba(225,29,72,.75);
+  animation:egLatidoNuevo 2.4s cubic-bezier(.23,1,.32,1) infinite;
 }
+@keyframes egLatidoNuevo{
+  0%,100%{transform:scale(1)}
+  8%{transform:scale(1.09)}
+  16%{transform:scale(1)}
+}
+@media (prefers-reduced-motion:reduce){
+  .eg-badge-nuevo{animation:none}
+}
+/* En la sidebar colapsada el texto se oculta; el badge también */
+#desktop-sidebar.collapsed .eg-badge-nuevo{display:none}
 
 /* ── Modal publicar ── */
 .nv-modal-bg{
