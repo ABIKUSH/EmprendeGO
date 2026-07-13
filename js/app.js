@@ -27,7 +27,8 @@ function trackSearch(q, resultCount) {
     trackEvent('search', { search_term: q, results: resultCount });
     // Guardar la búsqueda real + cantidad de resultados en la base.
     // Permite ver en el admin qué se busca y, sobre todo, qué se busca SIN resultados (demanda a reclutar).
-    try { sb.from('busquedas').insert({ termino: q, resultados: resultCount }); } catch (e) { }
+    // .then() es obligatorio: en supabase-js v2 el insert es "lazy" y sin then/await NO dispara la petición.
+    try { sb.from('busquedas').insert({ termino: q, resultados: resultCount }).then(() => {}, () => {}); } catch (e) { }
   }, 800);
 }
 
