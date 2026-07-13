@@ -25,6 +25,9 @@ function trackSearch(q, resultCount) {
     if (q.length < 2 || q === _lastSearchTracked) return;
     _lastSearchTracked = q;
     trackEvent('search', { search_term: q, results: resultCount });
+    // Guardar la búsqueda real + cantidad de resultados en la base.
+    // Permite ver en el admin qué se busca y, sobre todo, qué se busca SIN resultados (demanda a reclutar).
+    try { sb.from('busquedas').insert({ termino: q, resultados: resultCount }); } catch (e) { }
   }, 800);
 }
 

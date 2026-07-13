@@ -547,6 +547,16 @@ emprendego.com.ar</textarea>
             </div>
           </div>
         </div>
+        <div class="table-card" style="border:1.5px solid #fecaca;background:#fef2f2">
+          <div class="table-title" style="margin-bottom:6px;color:#b91c1c">🔴 Buscado y SIN resultados — tu lista para reclutar</div>
+          <p style="font-size:.8rem;color:var(--gray);margin:0 0 14px">Lo que la gente buscó y no encontró. Cada término es demanda comprobada: conseguí un proveedor de eso.</p>
+          <table>
+            <thead><tr><th>Término sin resultados</th><th>Veces</th></tr></thead>
+            <tbody id="busq-sin-table">
+              <tr><td colspan="2" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
         <div class="table-card">
           <div class="table-title" style="margin-bottom:16px">Todos los términos registrados</div>
           <table>
@@ -1357,9 +1367,16 @@ async function cargarPlanes(){
 // ===== BÚSQUEDAS =====
 async function cargarBusquedas(){
   try {
-    const {data} = await sb.from('busquedas').select('termino');
-    const count = {};
-    (data||[]).forEach(b=>{ if(b.termino){ const t=b.termino.trim().toLowerCase(); count[t]=(count[t]||0)+1; }});
+    const {data} = await sb.from('busquedas').select('termino,resultados');
+    // Solo búsquedas REALES del buscador (tienen la columna 'resultados' cargada).
+    // Las filas históricas de nombres de proveedor (resultados nulo) quedan afuera.
+    const reales = (data||[]).filter(b=> b.termino && b.resultados !== null && b.resultados !== undefined);
+    const count = {}, sinRes = {};
+    reales.forEach(b=>{
+      const t = b.termino.trim().toLowerCase();
+      count[t] = (count[t]||0)+1;
+      if (Number(b.resultados) === 0) sinRes[t] = (sinRes[t]||0)+1;
+    });
     const sorted = Object.entries(count).sort((a,b)=>b[1]-a[1]);
     const maxV = sorted[0]?.[1] || 1;
     const chartEl = document.getElementById('busq-chart-top');
@@ -1370,6 +1387,12 @@ async function cargarBusquedas(){
     tbody.innerHTML = sorted.length ? sorted.map(([t,n])=>
       `<tr><td>${escHtml(t)}</td><td>${n}</td></tr>`
     ).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--gray);padding:20px">Sin búsquedas registradas aún</td></tr>';
+    // Lista de búsquedas SIN resultados = demanda a reclutar
+    const sortedSin = Object.entries(sinRes).sort((a,b)=>b[1]-a[1]);
+    const tbodySin = document.getElementById('busq-sin-table');
+    if (tbodySin) tbodySin.innerHTML = sortedSin.length ? sortedSin.map(([t,n])=>
+      `<tr><td style="font-weight:600">${escHtml(t)}</td><td>${n}</td></tr>`
+    ).join('') : '<tr><td colspan="2" style="text-align:center;color:var(--gray);padding:20px">Todavía nadie buscó algo sin resultados (o falta correr el paso de la base) 🎉</td></tr>';
   } catch(e){ console.log('busquedas error',e); }
 }
 
