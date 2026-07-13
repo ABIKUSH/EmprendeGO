@@ -3148,6 +3148,7 @@ function goTo(s) {
     cargarNovedades();
     nvMarcarVisto();
   }
+  if (s === 'planes') renderPlanes();
   if (s === 'mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
   if (s === 'mensajes') cargarMensajesUsuario();
   const fab = document.getElementById('soporte-fab');
@@ -6065,7 +6066,7 @@ async function cargarNovedades(forzar) {
     if (ids.length) {
       const { data: provs } = await sb
         .from('proveedores')
-        .select('id,nombre,provincia,plan,plan_hasta')
+        .select('id,nombre,provincia,plan,plan_hasta,logo_url')
         .in('id', ids);
       const mapa = Object.fromEntries((provs || []).map(p => [p.id, p]));
       novedadesDB.forEach(n => { n._prov = mapa[n.proveedor_id] || null; });
@@ -6180,11 +6181,22 @@ function nvTarjetaProveedor(n) {
       </button>
     </div>` : '';
 
+  // El logo real si lo tiene; las iniciales solo como respaldo.
+  // onerror: si la URL está rota, cae a las iniciales en vez de mostrar
+  // el ícono de imagen quebrada.
+  const avatar = prov && prov.logo_url
+    ? `<span class="nv-sigla nv-sigla-logo" aria-hidden="true">
+         <img src="${nvEsc(imgThumb(prov.logo_url, 120, 75))}" alt=""
+              loading="lazy"
+              onerror="this.parentNode.classList.remove('nv-sigla-logo');this.parentNode.textContent='${nvEsc(nvIniciales(nombre))}'">
+       </span>`
+    : `<span class="nv-sigla" aria-hidden="true">${nvEsc(nvIniciales(nombre))}</span>`;
+
   return `
     <article class="nv-bandeja nv-sube">
       <div class="nv-nucleo">
         <div class="nv-quien">
-          <span class="nv-sigla" aria-hidden="true">${nvEsc(nvIniciales(nombre))}</span>
+          ${avatar}
           <span class="nv-quien-txt">
             <b>${nvEsc(nombre)}</b>
             <span>${nvEsc(meta)}</span>
@@ -6349,6 +6361,49 @@ function nvInitRiel() {
     riel.classList.toggle('pegado', !e[0].isIntersecting);
   }, { rootMargin: '-13px 0px 0px 0px', threshold: 0 });
   novRielIO.observe(cent);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PLANES
+// ═══════════════════════════════════════════════════════════════
+function renderPlanes() {
+  // El titular usa el número real de proveedores: si lo hardcodeamos,
+  // queda desactualizado y le miente al proveedor.
+  const total = document.getElementById('pl-total');
+  if (total && Array.isArray(proveedoresDB) && proveedoresDB.length) {
+    total.textContent = proveedoresDB.length;
+  }
+
+  const ctaPro = document.getElementById('pl-cta-pro');
+  const ctaFree = document.getElementById('pl-cta-free');
+  if (!ctaPro || !ctaFree) return;
+
+  const esProveedor = currentUser?.type === 'proveedor';
+
+  if (esProvPro()) {
+    ctaPro.textContent = 'Tu plan actual';
+    ctaPro.classList.add('pl-cta--actual');
+    ctaPro.disabled = true;
+    ctaFree.textContent = 'Plan Gratis';
+    ctaFree.classList.add('pl-cta--actual');
+    ctaFree.disabled = true;
+    return;
+  }
+
+  ctaPro.textContent = 'Activar Plan Pro';
+  ctaPro.classList.remove('pl-cta--actual');
+  ctaPro.disabled = false;
+
+  if (esProveedor) {
+    // Ya es proveedor: el gratis es su plan actual, no un botón de alta.
+    ctaFree.textContent = 'Tu plan actual';
+    ctaFree.classList.add('pl-cta--actual');
+    ctaFree.disabled = true;
+  } else {
+    ctaFree.textContent = 'Empezar gratis';
+    ctaFree.classList.remove('pl-cta--actual');
+    ctaFree.disabled = false;
+  }
 }
 
 // ── Badge "Nuevo" ────────────────────────────────────────────────

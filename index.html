@@ -62,7 +62,7 @@
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260713-nov4">
+<link rel="stylesheet" href="css/styles.css?v=20260713-nov5">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -722,11 +722,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <span id="mapaResultLabel">Proveedores</span>
         <button class="mapa-clear" onclick="clearMapaFilter()">✕ Limpiar filtro</button>
       </div>
-      <div id="mapaProvList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div id="mapaProvList" class="mapa-grid"></div>
     </div>
     <div id="mapaAllProvs" style="display:block">
       <div class="mapa-results-label"><span>Todos los proveedores</span></div>
-      <div id="mapaAllList" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div id="mapaAllList" class="mapa-grid"></div>
     </div>
   </div>
 </div>
@@ -1179,77 +1179,115 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
 <!-- ===== PLANES ===== -->
 <div class="screen" id="screen-planes">
-  <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Planes</span></div>
-  <div style="background:linear-gradient(135deg,#006039,#004D2E);padding:28px 24px;text-align:center">
-    <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white;margin-bottom:6px">Hacé crecer tu negocio</h2>
-    <p style="color:rgba(255,255,255,.6);font-size:.88rem;line-height:1.5">Elegí el plan que mejor se adapte a tu emprendimiento.</p>
-  </div>
-  <div class="plans-wrap">
-    <!-- ===== PLAN GRATIS ===== -->
-    <div class="plan-card">
-      <div class="plan-body">
-        <div class="plan-eyebrow">Nivel inicial</div>
-        <div class="plan-name">Plan Gratis</div>
-        <div class="plan-desc">Para conocer la plataforma.</div>
-        <div class="plan-price-row">
-          <span class="plan-price">$0</span>
-          <span class="plan-price-period">/mes</span>
+  <header class="pl-topbar">
+    <button class="pl-hamb" onclick="openDrawer()" aria-label="Abrir menú">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="pl-marca">EmprendeGO</span>
+  </header>
+
+  <!-- ═══ HERO: la tesis, no un eslogan ═══ -->
+  <section class="pl-hero">
+    <span class="pl-eyebrow">Planes para proveedores</span>
+    <h1>Hoy sos uno de <em id="pl-total">113</em> proveedores</h1>
+    <p class="pl-bajada">El comprador entra, busca su rubro y contacta a los primeros que ve. El Plan Pro te pone ahí.</p>
+  </section>
+
+  <div class="pl-wrap">
+
+    <!-- ═══ PRO ═══ -->
+    <article class="pl-bandeja pl-pro">
+      <div class="pl-nucleo">
+        <div class="pl-cinta">Recomendado</div>
+
+        <p class="pl-rotulo">Plan Pro</p>
+        <div class="pl-precio-row">
+          <span class="pl-precio">$20.000</span>
+          <span class="pl-periodo">por mes</span>
         </div>
-        <div class="plan-price-note">Sin tarjeta. Para siempre.</div>
-        <div class="plan-divider"></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Perfil visible en el directorio</div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Carga manual de productos (hasta 30)</div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Contacto directo por WhatsApp</div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Panel de proveedor básico</div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Solicitudes de contacto recibidas</div></div>
-        <div class="plan-divider"></div>
-        <div class="plan-locked">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Badge Verificado · Productos ilimitados · Estadísticas — solo en Pro
+        <p class="pl-precio-nota">Cancelás cuando querés. Sin permanencia.</p>
+
+        <div class="pl-linea"></div>
+
+        <div class="pl-bloque">
+          <p class="pl-bloque-titulo">Que te vean primero</p>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Aparecés antes en las búsquedas</strong><span>Arriba de los planes gratis de tu mismo rubro</span></div></div>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Sello PRO verificado</strong><span>El comprador desconfía del que no tiene sello</span></div></div>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Publicás en Novedades</strong><span>Contá qué entró o qué liquidás y salí en el feed<span class="pl-nuevo">Nuevo</span></span></div></div>
         </div>
-        <button class="plan-cta plan-cta--current">Tu plan actual</button>
+
+        <div class="pl-bloque">
+          <p class="pl-bloque-titulo">Mostrá todo lo que vendés</p>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Productos ilimitados</strong><span>Sin el tope de 30 del plan gratis</span></div></div>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Importás de Mercado Libre y Tienda Nube</strong><span>Todo tu catálogo en un clic, no de a uno</span></div></div>
+        </div>
+
+        <div class="pl-bloque">
+          <p class="pl-bloque-titulo">Enterate de qué pasa</p>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Visitas y consultas de tu perfil</strong><span>Cuántos te vieron y cuántos te escribieron</span></div></div>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Qué están buscando los compradores</strong><span>Para saber qué conviene tener en stock</span></div></div>
+          <div class="pl-item"><span class="pl-tic"></span><div><strong>Pedidos ordenados en tu panel</strong><span>No se te pierde ninguno entre las consultas</span></div></div>
+        </div>
+
+        <div class="pl-linea"></div>
+        <div class="pl-item"><span class="pl-tic"></span><div><strong>Soporte por WhatsApp</strong><span>Te respondemos en el día</span></div></div>
+
+        <button class="pl-cta" id="pl-cta-pro" onclick="iniciarPagoPro(this)">Activar Plan Pro</button>
+        <p class="pl-cta-nota">Pagás con Mercado Pago. Se activa al instante.</p>
       </div>
-    </div>
-    <!-- ===== PLAN PRO ===== -->
-    <div class="plan-card plan-card--pro">
-      <div class="plan-badge">★ Recomendado</div>
-      <div class="plan-body">
-        <div class="plan-eyebrow plan-eyebrow--pro">Nivel profesional</div>
-        <div class="plan-name">Plan Pro</div>
-        <div class="plan-desc">Todo lo que necesitás para vender más.</div>
-        <div class="plan-price-row">
-          <span class="plan-price">$20.000</span>
-          <span class="plan-price-period">/mes</span>
+    </article>
+
+    <!-- ═══ GRATIS ═══ -->
+    <article class="pl-bandeja pl-free">
+      <div class="pl-nucleo">
+        <p class="pl-rotulo">Plan Gratis</p>
+        <div class="pl-precio-row">
+          <span class="pl-precio">$0</span>
+          <span class="pl-periodo">para siempre</span>
         </div>
-        <div class="plan-price-note">Cancelás cuando quieras. Sin permanencia.</div>
-        <div class="plan-divider"></div>
+        <p class="pl-precio-nota">Sin tarjeta. Para arrancar y probar.</p>
 
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div class="plan-feat-title">Todo lo del Plan Gratis incluido</div></div>
+        <div class="pl-linea"></div>
 
-        <div class="plan-group">Más visibilidad</div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Badge PRO Verificado</div><div class="plan-feat-sub">Los compradores eligen primero a quienes tienen el sello</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Prioridad en los resultados de búsqueda</div><div class="plan-feat-sub">Tu negocio aparece antes que el de los planes gratis</div></div></div>
+        <div class="pl-item"><span class="pl-tic"></span><div><strong>Tu perfil en el directorio</strong></div></div>
+        <div class="pl-item"><span class="pl-tic"></span><div><strong>Hasta 30 productos, cargados a mano</strong></div></div>
+        <div class="pl-item"><span class="pl-tic"></span><div><strong>Los compradores te escriben por WhatsApp</strong></div></div>
+        <div class="pl-item"><span class="pl-tic"></span><div><strong>Panel de proveedor básico</strong></div></div>
 
-        <div class="plan-group">Catálogo sin límites</div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Productos ilimitados</div><div class="plan-feat-sub">Mostrá todo tu catálogo, sin el tope de 30 del plan gratis</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Integración con Tienda Nube</div><div class="plan-feat-sub">Lo que cargar manual te lleva horas, acá lo importás en segundos</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Integración con MercadoLibre</div><div class="plan-feat-sub">Sincronizá tus publicaciones de ML en un clic</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Carga masiva de productos</div><div class="plan-feat-sub">Subí decenas de productos en minutos</div></div></div>
+        <div class="pl-linea"></div>
+        <p class="pl-candado">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Sin sello, sin prioridad, sin estadísticas y sin publicar en Novedades
+        </p>
 
-        <div class="plan-group">Gestión y análisis</div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Pedidos organizados en dashboard</div><div class="plan-feat-sub">Nunca más perdés un pedido entre las consultas</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Estadísticas de visitas y contactos</div><div class="plan-feat-sub">Sabé cuántos compradores te ven y cuándo actuar</div></div></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Métricas de búsqueda</div><div class="plan-feat-sub">Entendé qué buscan los compradores y ajustá tu oferta</div></div></div>
-
-        <div class="plan-divider"></div>
-        <div class="plan-feat"><svg class="plan-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><div><div class="plan-feat-title">Soporte prioritario por WhatsApp</div><div class="plan-feat-sub">Respuesta en menos de 24hs, siempre</div></div></div>
-
-        <div class="plan-divider"></div>
-        <div class="plan-soon"><span>→</span> Próximamente: anuncios destacados</div>
-
-        <button class="plan-cta" onclick="iniciarPagoPro(this)">Activar Plan Pro →</button>
+        <button class="pl-cta pl-cta-free" id="pl-cta-free" onclick="goTo('registro')">Empezar gratis</button>
       </div>
-    </div>
+    </article>
+
+    <!-- ═══ COMPARACIÓN: lo que se scanea de un vistazo ═══ -->
+    <section class="pl-tabla-wrap">
+      <p class="pl-tabla-titulo">Uno al lado del otro</p>
+      <div class="pl-tabla">
+        <table>
+          <thead>
+            <tr><th scope="col">&nbsp;</th><th scope="col">Gratis</th><th scope="col" class="pro">Pro</th></tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Productos</th><td>Hasta 30</td><td class="pro">Sin límite</td></tr>
+            <tr><th scope="row">Lugar en las búsquedas</th><td>Después de los Pro</td><td class="pro">Primero</td></tr>
+            <tr><th scope="row">Sello verificado</th><td><span class="pl-no">—</span></td><td class="pro">Sí</td></tr>
+            <tr><th scope="row">Publicar en Novedades</th><td><span class="pl-no">—</span></td><td class="pro">Sí</td></tr>
+            <tr><th scope="row">Importar de ML y Tienda Nube</th><td><span class="pl-no">—</span></td><td class="pro">Sí</td></tr>
+            <tr><th scope="row">Estadísticas</th><td><span class="pl-no">—</span></td><td class="pro">Sí</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ═══ GARANTÍA ═══ -->
+    <section class="pl-garantia">
+      <p><strong>Si no te sirve, lo cancelás y listo.</strong> No hay permanencia ni letra chica. Escribinos por WhatsApp y lo damos de baja el mismo día.</p>
+    </section>
   </div>
 </div>
 
@@ -2156,7 +2194,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260713-nov4"></script>
+<script src="js/app.js?v=20260713-nov5"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

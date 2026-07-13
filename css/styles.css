@@ -917,6 +917,14 @@ select:focus { outline: none; }
   background:linear-gradient(145deg,var(--nv-verde-medio),var(--nv-verde-hondo));
   box-shadow:inset 0 1px 1px rgba(255,255,255,.22),0 3px 8px -3px rgba(0,0,0,.4);
 }
+/* Con logo: fondo claro y sin degradé verde, para que el logo se lea */
+#screen-novedades .nv-sigla-logo{
+  background:#fff;padding:0;
+  box-shadow:inset 0 0 0 1px var(--nv-hair), 0 3px 8px -3px rgba(0,0,0,.25);
+}
+#screen-novedades .nv-sigla-logo img{
+  width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;
+}
 #screen-novedades .nv-quien-txt{flex:1;min-width:0}
 #screen-novedades .nv-quien-txt b{
   display:block;font-size:.87rem;font-weight:700;letter-spacing:-.01em;
@@ -1180,6 +1188,42 @@ select:focus { outline: none; }
 #screen-novedades.active .nv-hero .nv-bajada{animation-delay:280ms}
 @keyframes nvRevela{to{opacity:1;transform:none;filter:blur(0)}}
 
+/* ══════════════════════════════════════════════════════════════
+   MAPA — tarjetas de proveedor de a dos por fila.
+   La tarjeta (renderProvCardMini) trae estilos inline, así que acá
+   hace falta !important para reacomodarla al ancho angosto.
+   ══════════════════════════════════════════════════════════════ */
+.mapa-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(170px, 1fr));
+  gap:10px;
+  align-items:start;
+}
+.mapa-grid > [data-id]{padding:12px !important;position:relative}
+/* La cabecera pasa de fila a columna: al 50% de ancho no entraba
+   logo + nombre + corazón en línea. */
+.mapa-grid > [data-id] > div:first-child{
+  flex-direction:column !important;
+  align-items:flex-start !important;
+  gap:9px !important;
+}
+.mapa-grid > [data-id] > div:first-child > div:first-child{
+  width:42px !important;height:42px !important;font-size:.9rem !important;
+}
+/* El corazón se va a la esquina para no comer ancho */
+.mapa-grid > [data-id] > div:first-child > button{
+  position:absolute !important;top:6px;right:6px;
+}
+.mapa-grid > [data-id] > div:first-child > div:nth-child(2){width:100%}
+/* Los rubros van a 2 líneas como máximo: hay proveedores con siete rubros
+   y estiraban la tarjeta al doble que las de al lado. */
+.mapa-grid > [data-id] > div:first-child > div:nth-child(2) > div:nth-child(2){
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
 /* ── Badge "Nuevo" en los dos menús. Rojo: es un aviso, no una etiqueta.
       Se esconde solo cuando la persona ya entró una vez (ver app.js). ── */
 .eg-badge-nuevo{
@@ -1340,4 +1384,329 @@ select:focus { outline: none; }
                              padding-right:max(22px, calc((100% - 1240px) / 2))}
   #screen-novedades .nv-riel{padding-left:max(16px, calc((100% - 1240px) / 2));
                              padding-right:max(16px, calc((100% - 1240px) / 2))}
+}
+/* ══════════════════════════════════════════════════════════════
+   PLANES — mismo lenguaje visual que Novedades (doble bisel,
+   Fraunces, verde tinta) para que la app se sienta una sola cosa.
+   Prefijo .pl-
+   ══════════════════════════════════════════════════════════════ */
+#screen-planes{
+  --pl-fondo:#F1F3EF;
+  --pl-carta:#fff;
+  --pl-tinta:#0E1411;
+  --pl-tinta-2:#5B6862;
+  --pl-tinta-3:#8C9A93;
+  --pl-hair:rgba(14,20,17,.07);
+  --pl-hair-2:rgba(14,20,17,.045);
+  --pl-verde:#006039;
+  --pl-verde-hondo:#04150E;
+  --pl-verde-medio:#0A3D28;
+  --pl-naranja:#FF6B00;
+  --pl-naranja-luz:#FFB07A;
+  --pl-masa:cubic-bezier(.32,.72,0,1);
+  --pl-salida:cubic-bezier(.23,1,.32,1);
+  --pl-flota:0 1px 2px rgba(14,20,17,.03),0 8px 20px -8px rgba(14,20,17,.07),0 24px 48px -24px rgba(14,20,17,.10);
+  --pl-mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  background:var(--pl-fondo);
+  color:var(--pl-tinta);
+  padding-bottom:96px;
+  position:relative;
+  overflow-x:hidden;
+}
+
+/* ── Topbar ── */
+#screen-planes .pl-topbar{
+  position:absolute;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;gap:12px;padding:16px 20px;
+}
+#screen-planes .pl-hamb{
+  width:40px;height:40px;flex-shrink:0;cursor:pointer;
+  border-radius:50%;border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.08);backdrop-filter:blur(14px);
+  color:rgba(255,255,255,.9);
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 200ms var(--pl-masa);
+}
+#screen-planes .pl-hamb:active{transform:scale(.94)}
+#screen-planes .pl-hamb:focus-visible{outline:2px solid var(--pl-naranja-luz);outline-offset:3px}
+#screen-planes .pl-marca{
+  font-family:'Fraunces',serif !important;font-weight:800;font-size:1.02rem;
+  letter-spacing:-.015em;color:rgba(255,255,255,.94);
+}
+
+/* ── Hero ── */
+#screen-planes .pl-hero{
+  position:relative;background:var(--pl-verde-hondo);
+  padding:84px 22px 92px;
+  border-bottom-left-radius:34px;border-bottom-right-radius:34px;
+  overflow:hidden;isolation:isolate;
+}
+#screen-planes .pl-hero::before{
+  content:"";position:absolute;inset:-30% -20% auto -30%;height:120%;z-index:-1;
+  background:
+    radial-gradient(58% 46% at 22% 8%, rgba(18,164,106,.40), transparent 68%),
+    radial-gradient(46% 40% at 92% 26%, rgba(255,107,0,.22), transparent 66%),
+    radial-gradient(70% 50% at 50% 100%, rgba(0,96,57,.55), transparent 70%);
+}
+#screen-planes .pl-hero::after{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:34px 34px;
+  -webkit-mask-image:radial-gradient(80% 60% at 50% 20%,#000,transparent 75%);
+  mask-image:radial-gradient(80% 60% at 50% 20%,#000,transparent 75%);
+}
+#screen-planes .pl-eyebrow{
+  display:inline-flex;align-items:center;
+  border-radius:999px;padding:6px 12px;
+  border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
+  backdrop-filter:blur(10px);
+  font-family:var(--pl-mono) !important;font-size:.62rem;font-weight:600;
+  letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.82);
+}
+#screen-planes .pl-hero h1{
+  font-family:'Fraunces',serif !important;
+  font-size:2.5rem;font-weight:900;line-height:1;letter-spacing:-.035em;
+  color:#fff;margin-top:18px;text-wrap:balance;
+}
+#screen-planes .pl-hero h1 em{
+  font-style:italic;font-weight:700;color:transparent;
+  background:linear-gradient(100deg,#FFC79A,var(--pl-naranja) 60%);
+  -webkit-background-clip:text;background-clip:text;
+  font-variant-numeric:tabular-nums;
+}
+#screen-planes .pl-bajada{
+  font-size:.92rem;line-height:1.6;margin-top:15px;
+  color:rgba(255,255,255,.62);max-width:31ch;
+}
+
+/* ── Contenedor ── */
+#screen-planes .pl-wrap{
+  display:flex;flex-direction:column;gap:20px;
+  padding:26px 16px 0;
+}
+
+/* ── Doble bisel ── */
+#screen-planes .pl-bandeja{
+  background:var(--pl-hair-2);border:1px solid var(--pl-hair);
+  border-radius:30px;padding:6px;box-shadow:var(--pl-flota);
+}
+#screen-planes .pl-nucleo{
+  background:var(--pl-carta);border-radius:24px;
+  padding:26px 22px 22px;position:relative;overflow:hidden;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.6);
+}
+
+/* ── Pro: se invierte a tinta. Es el que queremos vender. ── */
+#screen-planes .pl-pro .pl-nucleo{
+  background:linear-gradient(160deg,var(--pl-verde-medio),var(--pl-verde-hondo));
+  color:#fff;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.10);
+}
+#screen-planes .pl-pro .pl-nucleo::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(60% 44% at 92% 2%, rgba(255,107,0,.26), transparent 66%);
+}
+/* Pastilla, no cinta diagonal: la cinta quedaba cortada por el borde
+   redondeado y el texto casi no se leía. */
+#screen-planes .pl-cinta{
+  position:absolute;top:18px;right:18px;z-index:2;
+  background:linear-gradient(145deg,#FF8534,var(--pl-naranja));
+  color:#fff;border-radius:999px;
+  font-family:var(--pl-mono) !important;font-size:.55rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;
+  padding:5px 11px;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.35),0 4px 14px -4px rgba(255,107,0,.8);
+}
+
+#screen-planes .pl-rotulo{
+  position:relative;
+  font-family:var(--pl-mono) !important;font-size:.62rem;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--pl-tinta-3);
+}
+#screen-planes .pl-pro .pl-rotulo{color:var(--pl-naranja-luz)}
+
+#screen-planes .pl-precio-row{
+  position:relative;display:flex;align-items:baseline;gap:7px;margin-top:10px;
+}
+#screen-planes .pl-precio{
+  font-family:'Fraunces',serif !important;
+  font-size:2.7rem;font-weight:900;letter-spacing:-.04em;line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+#screen-planes .pl-pro .pl-precio{color:#fff}
+#screen-planes .pl-periodo{
+  font-family:var(--pl-mono) !important;font-size:.66rem;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--pl-tinta-3);
+}
+#screen-planes .pl-pro .pl-periodo{color:rgba(255,255,255,.5)}
+#screen-planes .pl-precio-nota{
+  position:relative;
+  font-size:.79rem;color:var(--pl-tinta-2);margin-top:7px;line-height:1.5;
+}
+#screen-planes .pl-pro .pl-precio-nota{color:rgba(255,255,255,.6)}
+
+#screen-planes .pl-linea{
+  position:relative;height:1px;background:var(--pl-hair);margin:20px 0;
+}
+#screen-planes .pl-pro .pl-linea{background:rgba(255,255,255,.12)}
+
+/* ── Bloques por resultado, no lista de features sueltas ── */
+#screen-planes .pl-bloque{position:relative;margin-bottom:20px}
+#screen-planes .pl-bloque:last-of-type{margin-bottom:0}
+#screen-planes .pl-bloque-titulo{
+  font-family:'Fraunces',serif !important;
+  font-size:1.05rem;font-weight:800;letter-spacing:-.02em;
+  margin-bottom:12px;
+}
+#screen-planes .pl-pro .pl-bloque-titulo{color:#fff}
+
+#screen-planes .pl-item{
+  position:relative;display:flex;gap:11px;align-items:flex-start;
+  margin-bottom:11px;
+}
+#screen-planes .pl-item:last-child{margin-bottom:0}
+#screen-planes .pl-tic{
+  width:18px;height:18px;flex-shrink:0;margin-top:2px;border-radius:50%;
+  background:var(--pl-verde);
+  position:relative;
+}
+#screen-planes .pl-pro .pl-tic{background:rgba(255,255,255,.16)}
+#screen-planes .pl-tic::after{
+  content:"";position:absolute;left:5.5px;top:4.5px;
+  width:4px;height:8px;
+  border:solid #fff;border-width:0 1.8px 1.8px 0;
+  transform:rotate(45deg);
+}
+#screen-planes .pl-item strong{
+  display:block;font-size:.88rem;font-weight:700;line-height:1.4;
+  letter-spacing:-.01em;
+}
+#screen-planes .pl-item span{
+  display:block;font-size:.79rem;line-height:1.5;color:var(--pl-tinta-2);
+  margin-top:2px;
+}
+#screen-planes .pl-pro .pl-item span{color:rgba(255,255,255,.6)}
+#screen-planes .pl-nuevo{
+  display:inline-block !important;margin:6px 0 0 !important;
+  font-family:var(--pl-mono) !important;font-size:.55rem;font-weight:700;
+  letter-spacing:.12em;text-transform:uppercase;
+  color:#fff !important;background:#E11D48;
+  border-radius:5px;padding:2px 7px;
+}
+
+/* ── CTA. Texto plano: iniciarPagoPro() pisa el textContent. ── */
+#screen-planes .pl-cta{
+  position:relative;width:100%;cursor:pointer;min-height:52px;
+  margin-top:24px;border:none;border-radius:999px;
+  font-family:inherit;font-size:.95rem;font-weight:700;letter-spacing:-.01em;
+  color:#fff;
+  background:linear-gradient(145deg,#FF8534,var(--pl-naranja));
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.3),0 8px 22px -8px rgba(255,107,0,.85);
+  transition:transform 200ms var(--pl-salida),filter 200ms var(--pl-masa);
+}
+#screen-planes .pl-cta:active{transform:scale(.98)}
+#screen-planes .pl-cta:focus-visible{outline:2px solid #fff;outline-offset:3px}
+#screen-planes .pl-cta:disabled{opacity:.6;cursor:progress}
+#screen-planes .pl-cta-free{
+  background:var(--pl-hair-2);color:var(--pl-tinta);
+  border:1px solid var(--pl-hair);box-shadow:none;
+}
+#screen-planes .pl-cta--actual{
+  background:var(--pl-hair-2) !important;color:var(--pl-tinta-3) !important;
+  border:1px solid var(--pl-hair) !important;box-shadow:none !important;
+  cursor:default;
+}
+#screen-planes .pl-pro .pl-cta--actual{
+  background:rgba(255,255,255,.1) !important;color:rgba(255,255,255,.6) !important;
+  border-color:rgba(255,255,255,.16) !important;
+}
+#screen-planes .pl-cta-nota{
+  position:relative;text-align:center;margin-top:11px;
+  font-family:var(--pl-mono) !important;font-size:.58rem;
+  letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.42);
+}
+
+#screen-planes .pl-candado{
+  position:relative;display:flex;gap:8px;align-items:flex-start;
+  font-size:.78rem;line-height:1.5;color:var(--pl-tinta-3);
+}
+#screen-planes .pl-candado svg{width:13px;height:13px;flex-shrink:0;margin-top:3px}
+
+/* ── Tabla comparativa ── */
+#screen-planes .pl-tabla-wrap{margin-top:6px}
+#screen-planes .pl-tabla-titulo{
+  font-family:'Fraunces',serif !important;
+  font-size:1.2rem;font-weight:800;letter-spacing:-.025em;
+  margin:0 4px 14px;
+}
+#screen-planes .pl-tabla{
+  overflow-x:auto;
+  background:var(--pl-carta);
+  border:1px solid var(--pl-hair);
+  border-radius:20px;
+  box-shadow:var(--pl-flota);
+}
+#screen-planes .pl-tabla table{
+  width:100%;border-collapse:collapse;
+}
+#screen-planes .pl-tabla th,
+#screen-planes .pl-tabla td{
+  text-align:left;padding:13px 14px;
+  font-size:.8rem;line-height:1.4;
+  border-bottom:1px solid var(--pl-hair);
+}
+#screen-planes .pl-tabla tr:last-child th,
+#screen-planes .pl-tabla tr:last-child td{border-bottom:none}
+#screen-planes .pl-tabla thead th{
+  font-family:var(--pl-mono) !important;font-size:.58rem;font-weight:700;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--pl-tinta-3);
+  background:var(--pl-hair-2);
+}
+#screen-planes .pl-tabla thead th.pro{color:var(--pl-naranja)}
+#screen-planes .pl-tabla tbody th{
+  font-weight:700;color:var(--pl-tinta);
+}
+#screen-planes .pl-tabla td{color:var(--pl-tinta-2)}
+#screen-planes .pl-tabla td.pro{
+  color:var(--pl-verde);font-weight:700;
+  background:rgba(0,96,57,.035);
+}
+#screen-planes .pl-no{color:var(--pl-tinta-3)}
+
+/* ── Garantía ── */
+#screen-planes .pl-garantia{
+  background:var(--pl-hair-2);
+  border:1px dashed var(--pl-hair);
+  border-radius:20px;
+  padding:18px 20px;
+}
+#screen-planes .pl-garantia p{
+  font-size:.83rem;line-height:1.6;color:var(--pl-tinta-2);
+}
+#screen-planes .pl-garantia strong{color:var(--pl-tinta);font-weight:700}
+
+@media (hover:hover) and (pointer:fine){
+  #screen-planes .pl-cta:not(.pl-cta--actual):hover{filter:brightness(1.06)}
+}
+
+/* ── Escritorio: dos planes lado a lado ── */
+@media (min-width:768px){
+  #screen-planes .pl-topbar{display:none}
+  #screen-planes .pl-hero{
+    padding:56px max(22px, calc((100% - 1000px) / 2)) 84px;
+    border-bottom-left-radius:0;border-bottom-right-radius:0;
+  }
+  #screen-planes .pl-hero h1{font-size:3.2rem;max-width:16ch}
+  #screen-planes .pl-bajada{font-size:1rem;max-width:46ch}
+  #screen-planes .pl-wrap{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:22px;align-items:start;
+    max-width:1000px;margin:0 auto;padding:30px 16px 0;
+  }
+  /* El Pro va primero y a la izquierda; los dos arrancan a la misma altura */
+  #screen-planes .pl-tabla-wrap,
+  #screen-planes .pl-garantia{grid-column:1 / -1}
 }
