@@ -2067,10 +2067,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260712-busq3"></script>
+<script src="js/app.js?v=20260712-busq4"></script>
 <script>
+// Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
+// La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+}
+if (window.caches && caches.keys) {
+  caches.keys().then(ks => ks.forEach(k => caches.delete(k))).catch(() => {});
 }
 </script>
 
