@@ -544,7 +544,7 @@ function renderFavs() {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
@@ -1038,7 +1038,7 @@ function renderProvCardMini(p, i) {
   return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
       ${p.logo_url
-        ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+        ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
         : `<div style="width:48px;height:48px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>`
       }
       <div style="flex:1;min-width:0">
@@ -1122,7 +1122,7 @@ function renderProvs(list) {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;overflow:hidden;cursor:pointer;display:flex;flex-direction:column">
       <div style="display:flex;align-items:flex-start;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
@@ -1347,7 +1347,7 @@ async function renderDetalleProductos(proveedorId) {
     const prodId = 'real_' + p.id;
     const emoji = getEmojiCat(p.categoria_principal || p.categoria);
     const imgHtml = p.imagen_url
-      ? `<img src="${escHtml(p.imagen_url)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
+      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
       : `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
     return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
       ${imgHtml}
@@ -2390,7 +2390,7 @@ async function cargarHistorial() {
       const bg = _monoColor(p.id);
       return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
-          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
           : `<div class="hist-logo" style="background:${bg}">${escHtml(ini)}</div>`
         }
           <div class="hist-info"><strong>${escHtml(p.nombre)}</strong><span>${escHtml(p.rubro || '')}${p.pro ? ' · PRO' : ''}</span></div>
@@ -2503,7 +2503,7 @@ function renderProdGrid() {
   el.innerHTML = productos.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img src="${escHtml(p.imagen_url)}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;${oculto ? 'opacity:.45' : ''}">`
+      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#F3F4F6;${oculto ? 'opacity:.45' : ''}">`
       : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;${oculto ? 'opacity:.45' : ''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#f8f8f8' : 'white'};border-radius:12px;padding:12px;border:1.5px solid ${oculto ? '#e0e0e0' : '#eee'};display:flex;align-items:center;gap:12px;margin-bottom:8px">
       ${img}
@@ -2601,7 +2601,70 @@ function removeFoto() {
   document.getElementById('foto-input').value = '';
 }
 
+// ===== OPTIMIZACIÓN DE IMÁGENES (ahorro de egress) =====
+// Comprime del lado del cliente ANTES de subir a Storage. Reduce drásticamente el
+// peso almacenado y servido (egress) y acelera la carga. Devuelve un File JPEG;
+// si algo falla, cae al archivo original para no romper la subida.
+async function comprimirImagen(file, maxWidth, quality) {
+  try {
+    if (!file || !file.type || !file.type.startsWith('image/')) return file;
+    // GIF (animado) y SVG (vectorial) no se tocan: canvas los arruinaría.
+    if (file.type === 'image/gif' || file.type === 'image/svg+xml') return file;
+    const dataUrl = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
+    const img = await new Promise((res, rej) => {
+      const im = new Image();
+      im.onload = () => res(im);
+      im.onerror = rej;
+      im.src = dataUrl;
+    });
+    let width = img.width, height = img.height;
+    // Solo achicar si supera el máximo; si ya es más chica, solo se recomprime.
+    if (width > maxWidth) {
+      height = Math.round(height * (maxWidth / width));
+      width = maxWidth;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    // Fondo blanco: JPEG no soporta transparencia; sin esto los PNG con alfa
+    // quedarían con fondo negro.
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', quality));
+    if (!blob) return file;
+    // Si el original ya era más liviano y no hubo redimensión, conservarlo.
+    if (blob.size >= file.size && width === img.width) return file;
+    const base = (file.name || 'img').replace(/\.[^.]+$/, '');
+    return new File([blob], base + '.jpg', { type: 'image/jpeg', lastModified: Date.now() });
+  } catch (e) {
+    console.warn('comprimirImagen: usando original', e);
+    return file;
+  }
+}
+
+// Reescribe una URL pública de Storage a la CDN de transformación de Supabase
+// (solo Plan Pro con "Image Transformations" habilitado). Sirve miniaturas
+// livianas en las listas → menos egress. Apagado por defecto: al activar el flag
+// todas las llamadas imgThumb() empiezan a pedir versiones reducidas.
+const USAR_TRANSFORM_IMG = false; // ← poné true cuando Supabase Pro tenga transformaciones activas
+function imgThumb(url, width, quality) {
+  if (!USAR_TRANSFORM_IMG || !url || typeof url !== 'string') return url;
+  if (!url.includes('/storage/v1/object/public/')) return url; // solo URLs de Storage propio
+  const sep = url.includes('?') ? '&' : '?';
+  return url.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/')
+    + sep + 'width=' + width + '&quality=' + (quality || 70);
+}
+
 async function subirFotoStorage(file, provId) {
+  // Fotos de producto: máx 800px de ancho, calidad 0.7.
+  file = await comprimirImagen(file, 800, 0.7);
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
   // Nombre único (token aleatorio + timestamp) para no depender de upsert.
   // El bucket 'productos' solo tiene política RLS de INSERT (no UPDATE); usar
@@ -3435,7 +3498,7 @@ function renderRecomendaciones(ranked, rubroSel) {
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
       <div style="display:flex;align-items:center;gap:12px;margin-top:${i === 0 ? '6px' : '0'}">
         ${p.logo_url
-        ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover" alt=""></div>`
+        ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
         : `<div style="width:46px;height:46px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>`}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
@@ -3601,7 +3664,7 @@ function renderHomeProdCard(p) {
   const color = catColors[p.cat] || '#1847C8';
   return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
     <div class="prod-img-wrap" style="position:relative">
-      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       <span class="prod-inicio-badge" style="position:absolute;top:7px;left:7px;background:${color}">${escHtml(p.cat)}</span>
     </div>
     <div class="prod-inicio-body">
@@ -3615,7 +3678,7 @@ function renderHomeProdCard(p) {
 function renderProdBuscarCard(p) {
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
     <div class="prod-img-wrap">
-      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
     </div>
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
@@ -3760,7 +3823,7 @@ function _drawBuscarGrid(el) {
   el.innerHTML = slice.map(p => `
     <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
       <div class="prod-img-wrap">
-        ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+        ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div class="body">
         <div class="title">${escHtml(p.nombre)}</div>
@@ -4081,7 +4144,7 @@ function renderProdRelacionados(p) {
   const _boxIcon = `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const cards = items.map(pp => {
     const imgHtml = pp.imgUrl
-      ? `<img src="${escHtml(pp.imgUrl)}" style="width:100%;height:90px;object-fit:cover;display:block" onerror="this.style.display='none'">`
+      ? `<img loading="lazy" src="${escHtml(imgThumb(pp.imgUrl, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
       : _boxIcon;
     return `<div onclick="abrirDetalleProd('${escHtml(String(pp.id))}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
       ${imgHtml}
@@ -4727,6 +4790,8 @@ async function verPedidosArchivados() {
 async function subirAvatar(file, carpeta) {
   if (!file) return null;
   if (file.size > 3 * 1024 * 1024) { showToast('La imagen es muy grande. Máx 3MB'); return null; }
+  // Logos/avatares: máx 200px de ancho, calidad 0.75.
+  file = await comprimirImagen(file, 200, 0.75);
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
   // Nombre único para evitar conflictos
   const path = carpeta + '/' + Math.random().toString(36).substring(2) + '_' + Date.now() + '.' + ext;
@@ -5097,7 +5162,7 @@ function buscarMisProds(query) {
   el.innerHTML = filtrados.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
@@ -5156,7 +5221,7 @@ function ordenarMisProds(tipo) {
   el.innerHTML = sorted.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img src="${escHtml(p.imagen_url)}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0">`
+      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
@@ -5178,7 +5243,7 @@ function ordenarMisProds(tipo) {
 function renderProdCard(p) {
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     <div class="prod-img-wrap">
-      ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
     </div>
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
@@ -5210,7 +5275,7 @@ function renderDetCarousels(prodsDetalle) {
   const cards = visibles.map(p => {
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
       <div class="prod-img-wrap">
-        ${p.imgUrl ? `<img src="${escHtml(p.imgUrl)}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+        ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div style="padding:7px 8px 9px">
         <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(p.nombre)}</div>
@@ -5261,7 +5326,7 @@ function renderProvDestacados() {
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
-        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
       }
       <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
@@ -5298,7 +5363,7 @@ async function renderRecienLlegados() {
       const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
       return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
         ${p.logo_url
-          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img src="${escHtml(p.logo_url)}" style="width:100%;height:100%;object-fit:cover"></div>`
+          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
           : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
         }
         <div style="flex:1;min-width:0">
