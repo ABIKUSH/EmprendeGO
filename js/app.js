@@ -3140,6 +3140,13 @@ function goTo(s) {
   if (s === 'perfil' && currentUser) updatePerfilUI();
   if (s === 'perfil' && currentUser?.type === 'user') cargarHistorial();
   if (s === 'favoritos') renderFavs();
+  if (s === 'novedades') {
+    const sem = document.getElementById('nv-semana');
+    if (sem) sem.textContent = nvTextoSemana();
+    nvInitRiel();
+    nvActualizarPublicar();
+    cargarNovedades();
+  }
   if (s === 'mapa') { renderMapaProvincias(); renderMapaAllProvs(); }
   if (s === 'mensajes') cargarMensajesUsuario();
   const fab = document.getElementById('soporte-fab');
@@ -5977,3 +5984,395 @@ function renderBannerProDashboard() {
     container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ Plan Pro</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><button onclick="event.stopPropagation();iniciarPagoPro(this)" style="background:#006039;color:white;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer">Activar Pro · $20.000/mes</button></div>';
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// NOVEDADES — feed de contenido
+// ═══════════════════════════════════════════════════════════════
+
+let novedadesDB = [];
+let novFiltroActual = 'todo';
+let novCargadas = false;
+let novIO = null;
+let novRielIO = null;
+
+// Todo texto que viene de la base pasa por acá antes de entrar al DOM.
+function nvEsc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function nvIniciales(nombre) {
+  const partes = String(nombre || '?').trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return '?';
+  return (partes[0][0] + (partes[1] ? partes[1][0] : '')).toUpperCase();
+}
+
+// "Semana del 13 de julio" pesa menos que "hace 12 días" cuando el feed va lento.
+const NV_MESES = ['enero','febrero','marzo','abril','mayo','junio',
+                  'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+function nvCuando(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const horas = (Date.now() - d.getTime()) / 36e5;
+  if (horas < 1)  return 'Recién';
+  if (horas < 24) return `Hace ${Math.floor(horas)} h`;
+  if (horas < 48) return 'Ayer';
+  if (horas < 168) return `Hace ${Math.floor(horas / 24)} días`;
+  return `${d.getDate()} de ${NV_MESES[d.getMonth()]}`;
+}
+
+function nvTextoSemana() {
+  const hoy = new Date();
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - ((hoy.getDay() + 6) % 7));
+  return `Semana del ${lunes.getDate()} de ${NV_MESES[lunes.getMonth()]}`;
+}
+
+// ── Carga ────────────────────────────────────────────────────────
+async function cargarNovedades(forzar) {
+  if (novCargadas && !forzar) return;
+  const feed = document.getElementById('nv-feed');
+  if (!feed) return;
+
+  // Esqueleto con la forma real de la tarjeta, no un spinner suelto.
+  feed.innerHTML = Array(3).fill(`
+    <div class="nv-bandeja">
+      <div class="nv-nucleo nv-hueso">
+        <div class="nv-barra-hueso corta" style="width:40%;margin-bottom:14px"></div>
+        <div class="nv-barra-hueso foto"></div>
+        <div class="nv-barra-hueso"></div>
+        <div class="nv-barra-hueso corta"></div>
+      </div>
+    </div>`).join('');
+
+  try {
+    const { data, error } = await sb
+      .from('novedades')
+      .select('id,tipo,titulo,bajada,imagen,sello,proveedor_id,rubro,minimo,descuento,fecha_evento,publicado_en,created_at')
+      .eq('estado', 'publicado')
+      .order('created_at', { ascending: false })
+      .limit(60);
+    if (error) throw error;
+
+    novedadesDB = data || [];
+
+    // Traemos los datos del proveedor de cada novedad en una sola consulta.
+    const ids = [...new Set(novedadesDB.map(n => n.proveedor_id).filter(Boolean))];
+    if (ids.length) {
+      const { data: provs } = await sb
+        .from('proveedores')
+        .select('id,nombre,provincia,plan,plan_hasta')
+        .in('id', ids);
+      const mapa = Object.fromEntries((provs || []).map(p => [p.id, p]));
+      novedadesDB.forEach(n => { n._prov = mapa[n.proveedor_id] || null; });
+    }
+
+    novCargadas = true;
+    renderNovedades();
+  } catch (e) {
+    console.error('[novedades] carga:', e);
+    feed.innerHTML = `
+      <div class="nv-bandeja nv-vacio">
+        <div class="nv-nucleo">
+          <span class="marca">Sin conexión</span>
+          <h3>No pudimos cargar las novedades</h3>
+          <p>Revisá tu conexión y volvé a entrar.</p>
+        </div>
+      </div>`;
+  }
+}
+
+// ── Pintado ──────────────────────────────────────────────────────
+function renderNovedades() {
+  const feed = document.getElementById('nv-feed');
+  if (!feed) return;
+
+  const lista = novFiltroActual === 'todo'
+    ? novedadesDB
+    : novedadesDB.filter(n => n.tipo === novFiltroActual);
+
+  if (!lista.length) {
+    feed.innerHTML = `
+      <div class="nv-bandeja nv-vacio">
+        <div class="nv-nucleo">
+          <span class="marca">Sin novedades</span>
+          <h3>Todavía no hay nada por acá</h3>
+          <p>Probá con otro filtro o volvé en unos días: el feed se mueve todas las semanas.</p>
+        </div>
+      </div>`;
+    return;
+  }
+
+  feed.innerHTML = lista.map(nvTarjeta).join('');
+  nvObservarEntrada();
+}
+
+function nvTarjeta(n) {
+  if (n.tipo === 'nota' || n.tipo === 'resumen') return nvTarjetaNota(n);
+  if (n.tipo === 'feria') return nvTarjetaFeria(n);
+  return nvTarjetaProveedor(n);
+}
+
+function nvTarjetaProveedor(n) {
+  const prov = n._prov;
+  const nombre = prov ? prov.nombre : 'EmprendeGO';
+  const esPro = prov && prov.plan === 'pro' &&
+    (!prov.plan_hasta || new Date(prov.plan_hasta + 'T03:00:00Z') > new Date());
+
+  const meta = [nvCuando(n.publicado_en || n.created_at), prov && prov.provincia]
+    .filter(Boolean).join(' · ');
+
+  const sello = n.sello
+    ? `<span class="nv-sello ${n.sello === 'liquida' ? 'liquida' : ''}">${
+         n.sello === 'liquida' ? 'LIQUIDA' : 'NUEVO INGRESO'}</span>`
+    : '';
+
+  const foto = n.imagen
+    ? `<div class="nv-foto"><img src="${nvEsc(n.imagen)}" alt="${nvEsc(n.titulo)}" loading="lazy">${sello}</div>`
+    : '';
+
+  const datos = [];
+  if (n.minimo)    datos.push(`<span class="nv-dato">Mínimo <b>${nvEsc(n.minimo)}</b></span>`);
+  if (n.rubro)     datos.push(`<span class="nv-dato">${nvEsc(String(n.rubro).split(',')[0].trim())}</span>`);
+  if (n.descuento) datos.push(`<span class="nv-dato rebaja"><b>−${n.descuento} %</b></span>`);
+
+  const acciones = n.proveedor_id ? `
+    <div class="nv-acciones">
+      <button class="nv-cta" onclick="nvVerProveedor('${nvEsc(n.proveedor_id)}')">
+        Ver catálogo
+        <span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+      </button>
+    </div>` : '';
+
+  return `
+    <article class="nv-bandeja nv-sube">
+      <div class="nv-nucleo">
+        <div class="nv-quien">
+          <span class="nv-sigla" aria-hidden="true">${nvEsc(nvIniciales(nombre))}</span>
+          <span class="nv-quien-txt">
+            <b>${nvEsc(nombre)}</b>
+            <span>${nvEsc(meta)}</span>
+          </span>
+          ${esPro ? '<span class="nv-pro">PRO</span>' : ''}
+        </div>
+        ${foto}
+        <div class="nv-cuerpo">
+          <h2>${nvEsc(n.titulo)}</h2>
+          ${n.bajada ? `<p>${nvEsc(n.bajada)}</p>` : ''}
+        </div>
+        ${datos.length ? `<div class="nv-datos">${datos.join('')}</div>` : ''}
+        ${acciones}
+      </div>
+    </article>`;
+}
+
+function nvTarjetaNota(n) {
+  const rotulo = n.tipo === 'resumen' ? 'La semana' : 'Guía';
+  const accion = n.tipo === 'resumen'
+    ? `<button class="nv-leer" onclick="goTo('buscar')">Buscar
+         <span class="nv-redondel" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span>
+       </button>`
+    : '';
+  return `
+    <article class="nv-bandeja nv-nota nv-sube">
+      <div class="nv-nucleo">
+        <p class="nv-rotulo">${rotulo}</p>
+        <h2>${nvEsc(n.titulo)}</h2>
+        ${n.bajada ? `<p>${nvEsc(n.bajada)}</p>` : ''}
+        <div class="nv-firma">
+          <span>Por el equipo · ${nvEsc(nvCuando(n.publicado_en || n.created_at))}</span>
+          ${accion}
+        </div>
+      </div>
+    </article>`;
+}
+
+function nvTarjetaFeria(n) {
+  const f = n.fecha_evento ? new Date(n.fecha_evento + 'T03:00:00Z') : null;
+  const dia = f ? f.getDate() : '—';
+  const mes = f ? NV_MESES[f.getMonth()].slice(0, 3) : '';
+  return `
+    <article class="nv-bandeja nv-agenda nv-sube">
+      <div class="nv-nucleo">
+        <div class="nv-fecha" aria-hidden="true">
+          <span class="dia">${dia}</span>
+          <span class="mes">${nvEsc(mes)}</span>
+        </div>
+        <div class="nv-lado">
+          <p class="nv-rotulo">Feria</p>
+          <h2>${nvEsc(n.titulo)}</h2>
+          ${n.bajada ? `<p>${nvEsc(n.bajada)}</p>` : ''}
+        </div>
+      </div>
+    </article>`;
+}
+
+function nvVerProveedor(id) {
+  trackEvent('novedad_click', { proveedor_id: id });
+  abrirDetalle(id);
+}
+
+function filtrarNovedades(tipo, btn) {
+  haptic('light');
+  novFiltroActual = tipo;
+  document.querySelectorAll('#screen-novedades .nv-filtro')
+    .forEach(b => b.setAttribute('aria-pressed', 'false'));
+  if (btn) btn.setAttribute('aria-pressed', 'true');
+  renderNovedades();
+}
+
+// ── Entrada al viewport + riel pegajoso ──────────────────────────
+function nvObservarEntrada() {
+  if (novIO) novIO.disconnect();
+  novIO = new IntersectionObserver(entradas => {
+    entradas.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('dentro'); novIO.unobserve(e.target); }
+    });
+  }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
+
+  document.querySelectorAll('#screen-novedades .nv-sube').forEach((el, i) => {
+    el.style.transitionDelay = (i % 4) * 70 + 'ms';
+    novIO.observe(el);
+  });
+}
+
+// El riel invierte a vidrio claro al despegarse del hero: blanco sobre claro no se lee.
+function nvInitRiel() {
+  if (novRielIO) return;
+  const riel = document.getElementById('nv-riel');
+  const cent = document.getElementById('nv-centinela');
+  if (!riel || !cent) return;
+  novRielIO = new IntersectionObserver(e => {
+    riel.classList.toggle('pegado', !e[0].isIntersecting);
+  }, { rootMargin: '-13px 0px 0px 0px', threshold: 0 });
+  novRielIO.observe(cent);
+}
+
+// ── Publicar (sólo Pro) ──────────────────────────────────────────
+function nvActualizarPublicar() {
+  const box = document.getElementById('nv-publicar');
+  if (!box) return;
+  // El que no es Pro ni se entera de que existe: nunca ve un espacio vacío.
+  box.style.display = esProvPro() ? 'block' : 'none';
+}
+
+function abrirFormNovedad() {
+  if (!esProvPro()) { showToast('Publicar novedades es parte del Plan Pro'); return goTo('planes'); }
+  haptic('light');
+  document.getElementById('nv-modal-bg')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  document.getElementById('nv-f-titulo')?.focus();
+}
+
+function cerrarFormNovedad() {
+  document.getElementById('nv-modal-bg')?.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+let nvArchivo = null;
+function previewNovedadImg(input) {
+  const f = input.files && input.files[0];
+  const cont = document.getElementById('nv-preview');
+  const img = document.getElementById('nv-preview-img');
+  if (!f) { nvArchivo = null; if (cont) cont.style.display = 'none'; return; }
+  if (!f.type.startsWith('image/')) {
+    showToast('Elegí una imagen'); input.value = ''; return;
+  }
+  if (f.size > 8 * 1024 * 1024) {
+    showToast('La foto no puede pesar más de 8 MB'); input.value = ''; return;
+  }
+  nvArchivo = f;
+  if (img && cont) { img.src = URL.createObjectURL(f); cont.style.display = 'block'; }
+}
+
+async function enviarNovedad() {
+  const btn = document.getElementById('nv-f-enviar');
+  const titulo = document.getElementById('nv-f-titulo').value.trim();
+  const bajada = document.getElementById('nv-f-bajada').value.trim();
+  const sello = document.getElementById('nv-f-sello').value;
+  const minimo = document.getElementById('nv-f-minimo').value.trim();
+  const descRaw = document.getElementById('nv-f-descuento').value;
+
+  if (titulo.length < 3) { showToast('Contanos qué pasó, en pocas palabras'); return; }
+  if (titulo.length > 120) { showToast('El título es muy largo'); return; }
+
+  let descuento = null;
+  if (descRaw !== '') {
+    descuento = parseInt(descRaw, 10);
+    if (isNaN(descuento) || descuento < 1 || descuento > 90) {
+      showToast('El descuento tiene que estar entre 1 y 90'); return;
+    }
+  }
+
+  const provId = currentUser?.provData?.id;
+  if (!provId) { showToast('No encontramos tu perfil de proveedor'); return; }
+
+  btn.disabled = true;
+  const textoOriginal = btn.childNodes[0].nodeValue;
+  btn.childNodes[0].nodeValue = 'Enviando… ';
+
+  try {
+    let urlImagen = null;
+    if (nvArchivo) urlImagen = await subirFotoStorage(nvArchivo, provId);
+
+    // estado/origen los fija la RLS igual; los mandamos explícitos para que
+    // el insert falle ruidosamente si alguien manipuló el cliente.
+    const { error } = await sb.from('novedades').insert({
+      tipo: 'drop',
+      estado: 'pendiente',
+      origen: 'manual',
+      titulo,
+      bajada: bajada || null,
+      imagen: urlImagen,
+      sello,
+      minimo: minimo || null,
+      descuento,
+      proveedor_id: provId,
+      rubro: currentUser?.provData?.rubro || null,
+      autor_email: currentUser?.email || null
+    });
+    if (error) throw error;
+
+    trackEvent('novedad_enviada', { proveedor_id: provId });
+    cerrarFormNovedad();
+    showToast('Enviada. La revisamos y sale hoy mismo.');
+
+    document.getElementById('nv-f-titulo').value = '';
+    document.getElementById('nv-f-bajada').value = '';
+    document.getElementById('nv-f-minimo').value = '';
+    document.getElementById('nv-f-descuento').value = '';
+    document.getElementById('nv-f-imagen').value = '';
+    document.getElementById('nv-preview').style.display = 'none';
+    nvArchivo = null;
+    document.getElementById('nv-cont-titulo').textContent = '0/120';
+    document.getElementById('nv-cont-bajada').textContent = '0/280';
+  } catch (e) {
+    console.error('[novedades] enviar:', e);
+    showToast(e?.message?.includes('row-level security')
+      ? 'Publicar novedades es parte del Plan Pro'
+      : 'No pudimos enviarla. Probá de nuevo.');
+  } finally {
+    btn.disabled = false;
+    btn.childNodes[0].nodeValue = textoOriginal;
+  }
+}
+
+// Contadores de caracteres + cierre con Escape
+document.addEventListener('DOMContentLoaded', () => {
+  const t = document.getElementById('nv-f-titulo');
+  const b = document.getElementById('nv-f-bajada');
+  t?.addEventListener('input', () => {
+    document.getElementById('nv-cont-titulo').textContent = `${t.value.length}/120`;
+  });
+  b?.addEventListener('input', () => {
+    document.getElementById('nv-cont-bajada').textContent = `${b.value.length}/280`;
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('nv-modal-bg')?.classList.contains('open')) {
+      cerrarFormNovedad();
+    }
+  });
+});
