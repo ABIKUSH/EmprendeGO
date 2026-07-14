@@ -2007,13 +2007,25 @@ async function notificarAdmin(tipo, datos) {
   try {
     const esProveedor = tipo === 'proveedor';
     const title = esProveedor ? 'Nueva solicitud de proveedor' : 'Nuevo usuario registrado';
+    const ig = (datos.instagram || '').trim();
+    const igUrl = ig ? (/^https?:\/\//i.test(ig) ? ig : 'https://instagram.com/' + ig.replace(/^@+/, '')) : '';
     const body = esProveedor
-      ? `${datos.nombre} | ${datos.whatsapp} | ${datos.rubro} | ${datos.provincia}`
+      ? [
+          datos.nombre,
+          ig ? (ig.startsWith('http') ? ig : '@' + ig.replace(/^@+/, '')) : 'SIN INSTAGRAM',
+          datos.whatsapp,
+          datos.cuit,
+          datos.rubro,
+          datos.provincia
+        ].filter(Boolean).join(' | ')
       : `${datos.nombre} | ${datos.email}`;
-    await fetch('https://ntfy.sh/emprendego-admin-x9k2', {
-      method: 'POST', body,
-      headers: { 'Title': title, 'Priority': 'high', 'Tags': esProveedor ? 'office' : 'bust_in_silhouette' }
-    });
+    const headers = { 'Title': title, 'Priority': 'high', 'Tags': esProveedor ? 'office' : 'bust_in_silhouette' };
+    // Tocar la notificación abre el IG del proveedor: verificamos sin entrar al panel.
+    if (esProveedor && igUrl) {
+      headers['Click'] = igUrl;
+      headers['Actions'] = `view, Ver Instagram, ${igUrl}; view, Abrir panel, https://emprendego.com.ar/admin.html`;
+    }
+    await fetch('https://ntfy.sh/emprendego-admin-x9k2', { method: 'POST', body, headers });
   } catch (e) {}
 }
 
