@@ -1145,11 +1145,22 @@ function renderProvFields(prov, editable){
       <label>${label}</label>
       ${editable && key ? `<textarea id="pedit-${key}">${val||''}</textarea>` : `<span>${val||'—'}</span>`}
     </div>`;
+  // El IG es lo primero que miramos para verificar que el negocio es real → link directo.
+  const igRaw = (prov.instagram||'').trim();
+  const igUrl = /^https?:\/\//i.test(igRaw) ? igRaw : (igRaw ? 'https://instagram.com/' + igRaw.replace(/^@+/,'') : '');
+  const igField = `
+    <div class="prov-field">
+      <label>Instagram</label>
+      ${editable ? `<input type="text" id="pedit-instagram" value="${igRaw.replace(/"/g,'&quot;')}">`
+        : (igUrl ? `<span><a href="${igUrl}" target="_blank" rel="noopener" style="color:#2563eb;font-weight:700;text-decoration:none">${escHtml(igRaw.startsWith('http') ? igRaw : '@'+igRaw.replace(/^@+/,''))} ↗</a></span>`
+                 : `<span style="color:#dc2626;font-weight:700">— sin Instagram</span>`)}
+    </div>`;
   document.getElementById('prov-fields-view').innerHTML =
     f('Nombre',prov.nombre,'nombre') +
     f('CUIT',prov.cuit,'cuit') +
     f('Email',prov.email,'email','email') +
     f('WhatsApp',prov.whatsapp,'whatsapp') +
+    igField +
     f('Rubro',prov.rubro,'rubro') +
     f('Provincia',prov.provincia,'provincia') +
     f('Plan', prov.plan + (prov.plan_hasta ? ' (hasta ' + new Date(prov.plan_hasta+'T03:00:00Z').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) + ')' : ''), null) +
@@ -1167,7 +1178,7 @@ function toggleEditProv(){
 async function guardarProveedor(){
   if(!provEditando) return;
   const get = k => document.getElementById('pedit-'+k)?.value||'';
-  const updates = { nombre:get('nombre'), cuit:get('cuit'), email:get('email'), whatsapp:get('whatsapp'), rubro:get('rubro'), provincia:get('provincia'), descripcion:get('descripcion') };
+  const updates = { nombre:get('nombre'), cuit:get('cuit'), email:get('email'), whatsapp:get('whatsapp'), instagram:get('instagram'), rubro:get('rubro'), provincia:get('provincia'), descripcion:get('descripcion') };
   const {error} = await sb.from('proveedores').update(updates).eq('id',provEditando.id);
   if(error){ showToast('Error al guardar'); return; }
   showToast('✅ Datos actualizados');

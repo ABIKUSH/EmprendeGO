@@ -1296,6 +1296,17 @@ function toggleMasRubros(btn) {
 // Normaliza un teléfono al formato internacional que requiere wa.me (Argentina).
 // Si el número se guardó sin código de país, WhatsApp interpreta el "1" inicial
 // como +1 (EE.UU.) y lo rechaza como inválido. Acá garantizamos el prefijo 549.
+// Acepta "@handle", "handle", "instagram.com/handle/?igsh=..." o el link de una tienda.
+// Devuelve el handle pelado; si es un link que no es de Instagram, lo deja tal cual.
+function normalizarIG(val) {
+  let v = (val || '').trim();
+  if (!v) return '';
+  const m = v.match(/(?:instagram\.com|instagr\.am)\/([A-Za-z0-9._]+)/i);
+  if (m) return m[1].toLowerCase();
+  if (/^https?:\/\//i.test(v) || v.includes('.com') || v.includes('.ar')) return v;
+  return v.replace(/^@+/, '').trim().toLowerCase();
+}
+
 function normalizarWAArg(num) {
   let n = (num || '').replace(/[^0-9]/g, '');
   if (!n) return '';
@@ -3263,8 +3274,11 @@ function showRegStep(step) {
     const r = document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
     const c = document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
     const ru = getRubrosSeleccionados('reg-rubros-picker');
+    const ig = normalizarIG(document.getElementById('reg-instagram')?.value || '');
     const d = document.querySelector('#reg-step2 textarea')?.value?.trim();
-    if (!r) { showToast('Ingresa la razon social'); return; } if (!c) { showToast('Ingresa el CUIT'); return; } if (!ru.length) { showToast('Seleccioná al menos un rubro'); return; } if (!d) { showToast('Ingresa una descripcion'); return; }
+    if (!r) { showToast('Ingresa la razon social'); return; } if (!c) { showToast('Ingresa el CUIT'); return; } if (!ru.length) { showToast('Seleccioná al menos un rubro'); return; }
+    if (!ig || ig.length < 3) { showToast('Ingresá tu Instagram (o el link de tu tienda)'); return; }
+    if (!d) { showToast('Ingresa una descripcion'); return; }
   }
   ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3', 'reg-success'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
   const map = { 0: 'reg-intro', 1: 'reg-step1', 2: 'reg-step2', 3: 'reg-step3' };
@@ -3282,9 +3296,11 @@ async function showRegSuccess() {
   const email = (document.querySelector('#reg-step1 input[type="email"]')?.value || '').toLowerCase().trim();
   const datos = {
     nombre: document.querySelector('#reg-step1 input[type="text"]')?.value || '',
+    razon_social: document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value || '',
     cuit: document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value || '',
     email,
     whatsapp: normalizarWAArg(document.querySelector('#reg-step1 input[type="tel"]')?.value || ''),
+    instagram: normalizarIG(document.getElementById('reg-instagram')?.value || ''),
     rubro: getRubrosSeleccionados('reg-rubros-picker').join(', '),
     provincia: document.querySelector('#reg-step1 select')?.value || '',
     descripcion: document.querySelector('#reg-step2 textarea')?.value || '',

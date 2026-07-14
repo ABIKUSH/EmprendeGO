@@ -1174,7 +1174,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
         <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"></div>
         <div class="form-group"><label>Rubro * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(hasta 7)</span></label><div id="reg-rubros-picker" class="rubros-picker"></div></div>
-        <div class="form-group"><label>Instagram o red social</label><input type="text" placeholder="@minegocio"></div>
+        <div class="form-group"><label>Instagram * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(lo usamos para verificar tu negocio — si no tenés, pegá el link de tu tienda o web)</span></label><input type="text" id="reg-instagram" placeholder="@minegocio"></div>
         <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
       </div>
       <button class="submit-btn" style="margin-top:24px" onclick="showRegStep(3)">Continuar →</button>
