@@ -6424,6 +6424,52 @@ const NV_ESTADO_CHIP = {
   rechazado: { txt: 'No salió', clase: 'no' }
 };
 
+// Tope de novedades vivas por proveedor. Sin esto un solo Pro llena el feed
+// con su catálogo y el resto desaparece. Las rechazadas no ocupan cupo, y
+// borrar una libera lugar en el acto.
+const NV_MAX_ACTIVAS = 2;
+const NV_ESTADOS_VIVOS = ['pendiente', 'publicado'];
+
+async function nvCuposUsados(provId) {
+  const { count, error } = await sb
+    .from('novedades')
+    .select('id', { count: 'exact', head: true })
+    .eq('proveedor_id', provId)
+    .eq('origen', 'manual')
+    .in('estado', NV_ESTADOS_VIVOS);
+
+  // Si la consulta falla no bloqueamos al proveedor: el trigger de la base
+  // corta igual, y es preferible un error al insertar que un "no podés"
+  // fantasma por un problema de red.
+  return error ? null : (count ?? 0);
+}
+
+// Pinta el cupo en las cajas de publicar: cuántas le quedan, y si no le queda
+// ninguna el botón deja de invitar y explica qué hacer.
+// Lo guardamos porque renderNovedades() repinta esas cajas de cero: sin esto
+// el cupo se borraría cada vez que se refresca el feed.
+let nvCupoUsado = null;
+
+function nvPintarCupo(usados) {
+  if (usados != null) nvCupoUsado = usados;
+  else usados = nvCupoUsado;
+  if (!esProvPro() || usados == null) return;
+
+  const btns = document.querySelectorAll('#nv-publicar-nucleo .nv-cta, #nv-publicar-nucleo-medio .nv-cta');
+  const notas = document.querySelectorAll('#nv-publicar-nucleo .nv-pro-nota, #nv-publicar-nucleo-medio .nv-pro-nota');
+
+  const lleno = usados >= NV_MAX_ACTIVAS;
+  notas.forEach(n => {
+    n.textContent = lleno
+      ? `Usaste las ${NV_MAX_ACTIVAS} — borrá una de abajo para publicar otra`
+      : `Te queda${NV_MAX_ACTIVAS - usados === 1 ? '' : 'n'} ${NV_MAX_ACTIVAS - usados} de ${NV_MAX_ACTIVAS}`;
+  });
+  btns.forEach(b => {
+    b.classList.toggle('nv-cta-lleno', lleno);
+    b.setAttribute('aria-disabled', lleno ? 'true' : 'false');
+  });
+}
+
 async function cargarMisNovedades() {
   const caja = document.getElementById('nv-mias');
   if (!caja) return;
@@ -6443,11 +6489,16 @@ async function cargarMisNovedades() {
     .order('created_at', { ascending: false })
     .limit(20);
 
-  if (error || !data || !data.length) { ocultar(); return; }
+  if (error) { ocultar(); return; }
+
+  const vivas = (data || []).filter(n => NV_ESTADOS_VIVOS.includes(n.estado)).length;
+  nvPintarCupo(vivas);
+
+  if (!data.length) { ocultar(); return; }
 
   caja.style.display = 'block';
   caja.innerHTML = `
-    <p class="nv-mias-titulo">Tus novedades</p>
+    <p class="nv-mias-titulo">Tus novedades <span class="nv-mias-cupo">${vivas} de ${NV_MAX_ACTIVAS}</span></p>
     <div class="nv-mias-lista">
       ${data.map(n => {
         const chip = NV_ESTADO_CHIP[n.estado] || NV_ESTADO_CHIP.pendiente;
@@ -6532,8 +6583,9 @@ function nvActualizarPublicar() {
       <h3>Contá qué entró esta semana</h3>
       <p>Tu novedad sale en este feed y la ve todo el que busca tu rubro.</p>
       <button class="nv-cta" onclick="abrirFormNovedad()">Publicar una novedad ${flechaMas}</button>
-      <p class="nv-pro-nota">Incluido en tu plan</p>`;
+      <p class="nv-pro-nota">Hasta ${NV_MAX_ACTIVAS} novedades activas</p>`;
     cajas.forEach(box => { box.classList.remove('bloqueada'); box.innerHTML = html; });
+    nvPintarCupo(null);   // reponemos el cupo que ya sabíamos, si lo sabíamos
     return;
   }
 
@@ -6555,7 +6607,7 @@ function nvActualizarPublicar() {
     <h3>${titulo}</h3>
     <p>${bajada}</p>
     <button class="nv-cta nv-cta-pro" onclick="haptic('light');goTo('planes')">Ver el Plan Pro ${flechaVa}</button>
-    <p class="nv-pro-nota">Publicá cuantas novedades quieras</p>`;
+    <p class="nv-pro-nota">Hasta ${NV_MAX_ACTIVAS} novedades activas a la vez</p>`;
   cajas.forEach(box => { box.classList.add('bloqueada'); box.innerHTML = html; });
 }
 
@@ -6569,8 +6621,21 @@ function publicarProductoEnNovedades(id) {
 // El producto del catálogo elegido para esta novedad (si eligió alguno).
 let nvProductoElegido = null;
 
-function abrirFormNovedad(productoId) {
+async function abrirFormNovedad(productoId) {
   if (!esProvPro()) { showToast('Publicar novedades es parte del Plan Pro'); return goTo('planes'); }
+
+  // Cortamos acá antes de que llene el formulario y suba una foto para nada.
+  const provId = currentUser?.provData?.id;
+  const usados = provId ? await nvCuposUsados(provId) : null;
+  if (usados != null) {
+    nvPintarCupo(usados);
+    if (usados >= NV_MAX_ACTIVAS) {
+      showToast(`Podés tener ${NV_MAX_ACTIVAS} novedades a la vez. Borrá una para publicar otra.`);
+      document.getElementById('nv-mias')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+  }
+
   haptic('light');
   document.getElementById('nv-modal-bg')?.classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -6742,6 +6807,17 @@ async function enviarNovedad() {
   btn.childNodes[0].nodeValue = 'Enviando… ';
 
   try {
+    // Recontamos recién ahora: entre que abrió el formulario y apretó enviar
+    // pudo haber publicado desde otra pestaña.
+    const usados = await nvCuposUsados(provId);
+    if (usados != null && usados >= NV_MAX_ACTIVAS) {
+      nvPintarCupo(usados);
+      showToast(`Ya tenés ${NV_MAX_ACTIVAS} novedades activas. Borrá una para publicar otra.`);
+      cerrarFormNovedad();
+      cargarMisNovedades();
+      return;
+    }
+
     let urlImagen = null;
     if (nvArchivo) {
       urlImagen = await subirFotoStorage(nvArchivo, provId);
@@ -6786,9 +6862,11 @@ async function enviarNovedad() {
     cargarMisNovedades();
   } catch (e) {
     console.error('[novedades] enviar:', e);
-    showToast(e?.message?.includes('row-level security')
-      ? 'Publicar novedades es parte del Plan Pro'
-      : 'No pudimos enviarla. Probá de nuevo.');
+    const msg = e?.message || '';
+    showToast(
+      msg.includes('EG_NOVEDADES_MAX')  ? `Ya tenés ${NV_MAX_ACTIVAS} novedades activas. Borrá una para publicar otra.` :
+      msg.includes('row-level security') ? 'Publicar novedades es parte del Plan Pro' :
+      'No pudimos enviarla. Probá de nuevo.');
   } finally {
     btn.disabled = false;
     btn.childNodes[0].nodeValue = textoOriginal;
