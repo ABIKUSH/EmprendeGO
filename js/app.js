@@ -591,7 +591,9 @@ async function cargarProveedores() {
     const score = p => (p.pro ? 20 : 0) + Math.min(p.visitas, 500) * 0.06;
     return score(b) - score(a);
   });
-  renderProvs(proveedoresDB);
+  renderProvs(proveedoresDB.filter(p => !esProvSoloServicio(p)));
+  renderServicios();
+  actualizarContadorServicios();
   renderMapaProvincias();
   renderMapaAllProvs();
 }
@@ -1113,7 +1115,13 @@ function renderProvs(list) {
     </div>`;
     return;
   }
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  renderProvCards(el, list);
+}
+
+// Pinta las tarjetas de proveedor en cualquier contenedor (usado por el listado de
+// Proveedores y por la pestaña Servicios para Emprendedores).
+function renderProvCards(el, list) {
+  if (!el) return;
   el.innerHTML = list.map((p, i) => {
     const pid = String(p.id);
     const fav = esFav(pid);
@@ -1179,13 +1187,54 @@ function toggleCompararById(id) {
   filterProvs();
 }
 
+// "Servicios" es un rubro más de la multi-selección: varios mayoristas de productos
+// (indumentaria, tecnología) lo tienen como etiqueta extra. Por eso hay dos reglas:
+//  - esProvServicio: aparece en la pestaña Servicios para Emprendedores.
+//  - esProvSoloServicio: SOLO vende servicios → sale del catálogo mayorista.
+// Un proveedor mixto se muestra en las dos pestañas; nunca se lo saca de Proveedores.
+function esProvServicio(p) {
+  return matchesCat(p.rubro, 'Servicios');
+}
+
+function esProvSoloServicio(p) {
+  const rubros = (p.rubro || '').split(',').map(r => r.trim()).filter(Boolean);
+  if (!rubros.length) return false;
+  return rubros.every(r => r === 'Servicios' || r === 'Otro') && rubros.includes('Servicios');
+}
+
+function renderServicios() {
+  const el = document.getElementById('serviciosList');
+  if (!el) return;
+  const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
+  const lista = proveedoresDB.filter(p => esProvServicio(p) && matchesQuery(p, q));
+  if (!lista.length) {
+    el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:36px 24px">
+      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">${q ? 'Sin servicios para esa búsqueda' : 'Estamos sumando los primeros servicios'}</div>
+      <div style="font-size:.82rem;color:#6B7A99;line-height:1.5">Diseño web, contadores, fotografía de producto, packaging y logística. Muy pronto.</div>
+    </div>`;
+    return;
+  }
+  renderProvCards(el, lista);
+}
+
+// Badge "Nuevo" de la pestaña Servicios: mismo criterio que el de Novedades —
+// se muestra hasta que la persona entra una vez, después sería ruido.
+const SERV_CLAVE_VISTO = 'eg_servicios_visto';
+
+function actualizarContadorServicios() {
+  const badge = document.getElementById('badge-nuevo-servicios');
+  if (!badge) return;
+  const visto = localStorage.getItem(SERV_CLAVE_VISTO) === '1';
+  badge.style.display = visto ? 'none' : 'inline-block';
+}
+
 function filterProvs() {
   const q = document.getElementById('searchInput')?.value.toLowerCase() || '';
   const prov = document.getElementById('fil-prov')?.value || '';
   const plan = document.getElementById('fil-plan')?.value || '';
   const orden = document.getElementById('fil-orden')?.value || '';
   const rubroFil = document.getElementById('fil-rubro')?.value || '';
-  const lista = proveedoresDB;
+  const lista = proveedoresDB.filter(p => !esProvSoloServicio(p));
   let result = lista.filter(p => {
     const mc = matchesCat(p.rubro, currentCat);
     const mq = matchesQuery(p, q);
@@ -1211,11 +1260,14 @@ function setChip(el, cat) {
   el.classList.add('active');
   currentCat = cat;
   if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
+  else if (buscarTab === 'servicios') renderServicios();
   else filterProvs();
 }
 
 function filterCat(cat) {
   goTo('buscar');
+  // "Servicios" ya no vive en el listado de proveedores: tiene su propia pestaña.
+  if (cat === 'Servicios') { switchBuscarTab('servicios', document.getElementById('tab-servicios')); return; }
   currentCat = cat;
   document.querySelectorAll('#buscar-chips .chip').forEach(c => {
     const label = (c.dataset.cat || c.textContent.replace(/[\s\S]*<\/svg>/,'').trim() || c.textContent.trim());
@@ -3868,18 +3920,33 @@ function buscarVerMas() {
 
 function switchBuscarTab(tab, el) {
   buscarTab = tab;
+  const tabs = ['productos', 'proveedores', 'servicios'];
+  const idx = Math.max(0, tabs.indexOf(tab));
   document.querySelectorAll('.search-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
+  const target = el || document.getElementById(`tab-${tab}`);
+  if (target) target.classList.add('active');
+  const tabsEl = document.getElementById('searchTabs');
+  if (tabsEl) tabsEl.style.setProperty('--tab-i', idx);
   const pv = document.getElementById('buscar-productos-view');
   const rv = document.getElementById('buscar-proveedores-view');
+  const xv = document.getElementById('buscar-servicios-view');
   const sv = document.getElementById('buscarSummary');
-  if (tab === 'productos') {
-    if (pv) pv.style.display = 'block'; if (rv) rv.style.display = 'none'; if (sv) sv.style.display = 'block';
-    renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
-  } else {
-    if (pv) pv.style.display = 'none'; if (rv) rv.style.display = 'block'; if (sv) sv.style.display = 'none';
-    filterProvs();
+  const tip = document.getElementById('buscar-tip');
+  const chips = document.getElementById('buscar-chips');
+  if (pv) pv.style.display = tab === 'productos' ? 'block' : 'none';
+  if (rv) rv.style.display = tab === 'proveedores' ? 'block' : 'none';
+  if (xv) xv.style.display = tab === 'servicios' ? 'block' : 'none';
+  if (sv) sv.style.display = tab === 'productos' ? 'block' : 'none';
+  // Los rubros y el tip de margen son del catálogo mayorista: no aplican a Servicios.
+  if (tip) tip.style.display = tab === 'servicios' ? 'none' : 'block';
+  if (chips) chips.style.display = tab === 'servicios' ? 'none' : 'flex';
+  if (tab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
+  else if (tab === 'servicios') {
+    try { localStorage.setItem(SERV_CLAVE_VISTO, '1'); } catch (e) { /* modo privado */ }
+    actualizarContadorServicios();
+    renderServicios();
   }
+  else filterProvs();
 }
 function heroSearch(text) {
   goTo('buscar');
@@ -3895,6 +3962,7 @@ function applySearchInput() {
   clearTimeout(_searchDebounceTimer);
   _searchDebounceTimer = setTimeout(() => {
     if (buscarTab === 'productos') renderProdBuscar(currentCat, val);
+    else if (buscarTab === 'servicios') renderServicios();
     else filterProvs();
   }, 200);
 }

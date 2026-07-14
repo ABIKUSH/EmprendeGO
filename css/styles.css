@@ -374,9 +374,25 @@ body, body *{
 .prod-inicio-prov-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
 
 /* TABS BUSCAR */
-.search-tabs{display:flex;background:var(--border);border-radius:12px;padding:3px;margin:10px 20px 0}
-.search-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:7px;font-size:.8rem;font-weight:700;color:var(--gray);border-radius:10px;cursor:pointer;transition:all .2s}
-.search-tab.active{background:white;color:var(--blue)}
+.search-tabs{position:relative;display:flex;background:#EDF1F7;border-radius:13px;padding:4px;margin:10px 20px 0;isolation:isolate}
+.search-tab-glider{position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--tab-n,2));border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(13,27,62,.10);transform:translateX(calc(var(--tab-i,0) * 100%));transition:transform .32s cubic-bezier(.22,1,.36,1)}
+.search-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;font-size:.8rem;font-weight:700;color:var(--gray);border-radius:10px;cursor:pointer;transition:color .22s ease;-webkit-tap-highlight-color:transparent}
+.search-tab.active{color:#006039}
+.search-tab svg{transition:transform .32s cubic-bezier(.22,1,.36,1)}
+.search-tab.active svg{transform:scale(1.1)}
+/* El badge "Nuevo" de los menús, adaptado a la pestaña: sin margin-left:auto
+   (rompería el centrado) y un punto más chico. */
+.serv-tab-nuevo{margin-left:2px;font-size:.55rem;padding:2px 6px;border-radius:5px}
+@media (prefers-reduced-motion:reduce){.search-tab-glider,.search-tab svg{transition:none}}
+@media (max-width:380px){.search-tab{font-size:.72rem;gap:3px;padding:8px 2px}.search-tab svg{width:12px;height:12px}}
+
+/* SERVICIOS PARA EMPRENDEDORES */
+.serv-hero{position:relative;overflow:hidden;margin:12px 20px 0;padding:20px 20px 22px;border-radius:20px;background:linear-gradient(135deg,#00432A,#006039 55%,#0A7A4C);color:#fff}
+.serv-hero::after{content:"";position:absolute;inset:auto -30% -60% auto;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,107,0,.28),transparent 70%);pointer-events:none}
+.serv-hero-tag{display:inline-block;font-size:.6rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:4px 9px;border-radius:20px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);margin-bottom:9px}
+.serv-hero-title{font-family:'Fraunces',serif;font-size:1.35rem;font-weight:900;line-height:1.15;letter-spacing:-.02em}
+.serv-hero-title em{font-style:italic;color:#FFB27A}
+.serv-hero-sub{font-size:.82rem;line-height:1.55;color:rgba(255,255,255,.8);margin-top:7px;max-width:32ch}
 
 /* DETALLE PRODUCTO */
 .prod-det-img{width:100%;aspect-ratio:1/1;max-height:480px;display:flex;align-items:center;justify-content:center;font-size:4rem;background:#f4f4f5;position:relative;overflow:hidden}

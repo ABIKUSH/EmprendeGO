@@ -527,14 +527,16 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div class="chip" onclick="setChip(this,'Marroquinería y Bolsos')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Bolsos</div>
     <div class="chip" onclick="setChip(this,'Deportes')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>Deportes</div>
     <div class="chip" onclick="setChip(this,'Automotor')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2z"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M5 9 7 5h10l2 4"/></svg>Automotor</div>
-    <div class="chip" onclick="setChip(this,'Servicios')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>Servicios</div>
+    <div class="chip" onclick="filterCat('Servicios')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>Servicios</div>
     <div class="chip" onclick="setChip(this,'Otro')" data-extra style="display:none"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>Otro</div>
   </div>
-  <div class="search-tabs">
+  <div class="search-tabs" id="searchTabs" style="--tab-i:0;--tab-n:3">
+    <span class="search-tab-glider" aria-hidden="true"></span>
     <div class="search-tab active" id="tab-productos" onclick="switchBuscarTab('productos',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Productos</div>
     <div class="search-tab" id="tab-proveedores" onclick="switchBuscarTab('proveedores',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg> Proveedores</div>
+    <div class="search-tab" id="tab-servicios" onclick="switchBuscarTab('servicios',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg> Servicios<span class="eg-badge-nuevo serv-tab-nuevo" id="badge-nuevo-servicios" style="display:none">Nuevo</span></div>
   </div>
-  <div style="padding:10px 20px 0">
+  <div style="padding:10px 20px 0" id="buscar-tip">
     <div style="background:white;border:1px solid var(--border);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:flex-start">
       <div style="flex-shrink:0;width:32px;height:32px;border-radius:8px;background:#FFF8E7;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
       <div><div style="font-size:.82rem;font-weight:800;color:var(--navy);margin-bottom:2px">Tip rápido</div><div style="font-size:.78rem;color:var(--gray);line-height:1.5">Primero mirá productos para ver si te sirve el margen. Después entrá al proveedor y contactalo.</div></div>
@@ -591,7 +593,6 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <option value="Deportes">Deportes</option>
         <option value="Automotor">Automotor</option>
         <option value="Construcción">Construcción</option>
-        <option value="Servicios">Servicios</option>
         <option value="Juguetería">Juguetería</option>
         <option value="Ferretería">Ferretería</option>
         <option value="Iluminación">Iluminación</option>
@@ -618,6 +619,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </select>
     </div>
     <div class="prov-list" id="provList"></div>
+  </div>
+  <div id="buscar-servicios-view" style="display:none">
+    <div class="serv-hero">
+      <div class="serv-hero-tag">Nuevo</div>
+      <h3 class="serv-hero-title">Servicios para <em>emprendedores</em></h3>
+      <p class="serv-hero-sub">Marketing, diseño web, logística y todo lo que necesitás para que tu negocio funcione.</p>
+    </div>
+    <div class="prov-list" id="serviciosList"></div>
   </div>
 </div>
 
