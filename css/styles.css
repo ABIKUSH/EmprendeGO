@@ -376,15 +376,30 @@ body, body *{
 /* TABS BUSCAR */
 .search-tabs{position:relative;display:flex;background:#EDF1F7;border-radius:13px;padding:4px;margin:10px 20px 0;isolation:isolate}
 .search-tab-glider{position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--tab-n,2));border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(13,27,62,.10);transform:translateX(calc(var(--tab-i,0) * 100%));transition:transform .32s cubic-bezier(.22,1,.36,1)}
-.search-tab{flex:1;display:flex;align-items:center;justify-content:center;gap:5px;padding:8px 4px;font-size:.8rem;font-weight:700;color:var(--gray);border-radius:10px;cursor:pointer;transition:color .22s ease;-webkit-tap-highlight-color:transparent}
+/* flex:1 1 0 + min-width:0 → las tres pestañas miden EXACTO un tercio pase lo que
+   pase con el contenido. Si no, el badge ensancha su pestaña y el indicador
+   (que mide 1/3 fijo) queda corrido. */
+.search-tab{flex:1 1 0;min-width:0;position:relative;display:flex;align-items:center;justify-content:center;gap:5px;padding:9px 4px;font-size:.8rem;font-weight:700;color:var(--gray);border-radius:10px;cursor:pointer;white-space:nowrap;transition:color .22s ease;-webkit-tap-highlight-color:transparent}
 .search-tab.active{color:#006039}
-.search-tab svg{transition:transform .32s cubic-bezier(.22,1,.36,1)}
+.search-tab svg{flex-shrink:0;transition:transform .32s cubic-bezier(.22,1,.36,1)}
 .search-tab.active svg{transform:scale(1.1)}
-/* El badge "Nuevo" de los menús, adaptado a la pestaña: sin margin-left:auto
-   (rompería el centrado) y un punto más chico. */
-.serv-tab-nuevo{margin-left:2px;font-size:.55rem;padding:2px 6px;border-radius:5px}
+/* El badge "Nuevo" de los menús, adaptado a la pestaña: absoluto para que no
+   ocupe ancho (si no, descentra el indicador deslizante). */
+.serv-tab-nuevo{position:absolute;top:-7px;right:2px;margin-left:0;font-size:.5rem;letter-spacing:.04em;padding:2px 5px;border-radius:5px;line-height:1.35;pointer-events:none;z-index:2}
 @media (prefers-reduced-motion:reduce){.search-tab-glider,.search-tab svg{transition:none}}
-@media (max-width:380px){.search-tab{font-size:.72rem;gap:3px;padding:8px 2px}.search-tab svg{width:12px;height:12px}}
+/* En celular el texto manda: los íconos se achican y el label baja de cuerpo
+   para que "Proveedores" entre sin apretarse. */
+@media (max-width:520px){
+  .search-tabs{margin:12px 16px 0;padding:4px}
+  .search-tab{font-size:.74rem;gap:4px;padding:9px 2px}
+  .search-tab svg{width:13px;height:13px}
+  .serv-tab-nuevo{font-size:.47rem;padding:2px 4px;right:0}
+}
+/* Abajo de 360px ya no entra el ícono junto a "Proveedores": gana el texto. */
+@media (max-width:359px){
+  .search-tab{font-size:.7rem;gap:0}
+  .search-tab svg{display:none}
+}
 
 /* SERVICIOS PARA EMPRENDEDORES */
 .serv-hero{position:relative;overflow:hidden;margin:12px 20px 0;padding:20px 20px 22px;border-radius:20px;background:linear-gradient(135deg,#00432A,#006039 55%,#0A7A4C);color:#fff}
