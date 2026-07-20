@@ -537,13 +537,13 @@ function renderFavs() {
     el.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#6B7A99"><div style="font-size:3rem;margin-bottom:12px">❤️</div><p style="font-size:.88rem;line-height:1.6">Todavia no guardaste favoritos.<br>Toca el corazon en cualquier proveedor.</p></div>';
     return;
   }
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
   el.innerHTML = favs.map((p, i) => {
     const pid = String(p.id);
     const bg = _monoColor(p.id);
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const avgR = getProvRating(pid).avg.toFixed(1);
-    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:12px;overflow:hidden;cursor:pointer">
+    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #DCE8E2;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
         ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
@@ -558,7 +558,7 @@ function renderFavs() {
       <div style="padding:0 14px 13px">
         <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:9px">${p.desc || ''}</p>
         <div style="display:flex;gap:7px">
-          <button data-favid="${pid}" style="background:#FFF0F5;color:#F43F8E;border:none;border-radius:9px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer">❤️ Quitar</button>
+          <button data-favid="${pid}" style="background:#FFF0F5;color:#EF4444;border:none;border-radius:9px;padding:7px 12px;font-size:.76rem;font-weight:700;cursor:pointer">❤️ Quitar</button>
         </div>
       </div>
     </div>`;
@@ -904,7 +904,7 @@ function closeComparadorOnBg(e) { if (e.target === document.getElementById('comp
 function renderComparadorModal() {
   const el = document.getElementById('compModalBody');
   if (!el) return;
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED'];
+  const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857'];
   const campos = [
     { key: 'rubro', label: 'Rubro' },
     { key: 'provincia', label: 'Provincia' },
@@ -921,7 +921,7 @@ function renderComparadorModal() {
     thead += `<th><div class="comp-header-cell">
       <div class="comp-header-ini" style="background:${bgs[i]}">${escHtml(ini)}</div>
       <div class="comp-header-name">${escHtml(p.nombre)}</div>
-      ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
+      ${p.pro ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 7px;border-radius:10px;letter-spacing:.04em">PRO</span>' : ''}
     </div></th>`;
   });
   thead += '</tr></thead>';
@@ -1028,7 +1028,7 @@ function clearMapaFilter() {
 }
 
 function renderProvCardMini(p, i) {
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
   const bg = _monoColor(p.id);
   const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
   const { avg, count } = getProvRating(p.id);
@@ -1038,8 +1038,8 @@ function renderProvCardMini(p, i) {
   const heartStroke = faved ? '#EF4444' : '#CBD5E1';
   const actionBtn = (p.whatsapp)
     ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation();registrarContactoWA('${pid}')" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
-    : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#F5F7FF;border:1.5px solid #E2E8F8;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;margin-top:8px">Ver perfil</button>`;
-  return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px;cursor:pointer">
+    : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;margin-top:8px">Ver perfil</button>`;
+  return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
       ${p.logo_url
         ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
@@ -1048,7 +1048,7 @@ function renderProvCardMini(p, i) {
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
           <span style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
-          ${p.pro ? '<span style="font-size:.6rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:8px;flex-shrink:0;letter-spacing:.04em">PRO</span>' : ''}
+          ${p.pro ? '<span style="font-size:.6rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 7px;border-radius:8px;flex-shrink:0;letter-spacing:.04em">PRO</span>' : ''}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <div style="font-size:.73rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro)}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
@@ -1065,7 +1065,7 @@ function renderProvCardMini(p, i) {
 // ===== SKELETON LOADERS =====
 function skelProv(n = 4) {
   return Array.from({ length: n }).map(() => `
-    <div style="background:white;border-radius:16px;border:1px solid #E2E8F8;margin-bottom:4px;padding:14px">
+    <div style="background:white;border-radius:16px;border:1px solid #DCE8E2;margin-bottom:4px;padding:14px">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
         <div class="skel" style="width:44px;height:44px;border-radius:11px;flex-shrink:0"></div>
         <div style="flex:1">
@@ -1089,7 +1089,7 @@ function skelCarousel(n = 5) {
 }
 function skelProvHoriz(n = 5) {
   return Array.from({ length: n }).map(() => `
-    <div style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:9px">
+    <div style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:9px">
       <div class="skel" style="width:48px;height:48px;border-radius:12px"></div>
       <div class="skel" style="height:11px;width:80%"></div>
       <div class="skel" style="height:9px;width:55%"></div>
@@ -1105,7 +1105,7 @@ function renderProvs(list) {
       ? `No encontramos proveedores para "<strong>${escHtml(q)}</strong>". Probá con otro término.`
       : 'No encontramos proveedores con esos filtros.';
     const cats = RUBROS_LISTA.slice(0, 6).map(r =>
-      `<button onclick="filterCat('${r}')" style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid #E2E8F8;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#1847C8;cursor:pointer;white-space:nowrap">${RUBROS_ICONS[r] || ''} ${escHtml(r)}</button>`
+      `<button onclick="filterCat('${r}')" style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid #DCE8E2;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;white-space:nowrap">${RUBROS_ICONS[r] || ''} ${escHtml(r)}</button>`
     ).join('');
     el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:40px 24px">
       <div style="font-size:3rem;margin-bottom:14px">🔍</div>
@@ -1129,7 +1129,7 @@ function renderProvCards(el, list) {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const { avg, count } = getProvRating(pid);
     const enComp = comparadorList.some(x => String(x.id) === pid);
-    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #E2E8F8;overflow:hidden;cursor:pointer;display:flex;flex-direction:column">
+    return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #DCE8E2;overflow:hidden;cursor:pointer;display:flex;flex-direction:column">
       <div style="display:flex;align-items:flex-start;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
         ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
@@ -1138,7 +1138,7 @@ function renderProvCards(el, list) {
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:flex-start;gap:6px">
             <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
-            ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:#0D1B3E;color:#F59E0B;letter-spacing:.04em;flex-shrink:0;margin-top:1px">PRO</span>' : ''}
+            ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);letter-spacing:.04em;flex-shrink:0;margin-top:1px">PRO</span>' : ''}
           </div>
           <div style="font-size:.72rem;color:#6B7A99;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</div>
         </div>
@@ -1152,7 +1152,7 @@ function renderProvCards(el, list) {
         <div class="prov-card-actions">
           ${p.whatsapp
         ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-pid="${pid}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>WhatsApp</button>`
-        : `<button style="display:flex;align-items:center;justify-content:center;gap:6px;background:#EEF2FF;color:#1847C8;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Ver perfil</button>`}
+        : `<button style="display:flex;align-items:center;justify-content:center;gap:6px;background:#EEF2FF;color:#065F46;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Ver perfil</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem;flex-shrink:0">${enComp ? '✓' : '⚖'}</button>
         </div>
@@ -1389,7 +1389,7 @@ async function cargarProductosDetalle(proveedorId) {
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
       return;
     }
-    const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+    const bgsColores = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
     data.forEach((p, i) => {
       const existente = productosReales.find(x => x.idReal == p.id);
       if (!existente) {
@@ -1417,7 +1417,7 @@ async function renderDetalleProductos(proveedorId) {
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
   const data = provDetalleData;
-  const bgsColores = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  const bgsColores = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
   const slice = data.slice(0, (provDetalleOffset + 1) * DETALLE_PAGE_SIZE);
   const resto = data.length - slice.length;
   el.style.cssText = '';
@@ -1447,7 +1447,7 @@ async function renderDetalleProductos(proveedorId) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite) ? '12px' : '0'}">
       ${cards}
     </div>
-    ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
+    ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
     ${notaLimite}
   `;
 }
@@ -1496,7 +1496,7 @@ function abrirDetalle(id) {
   document.getElementById('det-nombre').textContent = p.nombre;
   const rubrosArr = (p.rubro || 'General').split(',').map(r => r.trim()).filter(Boolean);
   const rubrosHtml = rubrosArr.map(r =>
-    `<span style="display:inline-block;background:#f0f4ff;color:#1847C8;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700;margin:2px 2px">${escHtml(r)}</span>`
+    `<span style="display:inline-block;background:#eff6f2;color:#065F46;border-radius:20px;padding:2px 10px;font-size:.72rem;font-weight:700;margin:2px 2px">${escHtml(r)}</span>`
   ).join('');
   document.getElementById('det-rubro').innerHTML = rubrosHtml + (p.provincia ? `<span style="display:inline-block;color:var(--gray);font-size:.72rem;margin:2px 4px">· ${escHtml(p.provincia)}</span>` : '');
   document.getElementById('det-desc').textContent = p.desc || p.descripcion || 'Sin descripcion.';
@@ -2462,7 +2462,7 @@ async function cargarHistorial() {
   if (!historial.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">🔍</div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div>';
   } else {
-    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
+    const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D', '#C2410C'];
     const grupos = {};
     historial.forEach(p => {
       const d = new Date(p.visitedAt);
@@ -2560,7 +2560,7 @@ async function cargarMisConversaciones() {
       return;
     }
 
-    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+    const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
     el.innerHTML = convs.map((c, i) => {
       const ini = escHtml(c.provNombre.substring(0, 2).toUpperCase());
       const preview = escHtml((c.ultimoMsg || '').split(String.fromCharCode(10)).join(' ').substring(0, 45) + ((c.ultimoMsg || '').length > 45 ? '...' : ''));
@@ -2777,7 +2777,7 @@ function _fotoTile(src, removeCall) {
   return `<div style="position:relative;width:60px;height:60px;flex:0 0 auto"><img src="${escHtml(src)}" style="width:60px;height:60px;object-fit:cover;border-radius:10px;border:1px solid #e5e7eb" onerror="this.style.display='none'"><button type="button" onclick="${removeCall}" aria-label="Quitar" style="position:absolute;top:-6px;right:-6px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:.7rem;line-height:1;cursor:pointer;padding:0">✕</button></div>`;
 }
 function _fotoAddTile(inputId) {
-  return `<div onclick="document.getElementById('${inputId}').click()" style="width:60px;height:60px;flex:0 0 auto;border:2px dashed #c7d4f8;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--blue);font-size:1.5rem;font-weight:300">+</div>`;
+  return `<div onclick="document.getElementById('${inputId}').click()" style="width:60px;height:60px;flex:0 0 auto;border:2px dashed #b9d4c6;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--blue);font-size:1.5rem;font-weight:300">+</div>`;
 }
 function _pushFotos(input, arr, existingCount) {
   const files = Array.from(input.files || []);
@@ -3598,7 +3598,7 @@ function renderRecomendaciones(ranked, rubroSel) {
     const waBtn = wa
       ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarContactoWA('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
       : '';
-    return `<div style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px;position:relative">
+    return `<div style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;position:relative">
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
       <div style="display:flex;align-items:center;gap:12px;margin-top:${i === 0 ? '6px' : '0'}">
         ${p.logo_url
@@ -3607,14 +3607,14 @@ function renderRecomendaciones(ranked, rubroSel) {
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
             <span style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
-            ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 6px;border-radius:7px;letter-spacing:.04em">PRO</span>' : ''}
+            ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 6px;border-radius:7px;letter-spacing:.04em">PRO</span>' : ''}
           </div>
           <div style="font-size:.72rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro)}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
       </div>
       <div style="font-size:.8rem;color:#334155;line-height:1.5;margin:10px 0 12px">${escHtml(porque)}</div>
       <div style="display:flex;gap:8px">
-        <button onclick="closeTest();abrirDetalle('${p.id}')" style="flex:1;background:#F5F7FF;border:1.5px solid #E2E8F8;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;color:#006039;cursor:pointer">Ver perfil</button>
+        <button onclick="closeTest();abrirDetalle('${p.id}')" style="flex:1;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;color:#006039;cursor:pointer">Ver perfil</button>
         ${waBtn}
       </div>
     </div>`;
@@ -3647,15 +3647,15 @@ let _buscarListaFiltrada = [], _buscarOffset = 0, _buscarFiltroActual = '';
 let provDetalleData = [], provDetalleOffset = 0, provDetalleEsPro = false, provDetalleLimite;
 const DETALLE_PAGE_SIZE = 20;
 const catColors = {
-  'Tecnología': '#1847C8', 'Indumentaria': '#FF6B00', 'Hogar y Deco': '#00A651', 'Bazar': '#7C3AED',
+  'Tecnología': '#065F46', 'Indumentaria': '#FF6B00', 'Hogar y Deco': '#00A651', 'Bazar': '#047857',
   'Alimentos': '#F59E0B', 'Belleza y Salud': '#E91E8C', 'Deportes': '#EF4444', 'Automotor': '#6B7280',
   'Construcción': '#92400E', 'Servicios': '#0369A1', 'Juguetería': '#D97706', 'Ferretería': '#78716C',
-  'Iluminación': '#CA8A04', 'Muebles': '#7C3AED', 'Textil y Telas': '#8B5CF6',
+  'Iluminación': '#CA8A04', 'Muebles': '#047857', 'Textil y Telas': '#8B5CF6',
   'Librería y Papelería': '#059669', 'Marroquinería y Bolsos': '#B45309', 'Limpieza': '#0891B2',
   'Blanquería': '#6366F1', 'Mascotas': '#16A34A', 'Bebés y Niños': '#DB2777',
   'Electrónica': '#2563EB', 'Herramientas': '#57534E', 'Packaging': '#0F766E', 'Otro': '#9CA3AF',
   // legacy
-  'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Textiles': '#8B5CF6', 'Otros': '#9CA3AF', 'Tecnologia': '#1847C8',
+  'Moda': '#FF6B00', 'Hogar': '#00A651', 'Salud': '#E91E8C', 'Textiles': '#8B5CF6', 'Otros': '#9CA3AF', 'Tecnologia': '#065F46',
 };
 
 function getEmojiCat(cat) { return ''; }
@@ -3663,7 +3663,7 @@ function getProdLista() { return productosReales; }
 
 // Color determinístico por proveedor para el monograma cuando no hay logo:
 // el mismo proveedor siempre obtiene el mismo color (se ve intencional, no random).
-const _MONO_PALETTE = ['#1847C8', '#0E7C5A', '#B45309', '#6D28D9', '#0F766E', '#9D174D', '#1E3A8A', '#3F6212'];
+const _MONO_PALETTE = ['#065F46', '#0E7C5A', '#B45309', '#6D28D9', '#0F766E', '#9D174D', '#006039', '#3F6212'];
 function _monoColor(seed) {
   const s = String(seed == null ? '' : seed);
   let h = 0;
@@ -3701,7 +3701,7 @@ async function cargarProductosReales() {
       if (!page || page.length < PAGE) break;
     }
     if (data.length > 0) {
-      const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+      const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
       const mapped = data.map((p, i) => ({
         id: 'real_' + p.id, idReal: p.id, nombre: p.nombre, precio: p.precio || 0,
         pedido_minimo: p.stock ? 'Stock: ' + p.stock + ' unidades' : 'Consultar',
@@ -3765,7 +3765,7 @@ function cargarMasHomeProductos() {
 }
 
 function renderHomeProdCard(p) {
-  const color = catColors[p.cat] || '#1847C8';
+  const color = catColors[p.cat] || '#065F46';
   return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
     <div class="prod-img-wrap" style="position:relative">
       ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
@@ -3937,7 +3937,7 @@ function _drawBuscarGrid(el) {
         <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
       </div>
     </div>`).join('') +
-    (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#1847C8;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
+    (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
 }
 
 function buscarVerMas() {
@@ -4026,7 +4026,7 @@ function showSearchDropdown(val) {
       </div>` +
       recientes.map(r =>
         `<div onclick="seleccionarSugerencia(this.dataset.texto)" data-texto="${escHtml(r)}"
-          style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #F0F4FF;font-size:.85rem;color:#1A1A1A">
+          style="padding:11px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #EFF6F2;font-size:.85rem;color:#1A1A1A">
           <span style="color:#9CA3AF">🕐</span>${escHtml(r)}
         </div>`
       ).join('');
@@ -4053,8 +4053,8 @@ function showSearchDropdown(val) {
   dd.style.display = 'block';
   dd.innerHTML = sugs.map(p =>
     `<div onclick="seleccionarProveedor('${p.id}')"
-      style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #F0F4FF">
-      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#1847C8;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0, 2).toUpperCase())}</div>
+      style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #EFF6F2">
+      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#065F46;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0, 2).toUpperCase())}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.85rem;font-weight:700;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
         <div style="font-size:.72rem;color:#6B7A99">${escHtml(p.rubro || '')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
@@ -4110,7 +4110,7 @@ function abrirDetalleProd(id) {
   const _boxIcon = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const _heartFilled = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.9"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
-  const _shareIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1847C8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
+  const _shareIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#065F46" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
   const _imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : (p.imgUrl ? [p.imgUrl] : []);
   document.getElementById('prod-det-emoji').innerHTML = `${_imgs.length ? `<img id="prod-det-main-img" src="${escHtml(_imgs[0])}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">` : _boxIcon}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
@@ -4226,7 +4226,7 @@ function renderProdThumbs(imgs) {
   if (!cont) return;
   if (_prodGalleryImgs.length < 2) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
   cont.innerHTML = _prodGalleryImgs.slice(0, 8).map((u, i) =>
-    `<img class="pd-thumb" data-i="${i}" src="${escHtml(u)}" onclick="setProdMainImgByIdx(${i}, this)" style="width:54px;height:54px;flex:0 0 auto;object-fit:cover;border-radius:9px;border:2px solid ${i === 0 ? '#1847C8' : 'transparent'};cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)" onerror="this.style.display='none'">`
+    `<img class="pd-thumb" data-i="${i}" src="${escHtml(u)}" onclick="setProdMainImgByIdx(${i}, this)" style="width:54px;height:54px;flex:0 0 auto;object-fit:cover;border-radius:9px;border:2px solid ${i === 0 ? '#065F46' : 'transparent'};cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)" onerror="this.style.display='none'">`
   ).join('');
   cont.style.display = 'flex';
 }
@@ -4236,12 +4236,12 @@ function setProdMainImgByIdx(i, el) {
   const main = document.getElementById('prod-det-main-img');
   if (main) { main.src = url; main.style.display = 'block'; }
   document.querySelectorAll('#prod-det-thumbs .pd-thumb').forEach(t => { t.style.borderColor = 'transparent'; });
-  if (el) el.style.borderColor = '#1847C8';
+  if (el) el.style.borderColor = '#065F46';
 }
 function renderProdBreadcrumb(p) {
   const el = document.getElementById('prod-det-breadcrumb');
   if (!el) return;
-  el.innerHTML = `<span onclick="goTo('inicio')" style="color:#1847C8;cursor:pointer;font-weight:600">Inicio</span>`
+  el.innerHTML = `<span onclick="goTo('inicio')" style="color:#065F46;cursor:pointer;font-weight:600">Inicio</span>`
     + `<span style="color:#cbd5e1;margin:0 6px">›</span>`
     + `<span style="color:var(--gray)">${escHtml(p.cat || 'Productos')}</span>`
     + `<span style="color:#cbd5e1;margin:0 6px">›</span>`
@@ -4280,7 +4280,7 @@ function renderProdRelacionados(p) {
     <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:18px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px">
         <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Más de ${escHtml(p.provNombre)}</div>
-        <button onclick="irAProveedorDesdeProd()" style="background:none;border:none;padding:0;color:#1847C8;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver toda la tienda →</button>
+        <button onclick="irAProveedorDesdeProd()" style="background:none;border:none;padding:0;color:#065F46;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver toda la tienda →</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
         ${cards}
@@ -4551,7 +4551,7 @@ function renderCarrito() {
   if (!carrito.length) { closeCarrito(); return; }
 
   const item0 = carrito[0];
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E'];
+  const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
 
   // Info proveedor
   const avatarEl = document.getElementById('carrito-prov-avatar');
@@ -4733,7 +4733,7 @@ const ESTADOS_PEDIDO = ['pendiente', 'confirmado', 'pago recibido', 'en preparac
 let pedidosCache = [];
 const ESTADO_COLOR = {
   pendiente: '#F59E0B', confirmado: '#16A34A', cancelado: '#ef4444',
-  'pago recibido': '#1847C8', 'en preparacion': '#7C3AED', enviado: '#006039', archivado: '#999'
+  'pago recibido': '#065F46', 'en preparacion': '#047857', enviado: '#006039', archivado: '#999'
 };
 const ESTADO_LABEL = {
   pendiente: 'Pendiente', confirmado: 'Confirmado', cancelado: 'Cancelado',
@@ -4776,7 +4776,7 @@ async function cargarPedidosRecientes() {
         <div style="font-size:.75rem;color:#555;margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${resumen}</div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="font-size:.9rem;font-weight:900;color:#006039">$${Number(p.total).toLocaleString('es-AR')}</div>
-          <div style="font-size:.68rem;color:#1847C8;font-weight:700">${tiempo} · Ver detalle →</div>
+          <div style="font-size:.68rem;color:#065F46;font-weight:700">${tiempo} · Ver detalle →</div>
         </div>
       </div>`;
     }).join('');
@@ -5088,9 +5088,9 @@ function renderExcelStep2() {
   const preview = excelData.slice(0, 3);
   const previewCols = Object.keys(preview[0] || {}).slice(0, 5);
   const previewHTML = preview.length ? `
-    <div style="overflow-x:auto;border:1px solid #e0e7ff;border-radius:10px;margin:10px 0 14px">
+    <div style="overflow-x:auto;border:1px solid #dfe8e3;border-radius:10px;margin:10px 0 14px">
       <table style="width:100%;border-collapse:collapse;font-size:.68rem">
-        <thead><tr>${previewCols.map(h => `<th style="padding:6px 10px;background:#f0f4ff;border-bottom:1px solid #e0e7ff;text-align:left;font-weight:800;color:#1847C8;white-space:nowrap">${escHtml(String(h))}</th>`).join('')}</tr></thead>
+        <thead><tr>${previewCols.map(h => `<th style="padding:6px 10px;background:#eff6f2;border-bottom:1px solid #dfe8e3;text-align:left;font-weight:800;color:#065F46;white-space:nowrap">${escHtml(String(h))}</th>`).join('')}</tr></thead>
         <tbody>${preview.map(row => `<tr>${previewCols.map(h => `<td style="padding:6px 10px;border-bottom:1px solid #f4f7ff;white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">${escHtml(String(row[h] || ''))}</td>`).join('')}</tr>`).join('')}</tbody>
       </table>
     </div>` : '';
@@ -5103,7 +5103,7 @@ function renderExcelStep2() {
     const cur = excelColMap[field] || '';
     return `<div class="form-group">
       <label>${label}${required ? ' *' : ' <span style="font-weight:400;color:#999">(opcional)</span>'}</label>
-      <select style="width:100%;border:1.5px solid #e0e7ff;border-radius:10px;padding:9px 12px;font-family:\'DM Sans\',sans-serif;font-size:.85rem"
+      <select style="width:100%;border:1.5px solid #dfe8e3;border-radius:10px;padding:9px 12px;font-family:\'DM Sans\',sans-serif;font-size:.85rem"
         onchange="excelColMap['${field}'] = this.value">
         <option value="">${required ? '— Seleccioná columna —' : '— No importar —'}</option>
         ${excelHeaders.map(h => `<option value="${escHtml(h)}" ${h === cur ? 'selected' : ''}>${escHtml(h)}</option>`).join('')}
@@ -5122,7 +5122,7 @@ function renderExcelStep2() {
     ${colOpts('descripcion', 'Descripción', false)}
     ${colOpts('categoria', 'Categoría del Excel', false)}
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="excelBack(2)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button onclick="excelBack(2)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
       <button onclick="confirmarColumnasExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Continuar →</button>
     </div>`;
 }
@@ -5149,7 +5149,7 @@ function confirmarColumnasExcel() {
             <span style="font-size:.8rem;flex:1;color:#374151;font-weight:600">${escHtml(rawCat)}</span>
             <span style="color:#9CA3AF;font-size:.9rem">→</span>
             <select onchange="excelCatMapping[${JSON.stringify(rawCat)}] = this.value"
-              style="flex:1;border:1.5px solid #e0e7ff;border-radius:8px;padding:6px 8px;font-size:.78rem;max-width:140px">
+              style="flex:1;border:1.5px solid #dfe8e3;border-radius:8px;padding:6px 8px;font-size:.78rem;max-width:140px">
               <option value="">Seleccioná...</option>
               ${CAT_PRINCIPAL.map(c => `<option value="${c}" ${(excelCatMapping[rawCat] || '') === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>
@@ -5158,7 +5158,7 @@ function confirmarColumnasExcel() {
   } else {
     catContent = `
       <div style="font-size:.82rem;font-weight:700;color:#374151;margin-bottom:10px">¿A qué categoría pertenecen todos estos productos?</div>
-      <select id="excel-cat-global" style="width:100%;border:1.5px solid #e0e7ff;border-radius:10px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:.88rem">
+      <select id="excel-cat-global" style="width:100%;border:1.5px solid #dfe8e3;border-radius:10px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:.88rem">
         <option value="">Seleccioná una categoría...</option>
         ${catOpts}
       </select>`;
@@ -5166,11 +5166,11 @@ function confirmarColumnasExcel() {
 
   wizard.innerHTML = `
     ${catContent}
-    <div style="background:#f0f4ff;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.8rem;color:#374151">
+    <div style="background:#eff6f2;border-radius:10px;padding:10px 12px;margin-top:14px;font-size:.8rem;color:#374151">
       Listo para importar <strong>${total} producto${total === 1 ? '' : 's'}</strong>.
     </div>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="excelBack(3)" style="flex:1;background:#f0f4ff;color:#1847C8;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button onclick="excelBack(3)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
       <button id="excel-import-btn" onclick="importarDesdeExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">
         <span id="excel-import-btn-text">Importar ${total} productos →</span>
       </button>
@@ -5416,7 +5416,7 @@ function renderDetCarousels(prodsDetalle) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${resto > 0 ? '12px' : '0'}">
       ${cards}
     </div>
-    ${resto > 0 ? `<button onclick="abrirTodosProductosProv()" style="width:100%;background:#f5f7ff;border:1.5px solid #E2E8F8;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1847C8;cursor:pointer">Ver los ${resto} productos restantes →</button>` : ''}
+    ${resto > 0 ? `<button onclick="abrirTodosProductosProv()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver los ${resto} productos restantes →</button>` : ''}
   `;
 }
 
@@ -5435,7 +5435,7 @@ function renderProvDestacados() {
   if (!seccion || !lista) return;
   const all = proveedoresDB;
   if (!all.length) return;
-  const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED', '#0D1B3E', '#C2410C'];
+  const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D', '#C2410C'];
   const now = new Date();
   const provsPro = all.filter(p => p.pro);
   console.log('[home] proveedores pro encontrados:', provsPro.length, provsPro.map(p => p.nombre));
@@ -5452,7 +5452,7 @@ function renderProvDestacados() {
     const ini = (p.inicial || p.nombre.substring(0, 2)).toUpperCase();
     const bg = _monoColor(p.id);
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
-    return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #E2E8F8;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+    return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
         ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
@@ -5460,7 +5460,7 @@ function renderProvDestacados() {
       <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
       <div style="font-size:.68rem;color:#6B7A99;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${escHtml(p.rubro || '')}</div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
-        ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 6px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
+        ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 6px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
         ${p.avgR > 0 ? `<span style="font-size:.68rem;font-weight:700;color:#F59E0B">${avgR} ★</span>` : ''}
       </div>
     </div>`;
@@ -5483,13 +5483,13 @@ async function renderRecienLlegados() {
       .limit(3);
     if (!data || !data.length) return;
     seccion.style.display = 'block';
-    const bgs = ['#1847C8', '#FF6B00', '#00A651', '#7C3AED'];
+    const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857'];
     lista.innerHTML = data.map((p, i) => {
       const ini = p.nombre.substring(0, 2).toUpperCase();
       const bg = _monoColor(p.id);
       const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
       const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
-      return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #E2E8F8;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
+      return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
         ${p.logo_url
           ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
           : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
@@ -5500,7 +5500,7 @@ async function renderRecienLlegados() {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
           <span style="font-size:.62rem;font-weight:800;background:#DCFCE7;color:#16A34A;padding:2px 7px;border-radius:20px">${badge}</span>
-          ${p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date()) ? '<span style="font-size:.62rem;font-weight:800;background:#0D1B3E;color:#F59E0B;padding:2px 7px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
+          ${p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date()) ? '<span style="font-size:.62rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 7px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
         </div>
       </div>`;
     }).join('');
