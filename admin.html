@@ -1917,9 +1917,9 @@ function _tjPeriodoBadge(p){
   if (p.desde){ const d = new Date(p.desde + 'T03:00:00Z'); return f(d) + ' – ' + f(hoy); }
   return 'al ' + f(hoy);
 }
-// Tarjeta de estadística (panel claro sobre fondo navy)
-function _tjStat(ctx, x, y, w, h, type, num, label, delta){
-  const MUTE = '#5B6B8C';
+// Tarjeta de estadística: el número de ESTA SEMANA va grande, el histórico abajo
+function _tjStat(ctx, x, y, w, h, type, semanal, label, total){
+  const MUTE = '#5B6B8C', GREEN = '#0E9F6E';
   _tjRR(ctx, x, y, w, h, 30); ctx.fillStyle = '#F7F9FD'; ctx.fill();
   ctx.strokeStyle = '#E5EBF6'; ctx.lineWidth = 2; ctx.stroke();
   const px = x + 46;
@@ -1929,26 +1929,34 @@ function _tjStat(ctx, x, y, w, h, type, num, label, delta){
   const icx = px + bw/2, icy = byy + bw/2;
   if (type === 'eye') _tjIconEye(ctx, icx, icy, 27, '#FFFFFF');
   else _tjIconChat(ctx, icx, icy, 22, '#FFFFFF');
-  // pill de crecimiento (arriba a la derecha)
-  if (delta){
-    ctx.font = '700 27px "DM Sans", Arial, sans-serif';
-    const tw = ctx.measureText(delta).width;
-    const pillW = tw + 64, pillH = 48, plx = x + w - 46 - pillW, ply = byy + 18;
-    _tjRR(ctx, plx, ply, pillW, pillH, 24); ctx.fillStyle = '#E7F9F0'; ctx.fill();
-    const ax = plx + 28, ay = ply + pillH/2;
-    ctx.strokeStyle = '#0E9F6E'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath(); ctx.moveTo(ax, ay + 7); ctx.lineTo(ax, ay - 8);
-    ctx.moveTo(ax - 7, ay - 1); ctx.lineTo(ax, ay - 9); ctx.lineTo(ax + 7, ay - 1); ctx.stroke();
-    ctx.fillStyle = '#0E9F6E'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(delta, ax + 22, ay + 1); ctx.textBaseline = 'alphabetic';
-  }
-  // número grande
+
+  const n = parseInt(semanal, 10) || 0;
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillStyle = TJ_DARK; ctx.font = '800 100px Sora, Arial, sans-serif';
-  ctx.fillText(num, px, y + h - 92);
-  // etiqueta
-  ctx.fillStyle = MUTE; ctx.font = '500 30px "DM Sans", Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, label, w - 92), px, y + h - 48);
+
+  // número grande = lo que pasó esta semana
+  const numY = y + h - 152;
+  let numX = px;
+  if (n > 0){
+    // flecha de crecimiento a la izquierda del número
+    const ay = numY - 34;
+    ctx.strokeStyle = GREEN; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(px + 16, ay + 32); ctx.lineTo(px + 16, ay - 28);
+    ctx.moveTo(px - 6, ay - 6); ctx.lineTo(px + 16, ay - 32); ctx.lineTo(px + 38, ay - 6);
+    ctx.stroke();
+    numX = px + 58;
+  }
+  ctx.fillStyle = n > 0 ? GREEN : TJ_DARK;
+  ctx.font = '800 112px Sora, Arial, sans-serif';
+  ctx.fillText(String(n), numX, numY);
+
+  // etiqueta ("Consultas esta semana")
+  ctx.fillStyle = TJ_DARK; ctx.font = '700 30px "DM Sans", Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, label, w - 92), px, y + h - 98);
+
+  // historial acumulado, en chico
+  ctx.fillStyle = MUTE; ctx.font = '500 27px "DM Sans", Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, 'Histórico: ' + (total != null ? total : 0), w - 92), px, y + h - 48);
 }
 async function generarTarjetaInforme(provJson){
   let p; try { p = JSON.parse(provJson); } catch(e){ return; }
@@ -1994,8 +2002,8 @@ async function generarTarjetaInforme(provJson){
   const cardW = (W - 2*m - gap) / 2;
   const cardH = 396;
   const cardY = m + 320;
-  _tjStat(ctx, m, cardY, cardW, cardH, 'eye', String(p.visitas != null ? p.visitas : 0), 'Visitas a tu perfil', p.vsem ? ('+' + p.vsem) : '');
-  _tjStat(ctx, m + cardW + gap, cardY, cardW, cardH, 'chat', String(p.consultas != null ? p.consultas : 0), 'Consultas por WhatsApp', p.csem ? ('+' + p.csem) : '');
+  _tjStat(ctx, m, cardY, cardW, cardH, 'eye', p.vsem || 0, 'Visitas esta semana', p.visitas != null ? p.visitas : 0);
+  _tjStat(ctx, m + cardW + gap, cardY, cardW, cardH, 'chat', p.csem || 0, 'Consultas esta semana', p.consultas != null ? p.consultas : 0);
 
   // ---- Footer ----
   const fy = cardY + cardH + 64;
