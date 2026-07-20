@@ -6998,3 +6998,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+/* ═══════════════════════════════════════════════════════
+   Mockup 3D del hero de "Para Proveedores"
+   El teléfono acompaña al mouse. Solo corre en escritorio
+   con puntero fino; en celular no se ejecuta nada.
+   ═══════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const box = document.getElementById('lpPhone3D');
+  if (!box) return;
+  if (!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+  if (window.matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+
+  const phone  = box.querySelector('.lp-phone');
+  const layers = box.querySelectorAll('[data-depth]');
+  let tx = 0, ty = 0, cx = 0, cy = 0, raf = null;
+
+  function frame() {
+    // lerp: el teléfono persigue al mouse en vez de saltar
+    cx += (tx - cx) * 0.075;
+    cy += (ty - cy) * 0.075;
+
+    phone.style.transform = `rotateY(${-9 + cx * 11}deg) rotateX(${4 - cy * 8}deg)`;
+    layers.forEach(l => {
+      const d = parseFloat(l.dataset.depth) || 1;
+      l.style.transform = `translate3d(${cx * d * 14}px, ${cy * d * 11}px, 0)`;
+    });
+
+    // cortamos el loop cuando ya llegó: no dejamos un rAF girando de fondo
+    raf = (Math.abs(tx - cx) > 0.001 || Math.abs(ty - cy) > 0.001)
+      ? requestAnimationFrame(frame)
+      : null;
+  }
+  const kick = () => { if (!raf) raf = requestAnimationFrame(frame); };
+
+  box.addEventListener('mousemove', e => {
+    const r = box.getBoundingClientRect();
+    tx = ((e.clientX - r.left) / r.width  - 0.5) * 2;
+    ty = ((e.clientY - r.top)  / r.height - 0.5) * 2;
+    kick();
+  });
+  box.addEventListener('mouseleave', () => { tx = 0; ty = 0; kick(); });
+});

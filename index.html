@@ -929,9 +929,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 
   <!-- HERO -->
-  <div style="background:linear-gradient(160deg,#001a0d 0%,#003d22 55%,#002918 100%);padding:28px 22px 32px;position:relative;overflow:hidden">
+  <div class="lp-hero-wrap" style="background:linear-gradient(160deg,#001a0d 0%,#003d22 55%,#002918 100%);padding:28px 22px 32px;position:relative;overflow:hidden">
     <div style="position:absolute;right:-50px;top:-50px;width:200px;height:200px;border-radius:50%;background:rgba(74,222,128,.07);pointer-events:none"></div>
     <div style="position:absolute;left:-40px;bottom:-40px;width:160px;height:160px;border-radius:50%;background:rgba(74,222,128,.05);pointer-events:none"></div>
+    <div class="lp-hero-grid"><div class="lp-hero-copy">
     <div style="position:relative;z-index:1;display:inline-flex;align-items:center;gap:7px;background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.3);color:#4ade80;font-size:.71rem;font-weight:700;padding:5px 13px;border-radius:20px;margin-bottom:18px;letter-spacing:.04em">
       <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 1.5s infinite"></span>
       MAYORISTAS · ARGENTINA
@@ -968,6 +969,31 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- CTA -->
       <button onclick="goTo('registro')" style="width:100%;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;cursor:pointer">Quiero mi lugar gratis →</button>
     </div>
+    </div><!-- /lp-hero-copy -->
+
+    <!-- Mockup 3D: solo escritorio con mouse (ver .lp-phone-3d en styles.css) -->
+    <div class="lp-phone-3d" id="lpPhone3D" aria-hidden="true">
+      <div class="lp-phone-stage">
+        <div class="lp-phone">
+          <div class="lp-phone-notch"></div>
+          <div class="lp-phone-screen">
+            <!-- Captura real del buscador. El alto del contenedor recorta
+                 la barra de Safari que viene al pie del screenshot. -->
+            <img class="lp-shot" src="img/buscador.jpg" alt="El buscador de EmprendeGo con proveedores verificados">
+          </div>
+        </div>
+
+        <div class="lp-float lp-float-a" data-depth="1.7">
+          <span class="lp-float-dot"></span>
+          <div><b>Nueva consulta</b><small>hace 2 minutos</small></div>
+        </div>
+        <div class="lp-float lp-float-b" data-depth="1.2">
+          <div><b>+128 visitas</b><small>a su perfil esta semana</small></div>
+        </div>
+        <div class="lp-float lp-float-c" data-depth="2.1">✓ Perfil verificado</div>
+      </div>
+    </div>
+    </div><!-- /lp-hero-grid -->
   </div>
 
   <!-- BENEFICIOS -->
@@ -2233,7 +2259,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260713-nov7"></script>
+<script src="js/app.js?v=20260720-hero3d"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.
