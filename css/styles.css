@@ -139,6 +139,9 @@ body, body *{
 .form-group input,.form-group select,.form-group textarea{background:white;border:1.5px solid #dfe8e3;border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;transition:border-color .15s}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue)}
 .form-group textarea{resize:none;min-height:80px}
+.form-group input.field-error,.form-group select.field-error,.form-group textarea.field-error{border-color:#e5484d;background:#fff6f6}
+.field-error{box-shadow:0 0 0 3px rgba(229,72,77,.28);border-radius:12px;animation:fieldShake .28s}
+@keyframes fieldShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 .submit-btn{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border:none;border-radius:14px;padding:15px;font-family:'Fraunces',serif;font-size:1rem;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(6,95,70,.3);transition:all .2s;width:100%}
 .submit-btn:active{transform:scale(.97)}
 .google-btn{display:flex;align-items:center;gap:10px;background:white;border:1.5px solid #dfe8e3;border-radius:14px;padding:14px 24px;font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;color:var(--navy);box-shadow:0 2px 10px rgba(0,0,0,.05);justify-content:center;transition:all .2s;width:100%}

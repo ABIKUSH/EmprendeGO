@@ -18,6 +18,25 @@ function toggleSidebar() {
 function trackEvent(name, params) {
   if (typeof gtag === 'function') gtag('event', name, params || {});
 }
+// ===== Validación visible del registro =====
+// Marca el campo en rojo, hace scroll hasta él y registra en GA4 qué campo trabó.
+// Antes solo salía un toast fugaz: el usuario no veía por qué "no pasaba" y abandonaba.
+function regClearErrors(containerId) {
+  document.querySelectorAll('#' + containerId + ' .field-error').forEach(el => el.classList.remove('field-error'));
+}
+function regFail(step, field, el, msg) {
+  showToast(msg);
+  if (el) {
+    el.classList.add('field-error');
+    try { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { }
+    try { el.focus({ preventScroll: true }); } catch (_) { try { el.focus(); } catch (__) { } }
+  }
+  // Mide EXACTAMENTE qué paso y qué campo hace abandonar (para atacar el correcto).
+  trackEvent('reg_block', { step: step, field: field });
+}
+// Apenas el usuario toca un campo marcado, se le saca el rojo (no espera al reintento).
+document.addEventListener('input', e => { if (e.target.classList?.contains('field-error')) e.target.classList.remove('field-error'); });
+document.addEventListener('change', e => { if (e.target.classList?.contains('field-error')) e.target.classList.remove('field-error'); });
 let _lastSearchTracked = '', _searchTrackTimer = null;
 function trackSearch(q, resultCount) {
   clearTimeout(_searchTrackTimer);
@@ -3275,33 +3294,49 @@ function showRegStep(step) {
     }, 0);
   }
   if (step === 2) {
-    const n = document.querySelector('#reg-step1 input[type="text"]')?.value?.trim();
-    const e = document.querySelector('#reg-step1 input[type="email"]')?.value?.trim();
-    const w = document.querySelector('#reg-step1 input[type="tel"]')?.value?.trim();
-    const p = document.querySelector('#reg-step1 select')?.value;
-    if (!n) { showToast('Ingresa tu nombre'); return; } if (!e) { showToast('Ingresa tu email'); return; } if (!w) { showToast('Ingresa tu WhatsApp'); return; } if (!p) { showToast('Selecciona tu provincia'); return; }
+    regClearErrors('reg-step1');
+    const nEl = document.querySelector('#reg-step1 input[type="text"]');
+    const eEl = document.querySelector('#reg-step1 input[type="email"]');
+    const wEl = document.querySelector('#reg-step1 input[type="tel"]');
+    const pEl = document.querySelector('#reg-step1 select');
+    if (!nEl?.value?.trim()) { return regFail(1, 'nombre', nEl, 'Ingresá el nombre del negocio'); }
+    if (!eEl?.value?.trim()) { return regFail(1, 'email', eEl, 'Ingresá tu email'); }
+    if (!wEl?.value?.trim()) { return regFail(1, 'whatsapp', wEl, 'Ingresá tu WhatsApp'); }
+    if (!pEl?.value) { return regFail(1, 'provincia', pEl, 'Seleccioná tu provincia'); }
   }
   if (step === 2) { renderRubrosPicker('reg-rubros-picker'); }
   if (step === 3) {
-    const r = document.querySelectorAll('#reg-step2 input[type="text"]')[0]?.value?.trim();
-    const c = document.querySelectorAll('#reg-step2 input[type="text"]')[1]?.value?.trim();
+    regClearErrors('reg-step2');
+    const rEl = document.querySelectorAll('#reg-step2 input[type="text"]')[0];
+    const cEl = document.querySelectorAll('#reg-step2 input[type="text"]')[1];
+    const igEl = document.getElementById('reg-instagram');
+    const dEl = document.querySelector('#reg-step2 textarea');
     const ru = getRubrosSeleccionados('reg-rubros-picker');
-    const ig = normalizarIG(document.getElementById('reg-instagram')?.value || '');
-    const d = document.querySelector('#reg-step2 textarea')?.value?.trim();
-    if (!r) { showToast('Ingresa la razon social'); return; } if (!c) { showToast('Ingresa el CUIT'); return; } if (!ru.length) { showToast('Seleccioná al menos un rubro'); return; }
-    if (!ig || ig.length < 3) { showToast('Ingresá tu Instagram (o el link de tu tienda)'); return; }
-    if (!d) { showToast('Ingresa una descripcion'); return; }
+    const c = cEl?.value?.trim() || '';
+    const ig = normalizarIG(igEl?.value || '');
+    if (!rEl?.value?.trim()) { return regFail(2, 'razon_social', rEl, 'Ingresá la razón social'); }
+    if (!c) { return regFail(2, 'cuit', cEl, 'Ingresá el CUIT o CUIL'); }
+    if (c.replace(/\D/g, '').length !== 11) { return regFail(2, 'cuit_formato', cEl, 'El CUIT/CUIL debe tener 11 números'); }
+    if (!ru.length) { return regFail(2, 'rubro', document.getElementById('reg-rubros-picker'), 'Seleccioná al menos un rubro'); }
+    if (!ig || ig.length < 3) { return regFail(2, 'instagram', igEl, 'Ingresá tu Instagram (o el link de tu tienda)'); }
+    if (!dEl?.value?.trim()) { return regFail(2, 'descripcion', dEl, 'Ingresá una descripción'); }
   }
   ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3', 'reg-success'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
   const map = { 0: 'reg-intro', 1: 'reg-step1', 2: 'reg-step2', 3: 'reg-step3' };
   const e = document.getElementById(map[step] || 'reg-intro');
   if (e) e.style.display = 'block';
+  // Mide cuántos LLEGAN a cada paso → con reg_block arma el embudo exacto en GA4.
+  if (step >= 1 && step <= 3) trackEvent('reg_step' + step, { step: step });
   window.scrollTo(0, 0);
 }
 async function showRegSuccess() {
-  const envios = document.querySelectorAll('#reg-step3 select')[0]?.value;
-  const minimo = document.querySelectorAll('#reg-step3 select')[1]?.value;
-  if (!envios) { showToast('Selecciona si haces envios'); return; } if (!minimo) { showToast('Selecciona el pedido minimo'); return; }
+  regClearErrors('reg-step3');
+  const enviosEl = document.querySelectorAll('#reg-step3 select')[0];
+  const minimoEl = document.querySelectorAll('#reg-step3 select')[1];
+  const envios = enviosEl?.value;
+  const minimo = minimoEl?.value;
+  if (!envios) { return regFail(3, 'envios', enviosEl, 'Seleccioná si hacés envíos'); }
+  if (!minimo) { return regFail(3, 'pedido_minimo', minimoEl, 'Seleccioná el pedido mínimo'); }
   const btn = document.querySelector('#reg-step3 .submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Verificando...'; }
 

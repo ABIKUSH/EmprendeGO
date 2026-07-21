@@ -1198,7 +1198,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Datos oficiales de verificación</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
-        <div class="form-group"><label>CUIT *</label><input type="text" placeholder="20-12345678-9" maxlength="13"></div>
+        <div class="form-group"><label>CUIT o CUIL * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(sirve monotributo — lo pedimos para confirmar que sos un negocio real)</span></label><input type="text" inputmode="numeric" placeholder="20-12345678-9" maxlength="13"></div>
         <div class="form-group"><label>Rubro * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(hasta 7)</span></label><div id="reg-rubros-picker" class="rubros-picker"></div></div>
         <div class="form-group"><label>Instagram * <span style="font-size:.75rem;color:var(--gray);font-weight:400">(lo usamos para verificar tu negocio — si no tenés, pegá el link de tu tienda o web)</span></label><input type="text" id="reg-instagram" placeholder="@minegocio"></div>
         <div class="form-group"><label>Descripción breve *</label><textarea placeholder="Ej: Mayorista de accesorios tech, envío a todo el país"></textarea></div>
@@ -1212,7 +1212,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>¿Hacés envíos? *</label><select><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local / GBA</option><option>El comprador retira</option></select></div>
         <div class="form-group"><label>Pedido mínimo *</label><select><option value="">Seleccioná</option><option>Sin mínimo</option><option>Desde $5.000</option><option>Desde $10.000</option><option>Desde $50.000</option><option>Desde $100.000+</option></select></div>
-        <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>📋 Términos:</strong> Al enviar, aceptás que verificaremos tu CUIT en AFIP. Aprobación en 24-48hs hábiles.</div>
+        <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>🛡️ Por qué te lo pedimos:</strong> confirmamos que sos un negocio real para proteger a los compradores. Aprobación en 24-48hs hábiles.</div>
       </div>
       <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button>
     </div>
