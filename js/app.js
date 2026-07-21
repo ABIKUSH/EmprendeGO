@@ -3355,22 +3355,27 @@ async function showRegSuccess() {
   };
 
   try {
+    // Dedup por email/CUIT vía RPC SECURITY DEFINER: el rol anon ya NO puede leer
+    // email/cuit/razon_social directamente (PII fuera de la API pública), así que
+    // la verificación de duplicados corre server-side sin exponer esas columnas.
+    const { data: dup } = await sb.rpc('registro_lookup', { p_email: email, p_cuit: datos.cuit || null });
+    const info = Array.isArray(dup) ? dup[0] : dup;
+
     // Verificar si ya existe por email
-    const { data: existente } = await sb.from('proveedores').select('id,estado').eq('email', email).maybeSingle();
-    if (existente) {
-      if (existente.estado === 'pendiente') {
+    if (info && info.email_estado) {
+      if (info.email_estado === 'pendiente') {
         if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
         showToast('Tu solicitud ya está siendo revisada. Te avisamos en 24-48hs por WhatsApp.');
         return;
       }
-      if (existente.estado === 'aprobado') {
+      if (info.email_estado === 'aprobado') {
         if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
         showToast('¡Ya tenés cuenta aprobada! Iniciá sesión para acceder a tu dashboard.');
         return;
       }
-      if (existente.estado === 'rechazado' || existente.estado === 'suspendido') {
+      if (info.email_estado === 'rechazado' || info.email_estado === 'suspendido') {
         if (btn) btn.textContent = 'Enviando...';
-        const { error } = await sb.from('proveedores').update({ ...datos, estado: 'pendiente', plan: 'gratis' }).eq('id', existente.id);
+        const { error } = await sb.from('proveedores').update({ ...datos, estado: 'pendiente', plan: 'gratis' }).eq('id', info.email_id);
         if (error) throw error;
         ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
         document.getElementById('reg-success').style.display = 'block';
@@ -3379,24 +3384,22 @@ async function showRegSuccess() {
       }
     }
 
-    // Verificar si ya existe por CUIT (otro email)
-    if (datos.cuit) {
-      const { data: existenteCuit } = await sb.from('proveedores').select('id,estado,email').eq('cuit', datos.cuit).maybeSingle();
-      if (existenteCuit && existenteCuit.email !== email) {
-        if (existenteCuit.estado === 'aprobado' || existenteCuit.estado === 'pendiente') {
-          if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
-          showToast('Ya existe una cuenta con ese CUIT. Iniciá sesión con el email registrado.');
-          return;
-        }
-        if (existenteCuit.estado === 'suspendido' || existenteCuit.estado === 'rechazado') {
-          if (btn) btn.textContent = 'Enviando...';
-          const { error } = await sb.from('proveedores').update({ ...datos, email, estado: 'pendiente', plan: 'gratis' }).eq('id', existenteCuit.id);
-          if (error) throw error;
-          ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
-          document.getElementById('reg-success').style.display = 'block';
-          window.scrollTo(0, 0);
-          return;
-        }
+    // Verificar si ya existe por CUIT (otro email) — la RPC solo lo devuelve si el CUIT
+    // pertenece a un email distinto al que se está registrando.
+    if (datos.cuit && info && info.cuit_estado) {
+      if (info.cuit_estado === 'aprobado' || info.cuit_estado === 'pendiente') {
+        if (btn) { btn.disabled = false; btn.textContent = 'Enviar solicitud ✓'; }
+        showToast('Ya existe una cuenta con ese CUIT. Iniciá sesión con el email registrado.');
+        return;
+      }
+      if (info.cuit_estado === 'suspendido' || info.cuit_estado === 'rechazado') {
+        if (btn) btn.textContent = 'Enviando...';
+        const { error } = await sb.from('proveedores').update({ ...datos, email, estado: 'pendiente', plan: 'gratis' }).eq('id', info.cuit_id);
+        if (error) throw error;
+        ['reg-intro', 'reg-step1', 'reg-step2', 'reg-step3'].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = 'none'; });
+        document.getElementById('reg-success').style.display = 'block';
+        window.scrollTo(0, 0);
+        return;
       }
     }
 
