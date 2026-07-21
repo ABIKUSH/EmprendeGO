@@ -66,10 +66,11 @@ function haptic(type) {
 const PROVINCIAS = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
 
 // ===== RUBROS / CATEGORÍAS =====
-const RUBROS_LISTA = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Lencería','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+const RUBROS_LISTA = ['Tecnología','Indumentaria','Calzado','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Lencería','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 const RUBROS_ICONS = {
   'Tecnología':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
   'Indumentaria':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>`,
+  'Calzado':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18v-3c0-1.2.7-2.2 1.8-2.7L7 11l3 3h5c3 0 5 1.3 6.5 3l.5.6V18a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z"/><path d="M7 11V6a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3"/></svg>`,
   'Hogar y Deco':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   'Bazar':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
   'Alimentos':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>`,
@@ -103,7 +104,9 @@ const SUBCATEGORIA_MAP = {
   'ropa de mujer': ['Indumentaria'], 'ropa de hombre': ['Indumentaria'], 'ropa de bebe': ['Indumentaria', 'Bebés y Niños'],
   'ropa de bebe y ninos': ['Indumentaria', 'Bebés y Niños'], 'ropa infantil': ['Indumentaria', 'Bebés y Niños'], 'ropa deportiva': ['Indumentaria', 'Deportes'],
   'talles especiales': ['Indumentaria'], 'accesorios de moda': ['Indumentaria', 'Marroquinería y Bolsos'], 'carteras': ['Marroquinería y Bolsos'],
-  'calzado': ['Indumentaria'], 'mochilas': ['Marroquinería y Bolsos'], 'marroquineria': ['Marroquinería y Bolsos'], 'textil': ['Textil y Telas'],
+  'calzado': ['Calzado'], 'zapatillas': ['Calzado'], 'zapatilla': ['Calzado'], 'zapatos': ['Calzado'], 'zapato': ['Calzado'],
+  'botas': ['Calzado'], 'bota': ['Calzado'], 'borcegos': ['Calzado'], 'sandalias': ['Calzado'], 'pantuflas': ['Calzado'], 'ojotas': ['Calzado'], 'botines': ['Calzado', 'Deportes'],
+  'mochilas': ['Marroquinería y Bolsos'], 'marroquineria': ['Marroquinería y Bolsos'], 'textil': ['Textil y Telas'],
   'indumentaria': ['Indumentaria'], 'vestimenta': ['Indumentaria'],
   'sabanas': ['Blanquería', 'Textil y Telas'], 'sabana': ['Blanquería', 'Textil y Telas'], 'frazada': ['Blanquería', 'Textil y Telas'], 'blanqueria': ['Blanquería'],
   'acolchado': ['Blanquería'], 'toalla': ['Blanquería', 'Textil y Telas'], 'mantel': ['Textil y Telas'], 'tela': ['Textil y Telas'],
@@ -245,11 +248,11 @@ const RUBRO_LEGACY = {
   'Accesorios de moda': 'Indumentaria', 'Muebles y decoración': 'Muebles',
   'Artículos de cocina': 'Hogar y Deco', 'Limpieza y hogar': 'Limpieza', 'Perfumería y cosméticos': 'Belleza y Salud',
   'Cuidado personal': 'Belleza y Salud', 'Suplementos y nutrición': 'Belleza y Salud', 'Tecnología y electrónica': 'Tecnología',
-  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Marroquinería y Bolsos', 'Calzado': 'Indumentaria',
+  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Marroquinería y Bolsos', 'Zapatos': 'Calzado', 'Zapatillas': 'Calzado',
   'Telas e insumos textiles': 'Textil y Telas', 'Juguetes y juegos': 'Juguetería', 'Librería y papelería': 'Librería y Papelería',
   'Alimentos y bebidas': 'Alimentos', 'Tecnologia': 'Tecnología',
   // Current rubros map to themselves
-  'Tecnología': 'Tecnología', 'Indumentaria': 'Indumentaria', 'Hogar y Deco': 'Hogar y Deco',
+  'Tecnología': 'Tecnología', 'Indumentaria': 'Indumentaria', 'Calzado': 'Calzado', 'Hogar y Deco': 'Hogar y Deco',
   'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Belleza y Salud': 'Belleza y Salud',
   'Deportes': 'Deportes', 'Automotor': 'Automotor', 'Construcción': 'Construcción',
   'Servicios': 'Servicios', 'Juguetería': 'Juguetería', 'Ferretería': 'Ferretería',
