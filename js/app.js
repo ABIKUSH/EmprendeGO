@@ -368,7 +368,7 @@ function animarContador(el, target, prefix) {
     // Easing ease-out
     const eased = 1 - Math.pow(1 - progress, 3);
     const current = Math.round(eased * target);
-    el.textContent = (prefix || '') + current;
+    el.textContent = (prefix || '') + current.toLocaleString('es-AR');
     if (progress < 1) requestAnimationFrame(update);
   }
   requestAnimationFrame(update);
