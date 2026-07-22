@@ -1408,7 +1408,10 @@ async function cargarProductosDetalle(proveedorId) {
     if (provDetalleLimite) q = q.limit(provDetalleLimite);
     const { data, error } = await q;
     if (error || !data || !data.length) {
-      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavia no cargo productos.</div>';
+      const ctaWA = provActual?.whatsapp
+        ? '<button onclick="detWA()" style="margin-top:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:12px;padding:12px 20px;font-family:\'Sora\',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">💬 Pedir catálogo por WhatsApp</button>'
+        : '';
+      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavía no cargó su catálogo acá.' + (provActual?.whatsapp ? ' Escribile por WhatsApp para pedirle el catálogo y los precios.' : '') + '<br>' + ctaWA + '</div>';
       return;
     }
     const bgsColores = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
