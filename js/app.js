@@ -2076,8 +2076,19 @@ async function checkSession(sessionOverride) {
         const { data: existingUser } = await sb.from('usuarios').select('id').eq('email', emailNorm).maybeSingle();
         await sb.from('usuarios').upsert({ email: emailNorm, nombre: name, foto_url: picture }, { onConflict: 'email' });
         if (!existingUser) notificarAdmin('usuario', { nombre: name, email: emailNorm });
+        // Aviso a Meta Pixel: mide el éxito de las campañas (costo por resultado).
+        // Bandera para no contar de más: checkSession() corre en cada carga y en onAuthStateChange.
+        try {
+          if (typeof fbq === 'function' && !window._egLoginTracked) {
+            window._egLoginTracked = true;
+            if (!existingUser) fbq('track', 'CompleteRegistration'); // usuario nuevo = conversión que paga la campaña
+            fbq('trackCustom', 'Login'); // todo inicio de sesión
+          }
+        } catch (e) {}
       } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
-      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,email,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
+      // No pedimos la columna `email` de vuelta: ya la tenemos de la sesión (`email`), y
+      // está revocada de la API pública por privacidad (PII). Filtramos por email igual.
+      const { data: provList } = await sb.from('proveedores').select('id,nombre,plan,plan_desde,plan_hasta,rubro,provincia,descripcion,whatsapp,instagram,pedido_minimo,envios,estado,logo_url,tn_store_id,ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('email', email.toLowerCase().trim());
       console.log('[checkSession] provList:', provList?.length, provList?.[0]?.estado);
       const prov = provList && provList.length > 0 ? provList[0] : null;
       if (prov && prov.estado === 'aprobado') {
