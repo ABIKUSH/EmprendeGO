@@ -239,6 +239,29 @@ function matchesQuery(p, q) {
   return false;
 }
 
+// Búsqueda de producto con expansión de conceptos. Además del match literal por
+// nombre/categoría/proveedor, si el término buscado es un tipo de producto conocido
+// (ej. "zapatillas", "botas", "sandalias" → Calzado) también trae todos los productos
+// de esa categoría aunque el nombre no contenga la palabra exacta. Mismo criterio que
+// matchesQuery (búsqueda de proveedores), para que ambas pestañas se comporten igual.
+function prodMatchesQuery(p, q) {
+  const qn = quitarAcentos((q || '').toLowerCase().trim());
+  if (!qn) return true;
+  const nombre = quitarAcentos((p.nombre || '').toLowerCase());
+  const cat = quitarAcentos((p.cat || '').toLowerCase());
+  const catP = quitarAcentos((p.catPrincipal || '').toLowerCase());
+  const prov = quitarAcentos((p.provNombre || '').toLowerCase());
+  const desc = quitarAcentos((p.descripcion || '').toLowerCase());
+  if (nombre.includes(qn) || cat.includes(qn) || catP.includes(qn) || prov.includes(qn) || desc.includes(qn)) return true;
+  const catReal = p.catPrincipal || p.cat || '';
+  for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
+    if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
+      if (rubros.some(r => matchesCat(catReal, r))) return true;
+    }
+  }
+  return false;
+}
+
 const RUBRO_LEGACY = {
   // Old rubros → new rubros
   'Moda': 'Indumentaria', 'Hogar': 'Hogar y Deco', 'Salud': 'Belleza y Salud',
@@ -3515,6 +3538,7 @@ function openTest() {
 // Burbuja flotante que invita al recomendador. Aparece 1 vez por sesión, 3s
 // después de entrar, y solo si el usuario está parado en el inicio.
 function mostrarBurbujaReco() {
+  return; // Burbuja del recomendador desactivada temporalmente.
   try { if (sessionStorage.getItem('eg_reco_bubble')) return; } catch (e) { }
   const inicio = document.getElementById('screen-inicio');
   const bubble = document.getElementById('recoBubble');
@@ -3869,7 +3893,7 @@ function renderProdBuscar(filtro, query = '') {
     if (legacyNorm.toLowerCase() === filtro.toLowerCase()) return true;
     return false;
   });
-  if (q) lista = lista.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.cat || '').toLowerCase().includes(q) || (p.provNombre || '').toLowerCase().includes(q));
+  if (q) lista = lista.filter(p => prodMatchesQuery(p, q));
   if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
   // Loguear la búsqueda de productos (incluye las de 0 resultados = demanda a reclutar)
   if (q) trackSearch(q, lista.length);
