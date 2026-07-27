@@ -807,7 +807,7 @@ async function initNotificaciones() {
   try {
     const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const { data: nuevos } = await sb.from('proveedores')
-      .select('id, nombre, rubro, created_at')
+      .select('id, nombre, rubro, logo_url, created_at')
       .eq('estado', 'aprobado')
       .gte('created_at', hace30dias)
       .order('created_at', { ascending: false })
@@ -818,18 +818,20 @@ async function initNotificaciones() {
     (nuevos || []).forEach(p => {
       const dias = Math.floor((Date.now() - new Date(p.created_at)) / 86400000);
       const tiempo = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
+      const ini = (p.nombre || '').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase();
       notificaciones.push({
         id: 'prov-' + p.id,
-        tipo: 'new', icon: '🆕',
-        titulo: 'Nuevo: ' + p.nombre,
-        texto: (p.rubro || 'Proveedor') + ' verificado se sumó a EmprendeGo.',
+        tipo: 'new',
+        logo: p.logo_url || '', ini,
+        titulo: p.nombre,
+        texto: 'Se sumó a EmprendeGo · ' + (p.rubro || 'Proveedor'),
         tiempo,
         provId: String(p.id)
       });
     });
 
     if (!notificaciones.length) {
-      notificaciones.push({ id: 'n-empty', tipo: 'tip', icon: '🔔', titulo: 'Sin novedades', texto: 'Cuando haya nuevos proveedores te avisamos acá.', tiempo: '' });
+      notificaciones.push({ id: 'n-empty', tipo: 'tip', logo: '', ini: '', titulo: 'Sin novedades', texto: 'Cuando se sume un proveedor nuevo, te avisamos acá.', tiempo: '' });
     }
   } catch (e) {
     notificaciones = [];
@@ -846,9 +848,9 @@ function renderNotifPanel() {
   if (!el) return;
   el.innerHTML = notificaciones.map(n => `
     <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
-      <div class="notif-icon ${n.tipo}">${n.icon}</div>
+      <div class="notif-icon ${n.tipo}"><span class="ni-mono">${escHtml(n.ini || '')}</span>${n.logo ? `<img class="ni-img" src="${escHtml(imgThumb(n.logo, 96, 72))}" alt="" onerror="this.remove()">` : ''}</div>
       <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
-      <div class="notif-time">${n.tiempo}</div>
+      <div class="notif-time">${escHtml(n.tiempo)}</div>
     </div>`).join('');
 }
 function onNotifClick(id, provId) {
@@ -5592,6 +5594,39 @@ async function cargarHeroStats() {
   }
 }
 
+// ===== HERO: logos de proveedores rotando en los círculos =====
+async function cargarHeroLogos() {
+  const slots = [0, 1, 2].map(i => document.getElementById('hero-logo-' + i));
+  if (slots.some(s => !s)) return;
+  let pool = [];
+  try {
+    const { data } = await sb.from('proveedores')
+      .select('logo_url')
+      .eq('estado', 'aprobado')
+      .not('logo_url', 'is', null)
+      .neq('logo_url', '')
+      .limit(48);
+    pool = (data || []).map(p => p.logo_url).filter(Boolean);
+  } catch (e) { return; }
+  if (pool.length < 3) return;
+  // barajar el pool para que no siempre arranque igual
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  function setLogo(slot, url) {
+    slot.style.opacity = '0';
+    setTimeout(() => {
+      slot.innerHTML = `<img src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
+      slot.style.opacity = '1';
+    }, 200);
+  }
+  slots.forEach((s, i) => setLogo(s, pool[i]));
+  // rota un círculo por vez para un efecto escalonado
+  let idx = 3, turn = 0;
+  setInterval(() => {
+    setLogo(slots[turn % 3], pool[idx % pool.length]);
+    idx++; turn++;
+  }, 2200);
+}
+
 // ===== ONBOARDING =====
 let obSlide = 0;
 const OB_SLIDES = 3;
@@ -5807,6 +5842,7 @@ sb.auth.onAuthStateChange((event, session) => {
   }
 });
 cargarHeroStats();
+cargarHeroLogos();
 renderRecienLlegados();
 cargarProductosReales();
 setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);

@@ -79,7 +79,7 @@ src="https://www.facebook.com/tr?id=1032515699633074&ev=PageView&noscript=1"
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css?v=20260713-nov7">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -305,42 +305,38 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 
   <!-- HERO CON GRADIENTE -->
-  <div style="position:relative;background:linear-gradient(150deg,#033D2E 0%,#065F46 50%,#047857 100%);overflow:hidden">
-    <!-- Patrón de puntos -->
-    <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.07;pointer-events:none;z-index:0" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" x="0" y="0" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.8" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>
-    <!-- Decoración: círculos de fondo -->
-    <div style="position:absolute;top:-80px;right:-80px;width:280px;height:280px;border-radius:50%;background:rgba(255,255,255,.06);pointer-events:none;z-index:0"></div>
-    <div style="position:absolute;top:60px;right:30px;width:120px;height:120px;border-radius:50%;background:rgba(245,158,11,.1);pointer-events:none;z-index:0"></div>
-    <div style="position:absolute;bottom:40px;left:-60px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05);pointer-events:none;z-index:0"></div>
-    <div style="position:relative;z-index:1;padding:28px 22px 22px">
+  <div style="position:relative;background:radial-gradient(120% 78% at 84% 4%,rgba(224,123,46,.20),transparent 46%),linear-gradient(168deg,#0a5c3c 0%,#074a30 58%,#053521 100%);overflow:hidden;border-radius:0 0 28px 28px;box-shadow:0 20px 44px -30px rgba(3,40,26,.6)">
+    <div style="position:relative;z-index:1;padding:24px 22px 20px">
       <!-- Greeting personalizado -->
       <div id="hero-greeting" style="display:none;font-size:.8rem;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:14px;letter-spacing:.01em"></div>
-      <!-- Badge verificado -->
-      <div style="display:flex;justify-content:center;margin-bottom:20px">
-        <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);color:white;font-size:.71rem;font-weight:700;padding:5px 13px;border-radius:20px;letter-spacing:.04em">
-          <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;animation:pulse 1.5s infinite;flex-shrink:0"></span>
-          PROVEEDORES VERIFICADOS · ARGENTINA
+      <!-- Prueba social: caras + verificación -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+        <div style="display:flex;flex-shrink:0">
+          <span id="hero-logo-0" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;margin-right:-9px;overflow:hidden;display:block;background:linear-gradient(140deg,#cdd6ce,#8fa89a);transition:opacity .35s"></span>
+          <span id="hero-logo-1" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;margin-right:-9px;overflow:hidden;display:block;background:linear-gradient(140deg,#d8cbb8,#b09a7d);transition:opacity .35s"></span>
+          <span id="hero-logo-2" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;overflow:hidden;display:block;background:linear-gradient(140deg,#b7c6d1,#8098a8);transition:opacity .35s"></span>
         </div>
+        <span style="color:rgba(255,255,255,.85);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;line-height:1.3">Proveedores verificados en toda Argentina</span>
       </div>
       <!-- Título grande con palabra destacada -->
-      <h1 style="font-family:'Outfit',sans-serif;font-size:clamp(3rem,9vw,3.8rem);font-weight:600;line-height:1.05;color:#fff;margin-bottom:24px;text-align:center;letter-spacing:-0.01em;text-shadow:0 2px 20px rgba(0,0,0,.15)">
-        Encontrá el<br><span style="color:#A7F3D0;font-weight:700;text-decoration:underline;text-decoration-color:#A7F3D0;text-underline-offset:5px">proveedor</span><br>que tu negocio<br>necesita.
+      <h1 style="font-family:'Inter','DM Sans',sans-serif;font-size:clamp(2.7rem,9vw,3.5rem);font-weight:800;line-height:1.02;color:#fff;margin-bottom:22px;letter-spacing:-0.035em;text-wrap:balance">
+        Encontrá el <span style="color:#f6b877">proveedor</span> que tu negocio necesita.
       </h1>
       <!-- Barra de búsqueda -->
-      <div class="hero-searchbar" style="display:flex;background:white;border-radius:14px;align-items:center;margin-bottom:12px;box-shadow:0 10px 28px -10px rgba(0,0,0,.4);overflow:hidden">
-        <div style="padding:0 10px 0 14px;display:flex;align-items:center;flex-shrink:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <input type="text" id="hero-search-input" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:14px 0;font-family:'DM Sans',sans-serif;font-size:.9rem;color:#333;background:transparent;min-width:0" onkeydown="if(event.key==='Enter') heroSearch(this.value)">
-        <button onclick="heroSearch(document.getElementById('hero-search-input').value)" style="background:#065F46;color:white;padding:14px 22px;font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none;align-self:stretch">Buscar</button>
+      <div class="hero-searchbar" style="display:flex;align-items:center;background:white;border-radius:14px;padding:5px 5px 5px 14px;margin-bottom:11px;box-shadow:0 12px 30px -14px rgba(3,40,26,.7)">
+        <div style="display:flex;align-items:center;flex-shrink:0;margin-right:9px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+        <input type="text" id="hero-search-input" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:11px 0;font-family:'DM Sans',sans-serif;font-size:.88rem;color:#16201b;background:transparent;min-width:0" onkeydown="if(event.key==='Enter') heroSearch(this.value)">
+        <button onclick="heroSearch(document.getElementById('hero-search-input').value)" style="background:#0b6b45;color:white;padding:11px 17px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none">Buscar</button>
       </div>
       <!-- Publicar negocio button -->
-      <button onclick="goTo('landing-prov')" style="background:rgba(255,255,255,.12);color:white;border:1.5px solid rgba(255,255,255,.3);border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;width:100%;letter-spacing:.01em;backdrop-filter:blur(6px)">→ Publicar mi negocio gratis</button>
+      <button onclick="goTo('landing-prov')" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:rgba(255,255,255,.06);color:white;border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Publicar mi negocio · gratis</button>
     </div>
 
     <!-- Social proof carrusel -->
     <div style="position:relative;z-index:1;margin:18px 18px 20px">
       <div id="testimonios-wrap" style="position:relative;min-height:70px">
         <div class="testim-slide" style="background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#006039,#4ade80);display:flex;align-items:center;justify-content:center;color:white;font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;flex-shrink:0">SR</div>
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#cdd6ce,#93a89a);display:flex;align-items:center;justify-content:center;color:#0a3a28;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">SR</div>
           <div style="flex:1;min-width:0">
             <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Buscaba telas por mayor hacía meses. Acá di con un proveedor de Once en una tarde."</div>
             <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Sofía R. · Local de indumentaria, La Plata</div>
@@ -348,7 +344,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div style="color:#F59E0B;font-size:.75rem;flex-shrink:0">★★★★★</div>
         </div>
         <div class="testim-slide" style="display:none;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#FF6B00,#ffb347);display:flex;align-items:center;justify-content:center;color:white;font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;flex-shrink:0">PV</div>
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#d8cbb8,#b09a7d);display:flex;align-items:center;justify-content:center;color:#4a3a22;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">PV</div>
           <div style="flex:1;min-width:0">
             <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Abrí mi local de blanquería y surtí todo desde acá. Sábanas y toallones a precio mayorista de verdad."</div>
             <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Paula V. · Blanquería, Mar del Plata</div>
@@ -356,7 +352,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div style="color:#F59E0B;font-size:.75rem;flex-shrink:0">★★★★★</div>
         </div>
         <div class="testim-slide" style="display:none;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#FF6B00,#ffb347);display:flex;align-items:center;justify-content:center;color:white;font-family:'Sora',sans-serif;font-weight:900;font-size:.8rem;flex-shrink:0">RT</div>
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#b7c6d1,#8098a8);display:flex;align-items:center;justify-content:center;color:#22323f;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">RT</div>
           <div style="flex:1;min-width:0">
             <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Verifican en serio. Dejé de perder tiempo con vendedores truchos de los grupos de Facebook."</div>
             <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Romina T. · Distribuidora de cosmética, Santa Fe</div>
@@ -372,29 +368,25 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
     </div>
 
-    <!-- Stats flotantes -->
-    <div class="reveal" style="position:relative;z-index:1;margin:0 16px 0;background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:14px;padding:14px 8px;display:flex;box-shadow:0 4px 24px rgba(0,0,0,.18)">
+    <!-- Stats en línea sobre el verde -->
+    <div class="reveal" style="position:relative;z-index:1;display:flex;gap:6px;margin:6px 22px 26px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14)">
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-provs" class="stat-loading" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#1A1A1A">…</div>
-        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Proveedores</div>
+        <div id="hero-stat-provs" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
+        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Proveedores</div>
       </div>
-      <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-prods" class="stat-loading" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#1A1A1A">…</div>
-        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Productos</div>
+        <div id="hero-stat-prods" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
+        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Productos</div>
       </div>
-      <div style="width:1px;background:#eee"></div>
       <div style="flex:1;text-align:center">
-        <div id="hero-stat-rubros" class="stat-loading" style="font-family:'Sora',sans-serif;font-size:1.25rem;font-weight:900;color:#006039">…</div>
-        <div style="font-size:.63rem;color:#999;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Rubros</div>
+        <div id="hero-stat-rubros" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
+        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Rubros</div>
       </div>
     </div>
-    <!-- Curva decorativa de cierre del hero -->
-    <svg style="display:block;margin-top:20px" viewBox="0 0 430 32" preserveAspectRatio="none" height="32" width="100%"><path d="M0,0 Q215,32 430,0 L430,32 L0,32 Z" fill="#F8F8F8"/></svg>
   </div>
 
-  <!-- CÓMO FUNCIONA (movido arriba) -->
-  <div class="reveal" style="padding:26px 20px 0">
+  <!-- CÓMO FUNCIONA (oculta temporalmente para probar el nuevo layout) -->
+  <div class="reveal" style="padding:26px 20px 0;display:none">
     <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
     <div style="font-size:.8rem;color:#999;margin-bottom:16px">Tres pasos para encontrar tu proveedor ideal</div>
     <div style="display:flex;gap:0;position:relative">
@@ -417,8 +409,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
   </div>
 
-  <!-- CATEGORÍAS CON IMÁGENES -->
-  <div class="reveal" style="padding:26px 20px 0">
+  <!-- CATEGORÍAS CON IMÁGENES (oculta temporalmente para probar el nuevo layout) -->
+  <div class="reveal" style="padding:26px 20px 0;display:none">
     <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">Explorá por categoría</div>
     <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
       <div onclick="filterCat('Indumentaria')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
@@ -2038,7 +2030,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div id="notifPanelBg" class="notif-overlay-bg" style="display:none" onclick="closeNotifPanel()"></div>
 <div id="notifPanel" class="notif-panel" style="display:none">
   <div class="notif-panel-header">
-    <div class="notif-panel-title">🔔 Notificaciones</div>
+    <div class="notif-panel-title">Notificaciones</div>
     <div style="display:flex;gap:8px;align-items:center">
       <button onclick="limpiarNotificaciones()" style="background:none;border:1px solid #dfe8e3;font-size:.75rem;color:var(--gray);cursor:pointer;font-family:inherit;font-weight:600;padding:4px 8px;border-radius:6px">Limpiar todo</button>
       <button class="notif-close-btn" onclick="closeNotifPanel()">✕</button>

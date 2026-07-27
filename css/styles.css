@@ -46,6 +46,12 @@ body, body *{
 .topbar{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #eef0f8;position:sticky;top:0;z-index:100}
 .topbar-logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.22rem;color:#006039;letter-spacing:-.01em}
 .topbar-btn{background:#006039;color:white;border:none;border-radius:10px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer}
+/* Topbar integrado al verde del hero — solo en la pantalla de inicio */
+#screen-inicio .topbar{background:#0a5c3c;border-bottom:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;position:static}
+#screen-inicio .topbar-logo{color:#fff}
+#screen-inicio .hamburger-btn{color:#fff}
+#screen-inicio .notif-bell{background:rgba(255,255,255,.16);color:#fff}
+#screen-inicio .topbar-btn{background:#fff;color:#0a5c3c}
 .topbar-right{display:flex;align-items:center;gap:10px}
 /* Burbuja flotante del recomendador: "sale" del logo del home, aparece a los 3s */
 #recoBubble{position:absolute;top:100%;left:14px;margin-top:8px;z-index:120;display:none;max-width:236px;background:#fff;color:#0F172A;border:1px solid #DCE8E2;border-radius:14px;padding:11px 30px 11px 13px;box-shadow:0 12px 34px rgba(0,0,0,.22);cursor:pointer;transform:translateY(-8px) scale(.96);opacity:0;transition:opacity .25s ease,transform .25s ease}
@@ -488,13 +494,15 @@ body, body *{
 .notif-panel-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);position:sticky;top:0;background:white;z-index:1}
 .notif-panel-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:800}
 .notif-close-btn{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--gray)}
-.notif-item{padding:14px 20px;border-bottom:1px solid #f4f7ff;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .15s}
-.notif-item:hover{background:#f8f9ff}
-.notif-item.unread{background:#f0f5ff}
-.notif-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0}
-.notif-icon.new{background:var(--green-light)}
-.notif-icon.promo{background:var(--orange-light)}
-.notif-icon.tip{background:var(--blue-light)}
+.notif-item{padding:14px 20px;border-bottom:1px solid #eef1ef;display:flex;gap:12px;align-items:flex-start;cursor:pointer;transition:background .15s}
+.notif-item:hover{background:#f4f9f6}
+.notif-item.unread{background:#eef6f1}
+.notif-icon{position:relative;overflow:hidden;width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:#e7f2ec}
+.notif-icon .ni-mono{font-family:'Inter',sans-serif;font-weight:800;font-size:.8rem;color:#0a5c3c}
+.notif-icon .ni-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#fff}
+.notif-icon.new{background:#e7f2ec}
+.notif-icon.promo{background:#e7f2ec}
+.notif-icon.tip{background:#eef3f0}
 .notif-text{flex:1}
 .notif-text strong{font-size:.85rem;font-weight:700;display:block;margin-bottom:2px}
 .notif-text span{font-size:.78rem;color:var(--gray);line-height:1.4}
