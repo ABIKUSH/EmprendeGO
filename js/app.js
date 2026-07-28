@@ -1413,7 +1413,9 @@ function registrarConsulta(id) {
     const k = `eg_consulta_${id}`, t = parseInt(localStorage.getItem(k) || '0');
     if (Date.now() - t < 86400000) return;
     localStorage.setItem(k, Date.now());
-    sb.rpc('increment_consultas', { proveedor_id: id }).then(() => {}).catch(() => {});
+    // registrar_consulta: inserta una fila con fecha en public.consultas (para reportes/tendencia
+    // "este mes") Y mantiene el contador acumulado proveedores.consultas. Reemplaza a increment_consultas.
+    sb.rpc('registrar_consulta', { proveedor_id: id }).then(() => {}).catch(() => {});
   } catch (e) { }
 }
 
@@ -2299,6 +2301,19 @@ function updatePerfilUI() {
       img.src = currentUser.picture; img.style.display = 'block';
       document.getElementById('user-avatar-placeholder').style.display = 'none';
     }
+    try {
+      const favCard = document.getElementById('perfil-favs-card');
+      const favLabel = document.getElementById('perfil-favs-label');
+      const n = Array.isArray(favs) ? favs.length : 0;
+      if (favCard && favLabel) {
+        if (n > 0) {
+          favLabel.textContent = n + (n === 1 ? ' proveedor guardado' : ' proveedores guardados');
+          favCard.style.display = 'flex';
+        } else {
+          favCard.style.display = 'none';
+        }
+      }
+    } catch (e) { }
     cargarAvatarUsuario();
     cargarHistorial();
   }

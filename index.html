@@ -1415,6 +1415,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <span class="perfil-type-badge explorer" style="background:rgba(0,196,140,.2);color:#00c48c">✓ Verificado por Google</span>
       </div>
     </div>
+    <div id="perfil-favs-card" onclick="goTo('favoritos')" style="display:none;margin:0 16px 14px;background:white;border:1px solid #E8F2EE;border-radius:16px;padding:15px 16px;align-items:center;gap:13px;cursor:pointer">
+      <span style="width:40px;height:40px;border-radius:12px;background:#e7f2ec;display:grid;place-items:center;color:#0b6b45;flex-shrink:0"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg></span>
+      <div style="flex:1;min-width:0">
+        <div id="perfil-favs-label" style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;color:#16201b">0 proveedores guardados</div>
+        <div style="font-size:.72rem;color:#5f6f66;margin-top:2px">Tus favoritos, listos para contactar</div>
+      </div>
+      <span style="color:#9aa79d;flex-shrink:0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+    </div>
     <div class="historial-section">
       <h3>Proveedores que exploraste</h3>
       <div class="hist-list" id="historialList"><div class="empty-state"><div class="ei"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><p>Todavía no exploraste proveedores.<br>¡Empezá a buscar!</p></div></div>
@@ -2266,7 +2274,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260727-pixel"></script>
+<script src="js/app.js?v=20260728-paneles"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.
