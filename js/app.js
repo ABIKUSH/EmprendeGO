@@ -2375,6 +2375,64 @@ function showModalPro(feature) {
 }
 
 // ===== STATS DASHBOARD =====
+// Registra un snapshot diario (localStorage) de consultas/visitas y dibuja la
+// mini-tendencia de "Consultas por WhatsApp". Dato real, por dispositivo: la línea
+// se completa a medida que el proveedor entra al panel en días distintos.
+function renderConsultasTrend(provId, consultas, visitas) {
+  try {
+    if (!provId) return;
+    const key = 'eg_metricas_' + provId;
+    const hoy = new Date().toISOString().slice(0, 10);
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { hist = []; }
+    if (!Array.isArray(hist)) hist = [];
+    hist = hist.filter(h => h && h.f !== hoy);
+    hist.push({ f: hoy, c: consultas, v: visitas });
+    hist.sort((a, b) => (a.f < b.f ? -1 : 1));
+    hist = hist.slice(-30);
+    try { localStorage.setItem(key, JSON.stringify(hist)); } catch (e) { }
+
+    const spark = document.getElementById('consultas-spark');
+    const deltaEl = document.getElementById('consultas-delta');
+    if (hist.length < 2) {
+      if (spark) spark.style.display = 'none';
+      if (deltaEl) deltaEl.style.display = 'none';
+      return;
+    }
+
+    // Delta contra ~7 días atrás (o el primer snapshot disponible)
+    const ultimo = hist[hist.length - 1].c;
+    const hace7 = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const base = hist.find(h => h.f >= hace7) || hist[0];
+    const delta = ultimo - base.c;
+    if (deltaEl) {
+      if (delta > 0) {
+        deltaEl.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>+' + delta + ' esta semana';
+        deltaEl.style.display = 'inline-flex';
+      } else {
+        deltaEl.style.display = 'none';
+      }
+    }
+
+    // Sparkline de consultas acumuladas
+    if (spark) {
+      const vals = hist.map(h => h.c);
+      const min = Math.min.apply(null, vals);
+      const max = Math.max.apply(null, vals);
+      const W = 96, H = 40, pad = 4;
+      const range = (max - min) || 1;
+      const pts = vals.map(function (v, i) {
+        const x = pad + (i / (vals.length - 1)) * (W - 2 * pad);
+        const y = H - pad - ((v - min) / range) * (H - 2 * pad);
+        return x.toFixed(1) + ',' + y.toFixed(1);
+      });
+      const last = pts[pts.length - 1].split(',');
+      spark.innerHTML = '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#7fe0ac" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + last[0] + '" cy="' + last[1] + '" r="3" fill="#7fe0ac"/>';
+      spark.style.display = 'block';
+    }
+  } catch (e) { }
+}
+
 async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
   const esPro = esProvPro();
@@ -2384,6 +2442,7 @@ async function cargarStatsDashboard() {
       // Consultas por WhatsApp: visible siempre (free y Pro) — es la prueba de valor.
       const elC = document.getElementById('stat-consultas');
       if (elC) elC.textContent = prov.consultas || 0;
+      renderConsultasTrend(currentUser.proveedorId, prov.consultas || 0, prov.visitas || 0);
 
       // ===== MOMENTO MÁGICO: consultas nuevas desde la última visita (solo free) =====
       // Compara el total actual contra el guardado la última vez que entró.

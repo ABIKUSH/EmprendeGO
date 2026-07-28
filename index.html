@@ -1493,12 +1493,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <div id="dash-consulta-banner" style="display:none"></div>
 
       <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
-      <div style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
-        <div style="min-width:0">
+      <div style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="min-width:0;flex:1">
           <div style="font-family:'Inter',sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.92)">Consultas por WhatsApp</div>
-          <div style="font-size:.7rem;color:rgba(255,255,255,.78);margin-top:2px">Compradores que te tocaron "Contactar"</div>
+          <div id="stat-consultas" style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:white;line-height:1;margin-top:6px">0</div>
+          <div id="consultas-delta" style="display:none;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#7fe0ac;margin-top:6px"></div>
         </div>
-        <div id="stat-consultas" style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:white;flex-shrink:0;margin-left:12px">0</div>
+        <svg id="consultas-spark" width="96" height="40" viewBox="0 0 96 40" fill="none" style="display:none;flex-shrink:0"></svg>
       </div>
 
       <!-- ===== STATS REALES ===== -->
