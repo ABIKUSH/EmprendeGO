@@ -2275,10 +2275,10 @@ function updatePerfilUI() {
       const planHasta = pd2.plan_hasta ? new Date(pd2.plan_hasta + 'T03:00:00Z') : null;
       const vence = document.getElementById('dash-pro-vence');
       if (pd2.plan === 'pro' && planHasta && planHasta > new Date()) {
-        badge.textContent = '⭐ PRO';
+        badge.textContent = 'PRO';
         badge.style.display = 'inline-flex';
         if (vence) {
-          vence.textContent = '⭐ Plan Pro activo hasta el ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
+          vence.textContent = 'Plan Pro activo hasta el ' + planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' });
           vence.style.display = 'block';
         }
         const diasRestantes = Math.ceil((planHasta - new Date()) / 86400000);
@@ -2494,19 +2494,26 @@ async function cargarRankingRubro() {
     if (puesto < 1 || total < 2) { card.style.display = 'none'; return; } // sin competencia no hay pitch
     card.style.display = 'block';
     if (esProvPro()) {
-      card.innerHTML = `<div style="text-align:center;padding:4px 0">
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">⭐ Destacado en ${escHtml(miRubro)}</div>
-        <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.85rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
-        <div style="font-size:.74rem;color:#16A34A;margin-top:6px;font-weight:700">Aparecés por encima de los proveedores gratis de tu rubro 🚀</div>
+      card.innerHTML = `<div style="display:flex;align-items:center;gap:13px;background:#fdf6e6;border:1.5px solid #ecd9a8;border-radius:16px;padding:14px 15px">
+        <span style="width:46px;height:46px;border-radius:13px;background:rgba(200,150,46,.16);display:grid;place-items:center;flex-shrink:0">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8962e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg>
+        </span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'Sora',sans-serif;font-size:1.7rem;font-weight:900;color:#b07d17;line-height:1;letter-spacing:-.02em">#${puesto}</span><span style="font-size:.72rem;color:#9a8544;font-weight:700">de ${total} en ${escHtml(miRubro)}</span></div>
+          <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-top:4px">Tu puesto en el rubro</div>
+          <div style="font-size:.7rem;color:#8a7734;margin-top:2px;line-height:1.4">Aparecés por encima de los proveedores del plan gratis</div>
+        </div>
       </div>`;
     } else {
-      card.innerHTML = `<div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">📊 Tu posición en ${escHtml(miRubro)}</div>
+      card.innerHTML = `<div style="background:white;border:1.5px solid #E8F2EE;border-radius:14px;padding:16px">
+        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Tu posición en ${escHtml(miRubro)}</div>
         <div style="text-align:center;padding:2px 0 12px">
           <div style="font-size:.72rem;color:#6B7A99;margin-bottom:2px">Estás en el puesto</div>
           <div style="font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.9rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
           <div style="font-size:.74rem;color:#6B7A99;margin-top:8px;line-height:1.5">Los proveedores <b>Pro</b> aparecen en el <b>top 3</b> de cada rubro y reciben más consultas.</div>
         </div>
-        <button onclick="showModalPro('Aparecer primero en tu rubro')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer">Subir al top 3 con Pro →</button>`;
+        <button onclick="showModalPro('Aparecer primero en tu rubro')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer">Subir al top 3 con Pro</button>
+      </div>`;
     }
   } catch (e) { card.style.display = 'none'; }
 }
@@ -5924,9 +5931,9 @@ async function renderTiendaNubeSection() {
   // Si no es Pro, mostrar botón bloqueado
   if (!esProvPro()) {
     const card = document.getElementById('tn-card');
-    if (card) card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+    if (card) card.style.background = '#3f4854';
     statusLabel.textContent = 'Disponible en Plan Pro';
-    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar Tienda Nube · Solo Pro</button>`;
+    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Tienda Nube · Solo Pro</button>`;
     return;
   }
 
@@ -5941,12 +5948,12 @@ async function renderTiendaNubeSection() {
   if (tnStoreId) {
     statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
     statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#065F46,#059669)';
+    if (card) card.style.background = '#0a5c3c';
     btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:white;color:#059669;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
     statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
     statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = 'linear-gradient(135deg,#1E40AF,#1B74E4)';
+    if (card) card.style.background = '#1c5aa0';
     btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:white;color:#1B74E4;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B74E4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
   }
 }
@@ -6047,11 +6054,11 @@ async function renderMercadoLibreSection() {
 
   // Si no es Pro -> tarjeta gris bloqueada
   if (!esProvPro()) {
-    card.style.background = 'linear-gradient(135deg,#374151,#4B5563)';
+    card.style.background = '#3f4854';
     statusLabel.textContent = 'Disponible en Plan Pro';
     statusLabel.style.color = 'rgba(255,255,255,.75)';
     if (titulo) titulo.style.color = 'white';
-    btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">🔒 Conectar Mercado Libre · Solo Pro</button>`;
+    btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Mercado Libre · Solo Pro</button>`;
     return;
   }
 
@@ -6071,12 +6078,12 @@ async function renderMercadoLibreSection() {
   if (titulo) titulo.style.color = '#1a1a1a';
 
   if (conectado) {
-    card.style.background = 'linear-gradient(135deg,#F5C200,#E8A800)';
+    card.style.background = '#eab308';
     statusLabel.textContent = data.ml_nickname ? `Conectada · @${data.ml_nickname}` : 'Conectada';
     statusLabel.style.color = 'rgba(0,0,0,.7)';
     btnArea.innerHTML = `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
-    card.style.background = 'linear-gradient(135deg,#FFE600,#F5C200)';
+    card.style.background = '#ecc233';
     statusLabel.textContent = 'Importá tus publicaciones automáticamente';
     statusLabel.style.color = 'rgba(0,0,0,.6)';
     btnArea.innerHTML = `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`;
