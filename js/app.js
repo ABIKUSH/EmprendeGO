@@ -315,6 +315,18 @@ function renderRubrosPicker(containerId, preselected = []) {
     <div style="font-size:.75rem;color:#888" id="${containerId}-counter">${normPre.length}/${MAX_RUBROS} seleccionados</div>`;
 }
 
+// Puebla los <select> de categoría de producto (carga y edición) desde RUBROS_LISTA
+// para que nunca se desincronicen de las categorías del buscador.
+function poblarSelectsCategoria() {
+  const opciones = RUBROS_LISTA.map(r => `<option>${r}</option>`).join('');
+  ['new-prod-cat-principal', 'edit-prod-cat-principal'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = `<option value="">Seleccioná categoría...</option>${opciones}`;
+  });
+}
+document.addEventListener('DOMContentLoaded', poblarSelectsCategoria);
+
 function toggleRubroChip(btn, containerId) {
   const el = document.getElementById(containerId);
   const r = btn.dataset.rubro;
