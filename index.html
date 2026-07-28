@@ -125,10 +125,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div id="splash" style="position:fixed;inset:0;background:linear-gradient(160deg,#004D2E 0%,#006039 60%,#00A651 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .5s ease,transform .5s ease">
   <div style="display:flex;flex-direction:column;align-items:center;gap:18px">
     <div style="width:88px;height:88px;background:white;border-radius:24px;display:flex;align-items:center;justify-content:center;box-shadow:0 8px 32px rgba(0,0,0,.18);animation:splashLogo .6s cubic-bezier(.34,1.56,.64,1) both">
-      <span style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:#006039">EG</span>
+      <span style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:#006039">EG</span>
     </div>
     <div style="animation:splashText .5s .2s ease both;opacity:0">
-      <div style="font-family:'Sora',sans-serif;font-size:1.7rem;font-weight:900;color:white;letter-spacing:-.02em;text-align:center">EmprendeGO</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.7rem;font-weight:900;color:white;letter-spacing:-.02em;text-align:center">EmprendeGO</div>
       <div style="font-size:.82rem;color:rgba(255,255,255,.65);text-align:center;margin-top:4px">Marketplace B2B de Argentina</div>
     </div>
   </div>
@@ -243,9 +243,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
     <div class="modal-body">
       <div id="carrito-prov-info" style="display:flex;align-items:center;gap:10px;background:var(--blue-light);border-radius:12px;padding:10px 12px;margin-bottom:14px">
-        <div id="carrito-prov-avatar" style="width:36px;height:36px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:900;font-size:.85rem;color:white;flex-shrink:0">EG</div>
+        <div id="carrito-prov-avatar" style="width:36px;height:36px;border-radius:9px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-weight:900;font-size:.85rem;color:white;flex-shrink:0">EG</div>
         <div>
-          <div id="carrito-prov-name" style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy)">Proveedor</div>
+          <div id="carrito-prov-name" style="font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:var(--navy)">Proveedor</div>
           <div style="font-size:.72rem;color:var(--gray)">Tu pedido va directo a este proveedor</div>
         </div>
       </div>
@@ -255,12 +255,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div class="carrito-total-row"><span>Unidades</span><span id="carrito-unidades">0</span></div>
         <div style="border-top:1px solid #a7f3d0;margin:8px 0"></div>
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800">Total estimado</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800">Total estimado</span>
           <span class="carrito-total-val" id="carrito-total">$0</span>
         </div>
       </div>
       <div id="carrito-actions"></div>
-      <button onclick="limpiarCarrito()" style="width:100%;background:none;border:1.5px solid #fee2e2;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#ef4444;cursor:pointer;margin-top:8px">🗑 Vaciar pedido</button>
+      <button onclick="limpiarCarrito()" style="width:100%;background:none;border:1.5px solid #fee2e2;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#ef4444;cursor:pointer;margin-top:8px">🗑 Vaciar pedido</button>
     </div>
   </div>
 </div>
@@ -280,7 +280,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <label>Tu WhatsApp</label>
         <input type="tel" id="invitado-wa-input" placeholder="Ej: 11 2345 6789" autocomplete="tel" inputmode="tel">
       </div>
-      <button onclick="confirmarDatosInvitado()" style="width:100%;background:var(--green,#006039);border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white;cursor:pointer">Continuar con el pedido →</button>
+      <button onclick="confirmarDatosInvitado()" style="width:100%;background:var(--green,#006039);border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:white;cursor:pointer">Continuar con el pedido →</button>
     </div>
   </div>
 </div>
@@ -387,23 +387,23 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
   <!-- CÓMO FUNCIONA (oculta temporalmente para probar el nuevo layout) -->
   <div class="reveal" style="padding:26px 20px 0;display:none">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
+    <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
     <div style="font-size:.8rem;color:#999;margin-bottom:16px">Tres pasos para encontrar tu proveedor ideal</div>
     <div style="display:flex;gap:0;position:relative">
       <div style="position:absolute;top:20px;left:20px;right:20px;height:2px;background:linear-gradient(90deg,#006039,#4ade80);z-index:0"></div>
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
         <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Buscá</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Buscá</div>
         <div style="font-size:.71rem;color:#999;line-height:1.4">Por rubro o provincia</div>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
         <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Contactá</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Contactá</div>
         <div style="font-size:.71rem;color:#999;line-height:1.4">Directo por WhatsApp</div>
       </div>
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;position:relative;z-index:1">
         <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,96,57,.3)"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
-        <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Hacé crecer</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Hacé crecer</div>
         <div style="font-size:.71rem;color:#999;line-height:1.4">Tu negocio</div>
       </div>
     </div>
@@ -411,48 +411,48 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
   <!-- CATEGORÍAS CON IMÁGENES (oculta temporalmente para probar el nuevo layout) -->
   <div class="reveal" style="padding:26px 20px 0;display:none">
-    <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">Explorá por categoría</div>
+    <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:14px">Explorá por categoría</div>
     <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
       <div onclick="filterCat('Indumentaria')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Indumentaria</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Indumentaria</span>
         </div>
       </div>
       <div onclick="filterCat('Hogar y Deco')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Hogar y Deco</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Hogar y Deco</span>
         </div>
       </div>
       <div onclick="filterCat('Belleza y Salud')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Belleza y Salud</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Belleza y Salud</span>
         </div>
       </div>
       <div onclick="filterCat('Tecnología')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1468495244123-6c6c332eeece?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Tecnología</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Tecnología</span>
         </div>
       </div>
       <div onclick="filterCat('Bebés y Niños')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Bebés y Niños</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Bebés y Niños</span>
         </div>
       </div>
       <div onclick="filterCat('Juguetería')" style="min-width:110px;height:130px;border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.12)">
         <img src="https://images.unsplash.com/photo-1545558014-8692077e9b5c?w=300&q=70" style="width:100%;height:100%;object-fit:cover">
         <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,.72) 40%,rgba(0,0,0,.1) 100%)"></div>
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 12px">
-          <span style="color:white;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800">Juguetería</span>
+          <span style="color:white;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800">Juguetería</span>
         </div>
       </div>
     </div>
@@ -461,7 +461,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <!-- PROVEEDORES DESTACADOS -->
   <div id="seccion-prov-dest" class="reveal" style="display:none;padding:20px 20px 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Proveedores destacados</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Proveedores destacados</div>
       <span onclick="switchBuscarTab('proveedores',document.getElementById('tab-proveedores'));goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
     </div>
     <div id="prov-dest-list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch"></div>
@@ -470,18 +470,18 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <!-- PRODUCTOS MARKETPLACE -->
   <div class="reveal" id="home-marketplace-section" style="padding:20px 20px 0">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-      <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos Destacados</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">Productos Destacados</div>
       <span onclick="goTo('buscar')" style="font-size:.78rem;font-weight:600;color:#006039;cursor:pointer">Ver todos ></span>
     </div>
     <div id="home-prod-grid" class="home-prod-grid"></div>
-    <button id="home-ver-mas-btn" onclick="cargarMasHomeProductos()" style="display:none;width:100%;margin-top:14px;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver más productos →</button>
+    <button id="home-ver-mas-btn" onclick="cargarMasHomeProductos()" style="display:none;width:100%;margin-top:14px;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver más productos →</button>
   </div>
 
   <!-- BANNER TEST -->
   <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px">
     <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
     <div style="flex:1">
-      <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:white;margin-bottom:2px">¿No sabés a qué proveedor comprarle?</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:white;margin-bottom:2px">¿No sabés a qué proveedor comprarle?</div>
       <div style="font-size:.76rem;color:rgba(255,255,255,.65)">Respondé 4 preguntas y te encontramos el ideal</div>
     </div>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -491,7 +491,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div style="margin:12px 20px 28px;background:white;border:1.5px solid #E5E5E5;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goTo('landing-prov')">
     <div style="width:44px;height:44px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div>
     <div style="flex:1">
-      <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Sos mayorista?</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Sos mayorista?</div>
       <div style="font-size:.76rem;color:#777;line-height:1.4">Publicá gratis y llegá a miles de emprendedores.</div>
     </div>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
@@ -505,7 +505,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <span class="topbar-logo">Buscar</span>
     <button class="notif-bell" onclick="toggleNotifPanel()" aria-label="Notificaciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot" id="notifDot2"></span></button>
   </div>
-  <div style="padding:16px 20px 0"><h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales.</p></div>
+  <div style="padding:16px 20px 0"><h2 style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:800">Encontrá qué vender</h2><p style="color:var(--gray);font-size:.88rem;margin-top:4px">Buscá productos para empezar y proveedores reales.</p></div>
   <div style="position:relative">
     <div class="search-box"><span style="display:flex;align-items:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Buscar producto, proveedor o rubro..." id="searchInput" oninput="applySearchInput()" onfocus="onSearchFocus()" onkeydown="onSearchKeydown(event)" autocomplete="off"></div>
     <div id="search-dropdown" style="display:none;position:absolute;top:100%;left:20px;right:20px;background:white;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.14);z-index:300;overflow:hidden;border:1px solid #DCE8E2;margin-top:2px"></div>
@@ -799,7 +799,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <!-- Foto circular grande -->
     <div class="det-logo" id="det-logo" style="width:90px;height:90px;border-radius:50%;margin:0 auto 14px;font-size:1.8rem;border:3px solid #E8F2EE"></div>
 
-    <div id="det-nombre" style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A;margin-bottom:5px">Proveedor</div>
+    <div id="det-nombre" style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:900;color:#1A1A1A;margin-bottom:5px">Proveedor</div>
     <div id="det-rubro" style="font-size:.85rem;color:#888;margin-bottom:12px">Rubro</div>
 
     <!-- Badges -->
@@ -813,10 +813,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
     <!-- Botones de contacto -->
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
-      <button id="det-wa-btn" onclick="detWA()" style="display:none;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.97rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(18,140,126,.32)">
+      <button id="det-wa-btn" onclick="detWA()" style="display:none;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:.97rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(18,140,126,.32)">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Contactar por WhatsApp
       </button>
-      <button onclick="detChat()" style="display:none;background:#F0F7F4;color:#006039;border:2px solid #D1FAE5;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;align-items:center;justify-content:center;gap:8px">
+      <button onclick="detChat()" style="display:none;background:#F0F7F4;color:#006039;border:2px solid #D1FAE5;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;align-items:center;justify-content:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Enviar mensaje interno
       </button>
     </div>
@@ -826,7 +826,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
     <!-- INFO DEL NEGOCIO -->
     <div style="background:white;border-radius:16px;margin-bottom:12px;overflow:hidden">
-      <div style="padding:14px 16px;border-bottom:1px solid #F0F0F0;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;letter-spacing:.05em;text-transform:uppercase">Info del negocio</div>
+      <div style="padding:14px 16px;border-bottom:1px solid #F0F0F0;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#999;letter-spacing:.05em;text-transform:uppercase">Info del negocio</div>
       <div class="det-info-row"><span style="display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.8"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span><span class="det-info-key">Pedido mínimo</span><span class="det-info-val" id="det-minimo">-</span></div>
       <div class="det-info-row"><span style="display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.8"><rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><span class="det-info-key">Envíos</span><span class="det-info-val" id="det-envios">-</span></div>
       <div class="det-info-row"><span style="display:flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><span class="det-info-key">Provincia</span><span class="det-info-val" id="det-provincia">-</span></div>
@@ -925,7 +925,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
       <button class="add-carrito-btn" onclick="agregarAlCarrito()">Agregar al pedido</button>
       <button id="prod-det-wa-btn" style="display:none" onclick="detWAProd()"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Contactar por WhatsApp</button>
-      <button id="prod-det-chat-btn" onclick="detChatProd()" style="width:100%;padding:15px;border-radius:14px;background:#F0F7F4;color:#006039;border:2px solid #006039;font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.13)">Enviar mensaje</button>
+      <button id="prod-det-chat-btn" onclick="detChatProd()" style="width:100%;padding:15px;border-radius:14px;background:#F0F7F4;color:#006039;border:2px solid #006039;font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:none;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(0,96,57,.13)">Enviar mensaje</button>
     </div>
     <div id="prod-det-relacionados" style="display:none"></div>
   </div>
@@ -948,21 +948,21 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <span style="width:6px;height:6px;background:#4ade80;border-radius:50%;display:inline-block;flex-shrink:0;animation:pulse 1.5s infinite"></span>
       MAYORISTAS · ARGENTINA
     </div>
-    <h1 style="position:relative;z-index:1;font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:white;line-height:1.15;margin-bottom:12px">Sumá tu negocio.<br><span style="color:#4ade80">Llegá a miles</span><br>de compradores.</h1>
+    <h1 style="position:relative;z-index:1;font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:white;line-height:1.15;margin-bottom:12px">Sumá tu negocio.<br><span style="color:#4ade80">Llegá a miles</span><br>de compradores.</h1>
     <p style="position:relative;z-index:1;color:rgba(255,255,255,.7);font-size:.88rem;line-height:1.6;margin-bottom:22px">Publicá tu catálogo, recibí consultas y hacé crecer tu cartera de clientes mayoristas.</p>
     <div style="position:relative;z-index:1;display:flex;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:14px;padding:14px 0;margin-bottom:22px">
       <div style="flex:1;text-align:center">
-        <div id="lp-stat-provs" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">—</div>
+        <div id="lp-stat-provs" style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">—</div>
         <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Proveedores</div>
       </div>
       <div style="width:1px;background:rgba(255,255,255,.15)"></div>
       <div style="flex:1;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">Gratis</div>
+        <div style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">Gratis</div>
         <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Para empezar</div>
       </div>
       <div style="width:1px;background:rgba(255,255,255,.15)"></div>
       <div style="flex:1;text-align:center">
-        <div style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">24hs</div>
+        <div style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:900;color:#4ade80">24hs</div>
         <div style="font-size:.62rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Aprobación</div>
       </div>
     </div>
@@ -974,11 +974,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- Precios -->
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
         <span style="font-family:'DM Sans',sans-serif;font-size:1rem;color:rgba(255,255,255,.4);text-decoration:line-through">$20.000/mes</span>
-        <div style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:#4ade80;line-height:1">GRATIS</div>
+        <div style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:#4ade80;line-height:1">GRATIS</div>
       </div>
       <div style="font-size:.75rem;color:rgba(255,255,255,.45);margin-bottom:18px">Sin tarjeta. Sin compromiso. Publicás en 24hs.</div>
       <!-- CTA -->
-      <button onclick="goTo('registro')" style="width:100%;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;cursor:pointer">Quiero mi lugar gratis →</button>
+      <button onclick="goTo('registro')" style="width:100%;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:16px;font-family:'Inter',sans-serif;font-size:1rem;font-weight:900;cursor:pointer">Quiero mi lugar gratis →</button>
     </div>
     </div><!-- /lp-hero-copy -->
 
@@ -1009,37 +1009,37 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
   <!-- BENEFICIOS -->
   <div class="reveal" style="padding:28px 20px 0">
-    <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">¿Por qué publicar en EmprendeGo?</div>
+    <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">¿Por qué publicar en EmprendeGo?</div>
     <div style="font-size:.8rem;color:#999;margin-bottom:18px">Todo lo que necesitás para vender al por mayor</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
         <div style="font-size:1.5rem;margin-bottom:8px">👥</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Miles de clientes</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Miles de clientes</div>
         <div style="font-size:.72rem;color:#777;line-height:1.4">Emprendedores activos buscando proveedores como vos</div>
       </div>
       <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
         <div style="font-size:1.5rem;margin-bottom:8px">✅</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Perfil verificado</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Perfil verificado</div>
         <div style="font-size:.72rem;color:#777;line-height:1.4">Badge oficial que genera confianza en tus compradores</div>
       </div>
       <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
         <div style="font-size:1.5rem;margin-bottom:8px">📦</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Catálogo digital</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Catálogo digital</div>
         <div style="font-size:.72rem;color:#777;line-height:1.4">Publicá productos con fotos, precios y stock actualizado</div>
       </div>
       <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
         <div style="font-size:1.5rem;margin-bottom:8px">💬</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Chat directo</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Chat directo</div>
         <div style="font-size:.72rem;color:#777;line-height:1.4">Recibí consultas en tiempo real sin intermediarios</div>
       </div>
       <div style="background:white;border-radius:16px;padding:16px;border:1.5px solid #E5E5E5">
         <div style="font-size:1.5rem;margin-bottom:8px">📊</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Estadísticas</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Estadísticas</div>
         <div style="font-size:.72rem;color:#777;line-height:1.4">Visitas, contactos recibidos y métricas de tu perfil</div>
       </div>
       <div style="background:#E8F2EE;border-radius:16px;padding:16px;border:1.5px solid #D1FAE5">
         <div style="font-size:1.5rem;margin-bottom:8px">🆓</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#006039;margin-bottom:4px">Empezá gratis</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#006039;margin-bottom:4px">Empezá gratis</div>
         <div style="font-size:.72rem;color:#006039;opacity:.8;line-height:1.4">Sin costo. Upgrade al Plan Pro cuando quieras</div>
       </div>
     </div>
@@ -1047,43 +1047,43 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
   <!-- CÓMO FUNCIONA -->
   <div class="reveal" style="padding:28px 20px 0">
-    <div style="font-family:'Sora',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
+    <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:900;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
     <div style="font-size:.8rem;color:#999;margin-bottom:22px">Simple y rápido, en 4 pasos</div>
     <div style="display:flex;flex-direction:column">
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">1</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">1</div>
           <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
         </div>
         <div style="padding-top:8px;padding-bottom:24px">
-          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Registrate gratis</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Registrate gratis</div>
           <div style="font-size:.78rem;color:#777;line-height:1.5">Completá el formulario con los datos de tu negocio y rubro.</div>
         </div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">2</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">2</div>
           <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
         </div>
         <div style="padding-top:8px;padding-bottom:24px">
-          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Verificamos tu CUIT</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Verificamos tu CUIT</div>
           <div style="font-size:.78rem;color:#777;line-height:1.5">Validamos que tu negocio sea real. Respuesta en 24-48hs hábiles.</div>
         </div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
-          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">3</div>
+          <div style="width:40px;height:40px;border-radius:50%;background:#006039;display:flex;align-items:center;justify-content:center;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:900;color:white;flex-shrink:0">3</div>
           <div style="width:2px;flex:1;background:#E5E5E5;min-height:36px;margin:4px 0"></div>
         </div>
         <div style="padding-top:8px;padding-bottom:24px">
-          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Publicás tu perfil</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">Publicás tu perfil</div>
           <div style="font-size:.78rem;color:#777;line-height:1.5">Tu negocio aparece en el directorio. Subí tu catálogo de productos.</div>
         </div>
       </div>
       <div style="display:flex;gap:16px;align-items:flex-start">
         <div style="flex-shrink:0;width:40px;height:40px;border-radius:50%;background:#4ade80;display:flex;align-items:center;justify-content:center;font-size:1.1rem">🚀</div>
         <div style="padding-top:8px">
-          <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">¡Empezás a vender!</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">¡Empezás a vender!</div>
           <div style="font-size:.78rem;color:#777;line-height:1.5">Recibís consultas, armás tu cartera y hacés crecer tu negocio.</div>
         </div>
       </div>
@@ -1094,7 +1094,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div class="reveal" id="lp-form" style="padding:28px 20px 0">
     <div style="background:#1A1A1A;border-radius:20px;padding:24px">
       <div style="font-size:.68rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#4ade80;margin-bottom:8px">¿Tenés dudas?</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">Dejá tu contacto</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">Dejá tu contacto</div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.5);margin-bottom:20px;line-height:1.5">Te contactamos para ayudarte a publicar tu negocio.</div>
       <div style="display:flex;flex-direction:column;gap:12px">
         <div>
@@ -1141,7 +1141,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           </select>
         </div>
       </div>
-      <button onclick="enviarContactoProv(this)" style="width:100%;margin-top:18px;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:15px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer">Quiero que me contacten →</button>
+      <button onclick="enviarContactoProv(this)" style="width:100%;margin-top:18px;background:#4ade80;color:#002918;border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer">Quiero que me contacten →</button>
     </div>
   </div>
 
@@ -1149,9 +1149,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div class="reveal" style="padding:24px 20px 32px">
     <div style="background:linear-gradient(135deg,#006039,#004D2E);border-radius:20px;padding:24px;text-align:center">
       <div style="font-size:2rem;margin-bottom:10px">🏭</div>
-      <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">¿Listo para publicar?</div>
+      <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin-bottom:6px">¿Listo para publicar?</div>
       <div style="font-size:.78rem;color:rgba(255,255,255,.6);margin-bottom:18px;line-height:1.5">Completá el registro en menos de 5 minutos.</div>
-      <button onclick="goTo('registro')" style="background:white;color:#006039;border:none;border-radius:12px;padding:14px 24px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer;width:100%">Registrarme ahora →</button>
+      <button onclick="goTo('registro')" style="background:white;color:#006039;border:none;border-radius:12px;padding:14px 24px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:900;cursor:pointer;width:100%">Registrarme ahora →</button>
     </div>
   </div>
 </div>
@@ -1167,7 +1167,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></svg>
           </div>
           <div>
-            <h2 style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:900;color:white;margin-bottom:4px">Publicá tu negocio</h2>
+            <h2 style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:900;color:white;margin-bottom:4px">Publicá tu negocio</h2>
             <p style="color:rgba(255,255,255,.65);font-size:.82rem;line-height:1.5;margin:0">Llegá a miles de emprendedores en todo el país.</p>
           </div>
         </div>
@@ -1193,7 +1193,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
     <div id="reg-step1" style="display:none;padding-top:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(0)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 1 de 3</div><div style="height:4px;background:#dfe8e3;border-radius:2px"><div style="height:100%;width:33%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
-      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Datos personales</h2>
+      <h2 style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Datos personales</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Información del responsable</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Nombre Del Negocio*</label><input type="text" placeholder="Ej: Carlos Rodríguez"></div>
@@ -1205,7 +1205,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
     <div id="reg-step2" style="display:none;padding-top:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(1)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 2 de 3</div><div style="height:4px;background:#dfe8e3;border-radius:2px"><div style="height:100%;width:66%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
-      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Tu negocio</h2>
+      <h2 style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Tu negocio</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Datos oficiales de verificación</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>Razón social *</label><input type="text" placeholder="Ej: Distribuidora del Sur SRL"></div>
@@ -1218,7 +1218,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
     <div id="reg-step3" style="display:none;padding-top:20px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="showRegStep(2)" style="background:var(--blue-light);border:none;border-radius:10px;padding:8px 12px;cursor:pointer;color:var(--blue);font-weight:700">←</button><div style="flex:1"><div style="font-size:.75rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Paso 3 de 3</div><div style="height:4px;background:#dfe8e3;border-radius:2px"><div style="height:100%;width:100%;background:linear-gradient(90deg,var(--blue),var(--purple));border-radius:2px"></div></div></div></div>
-      <h2 style="font-family:'Sora',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Verificación</h2>
+      <h2 style="font-family:'Inter',sans-serif;font-size:1.3rem;font-weight:800;margin-bottom:4px">Verificación</h2>
       <p style="color:var(--gray);font-size:.85rem;margin-bottom:20px">Confirmamos que tu negocio es real</p>
       <div style="display:flex;flex-direction:column;gap:14px">
         <div class="form-group"><label>¿Hacés envíos? *</label><select><option value="">Seleccioná</option><option>Sí, a todo el país</option><option>Sí, a ciertas provincias</option><option>Solo zona local / GBA</option><option>El comprador retira</option></select></div>
@@ -1229,10 +1229,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
     <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
       <div style="font-size:4rem;margin-bottom:16px">🎉</div>
-      <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
+      <h2 style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;margin-bottom:10px">¡Solicitud enviada!</h2>
       <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin-bottom:20px">Revisamos tu CUIT en <strong>24-48hs hábiles</strong>. Te avisamos por WhatsApp cuando esté aprobado.</p>
       <div style="background:#f8fafc;border-radius:16px;padding:16px;margin-bottom:24px;text-align:left">
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#111;margin-bottom:12px">¿Qué pasa después?</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#111;margin-bottom:12px">¿Qué pasa después?</div>
         <div style="display:flex;flex-direction:column;gap:10px">
           <div style="display:flex;align-items:flex-start;gap:12px">
             <div style="width:24px;height:24px;border-radius:50%;background:#006039;color:white;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
@@ -1373,7 +1373,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div class="topbar"><button class="hamburger-btn" onclick="openDrawer()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button><span class="topbar-logo">Mi Perfil</span></div>
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:40px 24px;text-align:center;gap:14px;max-width:420px;margin:0 auto">
       <div style="width:80px;height:80px;background:#e7f2ec;border-radius:50%;display:flex;align-items:center;justify-content:center"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-      <h2 id="login-title" style="font-family:'Sora',sans-serif;font-size:1.2rem;font-weight:800;margin:0">Ingresá a tu cuenta</h2>
+      <h2 id="login-title" style="font-family:'Inter',sans-serif;font-size:1.2rem;font-weight:800;margin:0">Ingresá a tu cuenta</h2>
       <p style="color:var(--gray);font-size:.9rem;line-height:1.6;margin:0">Guardá tus proveedores favoritos, accedé a tu historial y gestioná tu negocio.</p>
       <button class="google-btn" onclick="simulateGoogleLogin(this)"><span class="g-logo">G</span> Continuar con Google</button>
       <div style="display:flex;align-items:center;gap:12px;width:100%;margin:2px 0">
@@ -1387,7 +1387,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div id="auth-forgot-wrap" style="text-align:right;margin-top:-4px"><a href="#" onclick="solicitarRecuperarContrasena(event)" style="font-size:.8rem;color:var(--blue);text-decoration:none;font-weight:600">¿Olvidaste tu contraseña?</a></div>
         <div id="auth-error" role="alert" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:10px;font-size:.82rem;text-align:left;line-height:1.4"></div>
         <div id="auth-resend-wrap" style="display:none;text-align:left;margin-top:-4px"><a href="#" onclick="reenviarConfirmacion(event)" style="font-size:.8rem;color:var(--blue);text-decoration:none;font-weight:600">Reenviar email de confirmación</a></div>
-        <button id="auth-submit-btn" type="submit" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;width:100%">Iniciar sesión</button>
+        <button id="auth-submit-btn" type="submit" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;width:100%">Iniciar sesión</button>
       </form>
       <p style="font-size:.85rem;color:var(--gray);margin:2px 0 0">
         <span id="auth-toggle-question">¿No tenés cuenta?</span>
@@ -1432,11 +1432,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <button class="action-btn" onclick="goTo('registro')"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9M3 9h18"/></svg>Registrarme como proveedor</button>
         <div onclick="goTo('planes')" style="background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;margin-top:4px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-            <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:white">Sumate al Plan Pro</div>
+            <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:white">Sumate al Plan Pro</div>
             <div style="background:rgba(255,255,255,.2);color:white;font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:20px">$20.000/mes</div>
           </div>
           <div style="color:rgba(255,255,255,.75);font-size:.8rem;line-height:1.5;margin-bottom:12px">WhatsApp directo, badge Verificado, productos ilimitados, estadísticas y mucho más.</div>
-          <div style="background:white;color:#006039;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:9px;text-align:center">Ver beneficios →</div>
+          <div style="background:white;color:#006039;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;border-radius:10px;padding:9px;text-align:center">Ver beneficios →</div>
         </div>
         <div style="text-align:center;margin-top:4px">
           <div onclick="goTo('terminos')" style="display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid #E5E5E5;border-radius:12px;padding:13px 16px;cursor:pointer;margin-top:8px">
@@ -1459,7 +1459,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:10px">
           <button onclick="goBack('inicio')" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:9px;padding:6px 10px;color:white;font-size:.8rem;font-weight:700;cursor:pointer;line-height:1">← Volver</button>
-          <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:900;color:white;letter-spacing:-.02em">Mi Dashboard</span>
+          <span style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:900;color:white;letter-spacing:-.02em">Mi Dashboard</span>
         </div>
         <button class="notif-bell" onclick="toggleNotifPanel()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.15)">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.8)" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -1478,7 +1478,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <input type="file" id="prov-logo-input" class="avatar-upload-input" accept="image/*" onchange="subirLogoProveedor(this)">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px">
-            <h3 id="dash-nombre" style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin:0;line-height:1.15">Mi Negocio</h3>
+            <h3 id="dash-nombre" style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:900;color:white;margin:0;line-height:1.15">Mi Negocio</h3>
             <span class="dash-pro-badge" id="dash-pro-badge-el" style="display:none">PRO</span>
           </div>
           <p id="dash-rubro-label" style="color:rgba(255,255,255,.55);font-size:.78rem;margin:0">Rubro · Argentina</p>
@@ -1495,24 +1495,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
       <div style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between">
         <div style="min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.92)">Consultas por WhatsApp</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.92)">Consultas por WhatsApp</div>
           <div style="font-size:.7rem;color:rgba(255,255,255,.78);margin-top:2px">Compradores que te tocaron "Contactar"</div>
         </div>
-        <div id="stat-consultas" style="font-family:'Sora',sans-serif;font-size:2rem;font-weight:900;color:white;flex-shrink:0;margin-left:12px">0</div>
+        <div id="stat-consultas" style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:white;flex-shrink:0;margin-left:12px">0</div>
       </div>
 
       <!-- ===== STATS REALES ===== -->
       <div id="dash-stats-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="stat-visitas" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-num" id="stat-visitas" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
           <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Visitas</div>
         </div>
         <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="stat-leads" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-num" id="stat-leads" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
           <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Contactos</div>
         </div>
         <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="dash-prodstat-count" style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
+          <div class="dash-stat-num" id="dash-prodstat-count" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
           <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Productos</div>
         </div>
       </div>
@@ -1524,8 +1524,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <!-- ===== COMPLETITUD DEL PERFIL ===== -->
     <div style="background:white;margin:12px 16px;border-radius:14px;padding:14px 16px;border:1.5px solid #E8F2EE" id="perfil-completitud-wrap">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A">Completitud del perfil</div>
-        <span id="perfil-pct-label" style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:900;color:#006039">0%</span>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A">Completitud del perfil</div>
+        <span id="perfil-pct-label" style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:900;color:#006039">0%</span>
       </div>
       <div style="background:#F0F0F0;border-radius:20px;height:7px;overflow:hidden;margin-bottom:8px">
         <div id="perfil-pct-bar" style="height:100%;background:linear-gradient(90deg,#006039,#4ade80);border-radius:20px;width:0%;transition:width .6s ease"></div>
@@ -1535,69 +1535,69 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 
     <!-- ===== ACCIONES RÁPIDAS ===== -->
     <div style="padding:0 16px 0">
-      <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Acciones rápidas</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Acciones rápidas</div>
       <div id="dash-quick-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
         <button class="dash-action-btn" onclick="openAddProduct();haptic('light')" style="background:#006039;color:white;border:none;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Agregar</div><div style="font-size:.7rem;opacity:.7">producto</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Agregar</div><div style="font-size:.7rem;opacity:.7">producto</div></div>
         </button>
         <!-- Botón Mensajes oculto: el chat interno está desactivado, todos los proveedores usan WhatsApp -->
         <button class="dash-action-btn" onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones();haptic('light')" style="display:none;background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;align-items:center;gap:10px;cursor:pointer;text-align:left;position:relative">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
           <span id="dash-msgs-new" style="position:absolute;top:8px;right:8px;background:#EF4444;color:white;font-size:.55rem;font-weight:800;padding:2px 6px;border-radius:8px;display:none">NEW</span>
         </button>
         <button class="dash-action-btn" onclick="exportarContactosCSV();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Contactos</div><div style="font-size:.7rem;color:#999">exportar CSV</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Contactos</div><div style="font-size:.7rem;color:#999">exportar CSV</div></div>
         </button>
         <button class="dash-action-btn" onclick="abrirMisProductos();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Productos</div><div style="font-size:.7rem;color:#999" id="dash-prod-count">0 publicados</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Productos</div><div style="font-size:.7rem;color:#999" id="dash-prod-count">0 publicados</div></div>
         </button>
         <button class="dash-action-btn" onclick="abrirEditarPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Editar</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Editar</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
         </button>
         <button class="dash-action-btn" onclick="compartirMiPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Compartir</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Compartir</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
         </button>
         <button class="dash-action-btn" onclick="verMiPerfilPublico();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Ver perfil</div><div style="font-size:.7rem;color:#999">como comprador</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Ver perfil</div><div style="font-size:.7rem;color:#999">como comprador</div></div>
         </button>
       </div>
     </div>
 
     <!-- ===== TIENDA NUBE ===== -->
     <div style="padding:16px 16px 0" id="tn-section">
-      <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Integraciones</div>
-      <div id="tn-card" style="background:#1c5aa0;border-radius:14px;padding:16px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-          <div>
-            <div style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;color:white">Tienda Nube</div>
-            <div style="font-size:.72rem;color:rgba(255,255,255,.8)" id="tn-status-label">Importá tus productos con fotos automáticamente</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Integraciones</div>
+      <div id="tn-card" style="background:#fff;border:1px solid #E8F2EE;border-radius:16px;padding:14px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="width:40px;height:40px;background:#e7f0fb;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2a6fb0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+          <div style="flex:1;min-width:0">
+            <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#16201b">Tienda Nube</div>
+            <div style="font-size:.72rem;color:#5f6f66;margin-top:1px" id="tn-status-label">Importá tus productos con fotos automáticamente</div>
           </div>
         </div>
         <div id="tn-btn-area">
-          <button onclick="conectarTiendaNube(this)" style="width:100%;background:white;color:#1B74E4;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B74E4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>
+          <button onclick="conectarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>
         </div>
       </div>
     </div>
     <!-- ===== MERCADO LIBRE ===== -->
     <div style="padding:8px 16px 0" id="ml-section">
-      <div id="ml-card" style="background:#ecc233;border-radius:14px;padding:16px">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div style="width:36px;height:36px;background:rgba(0,0,0,.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
-          <div>
-            <div id="ml-title" style="font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;color:#1a1a1a">Mercado Libre</div>
-            <div id="ml-status-label" style="font-size:.72rem;color:rgba(0,0,0,.6)">Importá tus publicaciones automáticamente</div>
+      <div id="ml-card" style="background:#fff;border:1px solid #E8F2EE;border-radius:16px;padding:14px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="width:40px;height:40px;background:#fff6d6;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#c99a00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
+          <div style="flex:1;min-width:0">
+            <div id="ml-title" style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#16201b">Mercado Libre</div>
+            <div id="ml-status-label" style="font-size:.72rem;color:#5f6f66;margin-top:1px">Importá tus publicaciones automáticamente</div>
           </div>
         </div>
         <div id="ml-btn-area">
-          <button onclick="conectarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>
+          <button onclick="conectarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>
         </div>
       </div>
     </div>
@@ -1606,7 +1606,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <!-- ===== PEDIDOS RECIENTES ===== -->
     <div style="padding:16px 16px 0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em">Pedidos recientes</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em">Pedidos recientes</div>
         <span onclick="verPedidosArchivados()" style="font-size:.75rem;font-weight:700;color:#006039;cursor:pointer">Archivados</span>
       </div>
       <div id="dash-pedidos-list" style="display:flex;flex-direction:column;gap:8px">
@@ -1622,7 +1622,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <!-- ===== AYUDA ===== -->
     <div style="padding:16px 16px 24px">
       <div style="background:white;border-radius:14px;padding:16px;border:1.5px solid #eee">
-        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#111;margin-bottom:4px">¿Necesitás ayuda?</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#111;margin-bottom:4px">¿Necesitás ayuda?</div>
         <div style="font-size:.78rem;color:#777;line-height:1.5;margin-bottom:12px">Nuestro equipo te responde por WhatsApp.</div>
         <a href="https://wa.me/5491126048301?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:#ECFDF5;border:1.5px solid #D1FAE5;border-radius:10px;font-size:.85rem;font-weight:700;color:#006039;text-decoration:none">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>Contactar soporte por WhatsApp
@@ -1728,7 +1728,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div class="modal-handle"></div>
     <div class="modal-header">
       <div>
-        <div id="prov-chat-nombre" style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800">Chat</div>
+        <div id="prov-chat-nombre" style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">Chat</div>
         <div id="prov-chat-sub" style="font-size:.72rem;color:var(--gray)">Emprendedor</div>
       </div>
       <button class="modal-close" onclick="closeProvChat()">✕</button>
@@ -1760,7 +1760,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div id="resultContent" style="display:none">
           <div id="reco-heading"></div>
           <div id="recoResults" style="display:flex;flex-direction:column;gap:14px;padding-top:6px"></div>
-          <button onclick="resetTest()" style="width:100%;background:white;color:var(--navy);border:1.5px solid #dfe8e3;border-radius:14px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:16px">↺ Hacer el test de nuevo</button>
+          <button onclick="resetTest()" style="width:100%;background:white;color:var(--navy);border:1.5px solid #dfe8e3;border-radius:14px;padding:13px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;margin-top:16px">↺ Hacer el test de nuevo</button>
         </div>
       </div>
     </div>
@@ -1871,14 +1871,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- TAB: MERCADOLIBRE -->
       <div id="add-tab-ml" style="display:none">
         <div style="background:linear-gradient(135deg,#fff7e6,#fff3cd);border:1.5px solid #fde68a;border-radius:14px;padding:14px;margin-bottom:16px">
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#92400e;margin-bottom:4px">🛒 Importar desde MercadoLibre</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#92400e;margin-bottom:4px">🛒 Importar desde MercadoLibre</div>
           <div style="font-size:.78rem;color:#78350f;line-height:1.5">Pegá el link de cualquier publicación de ML y traemos el nombre, precio y foto automáticamente.</div>
         </div>
         <div class="form-group" style="margin-bottom:12px">
           <label>Link de MercadoLibre *</label>
           <input type="url" id="ml-url-input" placeholder="https://articulo.mercadolibre.com.ar/MLA-..." style="font-size:.85rem">
         </div>
-        <button onclick="importarDesdeML()" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
+        <button onclick="importarDesdeML()" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
           <span id="ml-import-btn-text">🔍 Traer datos del producto</span>
         </button>
 
@@ -1887,7 +1887,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div style="display:flex;gap:12px;padding:12px">
             <img id="ml-preview-img" src="" style="width:70px;height:70px;object-fit:cover;border-radius:10px;flex-shrink:0;background:var(--blue-light)">
             <div style="flex:1;min-width:0">
-              <div id="ml-preview-name" style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3"></div>
+              <div id="ml-preview-name" style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:var(--navy);margin-bottom:4px;line-height:1.3"></div>
               <div id="ml-preview-price" style="font-size:1rem;font-weight:900;color:var(--blue);margin-bottom:6px"></div>
               <span style="background:#e6f7ee;color:var(--green);font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:6px">✓ Importado de ML</span>
             </div>
@@ -1920,7 +1920,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <!-- Historial de importados en esta sesión -->
         <div id="ml-importados" style="display:none;margin-top:8px">
           <div style="font-size:.75rem;font-weight:700;color:var(--green);margin-bottom:6px" id="ml-importados-label"></div>
-          <button onclick="importarOtro()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">+ Importar otro producto</button>
+          <button onclick="importarOtro()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">+ Importar otro producto</button>
         </div>
       </div>
 
@@ -1929,7 +1929,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <!-- PASO 1: Subir archivo -->
         <div id="excel-step1">
           <div style="background:#E8F2EE;border:1.5px solid #c3ddd3;border-radius:14px;padding:14px;margin-bottom:14px">
-            <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">Importar desde Excel</div>
+            <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">Importar desde Excel</div>
             <div style="font-size:.78rem;color:#333;line-height:1.6">Subí tu lista en cualquier formato — Tienda Nube, MercadoLibre, Excel propio. Detectamos las columnas automáticamente.</div>
           </div>
           <div id="excel-upload-zone" style="width:100%;min-height:100px;background:#fafafa;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:2px dashed #ccc;padding:20px" onclick="document.getElementById('excel-file-input').click()">
@@ -1946,7 +1946,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div style="background:#E8F2EE;border-radius:10px;padding:12px;text-align:center">
             <div style="font-size:.85rem;font-weight:700;color:#006039" id="excel-result-text"></div>
           </div>
-          <button onclick="resetExcelImport()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px">Importar otro archivo</button>
+          <button onclick="resetExcelImport()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:8px">Importar otro archivo</button>
         </div>
       </div>
 
@@ -1956,7 +1956,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           💡 <strong>Cómo funciona:</strong> Completá cada producto en su fila. Podés agregar hasta 10 a la vez. Solo nombre y precio son obligatorios.
         </div>
         <div id="multi-prod-list" style="display:flex;flex-direction:column;gap:10px"></div>
-        <button onclick="agregarFilaMulti()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:8px">+ Agregar otra fila</button>
+        <button onclick="agregarFilaMulti()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:11px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:8px">+ Agregar otra fila</button>
         <button class="submit-btn" style="margin-top:12px" onclick="addProductosMultiples()">
           <span id="multi-btn-text">Guardar todos los productos ✓</span>
         </button>
@@ -2022,7 +2022,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 </div>
 
 <!-- FAB GUIA PRODUCTOS -->
-<button id="guia-prod-fab" onclick="abrirGuiaCarga()" style="position:fixed;bottom:82px;right:16px;background:#006039;color:white;border:none;border-radius:50px;padding:11px 16px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(0,96,57,.4);z-index:300;display:none;align-items:center;gap:7px;transition:transform .2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+<button id="guia-prod-fab" onclick="abrirGuiaCarga()" style="position:fixed;bottom:82px;right:16px;background:#006039;color:white;border:none;border-radius:50px;padding:11px 16px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(0,96,57,.4);z-index:300;display:none;align-items:center;gap:7px;transition:transform .2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
   Subir productos
 </button>
@@ -2035,7 +2035,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div style="width:36px;height:4px;background:#e4e4e4;border-radius:2px;margin:10px auto 0"></div>
   <div style="background:linear-gradient(135deg,#004D2E,#006039);margin:10px 14px 0;border-radius:14px;padding:14px 15px;display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;color:white">¿Cómo subir tus productos?</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:white">¿Cómo subir tus productos?</div>
       <div style="font-size:.72rem;color:rgba(255,255,255,.72);margin-top:2px">Elegí el método que mejor te funcione</div>
     </div>
     <button onclick="cerrarGuiaCarga()" style="background:rgba(255,255,255,.18);border:none;border-radius:9px;width:30px;height:30px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
@@ -2051,12 +2051,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#111">Agregar uno por uno</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#111">Agregar uno por uno</span>
           <span style="background:#DCF5EA;color:#006039;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em">GRATIS</span>
         </div>
         <div style="font-size:.7rem;color:#666;margin-top:1px">Manual, con foto y precio</div>
       </div>
-      <button onclick="guiaUsarManual()" style="background:#006039;color:white;border:none;border-radius:9px;padding:7px 13px;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Usar</button>
+      <button onclick="guiaUsarManual()" style="background:#006039;color:white;border:none;border-radius:9px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Usar</button>
     </div>
 
     <!-- Múltiple -->
@@ -2066,12 +2066,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#111">Carga múltiple</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#111">Carga múltiple</span>
           <span style="background:#DCF5EA;color:#006039;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em">GRATIS</span>
         </div>
         <div style="font-size:.7rem;color:#666;margin-top:1px">Hasta 10 productos de una vez</div>
       </div>
-      <button onclick="guiaUsarMulti()" style="background:#006039;color:white;border:none;border-radius:9px;padding:7px 13px;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Usar</button>
+      <button onclick="guiaUsarMulti()" style="background:#006039;color:white;border:none;border-radius:9px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Usar</button>
     </div>
 
     <!-- Excel -->
@@ -2081,12 +2081,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#111">Importar por Excel</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#111">Importar por Excel</span>
           <span style="background:#FEF3C7;color:#92400E;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em">PRO</span>
         </div>
         <div style="font-size:.7rem;color:#666;margin-top:1px">Subí tu lista de precios completa</div>
       </div>
-      <button id="guia-btn-excel" onclick="guiaActivarExcel()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
+      <button id="guia-btn-excel" onclick="guiaActivarExcel()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
     </div>
 
     <!-- Tienda Nube -->
@@ -2098,12 +2098,12 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#111">Tienda Nube</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#111">Tienda Nube</span>
           <span style="background:#FEF3C7;color:#92400E;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em">PRO</span>
         </div>
         <div style="font-size:.7rem;color:#666;margin-top:1px">Importá tu catálogo entero &middot; <span style="color:#006039;font-weight:700">~1 min</span></div>
       </div>
-      <button id="guia-btn-tn" onclick="guiaActivarTN()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
+      <button id="guia-btn-tn" onclick="guiaActivarTN()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
     </div>
 
     <!-- Mercado Libre -->
@@ -2118,17 +2118,17 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;color:#111">Mercado Libre</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#111">Mercado Libre</span>
           <span style="background:#FEF3C7;color:#92400E;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:5px;letter-spacing:.02em">PRO</span>
         </div>
         <div style="font-size:.7rem;color:#666;margin-top:1px">Sincronizá tus publicaciones &middot; <span style="color:#006039;font-weight:700">~1 min</span></div>
       </div>
-      <button id="guia-btn-ml" onclick="guiaActivarML()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Sora',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
+      <button id="guia-btn-ml" onclick="guiaActivarML()" style="background:#F0F0F0;color:#555;border:none;border-radius:9px;padding:7px 13px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0">Activar</button>
     </div>
 
   </div>
   <div style="text-align:center;padding:14px 14px 22px">
-    <button onclick="noMostrarGuiaCarga()" style="background:none;border:none;font-size:.72rem;color:#bbb;cursor:pointer;font-family:'Sora',sans-serif;text-decoration:underline;text-underline-offset:3px">No mostrar nuevamente</button>
+    <button onclick="noMostrarGuiaCarga()" style="background:none;border:none;font-size:.72rem;color:#bbb;cursor:pointer;font-family:'Inter',sans-serif;text-decoration:underline;text-underline-offset:3px">No mostrar nuevamente</button>
   </div>
 </div>
 <style>
@@ -2136,7 +2136,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 </style>
 
 <!-- FAB SOPORTE WHATSAPP -->
-<a id="soporte-fab" href="https://wa.me/5491126048301?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO" target="_blank" style="position:fixed;bottom:24px;right:16px;background:#25D366;color:white;border-radius:50px;padding:11px 16px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(37,211,102,.45);z-index:300;display:none;align-items:center;gap:7px;text-decoration:none;transition:transform .2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
+<a id="soporte-fab" href="https://wa.me/5491126048301?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO" target="_blank" style="position:fixed;bottom:24px;right:16px;background:#25D366;color:white;border-radius:50px;padding:11px 16px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;box-shadow:0 4px 18px rgba(37,211,102,.45);z-index:300;display:none;align-items:center;gap:7px;text-decoration:none;transition:transform .2s" onmouseenter="this.style.transform='scale(1.05)'" onmouseleave="this.style.transform='scale(1)'">
   <svg width="17" height="17" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.117.549 4.107 1.508 5.845L.057 23.882a.5.5 0 0 0 .611.611l6.037-1.451A11.943 11.943 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.882a9.859 9.859 0 0 1-5.031-1.378l-.361-.214-3.735.898.914-3.734-.235-.374A9.856 9.856 0 0 1 2.118 12C2.118 6.533 6.533 2.118 12 2.118c5.468 0 9.882 4.415 9.882 9.882 0 5.468-4.414 9.882-9.882 9.882z"/></svg>
   Soporte
 </a>
@@ -2151,26 +2151,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <!-- slide 0 -->
       <div class="ob-slide">
         <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">🛒</div>
-        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Bienvenido a<br>EmprendeGO</div>
+        <div style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Bienvenido a<br>EmprendeGO</div>
         <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">El marketplace B2B más completo de Argentina. Conectamos emprendedores con proveedores mayoristas verificados.</div>
       </div>
       <!-- slide 1 -->
       <div class="ob-slide" style="display:none">
         <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">🔍</div>
-        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Encontrá tu<br>proveedor ideal</div>
+        <div style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Encontrá tu<br>proveedor ideal</div>
         <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">Buscá entre cientos de proveedores verificados por rubro, provincia y precio. Todos revisados por nuestro equipo.</div>
       </div>
       <!-- slide 2 -->
       <div class="ob-slide" style="display:none">
         <div style="text-align:center;margin-bottom:20px;font-size:3.5rem">💬</div>
-        <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Contacto directo,<br>sin comisiones</div>
+        <div style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;text-align:center;margin-bottom:12px">Contacto directo,<br>sin comisiones</div>
         <div style="font-size:.9rem;color:#6B7A99;text-align:center;line-height:1.65">Hablás directo con el proveedor por WhatsApp. Sin intermediarios, sin comisiones. El mejor precio para tu negocio.</div>
       </div>
     </div>
     <!-- Botones -->
     <div style="display:flex;gap:10px;margin-top:32px">
-      <button id="ob-skip" onclick="cerrarOnboarding()" style="flex:1;background:#f5f5f5;color:#999;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Saltar</button>
-      <button id="ob-next" onclick="nextSlideOnboarding()" style="flex:2;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;cursor:pointer">Siguiente →</button>
+      <button id="ob-skip" onclick="cerrarOnboarding()" style="flex:1;background:#f5f5f5;color:#999;border:none;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Saltar</button>
+      <button id="ob-next" onclick="nextSlideOnboarding()" style="flex:2;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;cursor:pointer">Siguiente →</button>
     </div>
   </div>
 </div>
@@ -2185,23 +2185,23 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div style="width:70px"></div>
   </div>
   <div style="padding:24px 22px 48px;max-width:100%">
-    <h2 style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;margin-bottom:6px">Términos y Condiciones</h2>
+    <h2 style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;margin-bottom:6px">Términos y Condiciones</h2>
     <p style="font-size:.75rem;color:#999;margin-bottom:28px">Última actualización: julio 2026</p>
 
     <div style="display:flex;flex-direction:column;gap:22px;font-size:.86rem;line-height:1.7;color:#333">
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">1. ¿Qué es EmprendeGO?</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">1. ¿Qué es EmprendeGO?</div>
         <p>EmprendeGO es una plataforma digital que conecta emprendedores con proveedores mayoristas de Argentina. No somos parte de ninguna transacción comercial entre usuarios y proveedores.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">2. Responsabilidad de los proveedores</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">2. Responsabilidad de los proveedores</div>
         <p>Cada proveedor es responsable exclusivo de la información que publica, incluyendo precios, disponibilidad, condiciones de venta y calidad de productos. EmprendeGO realiza una revisión inicial pero no garantiza la exactitud permanente de dicha información.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">3. Qué significa el sello "Verificado"</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">3. Qué significa el sello "Verificado"</div>
         <p>Cuando un proveedor muestra el sello <strong>"Verificado"</strong> en EmprendeGO, significa que, antes de aprobarlo, nuestro equipo realizó una revisión inicial que incluye, según el caso:</p>
         <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7">
           <li><strong>Redes sociales públicas y activas:</strong> con actividad real y coherente con el rubro declarado.</li>
@@ -2214,24 +2214,24 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Limitación de responsabilidad</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Limitación de responsabilidad</div>
         <p>EmprendeGO no es responsable por disputas, pérdidas económicas, incumplimientos o cualquier daño derivado de transacciones realizadas entre emprendedores y proveedores. El contacto y la negociación son directos entre las partes.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Uso aceptable</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Uso aceptable</div>
         <p>Queda prohibido usar EmprendeGO para publicar información falsa, spam, contenido ilegal o cualquier actividad que perjudique a otros usuarios. EmprendeGO se reserva el derecho de suspender cuentas sin previo aviso.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">5. Contenido publicado y propiedad intelectual</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">5. Contenido publicado y propiedad intelectual</div>
         <p>Al subir imágenes, textos, logos o cualquier contenido a EmprendeGO, usted declara que es su titular o que cuenta con los derechos y permisos necesarios para publicarlo. Es el único responsable por el contenido que carga.</p>
         <p style="margin-top:8px">No está permitido subir material protegido por derechos de autor, marcas registradas u otros derechos de terceros sin autorización. Si publica contenido infringiendo derechos ajenos, se compromete a mantener indemne a EmprendeGO frente a cualquier reclamo, daño o gasto que esto genere.</p>
         <p style="margin-top:8px"><strong>Denuncias de propiedad intelectual:</strong> si considera que un contenido publicado viola sus derechos, escríbanos a <strong>wa.me/5491126048301</strong> indicando el contenido y la titularidad. Revisamos cada denuncia y damos de baja el material que corresponda a la brevedad.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">6. Privacidad y datos personales</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">6. Privacidad y datos personales</div>
         <p>Para funcionar, EmprendeGO recolecta y trata los siguientes datos:</p>
         <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7">
           <li><strong>Identificación:</strong> nombre y email (incluido el inicio de sesión con Google).</li>
@@ -2243,22 +2243,22 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">7. Uso de inteligencia artificial</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">7. Uso de inteligencia artificial</div>
         <p>EmprendeGO puede utilizar tecnologías de inteligencia artificial para tareas como organización de catálogos, búsqueda y mejoras del servicio. Estas herramientas son un apoyo y pueden contener errores; la información publicada por cada proveedor sigue siendo responsabilidad de dicho proveedor.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">8. Ley aplicable y jurisdicción</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">8. Ley aplicable y jurisdicción</div>
         <p>Estos términos se rigen por las leyes de la República Argentina, incluida la Ley de Defensa del Consumidor N° 24.240. Ante cualquier conflicto, las partes se someten a los tribunales ordinarios competentes de Argentina, sin perjuicio de los derechos que la normativa de consumo reconoce a los usuarios.</p>
       </div>
 
       <div>
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">9. Modificaciones</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">9. Modificaciones</div>
         <p>EmprendeGO puede actualizar estos términos en cualquier momento. Los cambios se notificarán dentro de la app. El uso continuado implica la aceptación de los nuevos términos.</p>
       </div>
 
       <div style="background:#E8F2EE;border-radius:14px;padding:16px 18px">
-        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">¿Tiene dudas?</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#006039;margin-bottom:4px">¿Tiene dudas?</div>
         <p style="font-size:.82rem;color:#006039;line-height:1.5">Escríbanos a <strong>wa.me/5491126048301</strong> y le respondemos en menos de 48 horas.</p>
       </div>
     </div>
@@ -2282,7 +2282,7 @@ if (window.caches && caches.keys) {
   <div class="modal" style="max-height:85vh">
     <div class="modal-handle"></div>
     <div class="modal-header">
-      <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800">¿A qué categorías pertenecen tus productos?</span>
+      <span style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">¿A qué categorías pertenecen tus productos?</span>
       <button class="modal-close" onclick="document.getElementById('tnMapeoModal').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body" style="padding:12px 20px 0">
@@ -2290,7 +2290,7 @@ if (window.caches && caches.keys) {
       <div id="tn-mapeo-list" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
     <div style="padding:16px 20px 28px">
-      <button onclick="confirmarMapeoTN(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Confirmar categorías</button>
+      <button onclick="confirmarMapeoTN(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Confirmar categorías</button>
     </div>
   </div>
 </div>
@@ -2300,7 +2300,7 @@ if (window.caches && caches.keys) {
   <div class="modal" style="max-height:85vh">
     <div class="modal-handle"></div>
     <div class="modal-header">
-      <span style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800">¿A qué categorías pertenecen tus productos?</span>
+      <span style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800">¿A qué categorías pertenecen tus productos?</span>
       <button class="modal-close" onclick="document.getElementById('mlMapeoModal').classList.remove('open')">✕</button>
     </div>
     <div class="modal-body" style="padding:12px 20px 0">
@@ -2308,7 +2308,7 @@ if (window.caches && caches.keys) {
       <div id="ml-mapeo-list" style="display:flex;flex-direction:column;gap:12px"></div>
     </div>
     <div style="padding:16px 20px 28px">
-      <button onclick="confirmarMapeoML(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Confirmar categorías</button>
+      <button onclick="confirmarMapeoML(this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Confirmar categorías</button>
     </div>
   </div>
 </div>
@@ -2327,7 +2327,7 @@ if (window.caches && caches.keys) {
         <input id="nueva-password-input" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)" minlength="6" autocomplete="new-password" style="background:white;border:1.5px solid #dfe8e3;border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;width:100%;box-sizing:border-box">
         <input id="nueva-password-confirm" type="password" placeholder="Confirmá la contraseña" minlength="6" autocomplete="new-password" style="background:white;border:1.5px solid #dfe8e3;border-radius:12px;padding:12px 16px;font-family:'DM Sans',sans-serif;font-size:.95rem;color:var(--navy);outline:none;width:100%;box-sizing:border-box">
         <div id="nueva-password-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;padding:10px 12px;border-radius:10px;font-size:.82rem;line-height:1.4"></div>
-        <button id="nueva-password-btn" onclick="submitNuevaContrasena(event)" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;width:100%">Guardar contraseña</button>
+        <button id="nueva-password-btn" onclick="submitNuevaContrasena(event)" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;cursor:pointer;width:100%">Guardar contraseña</button>
       </div>
     </div>
   </div>

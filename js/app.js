@@ -604,10 +604,10 @@ function renderFavs() {
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
         ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
-        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
+        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.93rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
           <div style="font-size:.75rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro || '')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         <div style="font-size:.76rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avgR} ★</div>
@@ -1011,10 +1011,10 @@ function renderComparadorModal() {
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
       ${comparadorList.map(p => `
-        <button onclick="closeComparador();abrirDetalle('${p.id}')" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
+        <button onclick="closeComparador();abrirDetalle('${p.id}')" style="background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">
           Ver perfil de ${escHtml(p.nombre)} →
         </button>`).join('')}
-      <button onclick="comparadorList=[];updateComparadorFab();closeComparador();showToast('Comparador limpiado')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:4px">
+      <button onclick="comparadorList=[];updateComparadorFab();closeComparador();showToast('Comparador limpiado')" style="background:#fee2e2;color:#ef4444;border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;margin-top:4px">
         Limpiar comparador
       </button>
     </div>`;
@@ -1096,17 +1096,17 @@ function renderProvCardMini(p, i) {
   const heartFill = faved ? '#EF4444' : 'none';
   const heartStroke = faved ? '#EF4444' : '#CBD5E1';
   const actionBtn = (p.whatsapp)
-    ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation();registrarContactoWA('${pid}')" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
-    : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:9px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;margin-top:8px">Ver perfil</button>`;
+    ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation();registrarContactoWA('${pid}')" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:9px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
+    : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:9px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;margin-top:8px">Ver perfil</button>`;
   return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
       ${p.logo_url
         ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
-        : `<div style="width:48px;height:48px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>`
+        : `<div style="width:48px;height:48px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;font-family:'Inter',sans-serif;flex-shrink:0">${ini}</div>`
       }
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-          <span style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
+          <span style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
           ${p.pro ? '<span style="font-size:.6rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 7px;border-radius:8px;flex-shrink:0;letter-spacing:.04em">PRO</span>' : ''}
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -1168,9 +1168,9 @@ function renderProvs(list) {
     ).join('');
     el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:40px 24px">
       <div style="font-size:3rem;margin-bottom:14px">🔍</div>
-      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px">${cats}</div>
-      <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
+      <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
     </div>`;
     return;
   }
@@ -1192,11 +1192,11 @@ function renderProvCards(el, list) {
       <div style="display:flex;align-items:flex-start;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
         ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
-        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
+        : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:flex-start;gap:6px">
-            <div style="font-family:'Sora',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
+            <div style="font-family:'Inter',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
             ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);letter-spacing:.04em;flex-shrink:0;margin-top:1px">PRO</span>' : ''}
           </div>
           <div style="font-size:.72rem;color:#6B7A99;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</div>
@@ -1268,7 +1268,7 @@ function renderServicios() {
   const lista = proveedoresDB.filter(p => esProvServicio(p) && matchesQuery(p, q));
   if (!lista.length) {
     el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:36px 24px">
-      <div style="font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">${q ? 'Sin servicios para esa búsqueda' : 'Estamos sumando los primeros servicios'}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">${q ? 'Sin servicios para esa búsqueda' : 'Estamos sumando los primeros servicios'}</div>
       <div style="font-size:.82rem;color:#6B7A99;line-height:1.5">Diseño web, contadores, fotografía de producto, packaging y logística. Muy pronto.</div>
     </div>`;
     return;
@@ -1447,7 +1447,7 @@ async function cargarProductosDetalle(proveedorId) {
     if (error || !data || !data.length) {
       const waSvg = '<svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>';
       const ctaWA = provActual?.whatsapp
-        ? '<button onclick="detWA()" style="margin-top:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:12px;padding:12px 20px;font-family:\'Sora\',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">' + waSvg + ' Pedir catálogo por WhatsApp</button>'
+        ? '<button onclick="detWA()" style="margin-top:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;border:none;border-radius:12px;padding:12px 20px;font-family:\'Inter\',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">' + waSvg + ' Pedir catálogo por WhatsApp</button>'
         : '';
       el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavía no cargó su catálogo acá.' + (provActual?.whatsapp ? ' Escribile por WhatsApp para pedirle el catálogo y los precios.' : '') + '<br>' + ctaWA + '</div>';
       return;
@@ -1510,7 +1510,7 @@ async function renderDetalleProductos(proveedorId) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite) ? '12px' : '0'}">
       ${cards}
     </div>
-    ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
+    ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
     ${notaLimite}
   `;
 }
@@ -2365,10 +2365,10 @@ function showModalPro(feature) {
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   overlay.innerHTML = `<div style="background:white;border-radius:24px 24px 0 0;padding:28px 24px 36px;width:100%;max-width:480px;text-align:center">
     <div style="font-size:2.5rem;margin-bottom:12px">⭐</div>
-    <div style="font-family:'Sora',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A;margin-bottom:8px">${escHtml(f)} es exclusivo del Plan Pro</div>
+    <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A;margin-bottom:8px">${escHtml(f)} es exclusivo del Plan Pro</div>
     <div style="font-size:.85rem;color:#777;line-height:1.5;margin-bottom:24px">Desbloqueá todas las funciones avanzadas para hacer crecer tu negocio mayorista.</div>
-    <button onclick="document.getElementById('modal-pro-upgrade').remove();goTo('planes')" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:16px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-bottom:10px">Activar Plan Pro →</button>
-    <button onclick="document.getElementById('modal-pro-upgrade').remove()" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Ahora no</button>
+    <button onclick="document.getElementById('modal-pro-upgrade').remove();goTo('planes')" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:16px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-bottom:10px">Activar Plan Pro →</button>
+    <button onclick="document.getElementById('modal-pro-upgrade').remove()" style="width:100%;background:#f5f5f5;color:#555;border:none;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;cursor:pointer">Ahora no</button>
   </div>`;
   overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
   document.body.appendChild(overlay);
@@ -2400,7 +2400,7 @@ async function cargarStatsDashboard() {
           if (nuevas > 0) {
             banner.style.display = 'block';
             banner.innerHTML = `<div style="background:linear-gradient(135deg,#F59E0B,#F97316);border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 3px 12px rgba(245,158,11,.3)">
-              <div style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:900;color:white;margin-bottom:4px">🎉 ¡Te contactaron ${nuevas} ${nuevas === 1 ? 'vez' : 'veces'} desde tu última visita!</div>
+              <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:900;color:white;margin-bottom:4px">🎉 ¡Te contactaron ${nuevas} ${nuevas === 1 ? 'vez' : 'veces'} desde tu última visita!</div>
               <div style="font-size:.76rem;color:rgba(255,255,255,.92);line-height:1.5;margin-bottom:10px">Los proveedores que aparecen primero reciben hasta 3x más consultas.</div>
               <button onclick="goTo('planes');haptic('light')" style="background:white;color:#B45309;border:none;border-radius:9px;padding:9px 16px;font-size:.78rem;font-weight:800;cursor:pointer;font-family:inherit">Aparecer primero →</button>
             </div>`;
@@ -2499,20 +2499,20 @@ async function cargarRankingRubro() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#c8962e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.5 13.5L7 22l5-3 5 3-1.5-8.5"/></svg>
         </span>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'Sora',sans-serif;font-size:1.7rem;font-weight:900;color:#b07d17;line-height:1;letter-spacing:-.02em">#${puesto}</span><span style="font-size:.72rem;color:#9a8544;font-weight:700">de ${total} en ${escHtml(miRubro)}</span></div>
-          <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-top:4px">Tu puesto en el rubro</div>
+          <div style="display:flex;align-items:baseline;gap:6px"><span style="font-family:'Inter',sans-serif;font-size:1.7rem;font-weight:900;color:#b07d17;line-height:1;letter-spacing:-.02em">#${puesto}</span><span style="font-size:.72rem;color:#9a8544;font-weight:700">de ${total} en ${escHtml(miRubro)}</span></div>
+          <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-top:4px">Tu puesto en el rubro</div>
           <div style="font-size:.7rem;color:#8a7734;margin-top:2px;line-height:1.4">Aparecés por encima de los proveedores del plan gratis</div>
         </div>
       </div>`;
     } else {
       card.innerHTML = `<div style="background:white;border:1.5px solid #E8F2EE;border-radius:14px;padding:16px">
-        <div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Tu posición en ${escHtml(miRubro)}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Tu posición en ${escHtml(miRubro)}</div>
         <div style="text-align:center;padding:2px 0 12px">
           <div style="font-size:.72rem;color:#6B7A99;margin-bottom:2px">Estás en el puesto</div>
-          <div style="font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.9rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
+          <div style="font-family:'Inter',sans-serif;font-size:2.2rem;font-weight:900;color:#006039;line-height:1">#${puesto}<span style="font-size:.9rem;color:#9CA3AF;font-weight:700"> de ${total}</span></div>
           <div style="font-size:.74rem;color:#6B7A99;margin-top:8px;line-height:1.5">Los proveedores <b>Pro</b> aparecen en el <b>top 3</b> de cada rubro y reciben más consultas.</div>
         </div>
-        <button onclick="showModalPro('Aparecer primero en tu rubro')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Sora',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer">Subir al top 3 con Pro</button>
+        <button onclick="showModalPro('Aparecer primero en tu rubro')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:13px;font-family:'Inter',sans-serif;font-size:.86rem;font-weight:800;cursor:pointer">Subir al top 3 con Pro</button>
       </div>`;
     }
   } catch (e) { card.style.display = 'none'; }
@@ -3681,14 +3681,14 @@ function renderRecomendaciones(ranked, rubroSel) {
     head.innerHTML = '';
     cont.innerHTML = `<div style="text-align:center;padding:8px 4px 4px;color:#6B7A99;font-size:.9rem">
       No encontramos un proveedor que encaje justo con eso todavía.</div>
-      <button onclick="closeTest();${rubroSel ? `filterCat('${rubroSel.replace(/'/g, "\\'")}')` : "goTo('buscar')"}" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-top:6px">Ver todos los proveedores</button>`;
+      <button onclick="closeTest();${rubroSel ? `filterCat('${rubroSel.replace(/'/g, "\\'")}')` : "goTo('buscar')"}" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;margin-top:6px">Ver todos los proveedores</button>`;
     return;
   }
 
   const rubroMostrado = rubroSel || (ranked[0].p.rubro || '').split(',')[0].trim() || 'proveedores';
   head.innerHTML = rubroSel
-    ? `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Tu mejor match en ${escHtml(rubroMostrado)}</div>`
-    : `<div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Te recomendamos empezar por ${escHtml(rubroMostrado)}</div>
+    ? `<div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:12px">Tu mejor match en ${escHtml(rubroMostrado)}</div>`
+    : `<div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Te recomendamos empezar por ${escHtml(rubroMostrado)}</div>
        <div style="font-size:.8rem;color:#6B7A99;margin-bottom:12px">Es donde más y mejores proveedores hay para tu perfil.</div>`;
 
   cont.innerHTML = ranked.map(({ p, reasons }, i) => {
@@ -3697,17 +3697,17 @@ function renderRecomendaciones(ranked, rubroSel) {
     const porque = reasons.length ? 'Te lo recomiendo porque ' + reasons.slice(0, 3).join(', ') + '.' : 'Buen match para lo que buscás.';
     const wa = normalizarWAArg(p.whatsapp);
     const waBtn = wa
-      ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarContactoWA('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
+      ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarContactoWA('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
       : '';
     return `<div style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;position:relative">
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
       <div style="display:flex;align-items:center;gap:12px;margin-top:${i === 0 ? '6px' : '0'}">
         ${p.logo_url
         ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
-        : `<div style="width:46px;height:46px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-family:'Sora',sans-serif;flex-shrink:0">${ini}</div>`}
+        : `<div style="width:46px;height:46px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-family:'Inter',sans-serif;flex-shrink:0">${ini}</div>`}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-            <span style="font-family:'Sora',sans-serif;font-size:.9rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
+            <span style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</span>
             ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 6px;border-radius:7px;letter-spacing:.04em">PRO</span>' : ''}
           </div>
           <div style="font-size:.72rem;color:#6B7A99;margin-top:2px">${escHtml(p.rubro)}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
@@ -3715,7 +3715,7 @@ function renderRecomendaciones(ranked, rubroSel) {
       </div>
       <div style="font-size:.8rem;color:#334155;line-height:1.5;margin:10px 0 12px">${escHtml(porque)}</div>
       <div style="display:flex;gap:8px">
-        <button onclick="closeTest();abrirDetalle('${p.id}')" style="flex:1;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:10px;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:700;color:#006039;cursor:pointer">Ver perfil</button>
+        <button onclick="closeTest();abrirDetalle('${p.id}')" style="flex:1;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;color:#006039;cursor:pointer">Ver perfil</button>
         ${waBtn}
       </div>
     </div>`;
@@ -3945,7 +3945,7 @@ function renderProdBuscar(filtro, query = '') {
   el.innerHTML = Object.entries(porRubro).map(([rubro, prods]) => `
     <div style="margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div style="font-family:'Sora',sans-serif;font-size:.92rem;font-weight:800;color:#111;display:flex;align-items:center;gap:5px">${RUBROS_ICONS[rubro] || ''} ${rubro}</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#111;display:flex;align-items:center;gap:5px">${RUBROS_ICONS[rubro] || ''} ${rubro}</div>
         <span onclick="setChip(document.querySelector('.chip[onclick*=\\'${rubro}\\']')||document.querySelector('.chip'),'${rubro}')" style="font-size:.75rem;font-weight:700;color:#006039;cursor:pointer">Ver todos ></span>
       </div>
       <div style="display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;padding-bottom:4px;-webkit-overflow-scrolling:touch">
@@ -4038,7 +4038,7 @@ function _drawBuscarGrid(el) {
         <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
       </div>
     </div>`).join('') +
-    (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
+    (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
 }
 
 function buscarVerMas() {
@@ -4155,7 +4155,7 @@ function showSearchDropdown(val) {
   dd.innerHTML = sugs.map(p =>
     `<div onclick="seleccionarProveedor('${p.id}')"
       style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-top:1px solid #EFF6F2">
-      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#065F46;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(p.nombre.substring(0, 2).toUpperCase())}</div>
+      <div style="width:34px;height:34px;border-radius:9px;background:#EEF2FF;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#065F46;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(p.nombre.substring(0, 2).toUpperCase())}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.85rem;font-weight:700;color:#1A1A1A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
         <div style="font-size:.72rem;color:#6B7A99">${escHtml(p.rubro || '')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
@@ -4248,7 +4248,7 @@ function abrirDetalleProd(id) {
   const chatBtn = document.getElementById('prod-det-chat-btn');
   const proConWA = !!(prov && prov.whatsapp);
   if (waBtn) {
-    waBtn.style.cssText = 'width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(18,140,126,.28);display:' + (proConWA ? 'flex' : 'none');
+    waBtn.style.cssText = 'width:100%;padding:15px;border-radius:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;font-family:\'Inter\',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;align-items:center;justify-content:center;gap:10px;box-shadow:0 2px 12px rgba(18,140,126,.28);display:' + (proConWA ? 'flex' : 'none');
   }
   if (chatBtn) chatBtn.style.display = 'none';
   renderProdRelacionados(p);
@@ -4380,8 +4380,8 @@ function renderProdRelacionados(p) {
   cont.innerHTML = `
     <div style="border-top:1px solid var(--border);margin-top:4px;padding-top:18px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px">
-        <div style="font-family:'Sora',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Más de ${escHtml(p.provNombre)}</div>
-        <button onclick="irAProveedorDesdeProd()" style="background:none;border:none;padding:0;color:#065F46;font-family:'Sora',sans-serif;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver toda la tienda →</button>
+        <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:var(--navy);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Más de ${escHtml(p.provNombre)}</div>
+        <button onclick="irAProveedorDesdeProd()" style="background:none;border:none;padding:0;color:#065F46;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:800;cursor:pointer;white-space:nowrap;flex-shrink:0">Ver toda la tienda →</button>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
         ${cards}
@@ -4955,10 +4955,10 @@ function renderAccionesPedido(p) {
   const btnLabel = { confirmado: '✓ Confirmar pedido', 'pago recibido': '💳 Marcar pago recibido', 'en preparacion': '📦 En preparación', enviado: '🚀 Marcar como enviado' };
   const sigEstado = siguiente[p.estado];
   el.innerHTML = `
-    ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
-    ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado')" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
-    ${['enviado', 'cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
-    ${!['enviado', 'cancelado', 'archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Sora',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
+    ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
+    ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado')" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
+    ${['enviado', 'cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
+    ${!['enviado', 'cancelado', 'archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
   `;
 }
 
@@ -5223,8 +5223,8 @@ function renderExcelStep2() {
     ${colOpts('descripcion', 'Descripción', false)}
     ${colOpts('categoria', 'Categoría del Excel', false)}
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="excelBack(2)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
-      <button onclick="confirmarColumnasExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Continuar →</button>
+      <button onclick="excelBack(2)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button onclick="confirmarColumnasExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">Continuar →</button>
     </div>`;
 }
 
@@ -5271,8 +5271,8 @@ function confirmarColumnasExcel() {
       Listo para importar <strong>${total} producto${total === 1 ? '' : 's'}</strong>.
     </div>
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button onclick="excelBack(3)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
-      <button id="excel-import-btn" onclick="importarDesdeExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">
+      <button onclick="excelBack(3)" style="flex:1;background:#eff6f2;color:#065F46;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">← Volver</button>
+      <button id="excel-import-btn" onclick="importarDesdeExcel()" style="flex:2;background:#006039;color:white;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;cursor:pointer">
         <span id="excel-import-btn-text">Importar ${total} productos →</span>
       </button>
     </div>`;
@@ -5424,21 +5424,21 @@ function ordenarMisProds(tipo) {
     el.innerHTML = `<div style="padding:20px 0">
       <div style="text-align:center;margin-bottom:16px">
         <div style="font-size:1.8rem;margin-bottom:6px">📦</div>
-        <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:700;color:#333;margin-bottom:4px">Todavía no tenés productos</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#333;margin-bottom:4px">Todavía no tenés productos</div>
         <div style="font-size:.78rem;color:#999">¿Cómo querés cargar tu catálogo?</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <button onclick="openAddProduct()" style="background:#006039;color:white;border:none;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
           <div style="width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Agregar uno por uno</div><div style="font-size:.72rem;opacity:.75">Manual, con foto y precio</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Agregar uno por uno</div><div style="font-size:.72rem;opacity:.75">Manual, con foto y precio</div></div>
         </button>
         <button onclick="openAddProduct();switchAddTab('excel')" style="background:white;color:#1a1a1a;border:1.5px solid #E8F2EE;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
           <div style="width:36px;height:36px;background:#E8F2EE;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Importar desde Excel o Tienda Nube</div><div style="font-size:.72rem;color:#999">Subí tu lista y la importamos automáticamente</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Importar desde Excel o Tienda Nube</div><div style="font-size:.72rem;color:#999">Subí tu lista y la importamos automáticamente</div></div>
         </button>
         <button onclick="openAddProduct();switchAddTab('ml')" style="background:white;color:#1a1a1a;border:1.5px solid #fff3b0;border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;text-align:left;width:100%">
           <div style="width:36px;height:36px;background:#FFF9C4;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#b58a00" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></div>
-          <div><div style="font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700">Importar desde MercadoLibre</div><div style="font-size:.72rem;color:#999">Pegá el link y traemos los datos</div></div>
+          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Importar desde MercadoLibre</div><div style="font-size:.72rem;color:#999">Pegá el link y traemos los datos</div></div>
         </button>
       </div>
     </div>`;
@@ -5517,7 +5517,7 @@ function renderDetCarousels(prodsDetalle) {
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${resto > 0 ? '12px' : '0'}">
       ${cards}
     </div>
-    ${resto > 0 ? `<button onclick="abrirTodosProductosProv()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver los ${resto} productos restantes →</button>` : ''}
+    ${resto > 0 ? `<button onclick="abrirTodosProductosProv()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver los ${resto} productos restantes →</button>` : ''}
   `;
 }
 
@@ -5556,9 +5556,9 @@ function renderProvDestacados() {
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
         ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
-        : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
+        : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
-      <div style="font-family:'Sora',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
+      <div style="font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
       <div style="font-size:.68rem;color:#6B7A99;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">${escHtml(p.rubro || '')}</div>
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center">
         ${p.pro ? '<span style="font-size:.58rem;font-weight:800;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);padding:2px 6px;border-radius:20px;letter-spacing:.04em">PRO</span>' : ''}
@@ -5593,10 +5593,10 @@ async function renderRecienLlegados() {
       return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
         ${p.logo_url
           ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
-          : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Sora',sans-serif">${escHtml(ini)}</div>`
+          : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
         }
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Sora',sans-serif;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
+          <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.nombre)}</div>
           <div style="font-size:.73rem;color:#6B7A99;margin-top:1px">${escHtml(p.rubro || 'General')}${p.provincia ? ' · ' + escHtml(p.provincia) : ''}</div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
@@ -5931,9 +5931,10 @@ async function renderTiendaNubeSection() {
   // Si no es Pro, mostrar botón bloqueado
   if (!esProvPro()) {
     const card = document.getElementById('tn-card');
-    if (card) card.style.background = '#3f4854';
+    if (card) card.style.background = '#fff';
     statusLabel.textContent = 'Disponible en Plan Pro';
-    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Tienda Nube · Solo Pro</button>`;
+    statusLabel.style.color = '#8a948d';
+    btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:#f1f3f0;color:#6b756e;border:1px solid #e5e8e2;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Tienda Nube · Solo Pro</button>`;
     return;
   }
 
@@ -5947,14 +5948,14 @@ async function renderTiendaNubeSection() {
   const card = document.getElementById('tn-card');
   if (tnStoreId) {
     statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = '#0a5c3c';
-    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:white;color:#059669;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+    statusLabel.style.color = '#0b6b45';
+    if (card) card.style.background = '#fff';
+    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
     statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
-    statusLabel.style.color = 'rgba(255,255,255,.8)';
-    if (card) card.style.background = '#1c5aa0';
-    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:white;color:#1B74E4;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1B74E4" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
+    statusLabel.style.color = '#5f6f66';
+    if (card) card.style.background = '#fff';
+    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
   }
 }
 
@@ -6054,11 +6055,11 @@ async function renderMercadoLibreSection() {
 
   // Si no es Pro -> tarjeta gris bloqueada
   if (!esProvPro()) {
-    card.style.background = '#3f4854';
+    card.style.background = '#fff';
     statusLabel.textContent = 'Disponible en Plan Pro';
-    statusLabel.style.color = 'rgba(255,255,255,.75)';
-    if (titulo) titulo.style.color = 'white';
-    btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Mercado Libre · Solo Pro</button>`;
+    statusLabel.style.color = '#8a948d';
+    if (titulo) titulo.style.color = '#16201b';
+    btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:#f1f3f0;color:#6b756e;border:1px solid #e5e8e2;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Mercado Libre · Solo Pro</button>`;
     return;
   }
 
@@ -6075,18 +6076,18 @@ async function renderMercadoLibreSection() {
   }
 
   // Restaurar colores ML (por si venía del estado gris al volver a Pro)
-  if (titulo) titulo.style.color = '#1a1a1a';
+  if (titulo) titulo.style.color = '#16201b';
 
   if (conectado) {
-    card.style.background = '#eab308';
+    card.style.background = '#fff';
     statusLabel.textContent = data.ml_nickname ? `Conectada · @${data.ml_nickname}` : 'Conectada';
-    statusLabel.style.color = 'rgba(0,0,0,.7)';
-    btnArea.innerHTML = `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+    statusLabel.style.color = '#0b6b45';
+    btnArea.innerHTML = `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
   } else {
-    card.style.background = '#ecc233';
+    card.style.background = '#fff';
     statusLabel.textContent = 'Importá tus publicaciones automáticamente';
-    statusLabel.style.color = 'rgba(0,0,0,.6)';
-    btnArea.innerHTML = `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#1a1a1a;color:#FFE600;border:none;border-radius:10px;padding:11px;font-family:'Sora',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFE600" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`;
+    statusLabel.style.color = '#5f6f66';
+    btnArea.innerHTML = `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`;
   }
 }
 
@@ -6230,11 +6231,11 @@ function renderBannerProDashboard() {
 
   if (planActivo) {
     const fechaStr = planHasta.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
-    container.innerHTML = '<div style="background:linear-gradient(135deg,#065F46,#059669);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#A7F3D0;margin-bottom:6px">⭐ Plan Pro Activo</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Tu cuenta está potenciada</div><div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.5">Vence el ' + fechaStr + '</div></div>';
+    container.innerHTML = '<div style="background:linear-gradient(135deg,#065F46,#059669);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.1)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#A7F3D0;margin-bottom:6px">Plan Pro Activo</div><div style="font-family:\'Inter\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Tu cuenta está potenciada</div><div style="font-size:.75rem;color:rgba(255,255,255,.75);line-height:1.5">Vence el ' + fechaStr + '</div></div>';
   } else if (esPromoActiva()) {
-    container.innerHTML = '<div style="background:linear-gradient(135deg,#064E3B,#065F46);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(74,222,128,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ OFERTA LIMITADA</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Probá el Plan Pro GRATIS</div><div style="font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Sin tarjeta · Hasta el 31 de mayo · WhatsApp directo · Prioridad en búsquedas</div><button onclick="activarPlanProGratis(this)" style="background:#4ade80;color:#064E3B;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer;width:100%">Activar Plan Pro GRATIS →</button></div>';
+    container.innerHTML = '<div style="background:linear-gradient(135deg,#064E3B,#065F46);border-radius:14px;padding:18px;position:relative;overflow:hidden"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(74,222,128,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">OFERTA LIMITADA</div><div style="font-family:\'Inter\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Probá el Plan Pro GRATIS</div><div style="font-size:.75rem;color:rgba(255,255,255,.65);line-height:1.5;margin-bottom:14px">Sin tarjeta · Hasta el 31 de mayo · WhatsApp directo · Prioridad en búsquedas</div><button onclick="activarPlanProGratis(this)" style="background:#4ade80;color:#064E3B;font-family:\'Inter\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer;width:100%">Activar Plan Pro GRATIS →</button></div>';
   } else {
-    container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">⭐ Plan Pro</div><div style="font-family:\'Sora\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><button onclick="event.stopPropagation();iniciarPagoPro(this)" style="background:#006039;color:white;font-family:\'Sora\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer">Activar Pro · $20.000/mes</button></div>';
+    container.innerHTML = '<div onclick="goTo(\'planes\')" style="background:linear-gradient(135deg,#1A1A1A,#2D2D2D);border-radius:14px;padding:18px;position:relative;overflow:hidden;cursor:pointer"><div style="position:absolute;right:-15px;top:-15px;width:80px;height:80px;border-radius:50%;background:rgba(0,166,81,.15)"></div><div style="font-size:.65rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#4ade80;margin-bottom:6px">Plan Pro</div><div style="font-family:\'Inter\',sans-serif;font-size:1rem;font-weight:900;color:white;margin-bottom:4px">Potenciá tu negocio</div><div style="font-size:.75rem;color:rgba(255,255,255,.55);line-height:1.5;margin-bottom:14px">WhatsApp directo · Prioridad en búsquedas · Estadísticas</div><button onclick="event.stopPropagation();iniciarPagoPro(this)" style="background:#006039;color:white;font-family:\'Inter\',sans-serif;font-size:.8rem;font-weight:800;border-radius:8px;padding:10px 16px;border:none;cursor:pointer">Activar Pro · $20.000/mes</button></div>';
   }
 }
 
