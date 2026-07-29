@@ -2460,6 +2460,18 @@ async function cargarStatsDashboard() {
       if (elC) elC.textContent = prov.consultas || 0;
       renderConsultasTrend(currentUser.proveedorId, prov.consultas || 0, prov.visitas || 0);
 
+      // Dato REAL del mes desde la base (tabla consultas con fecha). Sobrescribe el delta
+      // aproximado por localStorage con la prueba de valor exacta: "X este mes". Se resuelve
+      // async, así que gana sobre renderConsultasTrend (sincrónico) sin condición de carrera.
+      sb.rpc('consultas_mes', { proveedor_id: currentUser.proveedorId }).then(({ data: mes }) => {
+        if (typeof mes !== 'number' || mes <= 0) return;
+        const d = document.getElementById('consultas-delta');
+        if (d) {
+          d.textContent = mes + (mes === 1 ? ' contacto este mes' : ' contactos este mes');
+          d.style.display = 'inline-flex';
+        }
+      }).catch(() => {});
+
       // ===== MOMENTO MÁGICO: consultas nuevas desde la última visita (solo free) =====
       // Compara el total actual contra el guardado la última vez que entró.
       // Solo una vez por carga de página (window._egConsultaChecked) para no parpadear.
