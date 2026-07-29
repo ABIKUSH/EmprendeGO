@@ -2120,8 +2120,9 @@ async function checkSession(sessionOverride) {
         try {
           if (typeof fbq === 'function' && !window._egLoginTracked) {
             window._egLoginTracked = true;
-            if (!existingUser) fbq('track', 'CompleteRegistration'); // usuario nuevo = conversión que paga la campaña
             fbq('trackCustom', 'Login'); // todo inicio de sesión
+            // CompleteRegistration NO va acá: ese evento queda reservado para el submit
+            // exitoso del formulario de registro (perfil nuevo), según pidió la publicista.
           }
         } catch (e) {}
       } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
@@ -3554,6 +3555,9 @@ async function showRegSuccess() {
   document.getElementById('reg-success').style.display = 'block';
   window.scrollTo(0, 0);
   trackEvent('sign_up', { method: 'proveedor_registro' });
+  // Meta Pixel: registro de proveedor completado (perfil nuevo creado) → conversión de campaña.
+  // Va acá, después del insert OK, para NO contar registros que fallaron o duplicados.
+  try { if (typeof fbq === 'function') fbq('track', 'CompleteRegistration'); } catch (e) {}
 }
 
 function showToast(msg) {
