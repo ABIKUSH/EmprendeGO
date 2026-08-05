@@ -73,6 +73,7 @@
   let dataListo = false;
   const seStack = [];          // historial interno de vistas
   let provCache = null;        // proveedores aprobados [{id, nombre, rubro, ...}]
+  let idxCache = null;         // indice liviano del catalogo [{id,nombre,precio,prov,n}]
 
   /* ---------- helpers ---------- */
   const $ = (id) => document.getElementById(id);
@@ -121,17 +122,17 @@
         <div class="se-obg"></div>
         <button class="se-fab-back" data-back aria-label="Volver">${icoBack()}</button>
         <div class="se-onb">
-          <span class="se-eyebrow"><span class="se-pulse"></span> Datos del mercado · en vivo</span>
-          <h1 class="se-h1">Vendé lo que <em>ya se busca.</em></h1>
-          <p class="se-bajada">Te mostramos qué se busca en el mercado y qué proveedor de EmprendeGO te lo vende por mayor.</p>
+          <span class="se-eyebrow se-rise" style="--d:60ms"><span class="se-pulse"></span> Datos del mercado · en vivo</span>
+          <h1 class="se-h1 se-rise" style="--d:140ms">Vendé lo que <em>ya se busca.</em></h1>
+          <p class="se-bajada se-rise" style="--d:220ms">Te mostramos qué se busca en el mercado y qué proveedor de EmprendeGO te lo vende por mayor.</p>
           <div class="se-steps">
-            <div class="se-step"><div class="se-num">1</div><div><b>¿Qué vendo?</b><small>Lo más buscado y por categoría.</small></div></div>
-            <div class="se-step"><div class="se-num">2</div><div><b>¿Quién me lo vende?</b><small>Proveedores verificados y su precio por mayor.</small></div></div>
-            <div class="se-step three"><div class="se-num">3</div><div><b>Arranco</b><small>Contactás y hacés tu primer pedido.</small></div></div>
+            <div class="se-step se-rise" style="--d:300ms"><div class="se-num">1</div><div><b>¿Qué vendo?</b><small>Lo más buscado y por categoría.</small></div></div>
+            <div class="se-step se-rise" style="--d:370ms"><div class="se-num">2</div><div><b>¿Quién me lo vende?</b><small>Proveedores verificados y su precio por mayor.</small></div></div>
+            <div class="se-step three se-rise" style="--d:440ms"><div class="se-num">3</div><div><b>Arranco</b><small>Contactás y hacés tu primer pedido.</small></div></div>
           </div>
-          <div class="se-onb-cta">
-            <button class="se-cta" id="se-btn-empezar">Ver el mercado hoy ${icoArrow()}</button>
-            <p class="se-mono se-hint">Gratis · Sin registrarte</p>
+          <div class="se-onb-cta se-rise" style="--d:530ms">
+            <button class="se-cta" id="se-btn-empezar">Probar gratis 15 días ${icoArrow()}</button>
+            <p class="se-mono se-hint">Sin tarjeta · Sin registrarte</p>
           </div>
         </div>
       </section>
@@ -234,10 +235,42 @@
     return (provCache || []).filter(p => norm(p.rubro).includes(cat.match));
   }
 
+  // Indice liviano de todo el catalogo visible. Se trae una sola vez y alimenta
+  // tres cosas: la cobertura de cada tendencia, el match producto->proveedores y
+  // el buscador. Sin imagenes, para que pese poco en celular.
+  async function cargarIndice() {
+    if (idxCache) return idxCache;
+    try {
+      const { data } = await sb.from('productos')
+        .select('id,nombre,precio,proveedor_id')
+        .eq('visible', true).limit(5000);
+      idxCache = (data || []).map(p => ({
+        id: p.id, nombre: p.nombre, precio: p.precio,
+        prov: p.proveedor_id, n: norm(p.nombre)
+      })).filter(x => x.n && x.prov);
+    } catch (e) { idxCache = []; }
+    return idxCache;
+  }
+
+  // Match por palabras: "zapatillas mujer" exige que el nombre contenga ambas.
+  // Se usa igual para la cobertura y para el detalle, asi el numero que promete
+  // la tarjeta es exactamente el que despues se ve.
+  function matchear(term) {
+    const t = norm(term);
+    if (!t || !idxCache) return [];
+    const ws = t.split(/\s+/).filter(w => w.length > 2);
+    if (!ws.length) return idxCache.filter(x => x.n.includes(t));
+    return idxCache.filter(x => ws.every(w => x.n.includes(w)));
+  }
+  function coberturaDe(term) {
+    const hits = matchear(term);
+    return { provs: new Set(hits.map(h => h.prov)).size, prods: hits.length };
+  }
+
   async function loadMercado() {
     if (dataListo) return;
     dataListo = true;
-    await cargarProveedores();
+    await Promise.all([cargarProveedores(), cargarIndice()]);
     renderCategorias();
     renderMasBuscado();
   }
@@ -281,13 +314,29 @@
       } catch (e) { }
     }
     const src = $('se-trend-src');
-    if (src) src.textContent = fromMarket ? 'en vivo' : 'demanda en EmprendeGO';
+    if (src) src.textContent = fromMarket ? 'Mercado, hoy' : 'Demanda en EmprendeGO';
     if (!terms.length) { cont.innerHTML = '<p class="se-muted" style="padding:8px 2px">Todavía no hay datos de tendencias.</p>'; return; }
-    cont.innerHTML = '<div class="se-chips">' + terms.map((t, i) =>
-      `<button class="se-chip" data-term="${esc(t)}"><span class="se-chip-pos">${i + 1}</span> ${esc(t)}</button>`
-    ).join('') + '</div>';
+    cont.innerHTML = '<div class="se-tgrid">' + terms.map((t, i) => cardTendencia(t, i)).join('') + '</div>';
     // Tocar una tendencia = matchear con proveedores de EmprendeGO.
     cont.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
+  }
+
+  // Tarjeta de tendencia. Solo datos verificables: la posicion es la que devuelve
+  // el mercado, el rubro sale del mapa de pistas y la cobertura se cuenta contra
+  // el catalogo real. No hay curvas ni porcentajes porque el endpoint de
+  // tendencias no da volumen ni historico: dibujarlos seria inventarlos.
+  function cardTendencia(term, i) {
+    const cat = catDeTermino(term);
+    const { provs } = coberturaDe(term);
+    const cobertura = provs > 0
+      ? `<span class="se-tcob ok">${provs} proveedor${provs !== 1 ? 'es' : ''}</span>`
+      : `<span class="se-tcob none">Sin cobertura</span>`;
+    const rubro = cat ? `<span class="se-trub">${esc(cat.key)}</span>` : '';
+    return `<button class="se-tcard${i < 3 ? ' top' : ''}" data-term="${esc(term)}" style="--d:${i * 40}ms">
+      <span class="se-tpos se-mono">${String(i + 1).padStart(2, '0')}</span>
+      <span class="se-tname">${esc(term)}</span>
+      <span class="se-tmeta">${rubro}${cobertura}</span>
+    </button>`;
   }
 
   /* ---------- categoría → productos ---------- */
@@ -316,14 +365,19 @@
       list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no hay productos cargados en ${esc(key)}</div><p class="se-muted">Hay proveedores del rubro; podés contactarlos igual desde Buscar.</p></div>`;
       return;
     }
-    list.innerHTML = prods.map(p => rowProducto(p)).join('');
+    const byId = {}; (provCache || []).forEach(p => byId[p.id] = p);
+    list.innerHTML = prods.map(p => rowProducto(p, byId[p.proveedor_id])).join('');
     list.querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.prod)));
   }
 
-  function rowProducto(p) {
+  function rowProducto(p, prov) {
+    const quien = prov ? `<span class="se-prodprov">${esc(prov.nombre || '')}</span>` : '';
     return `<button class="se-prodrow" data-prod="${esc(p.nombre)}">
       ${fotoBox(p, 'se-prodthumb')}
-      <div class="se-prodinfo"><b>${esc(p.nombre)}</b>${p.precio ? '<span class="se-mono se-prodprice">' + money(p.precio) + '</span>' : ''}</div>
+      <div class="se-prodinfo">
+        <b>${esc(p.nombre)}</b>
+        <span class="se-prodline">${p.precio ? '<span class="se-mono se-prodprice">' + money(p.precio) + '</span>' : ''}${quien}</span>
+      </div>
       ${icoChevron()}
     </button>`;
   }
@@ -337,18 +391,16 @@
     const list = $('se-prov-list');
     list.innerHTML = loading();
     show('prod');
-    let prods = [];
-    try {
-      const { data } = await sb.from('productos')
-        .select('id,nombre,precio,imagenes,imagen_url,foto_url,proveedor_id')
-        .ilike('nombre', '%' + t + '%').eq('visible', true).limit(120);
-      prods = data || [];
-    } catch (e) { prods = []; }
+    await Promise.all([cargarProveedores(), cargarIndice()]);
+
+    // Mismo matcher que usa la cobertura de la tarjeta: el numero que promete el
+    // ranking es el que se ve aca.
+    const prods = matchear(t);
 
     // agrupar por proveedor
     const porProv = {};
     prods.forEach(p => {
-      const id = p.proveedor_id;
+      const id = p.prov;
       if (!id) return;
       if (!porProv[id]) porProv[id] = { min: p.precio || null, ejemplo: p.nombre, count: 0 };
       porProv[id].count++;
@@ -367,8 +419,6 @@
     heroBits.push(`<div class="se-stat"><div class="se-stat-n se-mono">${provIds.length}</div><div class="se-stat-l se-mono">proveedor${provIds.length !== 1 ? 'es' : ''} lo vende${provIds.length !== 1 ? 'n' : ''}</div></div>`);
     $('se-prodhero').innerHTML = '<div class="se-h2" style="margin-bottom:12px">' + esc(t) + '</div><div class="se-stats">' + heroBits.join('') + '</div>';
 
-    await cargarProveedores();
-
     // Nadie lo tiene publicado con ese nombre. Antes de mostrar un callejón sin
     // salida, ofrecemos proveedores del rubro al que pertenece el término,
     // diciendo con todas las letras que es del rubro y no un producto publicado.
@@ -378,13 +428,13 @@
       if (delRubro.length) {
         const cards = delRubro
           .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
-          .map(p => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t)).join('');
+          .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t, i)).join('');
         list.innerHTML =
           `<div class="se-nota">
              <div class="se-nota-t">Nadie lo tiene publicado todavía</div>
              <p class="se-muted">Estos ${delRubro.length} proveedores son del rubro ${esc(cat.key)}. No figura “${esc(t)}” en su catálogo, pero es lo suyo: conviene preguntarles directo.</p>
-           </div>` + cards;
-        list.querySelectorAll('[data-wa]').forEach(b => b.addEventListener('click', () => { window.open(b.dataset.wa, '_blank'); }));
+           </div><div class="se-sgrid">${cards}</div>`;
+        ligarCardsProveedor(list);
         return;
       }
       list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no tenemos proveedores con “${esc(t)}” publicado</div><p class="se-muted">Probá con un término más general, o mirá las categorías.</p></div>`;
@@ -396,12 +446,27 @@
       .map(id => ({ prov: byId[id], info: porProv[id] }))
       .filter(x => x.prov)
       .sort((a, b) => (a.info.min || 9e9) - (b.info.min || 9e9))
-      .map(x => cardProveedor(x.prov, x.info, t)).join('');
-    list.innerHTML = cards || `<div class="se-empty"><div class="se-empty-t">Proveedores no disponibles ahora</div></div>`;
-    list.querySelectorAll('[data-wa]').forEach(b => b.addEventListener('click', () => { window.open(b.dataset.wa, '_blank'); }));
+      .map((x, i) => cardProveedor(x.prov, x.info, t, i)).join('');
+    list.innerHTML = cards
+      ? `<div class="se-sgrid">${cards}</div>`
+      : `<div class="se-empty"><div class="se-empty-t">Proveedores no disponibles ahora</div></div>`;
+    ligarCardsProveedor(list);
   }
 
-  function cardProveedor(prov, info, term) {
+  // Tap en la ficha = perfil del proveedor (abrirDetalle vive en app.js).
+  // El boton de WhatsApp corta la propagacion para no abrir las dos cosas.
+  function ligarCardsProveedor(cont) {
+    cont.querySelectorAll('[data-wa]').forEach(b => b.addEventListener('click', (e) => {
+      e.stopPropagation(); window.open(b.dataset.wa, '_blank');
+    }));
+    cont.querySelectorAll('[data-prov]').forEach(c => c.addEventListener('click', () => {
+      try { if (typeof abrirDetalle === 'function') abrirDetalle(c.dataset.prov); } catch (e) { }
+    }));
+  }
+
+  // Ficha compacta: entran dos por fila en celular. Toda la tarjeta es tappable
+  // hacia el perfil; el boton verde va directo a WhatsApp.
+  function cardProveedor(prov, info, term, i) {
     const ini = (prov.nombre || '·')[0].toUpperCase();
     const logo = prov.logo_url || prov.foto_url || '';
     const avatar = logo
@@ -410,26 +475,28 @@
     const msg = info.rubroOnly
       ? `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. ¿Manejás ${term} por mayor? Estoy armando mi emprendimiento y quiero revender. Si tenés, ¿me pasás precios y mínimo de compra? ¡Gracias!`
       : `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. Me interesa comprar ${term} por mayor para revender. ¿Me pasás precios y mínimo de compra? ¡Gracias!`;
-    const min = prov.pedido_minimo ? `<div class="se-sfig"><div class="se-sfl se-mono">Mínimo</div><div class="se-sfv">${esc(prov.pedido_minimo)}</div></div>` : '';
-    const precio = info.min ? `<div class="se-sfig"><div class="se-sfl se-mono">Desde</div><div class="se-sfv se-mono">${money(info.min)}</div></div>` : '';
-    // En el fallback por rubro no hay productos que contar: mostrar "0" seria enganoso.
-    const prods = info.rubroOnly
-      ? `<div class="se-sfig"><div class="se-sfl se-mono">Rubro</div><div class="se-sfv">${esc((prov.rubro || '').split(',')[0].trim() || '—')}</div></div>`
-      : `<div class="se-sfig"><div class="se-sfl se-mono">Productos</div><div class="se-sfv se-mono">${info.count}</div></div>`;
-    return `<div class="se-supp">
-      <div class="se-supp-top">
-        ${avatar}
-        <div class="se-supp-name">
-          <b>${esc(prov.nombre || 'Proveedor')} <span class="se-verif" title="Verificado">${icoCheck()}</span></b>
-          <div class="se-supp-loc se-mono">${esc(prov.provincia || 'Argentina')}</div>
-        </div>
-      </div>
-      <div class="se-sfigs">${precio}${min}${prods}</div>
-      ${prov.whatsapp ? `<button class="se-cta se-wa" data-wa="${esc(waLink(prov.whatsapp, msg))}">${icoWa()} Contactar por WhatsApp</button>` : '<div class="se-muted se-mono" style="text-align:center;font-size:.72rem;padding:8px">Sin WhatsApp cargado</div>'}
-    </div>`;
+    // Un solo dato duro por ficha: el que le sirve al que va a comprar.
+    const dato = info.min
+      ? `<span class="se-sfl se-mono">Desde</span><span class="se-sfv se-mono">${money(info.min)}</span>`
+      : (prov.pedido_minimo
+        ? `<span class="se-sfl se-mono">Mínimo</span><span class="se-sfv">${esc(prov.pedido_minimo)}</span>`
+        : `<span class="se-sfl se-mono">Rubro</span><span class="se-sfv">${esc((prov.rubro || '').split(',')[0].trim() || '—')}</span>`);
+    const wa = prov.whatsapp
+      ? `<button class="se-swa" data-wa="${esc(waLink(prov.whatsapp, msg))}" aria-label="Contactar a ${esc(prov.nombre || '')} por WhatsApp">${icoWa()} WhatsApp</button>`
+      : `<span class="se-swa off">Sin WhatsApp</span>`;
+    return `<article class="se-supp" data-prov="${esc(prov.id)}" style="--d:${(i || 0) * 45}ms" tabindex="0">
+      ${avatar}
+      <h4 class="se-supp-name">${esc(prov.nombre || 'Proveedor')} <span class="se-verif" title="Verificado">${icoCheck()}</span></h4>
+      <p class="se-supp-loc se-mono">${esc(prov.provincia || 'Argentina')}</p>
+      <div class="se-sfig">${dato}</div>
+      ${wa}
+    </article>`;
   }
 
-  /* ---------- buscador ---------- */
+  /* ---------- buscador del catálogo ---------- */
+  // Busca sobre el indice ya cargado (instantaneo, sin ida y vuelta al servidor)
+  // y recien pide las fotos de lo que va a mostrar. Devuelve productos y tambien
+  // proveedores, que es lo que uno espera de un buscador de catalogo.
   let buscarT = null;
   function buscar(q) {
     const cont = $('se-res');
@@ -439,23 +506,53 @@
     if (t.length < 2) { cont.innerHTML = '<p class="se-muted se-mono" style="padding:12px 2px">Escribí al menos 2 letras…</p>'; return; }
     cont.innerHTML = loading();
     buscarT = setTimeout(async () => {
-      let prods = [];
-      try {
-        const { data } = await sb.from('productos')
-          .select('id,nombre,precio,imagenes,imagen_url,foto_url,proveedor_id')
-          .ilike('nombre', '%' + q.trim() + '%').eq('visible', true).limit(40);
-        prods = data || [];
-      } catch (e) { prods = []; }
-      // dedup por nombre para no repetir
+      await Promise.all([cargarProveedores(), cargarIndice()]);
+
+      // Productos: primero los que empiezan con lo escrito, despues el resto.
+      const hits = matchear(t);
       const vistos = new Set(); const uniq = [];
-      prods.forEach(p => { const k = norm(p.nombre); if (!vistos.has(k)) { vistos.add(k); uniq.push(p); } });
-      if (!uniq.length) {
-        cont.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no medimos “${esc(q.trim())}”</div><p class="se-muted">Ningún proveedor lo tiene publicado por ahora. Quedó registrado como demanda.</p></div>`;
+      hits.sort((a, b) => (b.n.startsWith(t) ? 1 : 0) - (a.n.startsWith(t) ? 1 : 0) || a.n.length - b.n.length)
+        .forEach(p => { if (!vistos.has(p.n)) { vistos.add(p.n); uniq.push(p); } });
+      const top = uniq.slice(0, 30);
+
+      // Proveedores cuyo nombre o rubro coincide.
+      const provs = (provCache || []).filter(p => norm(p.nombre).includes(t) || norm(p.rubro).includes(t)).slice(0, 8);
+
+      if (!top.length && !provs.length) {
+        const cat = catDeTermino(t);
+        cont.innerHTML = `<div class="se-empty">
+            <div class="se-empty-t">Nadie tiene “${esc(q.trim())}” publicado</div>
+            <p class="se-muted">${cat ? 'Probá mirando la categoría ' + esc(cat.key) + ', o buscá un término más general.' : 'Probá con un término más general.'}</p>
+          </div>`;
         return;
       }
-      cont.innerHTML = uniq.map(p => rowProducto(p)).join('');
+
+      // Fotos solo de lo que se va a pintar.
+      let fotos = {};
+      if (top.length) {
+        try {
+          const { data } = await sb.from('productos')
+            .select('id,imagenes,imagen_url,foto_url').in('id', top.map(p => p.id));
+          (data || []).forEach(r => { fotos[r.id] = fotoDe(r); });
+        } catch (e) { }
+      }
+
+      const byId = {}; (provCache || []).forEach(p => byId[p.id] = p);
+      let html = '';
+      if (provs.length) {
+        html += `<div class="se-seclabel"><div class="se-h3">Proveedores</div><span class="se-mono se-muted">${provs.length}</span></div>`;
+        html += `<div class="se-sgrid">${provs.map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, q.trim(), i)).join('')}</div>`;
+      }
+      if (top.length) {
+        html += `<div class="se-seclabel"><div class="se-h3">Productos</div><span class="se-mono se-muted">${uniq.length}</span></div>`;
+        html += top.map(p => rowProducto({
+          nombre: p.nombre, precio: p.precio, imagen_url: fotos[p.id] || ''
+        }, byId[p.prov])).join('');
+      }
+      cont.innerHTML = html;
       cont.querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.prod)));
-    }, 260);
+      ligarCardsProveedor(cont);
+    }, 200);
   }
 
   /* ---------- entrada pública ---------- */
