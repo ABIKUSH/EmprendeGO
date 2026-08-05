@@ -2657,7 +2657,7 @@ async function mostrarAvisoIntencion() {
     const { count } = await sb.from('productos').select('id', { count: 'exact', head: true }).eq('proveedor_id', provId);
     const total = count || 0;
     const capado = !esProvPro() && total > 30; // se le corta el catalogo en 30
-    localStorage.setItem(seenKey, hoy);
+    if (window._egAvisoPend) return; // evita encolar dos timers en la misma carga
 
     const sustantivo = n === 1 ? 'persona' : 'personas';
     const verbo = capado
@@ -2667,25 +2667,39 @@ async function mostrarAvisoIntencion() {
       ? `Este mes. Usted muestra 30 de ${total} productos: los demás no los pudieron ver.`
       : 'Este mes. Sume más a su catálogo así no pierde esas ventas.';
     const ctaTxt = capado ? 'Mostrar todo con Pro →' : 'Cargar productos →';
-    // Ambas variantes empujan a Pro: es la palanca de monetizacion del cartel.
-    const ctaAccion = `document.getElementById('modal-aviso-intencion').remove();goTo('planes')`;
+    // El CTA lo lleva a su panel para hacerse Pro (no a la pantalla pelada de planes).
+    const ctaAccion = `document.getElementById('modal-aviso-intencion').remove();goTo('perfil')`;
 
-    const overlay = document.createElement('div');
-    overlay.id = 'modal-aviso-intencion';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.innerHTML = `<div style="background:white;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative">
-      <button onclick="document.getElementById('modal-aviso-intencion').remove()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
-      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">Intención de compra</div>
-      <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:6px">
-        <span style="font-size:2.6rem;font-weight:900;color:#006039;line-height:1;font-variant-numeric:tabular-nums">${n}</span>
-        <span style="font-size:.92rem;font-weight:800;color:#1A1A1A;line-height:1.2">${sustantivo} ${verbo}</span>
-      </div>
-      <div style="font-size:.82rem;color:#777;line-height:1.5;margin-bottom:18px">${desc}</div>
-      <button onclick="${ctaAccion}" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">${ctaTxt}</button>
-      <button onclick="document.getElementById('modal-aviso-intencion').remove()" style="width:100%;background:none;border:none;color:#999;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px">Ver más tarde</button>
-    </div>`;
-    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-    document.body.appendChild(overlay);
+    // Esperamos ~5s desde que abre la app para que primero vea la pantalla, y el cartel
+    // entra suave (fade + scale), no de golpe.
+    window._egAvisoPend = true;
+    setTimeout(() => {
+      window._egAvisoPend = false;
+      if (localStorage.getItem(seenKey) === hoy) return;            // ya se mostro (otra pestana)
+      if (document.getElementById('modal-aviso-intencion')) return; // ya hay uno abierto
+      localStorage.setItem(seenKey, hoy);
+      const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'modal-aviso-intencion';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s ease';
+      overlay.innerHTML = `<div class="eg-aviso-card" style="background:white;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative;transform:scale(.94);opacity:0;transition:transform .32s cubic-bezier(.2,.8,.25,1),opacity .3s ease">
+        <button onclick="document.getElementById('modal-aviso-intencion').remove()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
+        <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">Intención de compra</div>
+        <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:6px">
+          <span style="font-size:2.6rem;font-weight:900;color:#006039;line-height:1;font-variant-numeric:tabular-nums">${n}</span>
+          <span style="font-size:.92rem;font-weight:800;color:#1A1A1A;line-height:1.2">${sustantivo} ${verbo}</span>
+        </div>
+        <div style="font-size:.82rem;color:#777;line-height:1.5;margin-bottom:18px">${desc}</div>
+        <button onclick="${ctaAccion}" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">${ctaTxt}</button>
+        <button onclick="document.getElementById('modal-aviso-intencion').remove()" style="width:100%;background:none;border:none;color:#999;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px">Ver más tarde</button>
+      </div>`;
+      overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+      document.body.appendChild(overlay);
+      const card = overlay.querySelector('.eg-aviso-card');
+      if (reduce) { overlay.style.opacity = '1'; if (card) { card.style.transform = 'none'; card.style.opacity = '1'; } }
+      else { requestAnimationFrame(() => { overlay.style.opacity = '1'; if (card) { card.style.transform = 'scale(1)'; card.style.opacity = '1'; } }); }
+    }, 5000);
   } catch (e) { }
 }
 
