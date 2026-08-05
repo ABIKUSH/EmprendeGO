@@ -1419,6 +1419,48 @@ function registrarConsulta(id) {
   } catch (e) { }
 }
 
+// Registra un "Quiero ver mas / catalogo completo" del comprador para el proveedor.
+// Dedup por dispositivo/dia (localStorage) y excluye al propio proveedor. Espejo de registrarConsulta.
+function registrarIntentoCatalogo(id) {
+  if (!id) return;
+  if (currentUser?.provData && String(currentUser.provData.id) === String(id)) return;
+  try {
+    const k = `eg_intentocat_${id}`, t = parseInt(localStorage.getItem(k) || '0');
+    if (Date.now() - t < 86400000) return;
+    localStorage.setItem(k, Date.now());
+    sb.rpc('registrar_intento_catalogo', { proveedor_id: id }).then(() => {}).catch(() => {});
+  } catch (e) { }
+}
+
+// Handler del boton "Quiero ver mas productos / catalogo completo" en la ficha del proveedor.
+// Cuenta la intencion (dedup interno) y muestra un mensaje prolijo. No abre WhatsApp por si mismo;
+// solo deja la opcion secundaria si el proveedor tiene numero cargado.
+function pedirMasCatalogo(id) {
+  registrarIntentoCatalogo(id);
+  const nombre = provActual?.nombre || 'el proveedor';
+  const tieneWA = !!provActual?.whatsapp;
+  const existing = document.getElementById('modal-intento-catalogo');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'modal-intento-catalogo';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  const btnWA = tieneWA
+    ? `<button onclick="document.getElementById('modal-intento-catalogo').remove();detWA()" style="width:100%;background:#f5f5f5;color:#065F46;border:none;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Escribirle por WhatsApp</button>`
+    : '';
+  overlay.innerHTML = `<div style="background:white;border-radius:24px 24px 0 0;padding:28px 24px 34px;width:100%;max-width:480px;text-align:center">
+    <div style="width:56px;height:56px;border-radius:50%;background:#E9F5EF;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></svg>
+    </div>
+    <div style="font-family:'Inter',sans-serif;font-size:1.1rem;font-weight:900;color:#1A1A1A;margin-bottom:8px">Listo, ya le avisamos</div>
+    <div style="font-size:.86rem;color:#777;line-height:1.55;margin-bottom:22px">Le dijimos a ${escHtml(nombre)} que hay gente esperando ver más de su catálogo. Si lo necesita cuanto antes, también puede pedírselo por WhatsApp.</div>
+    <button onclick="document.getElementById('modal-intento-catalogo').remove()" style="width:100%;background:#006039;color:white;border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;cursor:pointer;margin-bottom:10px">Entendido</button>
+    ${btnWA}
+  </div>`;
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  haptic('light');
+}
+
 function mensajeWAProv(prov) {
   const nombre = prov?.nombre || 'tu negocio';
   const rubro = prov?.rubro || 'tus productos';
@@ -1531,18 +1573,29 @@ async function renderDetalleProductos(proveedorId) {
     </div>`;
   }).join('');
   let notaLimite = '';
+  let esCapado = false;
   if (!provDetalleEsPro && provDetalleData.length === provDetalleLimite) {
     const { count: totalReal } = await sb.from('productos').select('*', { count: 'exact', head: true }).eq('proveedor_id', proveedorId);
     if (totalReal && totalReal > provDetalleLimite) {
+      esCapado = true;
       notaLimite = `<div style="text-align:center;padding:10px;font-size:.75rem;color:var(--gray);background:#f8fafc;border-radius:10px;margin-top:8px">Mostrando 30 de ${totalReal} productos. Este proveedor tiene más en su catálogo completo.</div>`;
     }
   }
+  // Boton de intencion de compra: aparece solo al final del catalogo (sin busqueda activa y
+  // sin mas paginas por cargar). Copy adaptado: si el catalogo esta capado en 30 pide "completo",
+  // si ya se ve todo pide "mas productos". El tap cuenta la intencion (pedirMasCatalogo).
+  let intentoBtn = '';
+  if (resto <= 0 && !palabras.length && provDetalleData.length > 0) {
+    const label = esCapado ? 'Quiero ver el catálogo completo' : 'Quiero ver más productos';
+    intentoBtn = `<button onclick="pedirMasCatalogo('${escHtml(String(proveedorId))}')" style="width:100%;background:linear-gradient(135deg,#006039,#12855C);border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:800;color:#fff;cursor:pointer;margin-top:10px;box-shadow:0 8px 18px -8px rgba(0,60,36,.55)">${label}</button>`;
+  }
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite) ? '12px' : '0'}">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite || intentoBtn) ? '12px' : '0'}">
       ${cards}
     </div>
     ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
     ${notaLimite}
+    ${intentoBtn}
   `;
 }
 
@@ -2294,6 +2347,7 @@ function updatePerfilUI() {
     }
     cargarProductosProveedor();
     cargarStatsDashboard();
+    mostrarAvisoIntencion();
     cargarRankingRubro();
     cargarLogoProveedor();
     cargarPedidosRecientes();
@@ -2583,6 +2637,56 @@ async function cargarStatsDashboard() {
       const cta = document.getElementById('dash-unlock-cta');
       if (cta) cta.remove();
     }
+  } catch (e) { }
+}
+
+// ===== CARTEL DE INTENCION AL ENTRAR AL PANEL =====
+// Si hubo intentos de "ver mas catalogo" este mes, se lo mostramos al proveedor apenas entra,
+// como cartel al frente (no en la campanita). Maximo una vez por dia para no cansar.
+// Copy adaptado: si el catalogo esta capado en 30 (free con >30) pide Pro; si no, pide cargar mas.
+async function mostrarAvisoIntencion() {
+  try {
+    if (!currentUser || !currentUser.proveedorId) return;
+    const provId = currentUser.proveedorId;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const seenKey = `eg_avisoint_${provId}`;
+    if (localStorage.getItem(seenKey) === hoy) return; // ya lo vio hoy
+    const { data: mes } = await sb.rpc('intentos_catalogo_mes', { proveedor_id: provId });
+    const n = typeof mes === 'number' ? mes : 0;
+    if (n <= 0) return;
+    const { count } = await sb.from('productos').select('id', { count: 'exact', head: true }).eq('proveedor_id', provId);
+    const total = count || 0;
+    const capado = !esProvPro() && total > 30; // se le corta el catalogo en 30
+    localStorage.setItem(seenKey, hoy);
+
+    const sustantivo = n === 1 ? 'persona' : 'personas';
+    const verbo = capado
+      ? (n === 1 ? 'quiso ver su catálogo completo' : 'quisieron ver su catálogo completo')
+      : (n === 1 ? 'quería ver más productos suyos' : 'querían ver más productos suyos');
+    const desc = capado
+      ? `Este mes. Usted muestra 30 de ${total} productos: los demás no los pudieron ver.`
+      : 'Este mes. Sume más a su catálogo así no pierde esas ventas.';
+    const ctaTxt = capado ? 'Mostrar todo con Pro →' : 'Cargar productos →';
+    const ctaAccion = capado
+      ? `document.getElementById('modal-aviso-intencion').remove();goTo('planes')`
+      : `document.getElementById('modal-aviso-intencion').remove();abrirMisProductos()`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-aviso-intencion';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `<div style="background:white;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative">
+      <button onclick="document.getElementById('modal-aviso-intencion').remove()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
+      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">Intención de compra</div>
+      <div style="display:flex;align-items:baseline;gap:9px;margin-bottom:6px">
+        <span style="font-size:2.6rem;font-weight:900;color:#006039;line-height:1;font-variant-numeric:tabular-nums">${n}</span>
+        <span style="font-size:.92rem;font-weight:800;color:#1A1A1A;line-height:1.2">${sustantivo} ${verbo}</span>
+      </div>
+      <div style="font-size:.82rem;color:#777;line-height:1.5;margin-bottom:18px">${desc}</div>
+      <button onclick="${ctaAccion}" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">${ctaTxt}</button>
+      <button onclick="document.getElementById('modal-aviso-intencion').remove()" style="width:100%;background:none;border:none;color:#999;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px">Ver más tarde</button>
+    </div>`;
+    overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
   } catch (e) { }
 }
 
