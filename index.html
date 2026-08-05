@@ -109,6 +109,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div class="dsb-section-label">Explorar</div>
   <div class="dsb-item active" id="dsb-inicio" onclick="goTo('inicio')"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="dsb-label"> Inicio</span></div>
   <div class="dsb-item" id="dsb-buscar" onclick="goTo('buscar')"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><span class="dsb-label"> Buscar</span></div>
+  <div class="dsb-item" id="dsb-emprendedor" onclick="abrirEmprendedor()"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></span><span class="dsb-label"> Mercado</span><span class="eg-badge-nuevo">Nuevo</span></div>
   <div class="dsb-item" id="dsb-novedades" onclick="goTo('novedades')"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a2 2 0 0 1 2 2v13H6a2 2 0 0 1-2-2z"/><path d="M17 8h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"/><line x1="7" y1="8" x2="13" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/></svg></span><span class="dsb-label"> Novedades</span><span class="eg-badge-nuevo" id="badge-nuevo-sidebar">Nuevo</span></div>
   <div class="dsb-item" id="dsb-favoritos" onclick="goTo('favoritos')"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span><span class="dsb-label"> Favoritos</span></div>
   <div class="dsb-item" id="dsb-mapa" onclick="goTo('mapa')"><span class="dsb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span><span class="dsb-label"> Mapa</span></div>
@@ -176,6 +177,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <div class="drawer-item" id="dnav-buscar" onclick="drawerNavTo('buscar')">
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <span>Buscar proveedores</span>
+    </div>
+    <div class="drawer-item" onclick="abrirEmprendedor()">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg>
+      <span>Mercado</span>
+      <span class="eg-badge-nuevo">Nuevo</span>
     </div>
     <div class="drawer-item" id="dnav-novedades" onclick="drawerNavTo('novedades')">
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v13H6a2 2 0 0 1-2-2z"/><path d="M17 8h2a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-2"/><line x1="7" y1="8" x2="13" y2="8"/><line x1="7" y1="12" x2="13" y2="12"/></svg>
@@ -853,6 +859,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
 
     <div id="det-productos-section" style="margin-bottom:12px">
+      <!-- Buscador dentro del catálogo del proveedor. Vive fuera de
+           #det-productos-carousels para no perder el foco en cada tecla. -->
+      <div id="det-prod-search" style="display:none;margin-bottom:10px">
+        <div class="det-search-wrap">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="det-prod-q" type="search" autocomplete="off" placeholder="Buscar en este catálogo…" oninput="filtrarCatalogoProv(this.value)">
+        </div>
+      </div>
       <div id="det-productos-carousels"></div>
     </div>
 
@@ -2274,7 +2288,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
 </div>
 
-<script src="js/app.js?v=20260729-consultas-mes"></script>
+<!-- ===== SOY EMPRENDEDOR (módulo aislado; el contenido lo inyecta js/emprendedor.js) ===== -->
+<div class="screen" id="screen-emprendedor"></div>
+
+<script src="js/app.js?v=20260805-buscar-catalogo"></script>
+<script src="js/emprendedor.js?v=20260805-mercado"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

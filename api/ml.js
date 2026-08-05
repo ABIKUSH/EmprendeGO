@@ -6,6 +6,75 @@ const ALLOWED_ORIGINS = [
   'https://emprende-go.vercel.app'
 ];
 
+// Cache en memoria de la instancia para las tendencias del mercado.
+// Clave = categoria ('' = sitio completo).
+const trendsCache = new Map();
+const TRENDS_TTL_MS = 30 * 60 * 1000;
+
+// Rubro de EmprendeGO -> categoria de Mercado Libre, por NOMBRE y no por id.
+// Los ids se resuelven contra /sites/MLA/categories en vivo, asi no quedan
+// numeros magicos que se pudran si ML reacomoda el arbol.
+// `hijo` es una coincidencia parcial dentro de las subcategorias de `top`,
+// para los rubros que en ML viven un nivel mas abajo (calzado, bazar, etc).
+const RUBRO_ML = {
+  'indumentaria': { top: 'ropa y accesorios' },
+  'calzado': { top: 'ropa y accesorios', hijo: 'calzado' },
+  'marroquineria y bolsos': { top: 'ropa y accesorios', hijo: 'bolso' },
+  'hogar y deco': { top: 'hogar, muebles y jardin' },
+  'bazar': { top: 'hogar, muebles y jardin', hijo: 'bazar' },
+  'blanqueria': { top: 'hogar, muebles y jardin', hijo: 'textil' },
+  'limpieza': { top: 'hogar, muebles y jardin', hijo: 'limpieza' },
+  'tecnologia': { top: 'celulares y telefonos' },
+  'electronica': { top: 'electronica, audio y video' },
+  'bebes y ninos': { top: 'bebes' },
+  'belleza y salud': { top: 'belleza y cuidado personal' },
+  'jugueteria': { top: 'juegos y juguetes' },
+  'deportes': { top: 'deportes y fitness' },
+  'libreria y papeleria': { top: 'arte, libreria y merceria' },
+  'packaging': { top: 'industrias y oficinas', hijo: 'embalaje' },
+  'mascotas': { top: 'animales y mascotas' }
+};
+
+const sinTildes = (s) => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+let mlCatsCache = null;                 // categorias raiz de MLA
+const rubroIdCache = new Map();         // rubro normalizado -> id de ML | null
+
+// Resuelve el rubro de EmprendeGO al id de categoria de ML. Devuelve null si no
+// hay equivalencia: en ese caso se cae a las tendencias del sitio completo.
+async function idCategoriaML(rubro, accessToken) {
+  const key = sinTildes(rubro);
+  if (!key) return null;
+  if (rubroIdCache.has(key)) return rubroIdCache.get(key);
+  const conf = RUBRO_ML[key];
+  if (!conf) { rubroIdCache.set(key, null); return null; }
+
+  try {
+    if (!mlCatsCache) {
+      const r = await fetch('https://api.mercadolibre.com/sites/MLA/categories',
+        { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!r.ok) return null;
+      mlCatsCache = await r.json();
+    }
+    const raiz = (mlCatsCache || []).find(c => sinTildes(c.name) === conf.top)
+      || (mlCatsCache || []).find(c => sinTildes(c.name).includes(conf.top));
+    if (!raiz) { rubroIdCache.set(key, null); return null; }
+
+    let id = raiz.id;
+    if (conf.hijo) {
+      const r2 = await fetch(`https://api.mercadolibre.com/categories/${raiz.id}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r2.ok) {
+        const det = await r2.json();
+        const hijo = (det.children_categories || []).find(c => sinTildes(c.name).includes(conf.hijo));
+        if (hijo) id = hijo.id;
+      }
+    }
+    rubroIdCache.set(key, id);
+    return id;
+  } catch (e) { return null; }
+}
+
 function setCors(req, res) {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -35,6 +104,13 @@ export default async function handler(req, res) {
   // POST /api/ml?action=sync  body: { proveedor_id }
   if (req.method === 'POST' && req.query.action === 'sync') {
     return handleMLSync(req, res);
+  }
+
+  // Tendencias del mercado (seccion "Mercado" — lo mas buscado en ML).
+  // GET /api/ml?action=trends[&category=MLAxxxx]  ->  { trends: [...], source }
+  // Nunca tira error: si algo falla devuelve { trends: [] } para que el front use su fallback.
+  if (req.method === 'GET' && req.query.action === 'trends') {
+    return handleMLTrends(req, res);
   }
 
   setCors(req, res);
@@ -278,6 +354,147 @@ async function handleMLOAuthCallback(req, res) {
 
   console.log(`[ml-callback] proveedor ${proveedorId} conectado a ML user ${user_id}`);
   return res.redirect(302, 'https://emprendego.com.ar/?ml=ok');
+}
+
+// ============================================================
+// Tendencias del mercado (Mercado Libre) — para la seccion "Mercado"
+// Usa el token de cualquier proveedor conectado (las tendencias son
+// a nivel del sitio, no del proveedor). Refresca si esta por vencer.
+// ============================================================
+async function handleMLTrends(req, res) {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (!applyRateLimit(req, res, { bucket: 'ml-trends', limit: 30, windowMs: 60000 })) return;
+
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey || !process.env.ML_APP_ID) {
+    return res.status(200).json({ trends: [], source: 'unavailable' });
+  }
+
+  // `category` = id de ML directo. `rubro` = rubro de EmprendeGO, que se traduce
+  // a id contra el arbol de categorias de ML.
+  const catDirecta = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
+  const rubro = (req.query.rubro || '').toString().slice(0, 60);
+  const clave = catDirecta || (rubro ? 'r:' + sinTildes(rubro) : '');
+
+  // Las tendencias del sitio se mueven de a dias, no de a minutos: cacheamos
+  // en memoria de la instancia para no pegarle a ML en cada visita.
+  const cached = trendsCache.get(clave);
+  if (cached && Date.now() - cached.at < TRENDS_TTL_MS) {
+    return res.status(200).json({ trends: cached.trends, source: 'ml', rubro: rubro || undefined, cached: true });
+  }
+
+  try {
+    // Candidatos ordenados del token mas fresco al mas viejo. El refresh_token de
+    // ML es de un solo uso, asi que el de un proveedor que hace rato no sincroniza
+    // puede estar consumido; probamos varios antes de darnos por vencidos.
+    const provRes = await fetch(
+      `${supabaseUrl}/rest/v1/proveedores` +
+      `?ml_connected=eq.true&ml_refresh_token=not.is.null` +
+      `&select=id,ml_access_token,ml_refresh_token,ml_token_expires_at` +
+      `&order=ml_token_expires_at.desc.nullslast&limit=5`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    const provs = provRes.ok ? await provRes.json() : [];
+    if (!provs.length) return res.status(200).json({ trends: [], source: 'no_token' });
+
+    let ultimoEstado = null;
+
+    for (const prov of provs) {
+      let accessToken = prov.ml_access_token;
+      const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+      const vigente = accessToken && expiresAt && expiresAt.getTime() > Date.now() + 5 * 60 * 1000;
+
+      if (!vigente) {
+        // Ojo: sin marcarMLDesconectado. Este endpoint es publico y sin login;
+        // no puede desconectar la integracion de un proveedor como efecto colateral.
+        const refreshed = await refreshMLTrendsToken(prov.ml_refresh_token, prov.id, supabaseUrl, supabaseKey);
+        if (!refreshed) { ultimoEstado = 'refresh_failed'; continue; }
+        accessToken = refreshed.access_token;
+      }
+
+      // Con token en mano ya se puede resolver el rubro a id de categoria.
+      let catId = catDirecta;
+      if (!catId && rubro) catId = await idCategoriaML(rubro, accessToken) || '';
+      const url = catId
+        ? `https://api.mercadolibre.com/trends/MLA/${catId}`
+        : 'https://api.mercadolibre.com/trends/MLA';
+
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!r.ok) { ultimoEstado = 'ml_error_' + r.status; continue; }
+
+      const data = await r.json();
+      const trends = (Array.isArray(data) ? data : [])
+        .map(x => (x && x.keyword ? String(x.keyword) : ''))
+        .filter(Boolean)
+        .slice(0, 30);
+
+      if (trends.length) trendsCache.set(clave, { trends, at: Date.now() });
+      // `alcance` le dice al front si de verdad pudo filtrar por rubro o si le
+      // esta devolviendo las tendencias del sitio completo.
+      return res.status(200).json({
+        trends, source: 'ml',
+        rubro: rubro || undefined,
+        alcance: catId ? 'rubro' : 'sitio'
+      });
+    }
+
+    return res.status(200).json({ trends: [], source: ultimoEstado || 'no_token' });
+  } catch (e) {
+    return res.status(200).json({ trends: [], source: 'error' });
+  }
+}
+
+// Refresh acotado a tendencias: guarda el token nuevo (el refresh_token de ML es
+// de un solo uso, hay que persistirlo) pero NUNCA marca al proveedor como
+// desconectado, porque quien dispara esto es un visitante anonimo.
+async function refreshMLTrendsToken(refreshToken, proveedorId, supaUrl, supaKey) {
+  if (!refreshToken) return null;
+  try {
+    const r = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: process.env.ML_APP_ID,
+        client_secret: process.env.ML_APP_SECRET,
+        refresh_token: refreshToken
+      }).toString()
+    });
+    if (!r.ok) {
+      console.error('[ml-trends-refresh] fallo:', proveedorId, r.status);
+      return null;
+    }
+    const data = await r.json();
+    if (!data.access_token) return null;
+
+    const expiresAt = new Date(Date.now() + (Number(data.expires_in) || 21600) * 1000).toISOString();
+    const patch = {
+      ml_access_token: data.access_token,
+      ml_token_expires_at: expiresAt
+    };
+    if (data.refresh_token) patch.ml_refresh_token = data.refresh_token;
+
+    await fetch(`${supaUrl}/rest/v1/proveedores?id=eq.${proveedorId}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: supaKey,
+        Authorization: `Bearer ${supaKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(patch)
+    });
+
+    return data;
+  } catch (e) {
+    console.error('[ml-trends-refresh] error:', e.message);
+    return null;
+  }
 }
 
 // ============================================================
