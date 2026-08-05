@@ -458,7 +458,7 @@ async function handleMLTrends(req, res) {
       // de hoy, para no compararnos contra nosotros mismos.
       const claveRubro = catId ? sinTildes(rubro || catDirecta) : '';
       const movimiento = await variacionTendencias(claveRubro, trends, supabaseUrl, supabaseKey);
-      guardarSnapshot(claveRubro, trends, supabaseUrl, supabaseKey);
+      await guardarSnapshot(claveRubro, trends, supabaseUrl, supabaseKey);
 
       const payload = {
         trends, source: 'ml',
@@ -517,22 +517,29 @@ async function variacionTendencias(rubro, trends, supaUrl, supaKey) {
   } catch (e) { return {}; }
 }
 
-// Guarda la foto de hoy si todavia no existe. Sin await a proposito: que el
-// usuario no espere por esto. El unique (fecha,rubro,termino) evita duplicados,
-// asi que reintentar el mismo dia es inofensivo.
-function guardarSnapshot(rubro, trends, supaUrl, supaKey) {
+// Guarda la foto de hoy si todavia no existe.
+// OJO: hay que esperarlo. En Vercel la funcion se congela apenas se manda la
+// respuesta, asi que un fetch sin await queda a medio camino y nunca escribe.
+// Solo corre cuando falla el cache (una vez cada 30 min por instancia), y el
+// unique (fecha,rubro,termino) hace que reintentar el mismo dia sea inofensivo.
+async function guardarSnapshot(rubro, trends, supaUrl, supaKey) {
   if (!trends.length) return;
   const filas = trends.map((t, i) => ({ fecha: hoyAR(), rubro, termino: t, posicion: i + 1 }));
-  fetch(`${supaUrl}/rest/v1/tendencias_snapshot`, {
-    method: 'POST',
-    headers: {
-      apikey: supaKey,
-      Authorization: `Bearer ${supaKey}`,
-      'Content-Type': 'application/json',
-      Prefer: 'resolution=ignore-duplicates,return=minimal'
-    },
-    body: JSON.stringify(filas)
-  }).catch(e => console.error('[ml-trends] snapshot:', e.message));
+  try {
+    const r = await fetch(`${supaUrl}/rest/v1/tendencias_snapshot`, {
+      method: 'POST',
+      headers: {
+        apikey: supaKey,
+        Authorization: `Bearer ${supaKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=ignore-duplicates,return=minimal'
+      },
+      body: JSON.stringify(filas)
+    });
+    if (!r.ok) console.error('[ml-trends] snapshot:', r.status, await r.text());
+  } catch (e) {
+    console.error('[ml-trends] snapshot:', e.message);
+  }
 }
 
 // Refresh acotado a tendencias: guarda el token nuevo (el refresh_token de ML es
