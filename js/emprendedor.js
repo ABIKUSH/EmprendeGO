@@ -148,7 +148,7 @@
           <div class="se-searchbar" id="se-open-search">${icoSearch('var(--se-ink3)')}<span class="se-search-ph">Buscar un producto…</span></div>
           <div class="se-seclabel"><div class="se-h3">Lo más buscado en el mercado</div><span class="se-mono se-muted" id="se-trend-src">cargando…</span></div>
           <div id="se-buscado">${loading()}</div>
-          <div class="se-seclabel"><div class="se-h3">Explorá por categoría</div></div>
+          <div class="se-seclabel"><div class="se-h3">Qué se busca en cada rubro</div></div>
           <div class="se-catgrid" id="se-catgrid">${loading()}</div>
           <p class="se-mono se-fuente">TENDENCIAS DEL MERCADO · PROVEEDORES DE EMPRENDEGO</p>
         </div>
@@ -353,35 +353,55 @@
     </button>`;
   }
 
-  /* ---------- categoría → productos ---------- */
+  /* ---------- rubro → qué se busca en ese rubro ---------- */
+  // La categoria dejo de ser un directorio de proveedores: ahora muestra las
+  // tendencias del mercado DE ESE RUBRO, y debajo quien lo cubre en EmprendeGO.
   async function verCategoria(key) {
     const cat = CATS.find(c => c.key === key);
     if (!cat) return;
     $('se-cat-title').textContent = key;
-    $('se-cat-h').textContent = key;
+    $('se-cat-h').textContent = 'Qué se busca en ' + key;
     const provs = provsDeCat(cat);
-    $('se-cat-sub').textContent = provs.length + ' proveedor' + (provs.length !== 1 ? 'es' : '') + ' en esta categoría';
+    $('se-cat-sub').textContent = provs.length + ' proveedor' + (provs.length !== 1 ? 'es' : '') + ' del rubro en EmprendeGO';
     const list = $('se-cat-list');
     list.innerHTML = loading();
     show('categoria');
-    let prods = [];
+
+    // 1) Tendencias del rubro. Si ML no puede filtrar por esa categoria devuelve
+    //    alcance 'sitio': en ese caso no las mostramos, para no hacer pasar las
+    //    tendencias generales por tendencias del rubro.
+    let terms = [], alcanceRubro = false;
     try {
-      const ids = provs.map(p => p.id);
-      if (ids.length) {
-        const { data } = await sb.from('productos')
-          .select('id,nombre,precio,imagenes,imagen_url,foto_url,proveedor_id')
-          .in('proveedor_id', ids).eq('visible', true)
-          .order('created_at', { ascending: false }).limit(60);
-        prods = data || [];
+      const r = await fetch('/api/ml?action=trends&rubro=' + encodeURIComponent(key), { headers: { Accept: 'application/json' } });
+      if (r.ok) {
+        const j = await r.json();
+        if (j && Array.isArray(j.trends) && j.trends.length && j.alcance === 'rubro') {
+          terms = j.trends.slice(0, 12); alcanceRubro = true;
+        }
       }
-    } catch (e) { prods = []; }
-    if (!prods.length) {
-      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no hay productos cargados en ${esc(key)}</div><p class="se-muted">Hay proveedores del rubro; podés contactarlos igual desde Buscar.</p></div>`;
+    } catch (e) { }
+
+    let html = '';
+    if (alcanceRubro) {
+      html += `<div class="se-seclabel"><div class="se-h3">Lo más buscado</div><span class="se-mono se-muted">Mercado, hoy</span></div>`;
+      html += '<div class="se-tgrid">' + terms.map((t, i) => cardTendencia(t, i)).join('') + '</div>';
+    }
+
+    // 2) Quién lo cubre en EmprendeGO.
+    if (provs.length) {
+      html += `<div class="se-seclabel"><div class="se-h3">Proveedores del rubro</div><span class="se-mono se-muted">${provs.length}</span></div>`;
+      html += '<div class="se-sgrid">' + provs
+        .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+        .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, key, i)).join('') + '</div>';
+    }
+
+    if (!html) {
+      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Sin datos de ${esc(key)} por ahora</div><p class="se-muted">Probá con el buscador.</p></div>`;
       return;
     }
-    const byId = {}; (provCache || []).forEach(p => byId[p.id] = p);
-    list.innerHTML = prods.map(p => rowProducto(p, byId[p.proveedor_id])).join('');
-    list.querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.prod)));
+    list.innerHTML = html;
+    list.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
+    ligarCardsProveedor(list);
   }
 
   function rowProducto(p, prov) {

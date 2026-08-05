@@ -11,6 +11,70 @@ const ALLOWED_ORIGINS = [
 const trendsCache = new Map();
 const TRENDS_TTL_MS = 30 * 60 * 1000;
 
+// Rubro de EmprendeGO -> categoria de Mercado Libre, por NOMBRE y no por id.
+// Los ids se resuelven contra /sites/MLA/categories en vivo, asi no quedan
+// numeros magicos que se pudran si ML reacomoda el arbol.
+// `hijo` es una coincidencia parcial dentro de las subcategorias de `top`,
+// para los rubros que en ML viven un nivel mas abajo (calzado, bazar, etc).
+const RUBRO_ML = {
+  'indumentaria': { top: 'ropa y accesorios' },
+  'calzado': { top: 'ropa y accesorios', hijo: 'calzado' },
+  'marroquineria y bolsos': { top: 'ropa y accesorios', hijo: 'bolso' },
+  'hogar y deco': { top: 'hogar, muebles y jardin' },
+  'bazar': { top: 'hogar, muebles y jardin', hijo: 'bazar' },
+  'blanqueria': { top: 'hogar, muebles y jardin', hijo: 'textil' },
+  'limpieza': { top: 'hogar, muebles y jardin', hijo: 'limpieza' },
+  'tecnologia': { top: 'celulares y telefonos' },
+  'electronica': { top: 'electronica, audio y video' },
+  'bebes y ninos': { top: 'bebes' },
+  'belleza y salud': { top: 'belleza y cuidado personal' },
+  'jugueteria': { top: 'juegos y juguetes' },
+  'deportes': { top: 'deportes y fitness' },
+  'libreria y papeleria': { top: 'arte, libreria y merceria' },
+  'packaging': { top: 'industrias y oficinas', hijo: 'embalaje' },
+  'mascotas': { top: 'animales y mascotas' }
+};
+
+const sinTildes = (s) => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+let mlCatsCache = null;                 // categorias raiz de MLA
+const rubroIdCache = new Map();         // rubro normalizado -> id de ML | null
+
+// Resuelve el rubro de EmprendeGO al id de categoria de ML. Devuelve null si no
+// hay equivalencia: en ese caso se cae a las tendencias del sitio completo.
+async function idCategoriaML(rubro, accessToken) {
+  const key = sinTildes(rubro);
+  if (!key) return null;
+  if (rubroIdCache.has(key)) return rubroIdCache.get(key);
+  const conf = RUBRO_ML[key];
+  if (!conf) { rubroIdCache.set(key, null); return null; }
+
+  try {
+    if (!mlCatsCache) {
+      const r = await fetch('https://api.mercadolibre.com/sites/MLA/categories',
+        { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!r.ok) return null;
+      mlCatsCache = await r.json();
+    }
+    const raiz = (mlCatsCache || []).find(c => sinTildes(c.name) === conf.top)
+      || (mlCatsCache || []).find(c => sinTildes(c.name).includes(conf.top));
+    if (!raiz) { rubroIdCache.set(key, null); return null; }
+
+    let id = raiz.id;
+    if (conf.hijo) {
+      const r2 = await fetch(`https://api.mercadolibre.com/categories/${raiz.id}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (r2.ok) {
+        const det = await r2.json();
+        const hijo = (det.children_categories || []).find(c => sinTildes(c.name).includes(conf.hijo));
+        if (hijo) id = hijo.id;
+      }
+    }
+    rubroIdCache.set(key, id);
+    return id;
+  } catch (e) { return null; }
+}
+
 function setCors(req, res) {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -308,16 +372,17 @@ async function handleMLTrends(req, res) {
     return res.status(200).json({ trends: [], source: 'unavailable' });
   }
 
-  const cat = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
-  const url = cat
-    ? `https://api.mercadolibre.com/trends/MLA/${cat}`
-    : 'https://api.mercadolibre.com/trends/MLA';
+  // `category` = id de ML directo. `rubro` = rubro de EmprendeGO, que se traduce
+  // a id contra el arbol de categorias de ML.
+  const catDirecta = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
+  const rubro = (req.query.rubro || '').toString().slice(0, 60);
+  const clave = catDirecta || (rubro ? 'r:' + sinTildes(rubro) : '');
 
   // Las tendencias del sitio se mueven de a dias, no de a minutos: cacheamos
   // en memoria de la instancia para no pegarle a ML en cada visita.
-  const cached = trendsCache.get(cat);
+  const cached = trendsCache.get(clave);
   if (cached && Date.now() - cached.at < TRENDS_TTL_MS) {
-    return res.status(200).json({ trends: cached.trends, source: 'ml', cached: true });
+    return res.status(200).json({ trends: cached.trends, source: 'ml', rubro: rubro || undefined, cached: true });
   }
 
   try {
@@ -349,6 +414,13 @@ async function handleMLTrends(req, res) {
         accessToken = refreshed.access_token;
       }
 
+      // Con token en mano ya se puede resolver el rubro a id de categoria.
+      let catId = catDirecta;
+      if (!catId && rubro) catId = await idCategoriaML(rubro, accessToken) || '';
+      const url = catId
+        ? `https://api.mercadolibre.com/trends/MLA/${catId}`
+        : 'https://api.mercadolibre.com/trends/MLA';
+
       const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
       if (!r.ok) { ultimoEstado = 'ml_error_' + r.status; continue; }
 
@@ -358,8 +430,14 @@ async function handleMLTrends(req, res) {
         .filter(Boolean)
         .slice(0, 30);
 
-      if (trends.length) trendsCache.set(cat, { trends, at: Date.now() });
-      return res.status(200).json({ trends, source: 'ml' });
+      if (trends.length) trendsCache.set(clave, { trends, at: Date.now() });
+      // `alcance` le dice al front si de verdad pudo filtrar por rubro o si le
+      // esta devolviendo las tendencias del sitio completo.
+      return res.status(200).json({
+        trends, source: 'ml',
+        rubro: rubro || undefined,
+        alcance: catId ? 'rubro' : 'sitio'
+      });
     }
 
     return res.status(200).json({ trends: [], source: ultimoEstado || 'no_token' });
