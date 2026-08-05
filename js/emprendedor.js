@@ -1,5 +1,5 @@
 /* =====================================================================
-   SOY EMPRENDEDOR — módulo aislado (no toca el resto de la app).
+   MERCADO — módulo aislado (no toca el resto de la app).
    Vive dentro de #screen-emprendedor. Se abre con window.abrirEmprendedor().
    Usa el cliente global `sb` (Supabase). SOLO LECTURAS.
    Muestra únicamente datos reales: categorías (proveedores.rubro),

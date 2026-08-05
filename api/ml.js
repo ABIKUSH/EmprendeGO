@@ -106,7 +106,7 @@ export default async function handler(req, res) {
     return handleMLSync(req, res);
   }
 
-  // Tendencias del mercado (seccion "Soy Emprendedor" — lo mas buscado en ML).
+  // Tendencias del mercado (seccion "Mercado" — lo mas buscado en ML).
   // GET /api/ml?action=trends[&category=MLAxxxx]  ->  { trends: [...], source }
   // Nunca tira error: si algo falla devuelve { trends: [] } para que el front use su fallback.
   if (req.method === 'GET' && req.query.action === 'trends') {
@@ -357,7 +357,7 @@ async function handleMLOAuthCallback(req, res) {
 }
 
 // ============================================================
-// Tendencias del mercado (Mercado Libre) — para "Soy Emprendedor"
+// Tendencias del mercado (Mercado Libre) — para la seccion "Mercado"
 // Usa el token de cualquier proveedor conectado (las tendencias son
 // a nivel del sitio, no del proveedor). Refresca si esta por vencer.
 // ============================================================
