@@ -2156,6 +2156,10 @@ select:focus { outline: none; }
 @keyframes seSpin{to{transform:rotate(360deg)}}
 #screen-emprendedor .se-empty{text-align:center;padding:34px 18px}
 #screen-emprendedor .se-empty-t{font-family:var(--se-serif);font-size:1.05rem;font-weight:700;color:var(--se-ink);margin-bottom:8px}
+/* Aviso honesto arriba del fallback por rubro: no lo tienen publicado, pero es lo suyo. */
+#screen-emprendedor .se-nota{background:var(--se-menta);border:1px solid rgba(0,96,57,.14);border-radius:14px;padding:14px 16px;margin-bottom:14px}
+#screen-emprendedor .se-nota-t{font-family:var(--se-serif);font-size:1rem;font-weight:700;color:var(--se-verde-hondo);margin-bottom:4px}
+#screen-emprendedor .se-nota p{margin:0;font-size:.86rem;line-height:1.45;color:var(--se-ink2)}
 @media (prefers-reduced-motion:reduce){
   #screen-emprendedor .se-view.se-on{animation:none}
   #screen-emprendedor .se-spin,#screen-emprendedor .se-livedot,#screen-emprendedor .se-pulse{animation:none}

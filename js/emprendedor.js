@@ -30,6 +30,38 @@
     { key: 'Mascotas', match: 'mascota' }
   ];
 
+  // Pistas de rubro: si nadie tiene el producto publicado con ese nombre, al menos
+  // sabemos a qué categoría pertenece y podemos ofrecer proveedores del rubro.
+  // Se evalúa en orden: la primera pista contenida en el término gana.
+  const PISTAS = [
+    { k: ['zapatilla', 'zapato', 'bota', 'sandalia', 'ojota', 'calzado', 'crocs'], cat: 'Calzado' },
+    { k: ['remera', 'campera', 'buzo', 'pantalon', 'jean', 'vestido', 'short', 'media', 'ropa', 'indumentaria', 'camisa', 'bikini', 'malla', 'jogging', 'ambo'], cat: 'Indumentaria' },
+    { k: ['auricular', 'celular', 'tablet', 'notebook', 'cargador', 'parlante', 'smartwatch', 'teclado', 'mouse', 'monitor', 'gamer', 'usb', 'cable', 'power bank', 'led'], cat: 'Tecnología' },
+    { k: ['televisor', 'aire acondicionado', 'heladera', 'lavarropa', 'microonda', 'electrodomestico'], cat: 'Electrónica' },
+    { k: ['aspiradora', 'cocina', 'licuadora', 'cafetera', 'ventilador', 'mueble', 'silla', 'escritorio', 'deco', 'lampara', 'organizador'], cat: 'Hogar y Deco' },
+    { k: ['mate', 'termo', 'vaso', 'taza', 'olla', 'sarten', 'bazar', 'cubierto', 'bandeja', 'tupper'], cat: 'Bazar' },
+    { k: ['sabana', 'toalla', 'acolchado', 'almohada', 'cubrecama', 'manta', 'blanqueria'], cat: 'Blanquería' },
+    { k: ['perfume', 'maquillaje', 'crema', 'shampoo', 'labial', 'esmalte', 'belleza', 'skincare', 'cosmetic'], cat: 'Belleza y Salud' },
+    { k: ['mochila', 'bolso', 'cartera', 'billetera', 'riñonera', 'rinonera', 'valija'], cat: 'Marroquinería y Bolsos' },
+    { k: ['juguete', 'muñec', 'munec', 'peluche', 'rompecabeza', 'didactic'], cat: 'Juguetería' },
+    { k: ['pañal', 'panal', 'bebe', 'cochecito', 'mamadera', 'chupete'], cat: 'Bebés y Niños' },
+    { k: ['pelota', 'bicicleta', 'mancuerna', 'gimnasio', 'fitness', 'deporte', 'casco'], cat: 'Deportes' },
+    { k: ['cuaderno', 'lapiz', 'birome', 'papel', 'libreria', 'escolar', 'carpeta'], cat: 'Librería y Papelería' },
+    { k: ['perro', 'gato', 'mascota', 'alimento balanceado'], cat: 'Mascotas' },
+    { k: ['bolsa', 'caja', 'packaging', 'etiqueta', 'cinta', 'sobre'], cat: 'Packaging' },
+    { k: ['detergente', 'lavandina', 'limpieza', 'jabon', 'trapo'], cat: 'Limpieza' }
+  ];
+
+  // Devuelve la categoría probable de un término libre, o null.
+  function catDeTermino(term) {
+    const t = norm(term);
+    if (!t) return null;
+    for (const p of PISTAS) {
+      if (p.k.some(k => t.includes(k))) return CATS.find(c => c.key === p.cat) || null;
+    }
+    return null;
+  }
+
   // Términos de ubicación / ruido que NO son productos (para el "más buscado").
   const RUIDO = new Set([
     'buenos aires', 'caba', 'capital federal', 'cordoba', 'córdoba', 'mendoza',
@@ -327,16 +359,38 @@
     // hero con datos reales del catálogo
     const precios = prods.map(p => p.precio).filter(x => x > 0);
     const heroBits = [];
-    if (precios.length) heroBits.push(`<div class="se-stat"><div class="se-stat-n se-mono">${money(Math.min(...precios))}<span>–</span>${money(Math.max(...precios))}</div><div class="se-stat-l se-mono">precio en el catálogo</div></div>`);
+    if (precios.length) {
+      const lo = Math.min(...precios), hi = Math.max(...precios);
+      const rango = lo === hi ? money(lo) : `${money(lo)}<span>–</span>${money(hi)}`;
+      heroBits.push(`<div class="se-stat"><div class="se-stat-n se-mono">${rango}</div><div class="se-stat-l se-mono">precio en el catálogo</div></div>`);
+    }
     heroBits.push(`<div class="se-stat"><div class="se-stat-n se-mono">${provIds.length}</div><div class="se-stat-l se-mono">proveedor${provIds.length !== 1 ? 'es' : ''} lo vende${provIds.length !== 1 ? 'n' : ''}</div></div>`);
     $('se-prodhero').innerHTML = '<div class="se-h2" style="margin-bottom:12px">' + esc(t) + '</div><div class="se-stats">' + heroBits.join('') + '</div>';
 
+    await cargarProveedores();
+
+    // Nadie lo tiene publicado con ese nombre. Antes de mostrar un callejón sin
+    // salida, ofrecemos proveedores del rubro al que pertenece el término,
+    // diciendo con todas las letras que es del rubro y no un producto publicado.
     if (!provIds.length) {
-      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no tenemos proveedores con “${esc(t)}” publicado</div><p class="se-muted">Lo registramos como demanda para sumar proveedores.</p></div>`;
+      const cat = catDeTermino(t);
+      const delRubro = cat ? provsDeCat(cat) : [];
+      if (delRubro.length) {
+        const cards = delRubro
+          .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+          .map(p => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t)).join('');
+        list.innerHTML =
+          `<div class="se-nota">
+             <div class="se-nota-t">Nadie lo tiene publicado todavía</div>
+             <p class="se-muted">Estos ${delRubro.length} proveedores son del rubro ${esc(cat.key)}. No figura “${esc(t)}” en su catálogo, pero es lo suyo: conviene preguntarles directo.</p>
+           </div>` + cards;
+        list.querySelectorAll('[data-wa]').forEach(b => b.addEventListener('click', () => { window.open(b.dataset.wa, '_blank'); }));
+        return;
+      }
+      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no tenemos proveedores con “${esc(t)}” publicado</div><p class="se-muted">Probá con un término más general, o mirá las categorías.</p></div>`;
       return;
     }
 
-    await cargarProveedores();
     const byId = {}; (provCache || []).forEach(p => byId[p.id] = p);
     const cards = provIds
       .map(id => ({ prov: byId[id], info: porProv[id] }))
@@ -353,9 +407,15 @@
     const avatar = logo
       ? `<div class="se-supp-logo" style="background-image:url('${esc(logo)}')"></div>`
       : `<div class="se-supp-logo se-supp-ini">${esc(ini)}</div>`;
-    const msg = `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. Me interesa comprar ${term} por mayor para revender. ¿Me pasás precios y mínimo de compra? ¡Gracias!`;
+    const msg = info.rubroOnly
+      ? `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. ¿Manejás ${term} por mayor? Estoy armando mi emprendimiento y quiero revender. Si tenés, ¿me pasás precios y mínimo de compra? ¡Gracias!`
+      : `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. Me interesa comprar ${term} por mayor para revender. ¿Me pasás precios y mínimo de compra? ¡Gracias!`;
     const min = prov.pedido_minimo ? `<div class="se-sfig"><div class="se-sfl se-mono">Mínimo</div><div class="se-sfv">${esc(prov.pedido_minimo)}</div></div>` : '';
     const precio = info.min ? `<div class="se-sfig"><div class="se-sfl se-mono">Desde</div><div class="se-sfv se-mono">${money(info.min)}</div></div>` : '';
+    // En el fallback por rubro no hay productos que contar: mostrar "0" seria enganoso.
+    const prods = info.rubroOnly
+      ? `<div class="se-sfig"><div class="se-sfl se-mono">Rubro</div><div class="se-sfv">${esc((prov.rubro || '').split(',')[0].trim() || '—')}</div></div>`
+      : `<div class="se-sfig"><div class="se-sfl se-mono">Productos</div><div class="se-sfv se-mono">${info.count}</div></div>`;
     return `<div class="se-supp">
       <div class="se-supp-top">
         ${avatar}
@@ -364,7 +424,7 @@
           <div class="se-supp-loc se-mono">${esc(prov.provincia || 'Argentina')}</div>
         </div>
       </div>
-      <div class="se-sfigs">${precio}${min}<div class="se-sfig"><div class="se-sfl se-mono">Productos</div><div class="se-sfv se-mono">${info.count}</div></div></div>
+      <div class="se-sfigs">${precio}${min}${prods}</div>
       ${prov.whatsapp ? `<button class="se-cta se-wa" data-wa="${esc(waLink(prov.whatsapp, msg))}">${icoWa()} Contactar por WhatsApp</button>` : '<div class="se-muted se-mono" style="text-align:center;font-size:.72rem;padding:8px">Sin WhatsApp cargado</div>'}
     </div>`;
   }
