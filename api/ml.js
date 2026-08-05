@@ -37,6 +37,13 @@ export default async function handler(req, res) {
     return handleMLSync(req, res);
   }
 
+  // Tendencias del mercado (seccion "Soy Emprendedor" — lo mas buscado en ML).
+  // GET /api/ml?action=trends[&category=MLAxxxx]  ->  { trends: [...], source }
+  // Nunca tira error: si algo falla devuelve { trends: [] } para que el front use su fallback.
+  if (req.method === 'GET' && req.query.action === 'trends') {
+    return handleMLTrends(req, res);
+  }
+
   setCors(req, res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -278,6 +285,57 @@ async function handleMLOAuthCallback(req, res) {
 
   console.log(`[ml-callback] proveedor ${proveedorId} conectado a ML user ${user_id}`);
   return res.redirect(302, 'https://emprendego.com.ar/?ml=ok');
+}
+
+// ============================================================
+// Tendencias del mercado (Mercado Libre) — para "Soy Emprendedor"
+// Usa el token de cualquier proveedor conectado (las tendencias son
+// a nivel del sitio, no del proveedor). Refresca si esta por vencer.
+// ============================================================
+async function handleMLTrends(req, res) {
+  setCors(req, res);
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (!applyRateLimit(req, res, { bucket: 'ml-trends', limit: 30, windowMs: 60000 })) return;
+
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey || !process.env.ML_APP_ID) {
+    return res.status(200).json({ trends: [], source: 'unavailable' });
+  }
+
+  try {
+    // Un proveedor conectado con refresh_token disponible.
+    const provRes = await fetch(
+      `${supabaseUrl}/rest/v1/proveedores?ml_connected=eq.true&ml_refresh_token=not.is.null&select=id,ml_access_token,ml_refresh_token,ml_token_expires_at&limit=1`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    const provs = provRes.ok ? await provRes.json() : [];
+    if (!provs.length) return res.status(200).json({ trends: [], source: 'no_token' });
+    const prov = provs[0];
+
+    let accessToken = prov.ml_access_token;
+    const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+    if (!accessToken || !expiresAt || expiresAt.getTime() < Date.now() + 5 * 60 * 1000) {
+      const refreshed = await refreshMLToken(prov.ml_refresh_token, prov.id, supabaseUrl, supabaseKey);
+      if (!refreshed) return res.status(200).json({ trends: [], source: 'refresh_failed' });
+      accessToken = refreshed.access_token;
+    }
+
+    const cat = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
+    const url = cat
+      ? `https://api.mercadolibre.com/trends/MLA/${cat}`
+      : 'https://api.mercadolibre.com/trends/MLA';
+    const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+    if (!r.ok) return res.status(200).json({ trends: [], source: 'ml_error', status: r.status });
+    const data = await r.json();
+    const trends = (Array.isArray(data) ? data : [])
+      .map(x => (x && x.keyword ? String(x.keyword) : ''))
+      .filter(Boolean)
+      .slice(0, 30);
+    return res.status(200).json({ trends, source: 'ml' });
+  } catch (e) {
+    return res.status(200).json({ trends: [], source: 'error' });
+  }
 }
 
 // ============================================================
