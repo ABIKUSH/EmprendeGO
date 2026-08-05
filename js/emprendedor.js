@@ -589,8 +589,30 @@
     }, 200);
   }
 
+  /* ---------- reloj de la prueba gratuita ----------
+     El boton promete 15 dias. Todavia no hay muro de pago, pero desde HOY
+     guardamos cuando entro cada uno: el dia que se decida cobrar, el reloj ya
+     viene corriendo y no hay que adivinar quien empezo cuando.
+     No bloquea nada. window.mercadoPrueba() lo lee cuando exista el muro.     */
+  const PRUEBA_KEY = 'eg_mercado_prueba_desde';
+  const PRUEBA_DIAS = 15;
+  function registrarPrueba() {
+    try {
+      if (!localStorage.getItem(PRUEBA_KEY)) localStorage.setItem(PRUEBA_KEY, new Date().toISOString());
+    } catch (e) { }
+  }
+  window.mercadoPrueba = function () {
+    try {
+      const desde = localStorage.getItem(PRUEBA_KEY);
+      if (!desde) return null;
+      const dias = Math.floor((Date.now() - new Date(desde).getTime()) / 86400000);
+      return { desde, dias, restantes: Math.max(0, PRUEBA_DIAS - dias), vencida: dias >= PRUEBA_DIAS };
+    } catch (e) { return null; }
+  };
+
   /* ---------- entrada pública ---------- */
   window.abrirEmprendedor = function () {
+    registrarPrueba();
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     build();
     seStack.length = 0;
