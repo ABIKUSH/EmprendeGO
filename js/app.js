@@ -2661,15 +2661,14 @@ async function mostrarAvisoIntencion() {
 
     const sustantivo = n === 1 ? 'persona' : 'personas';
     const verbo = capado
-      ? (n === 1 ? 'quiso ver su catálogo completo' : 'quisieron ver su catálogo completo')
-      : (n === 1 ? 'quería ver más productos suyos' : 'querían ver más productos suyos');
+      ? (n === 1 ? 'intentó ver su catálogo completo' : 'intentaron ver su catálogo completo')
+      : (n === 1 ? 'intentó ver más productos suyos' : 'intentaron ver más productos suyos');
     const desc = capado
       ? `Este mes. Usted muestra 30 de ${total} productos: los demás no los pudieron ver.`
       : 'Este mes. Sume más a su catálogo así no pierde esas ventas.';
     const ctaTxt = capado ? 'Mostrar todo con Pro →' : 'Cargar productos →';
-    const ctaAccion = capado
-      ? `document.getElementById('modal-aviso-intencion').remove();goTo('planes')`
-      : `document.getElementById('modal-aviso-intencion').remove();abrirMisProductos()`;
+    // Ambas variantes empujan a Pro: es la palanca de monetizacion del cartel.
+    const ctaAccion = `document.getElementById('modal-aviso-intencion').remove();goTo('planes')`;
 
     const overlay = document.createElement('div');
     overlay.id = 'modal-aviso-intencion';
