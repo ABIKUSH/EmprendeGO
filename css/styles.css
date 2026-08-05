@@ -2129,7 +2129,14 @@ select:focus { outline: none; }
 #screen-emprendedor .se-tcard.top::after{transform:scaleX(1)}
 #screen-emprendedor .se-tcard:hover::after{transform:scaleX(1)}
 #screen-emprendedor .se-tcard:active{transform:scale(.98)}
+#screen-emprendedor .se-trow{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%}
 #screen-emprendedor .se-tpos{font-size:.68rem;font-weight:700;color:var(--se-ink3);letter-spacing:.02em}
+/* Movimiento contra la ultima foto del ranking. Si no hay historial no se pinta. */
+#screen-emprendedor .se-tmov{display:inline-flex;align-items:center;gap:2px;font-family:var(--se-mono);font-size:.62rem;font-weight:700;padding:2px 5px;border-radius:5px}
+#screen-emprendedor .se-tmov.sube{color:#0A7C42;background:var(--se-menta)}
+#screen-emprendedor .se-tmov.baja{color:#A33A2A;background:#FBE9E5}
+#screen-emprendedor .se-tmov.nuevo{color:#8A5A00;background:#FFF2DC}
+#screen-emprendedor .se-tmov.igual{color:var(--se-ink3);background:var(--se-bg2)}
 #screen-emprendedor .se-tcard.top .se-tpos{color:var(--se-naranja)}
 #screen-emprendedor .se-tname{font-family:var(--se-serif);font-size:1.02rem;font-weight:700;line-height:1.2;color:var(--se-ink);letter-spacing:-.01em;text-transform:capitalize}
 #screen-emprendedor .se-tmeta{margin-top:auto;display:flex;flex-wrap:wrap;gap:5px;align-items:center}

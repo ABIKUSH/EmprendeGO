@@ -404,7 +404,8 @@ async function handleMLTrends(req, res) {
   // en memoria de la instancia para no pegarle a ML en cada visita.
   const cached = trendsCache.get(clave);
   if (cached && Date.now() - cached.at < TRENDS_TTL_MS) {
-    return res.status(200).json({ trends: cached.trends, source: 'ml', rubro: rubro || undefined, cached: true });
+    const { at, ...payload } = cached;
+    return res.status(200).json({ ...payload, cached: true });
   }
 
   try {
@@ -453,20 +454,85 @@ async function handleMLTrends(req, res) {
         .filter(esProducto)
         .slice(0, 30);
 
-      if (trends.length) trendsCache.set(clave, { trends, at: Date.now() });
-      // `alcance` le dice al front si de verdad pudo filtrar por rubro o si le
-      // esta devolviendo las tendencias del sitio completo.
-      return res.status(200).json({
+      // Historial: comparamos contra la ultima foto guardada ANTES de guardar la
+      // de hoy, para no compararnos contra nosotros mismos.
+      const claveRubro = catId ? sinTildes(rubro || catDirecta) : '';
+      const movimiento = await variacionTendencias(claveRubro, trends, supabaseUrl, supabaseKey);
+      guardarSnapshot(claveRubro, trends, supabaseUrl, supabaseKey);
+
+      const payload = {
         trends, source: 'ml',
         rubro: rubro || undefined,
-        alcance: catId ? 'rubro' : 'sitio'
-      });
+        // `alcance` le dice al front si de verdad pudo filtrar por rubro o si le
+        // esta devolviendo las tendencias del sitio completo.
+        alcance: catId ? 'rubro' : 'sitio',
+        ...movimiento
+      };
+      if (trends.length) trendsCache.set(clave, { ...payload, at: Date.now() });
+      return res.status(200).json(payload);
     }
 
     return res.status(200).json({ trends: [], source: ultimoEstado || 'no_token' });
   } catch (e) {
     return res.status(200).json({ trends: [], source: 'error' });
   }
+}
+
+// ============================================================
+// Historial del ranking (tabla tendencias_snapshot)
+// ML no da volumen ni historico: la unica forma honesta de decir "subio 3
+// puestos" es guardar nosotros la foto de cada dia y comparar posiciones.
+// ============================================================
+
+// Fecha de hoy en Argentina, que es la que usa el default de la tabla.
+function hoyAR() {
+  return new Date(Date.now() - 3 * 3600 * 1000).toISOString().slice(0, 10);
+}
+
+// Movimiento de cada termino contra la ULTIMA foto anterior a hoy.
+// Devuelve { delta: {termino: +/-n|null}, comparadoCon: 'YYYY-MM-DD' } o {}.
+async function variacionTendencias(rubro, trends, supaUrl, supaKey) {
+  if (!trends.length) return {};
+  try {
+    const qs = `rubro=eq.${encodeURIComponent(rubro)}&fecha=lt.${hoyAR()}` +
+      `&select=fecha,termino,posicion&order=fecha.desc&limit=200`;
+    const r = await fetch(`${supaUrl}/rest/v1/tendencias_snapshot?${qs}`,
+      { headers: { apikey: supaKey, Authorization: `Bearer ${supaKey}` } });
+    if (!r.ok) return {};
+    const filas = await r.json();
+    if (!Array.isArray(filas) || !filas.length) return {};
+
+    // El order trae varias fechas mezcladas: nos quedamos con la mas reciente.
+    const fecha = filas[0].fecha;
+    const previo = new Map();
+    filas.filter(f => f.fecha === fecha).forEach(f => previo.set(sinTildes(f.termino), f.posicion));
+
+    const delta = {};
+    trends.forEach((t, i) => {
+      const antes = previo.get(sinTildes(t));
+      // Posicion menor = mejor. Subir en el ranking da numero positivo.
+      delta[t] = (antes == null) ? null : antes - (i + 1);
+    });
+    return { delta, comparadoCon: fecha };
+  } catch (e) { return {}; }
+}
+
+// Guarda la foto de hoy si todavia no existe. Sin await a proposito: que el
+// usuario no espere por esto. El unique (fecha,rubro,termino) evita duplicados,
+// asi que reintentar el mismo dia es inofensivo.
+function guardarSnapshot(rubro, trends, supaUrl, supaKey) {
+  if (!trends.length) return;
+  const filas = trends.map((t, i) => ({ fecha: hoyAR(), rubro, termino: t, posicion: i + 1 }));
+  fetch(`${supaUrl}/rest/v1/tendencias_snapshot`, {
+    method: 'POST',
+    headers: {
+      apikey: supaKey,
+      Authorization: `Bearer ${supaKey}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=ignore-duplicates,return=minimal'
+    },
+    body: JSON.stringify(filas)
+  }).catch(e => console.error('[ml-trends] snapshot:', e.message));
 }
 
 // Refresh acotado a tendencias: guarda el token nuevo (el refresh_token de ML es

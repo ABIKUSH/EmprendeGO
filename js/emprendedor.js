@@ -74,6 +74,7 @@
   const seStack = [];          // historial interno de vistas
   let provCache = null;        // proveedores aprobados [{id, nombre, rubro, ...}]
   let idxCache = null;         // indice liviano del catalogo [{id,nombre,precio,prov,n}]
+  let deltaCache = null;       // {termino: puestos que subio/bajo} | null si no hay historial
 
   /* ---------- helpers ---------- */
   const $ = (id) => document.getElementById(id);
@@ -331,7 +332,10 @@
       const r = await fetch('/api/ml?action=trends', { headers: { Accept: 'application/json' } });
       if (r.ok) {
         const j = await r.json();
-        if (j && Array.isArray(j.trends) && j.trends.length) { terms = j.trends.slice(0, 12); fromMarket = true; }
+        if (j && Array.isArray(j.trends) && j.trends.length) {
+          terms = j.trends.slice(0, 12); fromMarket = true;
+          deltaCache = j.delta || null;
+        }
       }
     } catch (e) { }
     // 2) Fallback: demanda real dentro de EmprendeGO (tabla busquedas).
@@ -363,11 +367,26 @@
       : `<span class="se-tcob none">Sin cobertura</span>`;
     const rubro = cat ? `<span class="se-trub">${esc(cat.key)}</span>` : '';
     return `<button class="se-tcard${i < 3 ? ' top' : ''}" data-term="${esc(term)}" style="--d:${i * 40}ms">
-      <span class="se-tpos se-mono">${String(i + 1).padStart(2, '0')}</span>
+      <span class="se-trow"><span class="se-tpos se-mono">${String(i + 1).padStart(2, '0')}</span>${movimientoDe(term)}</span>
       <span class="se-tname">${esc(term)}</span>
       <span class="se-tmeta">${rubro}${cobertura}</span>
     </button>`;
   }
+
+  // Movimiento respecto de la ultima foto guardada del ranking. Solo se muestra
+  // si el backend mando el dato; el primer dia no hay con que comparar y no se
+  // pinta nada, en lugar de inventar un cero.
+  function movimientoDe(term) {
+    if (!deltaCache || !(term in deltaCache)) return '';
+    const d = deltaCache[term];
+    if (d === null) return '<span class="se-tmov nuevo">nuevo</span>';
+    if (d === 0) return '<span class="se-tmov igual">=</span>';
+    return d > 0
+      ? `<span class="se-tmov sube">${flechaArriba()}${d}</span>`
+      : `<span class="se-tmov baja">${flechaAbajo()}${Math.abs(d)}</span>`;
+  }
+  function flechaArriba() { return '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>'; }
+  function flechaAbajo() { return '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>'; }
 
   /* ---------- rubro → qué se busca en ese rubro ---------- */
   // La categoria dejo de ser un directorio de proveedores: ahora muestra las
@@ -386,21 +405,25 @@
     // 1) Tendencias del rubro. Si ML no puede filtrar por esa categoria devuelve
     //    alcance 'sitio': en ese caso no las mostramos, para no hacer pasar las
     //    tendencias generales por tendencias del rubro.
-    let terms = [], alcanceRubro = false;
+    let terms = [], alcanceRubro = false, deltaRubro = null;
     try {
       const r = await fetch('/api/ml?action=trends&rubro=' + encodeURIComponent(key), { headers: { Accept: 'application/json' } });
       if (r.ok) {
         const j = await r.json();
         if (j && Array.isArray(j.trends) && j.trends.length && j.alcance === 'rubro') {
-          terms = j.trends.slice(0, 12); alcanceRubro = true;
+          terms = j.trends.slice(0, 12); alcanceRubro = true; deltaRubro = j.delta || null;
         }
       }
     } catch (e) { }
 
     let html = '';
     if (alcanceRubro) {
+      // El movimiento de este rubro no es el del ranking general: se cambia
+      // mientras se pintan estas tarjetas y se restaura despues.
+      const guardado = deltaCache; deltaCache = deltaRubro;
       html += `<div class="se-seclabel"><div class="se-h3">Lo más buscado</div><span class="se-mono se-muted">Mercado, hoy</span></div>`;
       html += '<div class="se-tgrid">' + terms.map((t, i) => cardTendencia(t, i)).join('') + '</div>';
+      deltaCache = guardado;
     }
 
     // 2) Quién lo cubre en EmprendeGO.
