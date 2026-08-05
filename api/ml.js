@@ -6,6 +6,11 @@ const ALLOWED_ORIGINS = [
   'https://emprende-go.vercel.app'
 ];
 
+// Cache en memoria de la instancia para las tendencias del mercado.
+// Clave = categoria ('' = sitio completo).
+const trendsCache = new Map();
+const TRENDS_TTL_MS = 30 * 60 * 1000;
+
 function setCors(req, res) {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -303,38 +308,114 @@ async function handleMLTrends(req, res) {
     return res.status(200).json({ trends: [], source: 'unavailable' });
   }
 
+  const cat = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
+  const url = cat
+    ? `https://api.mercadolibre.com/trends/MLA/${cat}`
+    : 'https://api.mercadolibre.com/trends/MLA';
+
+  // Las tendencias del sitio se mueven de a dias, no de a minutos: cacheamos
+  // en memoria de la instancia para no pegarle a ML en cada visita.
+  const cached = trendsCache.get(cat);
+  if (cached && Date.now() - cached.at < TRENDS_TTL_MS) {
+    return res.status(200).json({ trends: cached.trends, source: 'ml', cached: true });
+  }
+
   try {
-    // Un proveedor conectado con refresh_token disponible.
+    // Candidatos ordenados del token mas fresco al mas viejo. El refresh_token de
+    // ML es de un solo uso, asi que el de un proveedor que hace rato no sincroniza
+    // puede estar consumido; probamos varios antes de darnos por vencidos.
     const provRes = await fetch(
-      `${supabaseUrl}/rest/v1/proveedores?ml_connected=eq.true&ml_refresh_token=not.is.null&select=id,ml_access_token,ml_refresh_token,ml_token_expires_at&limit=1`,
+      `${supabaseUrl}/rest/v1/proveedores` +
+      `?ml_connected=eq.true&ml_refresh_token=not.is.null` +
+      `&select=id,ml_access_token,ml_refresh_token,ml_token_expires_at` +
+      `&order=ml_token_expires_at.desc.nullslast&limit=5`,
       { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
     );
     const provs = provRes.ok ? await provRes.json() : [];
     if (!provs.length) return res.status(200).json({ trends: [], source: 'no_token' });
-    const prov = provs[0];
 
-    let accessToken = prov.ml_access_token;
-    const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
-    if (!accessToken || !expiresAt || expiresAt.getTime() < Date.now() + 5 * 60 * 1000) {
-      const refreshed = await refreshMLToken(prov.ml_refresh_token, prov.id, supabaseUrl, supabaseKey);
-      if (!refreshed) return res.status(200).json({ trends: [], source: 'refresh_failed' });
-      accessToken = refreshed.access_token;
+    let ultimoEstado = null;
+
+    for (const prov of provs) {
+      let accessToken = prov.ml_access_token;
+      const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+      const vigente = accessToken && expiresAt && expiresAt.getTime() > Date.now() + 5 * 60 * 1000;
+
+      if (!vigente) {
+        // Ojo: sin marcarMLDesconectado. Este endpoint es publico y sin login;
+        // no puede desconectar la integracion de un proveedor como efecto colateral.
+        const refreshed = await refreshMLTrendsToken(prov.ml_refresh_token, prov.id, supabaseUrl, supabaseKey);
+        if (!refreshed) { ultimoEstado = 'refresh_failed'; continue; }
+        accessToken = refreshed.access_token;
+      }
+
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!r.ok) { ultimoEstado = 'ml_error_' + r.status; continue; }
+
+      const data = await r.json();
+      const trends = (Array.isArray(data) ? data : [])
+        .map(x => (x && x.keyword ? String(x.keyword) : ''))
+        .filter(Boolean)
+        .slice(0, 30);
+
+      if (trends.length) trendsCache.set(cat, { trends, at: Date.now() });
+      return res.status(200).json({ trends, source: 'ml' });
     }
 
-    const cat = (req.query.category || '').toString().replace(/[^A-Za-z0-9]/g, '');
-    const url = cat
-      ? `https://api.mercadolibre.com/trends/MLA/${cat}`
-      : 'https://api.mercadolibre.com/trends/MLA';
-    const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
-    if (!r.ok) return res.status(200).json({ trends: [], source: 'ml_error', status: r.status });
-    const data = await r.json();
-    const trends = (Array.isArray(data) ? data : [])
-      .map(x => (x && x.keyword ? String(x.keyword) : ''))
-      .filter(Boolean)
-      .slice(0, 30);
-    return res.status(200).json({ trends, source: 'ml' });
+    return res.status(200).json({ trends: [], source: ultimoEstado || 'no_token' });
   } catch (e) {
     return res.status(200).json({ trends: [], source: 'error' });
+  }
+}
+
+// Refresh acotado a tendencias: guarda el token nuevo (el refresh_token de ML es
+// de un solo uso, hay que persistirlo) pero NUNCA marca al proveedor como
+// desconectado, porque quien dispara esto es un visitante anonimo.
+async function refreshMLTrendsToken(refreshToken, proveedorId, supaUrl, supaKey) {
+  if (!refreshToken) return null;
+  try {
+    const r = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Accept': 'application/json'
+      },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: process.env.ML_APP_ID,
+        client_secret: process.env.ML_APP_SECRET,
+        refresh_token: refreshToken
+      }).toString()
+    });
+    if (!r.ok) {
+      console.error('[ml-trends-refresh] fallo:', proveedorId, r.status);
+      return null;
+    }
+    const data = await r.json();
+    if (!data.access_token) return null;
+
+    const expiresAt = new Date(Date.now() + (Number(data.expires_in) || 21600) * 1000).toISOString();
+    const patch = {
+      ml_access_token: data.access_token,
+      ml_token_expires_at: expiresAt
+    };
+    if (data.refresh_token) patch.ml_refresh_token = data.refresh_token;
+
+    await fetch(`${supaUrl}/rest/v1/proveedores?id=eq.${proveedorId}`, {
+      method: 'PATCH',
+      headers: {
+        apikey: supaKey,
+        Authorization: `Bearer ${supaKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal'
+      },
+      body: JSON.stringify(patch)
+    });
+
+    return data;
+  } catch (e) {
+    console.error('[ml-trends-refresh] error:', e.message);
+    return null;
   }
 }
 
