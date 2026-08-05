@@ -37,6 +37,28 @@ const RUBRO_ML = {
 
 const sinTildes = (s) => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
+// El ranking de ML mezcla productos con nombres de tiendas y cadenas
+// ("dell tienda oficial", "fravega", "mayorista bazar"). Para un revendedor eso
+// es ruido: no puede salir a comprar "Fravega". Los sacamos del ranking.
+// Ojo: nada de filtrar "oficial" suelto — "camiseta oficial argentina" es un
+// producto de verdad. Solo la frase completa "tienda oficial".
+const TIENDA_FRASES = [
+  'tienda oficial', 'outlet', 'mayorista', 'distribuidora',
+  'importadora', 'store', 'shop', 'showroom', 'liquidacion'
+];
+const CADENAS = new Set([
+  'fravega', 'garbarino', 'musimundo', 'coto', 'carrefour', 'jumbo', 'dia',
+  'easy', 'sodimac', 'farmacity', 'falabella', 'walmart', 'changomas',
+  'cetrogar', 'ribeiro', 'naldo', 'dexter', 'sportline', 'megatone',
+  'mercado libre', 'mercadolibre', 'temu', 'shein', 'amazon', 'aliexpress'
+]);
+function esProducto(keyword) {
+  const k = sinTildes(keyword);
+  if (!k) return false;
+  if (CADENAS.has(k)) return false;
+  return !TIENDA_FRASES.some(f => k.includes(f));
+}
+
 let mlCatsCache = null;                 // categorias raiz de MLA
 const rubroIdCache = new Map();         // rubro normalizado -> id de ML | null
 
@@ -428,6 +450,7 @@ async function handleMLTrends(req, res) {
       const trends = (Array.isArray(data) ? data : [])
         .map(x => (x && x.keyword ? String(x.keyword) : ''))
         .filter(Boolean)
+        .filter(esProducto)
         .slice(0, 30);
 
       if (trends.length) trendsCache.set(clave, { trends, at: Date.now() });

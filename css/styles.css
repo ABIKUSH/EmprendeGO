@@ -2111,7 +2111,7 @@ select:focus { outline: none; }
 #screen-emprendedor .se-searchbar input{flex:1;border:none;outline:none;background:none;font-family:'Inter',sans-serif;font-size:.95rem;color:var(--se-ink)}
 
 /* ---- categorías ---- */
-#screen-emprendedor .se-catgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+#screen-emprendedor .se-catgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}
 #screen-emprendedor .se-catcard{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:15px;border-radius:15px;background:var(--se-surface);border:1px solid var(--se-line);box-shadow:var(--se-sh);cursor:pointer;text-align:left}
 #screen-emprendedor .se-catcard:active{transform:scale(.98)}
 #screen-emprendedor .se-cat-ico{font-size:1.4rem;line-height:1}
@@ -2120,7 +2120,9 @@ select:focus { outline: none; }
 
 /* ---- más buscado (chips) ---- */
 /* ---- tendencias: dos por fila, con rubro y cobertura real ---- */
-#screen-emprendedor .se-tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* minmax(0,1fr) y no 1fr: con 1fr la columna no puede achicarse por debajo del
+   contenido minimo, y un nombre largo o un precio con nowrap desborda la grilla. */
+#screen-emprendedor .se-tgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 #screen-emprendedor .se-tcard{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:118px;padding:13px 13px 12px;border-radius:16px;background:var(--se-surface);border:1px solid var(--se-line);box-shadow:var(--se-sh);cursor:pointer;text-align:left;overflow:hidden;
   animation:seRise .5s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms)}
 #screen-emprendedor .se-tcard::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--se-verde-vivo),var(--se-naranja));transform:scaleX(0);transform-origin:left;transition:transform .35s cubic-bezier(.22,1,.36,1)}
@@ -2160,21 +2162,27 @@ select:focus { outline: none; }
 
 /* ---- proveedores ---- */
 /* Dos por fila en celular: el que busca no baja mucho, ve varios de un vistazo. */
-#screen-emprendedor .se-sgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
-#screen-emprendedor .se-supp{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:13px;border-radius:16px;background:var(--se-surface);border:1px solid var(--se-line);box-shadow:var(--se-sh);cursor:pointer;
+#screen-emprendedor .se-sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:stretch}
+#screen-emprendedor .se-supp{display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;min-width:0;padding:13px;border-radius:16px;background:var(--se-surface);border:1px solid var(--se-line);box-shadow:var(--se-sh);cursor:pointer;
   animation:seRise .5s cubic-bezier(.22,1,.36,1) both;animation-delay:var(--d,0ms);transition:border-color .2s ease,box-shadow .2s ease}
 #screen-emprendedor .se-supp:hover{border-color:var(--se-line2)}
 #screen-emprendedor .se-supp:active{transform:scale(.985)}
 #screen-emprendedor .se-supp:focus-visible{outline:2px solid var(--se-verde);outline-offset:2px}
 #screen-emprendedor .se-supp-logo{width:42px;height:42px;flex:0 0 42px;border-radius:12px;background:var(--se-bg2) center/cover no-repeat;border:1px solid var(--se-line)}
 #screen-emprendedor .se-supp-ini{display:grid;place-items:center;font-family:var(--se-serif);font-weight:800;font-size:1.05rem;color:#fff;background:linear-gradient(135deg,#00A862,#006039);border:none}
-#screen-emprendedor .se-supp-name{display:flex;align-items:center;gap:5px;margin:2px 0 0;font-family:'Inter',sans-serif;font-size:.86rem;font-weight:700;line-height:1.25;color:var(--se-ink)}
-#screen-emprendedor .se-verif{display:inline-flex;flex:0 0 auto;color:var(--se-verde-vivo)}
-#screen-emprendedor .se-supp-loc{margin:0;font-size:.7rem;color:var(--se-ink3)}
-#screen-emprendedor .se-sfig{width:100%;display:flex;align-items:baseline;justify-content:space-between;gap:6px;padding:8px 10px;border-radius:10px;background:var(--se-bg);border:1px solid var(--se-line)}
-#screen-emprendedor .se-sfl{font-size:.55rem;text-transform:uppercase;letter-spacing:.04em;color:var(--se-ink3)}
-#screen-emprendedor .se-sfv{font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:var(--se-ink);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#screen-emprendedor .se-swa{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:2px;padding:10px;border:none;border-radius:11px;background:linear-gradient(135deg,#25D366,#12A150);color:#fff;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer}
+#screen-emprendedor .se-supp-name{display:flex;align-items:flex-start;gap:5px;width:100%;min-width:0;margin:2px 0 0;font-family:'Inter',sans-serif;font-size:.86rem;font-weight:700;line-height:1.25;color:var(--se-ink)}
+/* El nombre se corta a dos lineas: sin esto un nombre largo estira la columna. */
+#screen-emprendedor .se-supp-nm{min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow-wrap:anywhere}
+#screen-emprendedor .se-verif{display:inline-flex;flex:0 0 auto;margin-top:1px;color:var(--se-verde-vivo)}
+#screen-emprendedor .se-supp-loc{margin:0;max-width:100%;font-size:.7rem;color:var(--se-ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#screen-emprendedor .se-sfigs{width:100%;display:flex;flex-direction:column;gap:5px}
+#screen-emprendedor .se-sfig{width:100%;display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0;padding:7px 10px;border-radius:10px;background:var(--se-bg);border:1px solid var(--se-line)}
+#screen-emprendedor .se-sfl{flex:0 0 auto;font-size:.55rem;text-transform:uppercase;letter-spacing:.04em;color:var(--se-ink3)}
+#screen-emprendedor .se-sfv{font-family:'Inter',sans-serif;font-size:.8rem;font-weight:800;color:var(--se-ink);text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#screen-emprendedor .se-sfv.vacio{color:var(--se-ink3);font-weight:600}
+/* margin-top:auto = todos los botones de la fila quedan alineados abajo,
+   aunque las fichas tengan nombres de distinto largo. */
+#screen-emprendedor .se-swa{width:100%;display:inline-flex;align-items:center;justify-content:center;gap:6px;margin-top:auto;padding:10px;border:none;border-radius:11px;background:linear-gradient(135deg,#25D366,#12A150);color:#fff;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer}
 #screen-emprendedor .se-swa.off{background:var(--se-bg2);color:var(--se-ink3);font-weight:600;cursor:default}
 #screen-emprendedor .se-prodline{display:flex;align-items:baseline;gap:8px;margin-top:2px;min-width:0}
 #screen-emprendedor .se-prodprov{font-size:.72rem;color:var(--se-ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

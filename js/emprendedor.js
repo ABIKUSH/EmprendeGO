@@ -281,6 +281,22 @@
     return { provs: new Set(hits.map(h => h.prov)).size, prods: hits.length };
   }
 
+  // Cuantos productos publicados tiene cada proveedor, contados del indice.
+  let porProvCount = null;
+  function catalogoDe(provId) {
+    if (!porProvCount) {
+      porProvCount = new Map();
+      (idxCache || []).forEach(p => porProvCount.set(p.prov, (porProvCount.get(p.prov) || 0) + 1));
+    }
+    return porProvCount.get(provId) || 0;
+  }
+  // Los que tienen catalogo primero: al que busca le sirve mas ver precios ya
+  // publicados que escribirle a una cuenta vacia.
+  function ordenarProveedores(list) {
+    return list.slice().sort((a, b) =>
+      catalogoDe(b.id) - catalogoDe(a.id) || (a.nombre || '').localeCompare(b.nombre || ''));
+  }
+
   async function loadMercado() {
     if (dataListo) return;
     dataListo = true;
@@ -390,8 +406,7 @@
     // 2) Quién lo cubre en EmprendeGO.
     if (provs.length) {
       html += `<div class="se-seclabel"><div class="se-h3">Proveedores del rubro</div><span class="se-mono se-muted">${provs.length}</span></div>`;
-      html += '<div class="se-sgrid">' + provs
-        .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+      html += '<div class="se-sgrid">' + ordenarProveedores(provs)
         .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, key, i)).join('') + '</div>';
     }
 
@@ -460,8 +475,7 @@
       const cat = catDeTermino(t);
       const delRubro = cat ? provsDeCat(cat) : [];
       if (delRubro.length) {
-        const cards = delRubro
-          .sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''))
+        const cards = ordenarProveedores(delRubro)
           .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t, i)).join('');
         list.innerHTML =
           `<div class="se-nota">
@@ -509,20 +523,29 @@
     const msg = info.rubroOnly
       ? `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. ¿Manejás ${term} por mayor? Estoy armando mi emprendimiento y quiero revender. Si tenés, ¿me pasás precios y mínimo de compra? ¡Gracias!`
       : `Hola ${prov.nombre || ''}, te contacto desde EmprendeGO. Me interesa comprar ${term} por mayor para revender. ¿Me pasás precios y mínimo de compra? ¡Gracias!`;
-    // Un solo dato duro por ficha: el que le sirve al que va a comprar.
-    const dato = info.min
-      ? `<span class="se-sfl se-mono">Desde</span><span class="se-sfv se-mono">${money(info.min)}</span>`
-      : (prov.pedido_minimo
-        ? `<span class="se-sfl se-mono">Mínimo</span><span class="se-sfv">${esc(prov.pedido_minimo)}</span>`
-        : `<span class="se-sfl se-mono">Rubro</span><span class="se-sfv">${esc((prov.rubro || '').split(',')[0].trim() || '—')}</span>`);
+    // Datos utiles y no redundantes. En un listado de rubro decir "Rubro: Bazar"
+    // no aporta nada: lo que decide a quien escribirle es si tiene catalogo
+    // publicado y cual es el minimo de compra.
+    const filas = [];
+    if (info.min) {
+      filas.push(`<div class="se-sfig"><span class="se-sfl se-mono">Desde</span><span class="se-sfv se-mono">${money(info.min)}</span></div>`);
+    } else {
+      const n = catalogoDe(prov.id);
+      filas.push(n
+        ? `<div class="se-sfig"><span class="se-sfl se-mono">Catálogo</span><span class="se-sfv se-mono">${n} producto${n !== 1 ? 's' : ''}</span></div>`
+        : `<div class="se-sfig"><span class="se-sfl se-mono">Catálogo</span><span class="se-sfv vacio">a pedido</span></div>`);
+    }
+    if (prov.pedido_minimo) {
+      filas.push(`<div class="se-sfig"><span class="se-sfl se-mono">Mínimo</span><span class="se-sfv">${esc(prov.pedido_minimo)}</span></div>`);
+    }
     const wa = prov.whatsapp
       ? `<button class="se-swa" data-wa="${esc(waLink(prov.whatsapp, msg))}" aria-label="Contactar a ${esc(prov.nombre || '')} por WhatsApp">${icoWa()} WhatsApp</button>`
       : `<span class="se-swa off">Sin WhatsApp</span>`;
     return `<article class="se-supp" data-prov="${esc(prov.id)}" style="--d:${(i || 0) * 45}ms" tabindex="0">
       ${avatar}
-      <h4 class="se-supp-name">${esc(prov.nombre || 'Proveedor')} <span class="se-verif" title="Verificado">${icoCheck()}</span></h4>
+      <h4 class="se-supp-name"><span class="se-supp-nm">${esc(prov.nombre || 'Proveedor')}</span><span class="se-verif" title="Verificado">${icoCheck()}</span></h4>
       <p class="se-supp-loc se-mono">${esc(prov.provincia || 'Argentina')}</p>
-      <div class="se-sfig">${dato}</div>
+      <div class="se-sfigs">${filas.join('')}</div>
       ${wa}
     </article>`;
   }
