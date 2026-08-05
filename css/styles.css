@@ -484,6 +484,14 @@ body, body *{
 .resena-texto{font-size:.82rem;color:var(--gray);line-height:1.55}
 .write-resena-btn{width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:12px;font-family:'Fraunces',serif;font-size:.88rem;font-weight:700;cursor:pointer}
 
+/* BUSCADOR DENTRO DEL CATÁLOGO DEL PROVEEDOR */
+.det-search-wrap{display:flex;align-items:center;gap:9px;padding:10px 13px;background:#fff;border:1.5px solid #E7EAE8;border-radius:12px;transition:border-color .15s ease}
+.det-search-wrap:focus-within{border-color:#006039}
+.det-search-wrap svg{flex:0 0 auto}
+.det-search-wrap input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Inter',sans-serif;font-size:.86rem;color:#111}
+.det-search-wrap input::placeholder{color:#9CA3AF}
+.det-search-wrap input::-webkit-search-cancel-button{cursor:pointer}
+
 /* MODAL RESEÑA */
 .resena-modal-stars{display:flex;gap:10px;justify-content:center;margin:16px 0}
 .resena-modal-stars .star{font-size:2rem}

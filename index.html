@@ -859,6 +859,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
 
     <div id="det-productos-section" style="margin-bottom:12px">
+      <!-- Buscador dentro del catálogo del proveedor. Vive fuera de
+           #det-productos-carousels para no perder el foco en cada tecla. -->
+      <div id="det-prod-search" style="display:none;margin-bottom:10px">
+        <div class="det-search-wrap">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="det-prod-q" type="search" autocomplete="off" placeholder="Buscar en este catálogo…" oninput="filtrarCatalogoProv(this.value)">
+        </div>
+      </div>
       <div id="det-productos-carousels"></div>
     </div>
 
@@ -2283,8 +2291,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <!-- ===== SOY EMPRENDEDOR (módulo aislado; el contenido lo inyecta js/emprendedor.js) ===== -->
 <div class="screen" id="screen-emprendedor"></div>
 
-<script src="js/app.js?v=20260729-consultas-mes"></script>
-<script src="js/emprendedor.js?v=20260805-cards"></script>
+<script src="js/app.js?v=20260805-buscar-catalogo"></script>
+<script src="js/emprendedor.js?v=20260805-indice"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

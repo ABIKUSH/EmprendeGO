@@ -238,17 +238,31 @@
   // Indice liviano de todo el catalogo visible. Se trae una sola vez y alimenta
   // tres cosas: la cobertura de cada tendencia, el match producto->proveedores y
   // el buscador. Sin imagenes, para que pese poco en celular.
+  // OJO: la API de Supabase corta en 1000 filas por request, sin avisar. Con un
+  // .limit(5000) el servidor devuelve 1000 igual y el catalogo queda truncado
+  // (asi se perdian los auriculares de MAYA). Hay que paginar con .range().
   async function cargarIndice() {
     if (idxCache) return idxCache;
+    const PAGE = 1000;
+    const acum = [];
     try {
-      const { data } = await sb.from('productos')
-        .select('id,nombre,precio,proveedor_id')
-        .eq('visible', true).limit(5000);
-      idxCache = (data || []).map(p => ({
-        id: p.id, nombre: p.nombre, precio: p.precio,
-        prov: p.proveedor_id, n: norm(p.nombre)
-      })).filter(x => x.n && x.prov);
-    } catch (e) { idxCache = []; }
+      for (let desde = 0; ; desde += PAGE) {
+        const { data, error } = await sb.from('productos')
+          .select('id,nombre,precio,proveedor_id')
+          .eq('visible', true)
+          .order('id', { ascending: true })
+          .range(desde, desde + PAGE - 1);
+        if (error) break;
+        const lote = data || [];
+        acum.push(...lote);
+        if (lote.length < PAGE) break;
+        if (desde > 50000) break; // cinturon de seguridad
+      }
+    } catch (e) { }
+    idxCache = acum.map(p => ({
+      id: p.id, nombre: p.nombre, precio: p.precio,
+      prov: p.proveedor_id, n: norm(p.nombre)
+    })).filter(x => x.n && x.prov);
     return idxCache;
   }
 
@@ -431,8 +445,8 @@
           .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t, i)).join('');
         list.innerHTML =
           `<div class="se-nota">
-             <div class="se-nota-t">Nadie lo tiene publicado todavía</div>
-             <p class="se-muted">Estos ${delRubro.length} proveedores son del rubro ${esc(cat.key)}. No figura “${esc(t)}” en su catálogo, pero es lo suyo: conviene preguntarles directo.</p>
+             <div class="se-nota-t">Sin publicaciones</div>
+             <p class="se-muted">Te mostramos ${delRubro.length} proveedores del rubro ${esc(cat.key)}.</p>
            </div><div class="se-sgrid">${cards}</div>`;
         ligarCardsProveedor(list);
         return;

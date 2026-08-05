@@ -1471,6 +1471,12 @@ async function cargarProductosDetalle(proveedorId) {
       }
     });
     provDetalleData = data;
+    provDetalleFiltro = '';
+    const cajaBusq = document.getElementById('det-prod-search');
+    const inputBusq = document.getElementById('det-prod-q');
+    if (inputBusq) inputBusq.value = '';
+    // El buscador solo aparece si hay catalogo suficiente para que sirva.
+    if (cajaBusq) cajaBusq.style.display = data.length >= 8 ? 'block' : 'none';
     await renderDetalleProductos(proveedorId);
   } catch (e) {
     const el2 = document.getElementById('det-productos-carousels');
@@ -1478,11 +1484,34 @@ async function cargarProductosDetalle(proveedorId) {
   }
 }
 
+// Filtra el catálogo del proveedor sin volver al servidor: busca sobre lo que ya
+// está cargado, así respeta el tope de 30 productos de los proveedores no-Pro.
+function filtrarCatalogoProv(q) {
+  provDetalleFiltro = (q || '').toString();
+  provDetalleOffset = 0;
+  renderDetalleProductos(provActual?.id);
+}
+function _normProd(s) {
+  return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
 async function renderDetalleProductos(proveedorId) {
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
-  const data = provDetalleData;
   const bgsColores = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
+  const filtro = _normProd(provDetalleFiltro).trim();
+  const palabras = filtro.split(/\s+/).filter(Boolean);
+  const data = palabras.length
+    ? provDetalleData.filter(p => {
+        const txt = _normProd(p.nombre) + ' ' + _normProd(p.categoria_principal || p.categoria);
+        return palabras.every(w => txt.includes(w));
+      })
+    : provDetalleData;
+  if (palabras.length && !data.length) {
+    el.style.cssText = '';
+    el.innerHTML = `<div style="text-align:center;padding:22px 14px;color:var(--gray);font-size:.82rem">Sin resultados para “${escHtml(provDetalleFiltro.trim())}” en este catálogo.</div>`;
+    return;
+  }
   const slice = data.slice(0, (provDetalleOffset + 1) * DETALLE_PAGE_SIZE);
   const resto = data.length - slice.length;
   el.style.cssText = '';
@@ -1502,7 +1531,7 @@ async function renderDetalleProductos(proveedorId) {
     </div>`;
   }).join('');
   let notaLimite = '';
-  if (!provDetalleEsPro && data.length === provDetalleLimite) {
+  if (!provDetalleEsPro && provDetalleData.length === provDetalleLimite) {
     const { count: totalReal } = await sb.from('productos').select('*', { count: 'exact', head: true }).eq('proveedor_id', proveedorId);
     if (totalReal && totalReal > provDetalleLimite) {
       notaLimite = `<div style="text-align:center;padding:10px;font-size:.75rem;color:var(--gray);background:#f8fafc;border-radius:10px;margin-top:8px">Mostrando 30 de ${totalReal} productos. Este proveedor tiene más en su catálogo completo.</div>`;
@@ -3836,6 +3865,7 @@ let homeProductosPage = 0;
 const HOME_PAGE_SIZE = 20;
 let _buscarListaFiltrada = [], _buscarOffset = 0, _buscarFiltroActual = '';
 let provDetalleData = [], provDetalleOffset = 0, provDetalleEsPro = false, provDetalleLimite;
+let provDetalleFiltro = '';   // texto del buscador dentro del catálogo del proveedor
 const DETALLE_PAGE_SIZE = 20;
 const catColors = {
   'Tecnología': '#065F46', 'Indumentaria': '#FF6B00', 'Hogar y Deco': '#00A651', 'Bazar': '#047857',
