@@ -62,6 +62,11 @@
     return null;
   }
 
+  // Preposiciones y articulos: no cuentan al medir en que posicion del nombre
+  // aparece el termino ("Cesto de ropa" -> cesto es la 1a, ropa la 2a).
+  const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'un', 'una', 'unos', 'unas',
+    'con', 'sin', 'para', 'por', 'en', 'al', 'y', 'o', 'a', 'x']);
+
   // Términos de ubicación / ruido que NO son productos (para el "más buscado").
   const RUIDO = new Set([
     'buenos aires', 'caba', 'capital federal', 'cordoba', 'córdoba', 'mendoza',
@@ -264,25 +269,75 @@
         if (desde > 50000) break; // cinturon de seguridad
       }
     } catch (e) { }
-    idxCache = acum.map(p => ({
-      id: p.id, nombre: p.nombre, precio: p.precio,
-      prov: p.proveedor_id, n: norm(p.nombre)
-    })).filter(x => x.n && x.prov);
+    idxCache = acum.map(p => {
+      const n = norm(p.nombre);
+      return {
+        id: p.id, nombre: p.nombre, precio: p.precio,
+        prov: p.proveedor_id, n,
+        // Palabras sueltas del nombre. Comparar contra estas y no contra el texto
+        // entero es lo que evita que "ropa" matchee "Europa".
+        toks: n.split(/[^a-z0-9]+/).filter(Boolean).map(raiz),
+        // Las mismas sin preposiciones ni articulos, para saber donde arranca de
+        // verdad el nombre del producto.
+        cont: n.split(/[^a-z0-9]+/).filter(w => w && !VACIAS.has(w)).map(raiz)
+      };
+    }).filter(x => x.n && x.prov);
     return idxCache;
   }
 
-  // Match por palabras: "zapatillas mujer" exige que el nombre contenga ambas.
-  // Se usa igual para la cobertura y para el detalle, asi el numero que promete
-  // la tarjeta es exactamente el que despues se ve.
+  // Raiz aproximada para tolerar plurales: gorras->gorra, auriculares->auricular.
+  // Conservadora a proposito: no toca palabras cortas, donde cortar la "s" hace
+  // mas dano que bien (mes, tres, gas).
+  function raiz(w) {
+    if (w.length > 5 && w.endsWith('es')) return w.slice(0, -2);
+    if (w.length > 4 && w.endsWith('s')) return w.slice(0, -1);
+    return w;
+  }
+
+  // Match por palabra completa (con su raiz), no por pedazo de texto.
+  // "zapatillas mujer" exige las dos palabras. "ropa" ya no cae en "Europa".
   function matchear(term) {
     const t = norm(term);
     if (!t || !idxCache) return [];
-    const ws = t.split(/\s+/).filter(w => w.length > 2);
-    if (!ws.length) return idxCache.filter(x => x.n.includes(t));
-    return idxCache.filter(x => ws.every(w => x.n.includes(w)));
+    const ws = t.split(/\s+/).filter(w => w.length > 2).map(raiz);
+    if (!ws.length) return idxCache.filter(x => x.toks.some(k => k.startsWith(t)));
+    return idxCache.filter(x => ws.every(w => x.toks.some(k => k.startsWith(w))));
   }
+
+  // Segundo filtro, este semantico. "Plancha a vapor para ropa" contiene la
+  // palabra ropa, pero es una plancha. En castellano el sustantivo principal va
+  // al principio del nombre, asi que exigimos que el termino encabece:
+  //   - si es la PRIMERA palabra del nombre, vale siempre
+  //     ("Auriculares Headset Verbatim" es auriculares, aunque lo venda una libreria)
+  //   - si esta en la segunda posicion, vale solo si ademas el proveedor es del
+  //     rubro del termino
+  // Si nada califica y el termino tiene rubro, devolvemos vacio a proposito: es
+  // mejor caer al listado de proveedores del rubro que ofrecer una plancha a
+  // quien busca ropa.
+  function matchearProveedores(term) {
+    const t = norm(term);
+    if (!t || !idxCache) return [];
+    const ws = t.split(/\s+/).filter(w => w.length > 2).map(raiz);
+    if (!ws.length) return [];
+
+    const hits = idxCache.filter(x => ws.every(w => x.toks.some(k => k.startsWith(w))));
+    if (!hits.length) return [];
+
+    const cat = catDeTermino(term);
+    const delRubro = cat ? new Set(provsDeCat(cat).map(p => p.id)) : null;
+
+    const fuertes = hits.filter(x => {
+      const pos = ws.map(w => x.cont.findIndex(k => k.startsWith(w)));
+      if (pos.some(p => p === 0)) return true;
+      if (delRubro && delRubro.has(x.prov) && pos.some(p => p === 1)) return true;
+      return false;
+    });
+    if (fuertes.length) return fuertes;
+    return delRubro ? [] : hits;
+  }
+
   function coberturaDe(term) {
-    const hits = matchear(term);
+    const hits = matchearProveedores(term);
     return { provs: new Set(hits.map(h => h.prov)).size, prods: hits.length };
   }
 
@@ -472,8 +527,8 @@
     await Promise.all([cargarProveedores(), cargarIndice()]);
 
     // Mismo matcher que usa la cobertura de la tarjeta: el numero que promete el
-    // ranking es el que se ve aca.
-    const prods = matchear(t);
+    // ranking es exactamente el que se ve aca.
+    const prods = matchearProveedores(t);
 
     // agrupar por proveedor
     const porProv = {};
