@@ -456,9 +456,15 @@ async function handleMLTrends(req, res) {
 
       // Historial: comparamos contra la ultima foto guardada ANTES de guardar la
       // de hoy, para no compararnos contra nosotros mismos.
-      const claveRubro = catId ? sinTildes(rubro || catDirecta) : '';
-      const movimiento = await variacionTendencias(claveRubro, trends, supabaseUrl, supabaseKey);
-      await guardarSnapshot(claveRubro, trends, supabaseUrl, supabaseKey);
+      // Solo guardamos historial de claves de nuestra lista (los 16 rubros y el
+      // sitio completo). `category` es un id de ML libre que manda el visitante:
+      // si lo aceptaramos como clave, cualquiera podria inflar la tabla con
+      // miles de categorias y llenarnos la base sin estar logueado.
+      const rubroValido = rubro && RUBRO_ML[sinTildes(rubro)];
+      const claveRubro = (catId && rubroValido) ? sinTildes(rubro) : (catId ? null : '');
+      const movimiento = claveRubro === null ? {}
+        : await variacionTendencias(claveRubro, trends, supabaseUrl, supabaseKey);
+      if (claveRubro !== null) await guardarSnapshot(claveRubro, trends, supabaseUrl, supabaseKey);
 
       const payload = {
         trends, source: 'ml',

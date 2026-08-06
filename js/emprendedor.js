@@ -80,7 +80,11 @@
   const $ = (id) => document.getElementById(id);
   const money = (n) => '$' + Number(n || 0).toLocaleString('es-AR');
   const norm = (s) => (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-  const esc = (s) => (s || '').toString().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Escapa tambien la comilla simple: varias URLs se interpolan dentro de
+  // style="background-image:url('...')" y sin esto se puede romper el atributo.
+  const esc = (s) => (s || '').toString()
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   function fotoDe(p) {
     if (Array.isArray(p.imagenes) && p.imagenes.length && p.imagenes[0]) return p.imagenes[0];
     return p.imagen_url || p.foto_url || '';
