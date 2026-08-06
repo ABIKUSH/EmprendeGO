@@ -377,14 +377,16 @@
     </button>`;
   }
 
-  // Movimiento respecto de la ultima foto guardada del ranking. Solo se muestra
-  // si el backend mando el dato; el primer dia no hay con que comparar y no se
-  // pinta nada, en lugar de inventar un cero.
+  // Movimiento respecto de la ultima foto guardada del ranking.
+  // Solo se pinta cuando HAY movimiento: el que se quedo en su puesto no lleva
+  // badge. Medido el 6/8, ML no movio ni un puesto de un dia al otro, asi que
+  // marcar los quietos llenaba las doce tarjetas de "=" y tapaba justamente lo
+  // unico que importa, que es lo que se movio.
   function movimientoDe(term) {
     if (!deltaCache || !(term in deltaCache)) return '';
     const d = deltaCache[term];
     if (d === null) return '<span class="se-tmov nuevo">nuevo</span>';
-    if (d === 0) return '<span class="se-tmov igual">=</span>';
+    if (d === 0) return '';
     return d > 0
       ? `<span class="se-tmov sube">${flechaArriba()}${d}</span>`
       : `<span class="se-tmov baja">${flechaAbajo()}${Math.abs(d)}</span>`;
