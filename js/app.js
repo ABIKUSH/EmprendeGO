@@ -229,7 +229,7 @@ function matchesQuery(p, q) {
   const qn = quitarAcentos(q.toLowerCase());
   if (quitarAcentos(p.nombre.toLowerCase()).includes(qn)) return true;
   if (quitarAcentos((p.rubro || '').toLowerCase()).includes(qn)) return true;
-  if (p.provincia && quitarAcentos(p.provincia.toLowerCase()).includes(qn)) return true;
+  if (matchesZona(p.provincia, qn)) return true;
   if (p.descripcion && quitarAcentos(p.descripcion.toLowerCase()).includes(qn)) return true;
   for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
     if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
@@ -239,11 +239,45 @@ function matchesQuery(p, q) {
   return false;
 }
 
+// Alias de zona → provincia tal como está cargada en `proveedores.provincia`.
+// La gente busca por ciudad o por el nombre coloquial ("capital federal", "once",
+// "rosario"), no por el nombre formal de la provincia. Sin esto esas búsquedas
+// devuelven cero aunque haya oferta en esa zona. Todo en minúscula y sin acentos.
+const ZONA_ALIAS = {
+  'capital federal': 'caba', 'capital': 'caba', 'ciudad de buenos aires': 'caba',
+  'once': 'caba', 'flores': 'caba', 'avellaneda': 'caba', 'microcentro': 'caba',
+  'gba': 'buenos aires', 'amba': 'buenos aires', 'conurbano': 'buenos aires',
+  'mar del plata': 'buenos aires', 'la plata': 'buenos aires', 'quilmes': 'buenos aires',
+  'rosario': 'santa fe', 'cordoba capital': 'cordoba',
+};
+
+// Devuelve true si la query apunta a la provincia del proveedor, sea por nombre
+// directo ("cordoba") o por alias de zona ("capital federal" → CABA).
+// Nunca matchea por substring: un fragmento a mitad de palabra arrastraba el
+// catálogo entero de una provincia ("nos" traía todo Buenos Aires). Pide 3+
+// caracteres por el mismo motivo.
+//   - Provincia: prefijo de cualquiera de sus palabras, porque es el nombre propio
+//     del lugar y buscar "aires" para Buenos Aires es legítimo.
+//   - Alias: prefijo de la FRASE COMPLETA únicamente. Si se permitiera por palabra,
+//     "plata" (joyería) traería Buenos Aires vía "mar del plata".
+function matchesZona(provincia, qn) {
+  if (!provincia || qn.length < 3) return false;
+  const pn = quitarAcentos(provincia.toLowerCase());
+  if (pn === qn || pn.split(/[\s,]+/).some(w => w.startsWith(qn))) return true;
+  for (const [alias, prov] of Object.entries(ZONA_ALIAS)) {
+    if (alias.startsWith(qn) && pn.includes(prov)) return true;
+  }
+  return false;
+}
+
 // Búsqueda de producto con expansión de conceptos. Además del match literal por
 // nombre/categoría/proveedor, si el término buscado es un tipo de producto conocido
 // (ej. "zapatillas", "botas", "sandalias" → Calzado) también trae todos los productos
 // de esa categoría aunque el nombre no contenga la palabra exacta. Mismo criterio que
 // matchesQuery (búsqueda de proveedores), para que ambas pestañas se comporten igual.
+// La provincia del proveedor entra al match porque mucha gente busca por zona
+// ("mendoza", "cordoba", "rosario") desde el buscador de productos, que es el tab
+// por defecto; sin esto esas búsquedas devolvían cero aunque hubiera oferta ahí.
 function prodMatchesQuery(p, q) {
   const qn = quitarAcentos((q || '').toLowerCase().trim());
   if (!qn) return true;
@@ -253,6 +287,7 @@ function prodMatchesQuery(p, q) {
   const prov = quitarAcentos((p.provNombre || '').toLowerCase());
   const desc = quitarAcentos((p.descripcion || '').toLowerCase());
   if (nombre.includes(qn) || cat.includes(qn) || catP.includes(qn) || prov.includes(qn) || desc.includes(qn)) return true;
+  if (matchesZona(p.provincia, qn)) return true;
   const catReal = p.catPrincipal || p.cat || '';
   for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
     if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
@@ -4046,6 +4081,7 @@ async function cargarProductosReales() {
         cat: p.categoria_principal || p.categoria || 'General', emoji: getEmojiCat(p.categoria_principal || p.categoria), catPrincipal: p.categoria_principal || null, descripcion: p.descripcion || null,
         provId: String(p.proveedor_id),
         provNombre: p.proveedores?.nombre || 'Proveedor',
+        provincia: p.proveedores?.provincia || '',
         provRubro: (p.proveedores?.rubro || '') + (p.proveedores?.provincia ? ' · ' + p.proveedores.provincia : ''),
         provColor: _monoColor(p.proveedor_id), imgUrl: p.imagen_url || '', imagenes: _normImgs(p.imagenes, p.imagen_url),
         whatsapp: p.proveedores?.whatsapp || '', esPro: p.proveedores?.plan === 'pro' && (!p.proveedores?.plan_hasta || new Date(p.proveedores.plan_hasta + 'T03:00:00Z') > new Date())
