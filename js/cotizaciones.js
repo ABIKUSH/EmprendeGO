@@ -201,6 +201,101 @@
       }
     }
 
+    /* ---- PORTADA / ONBOARDING ----
+       Mismo lenguaje que la portada de Mercado. Los tokens --se-* y las clases
+       .se-* de css/styles.css estan scopeados a #screen-emprendedor, asi que
+       hay que redeclararlos aca; se copian los MISMOS valores para que las dos
+       pantallas se vean iguales. */
+    #screen-cotizaciones .cz-portada{
+      --cz-naranja:#FF6B00;--cz-naranja-soft:#FF8A33;--cz-naranja-luz:#FFC79A;
+      --cz-serif:'Fraunces',Georgia,'Times New Roman',serif;
+      --cz-mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
+      position:relative;min-height:100vh;overflow:hidden;
+    }
+    #screen-cotizaciones .cz-obg{
+      position:absolute;inset:0;z-index:0;pointer-events:none;
+      background:
+        radial-gradient(62% 42% at 16% 3%,rgba(28,190,124,.42),transparent 66%),
+        radial-gradient(50% 40% at 98% 12%,rgba(255,107,0,.24),transparent 62%),
+        radial-gradient(85% 55% at 50% 112%,rgba(13,110,70,.5),transparent 74%),
+        linear-gradient(180deg,#0B3A27,#082C1E 55%,#051f15);
+    }
+    #screen-cotizaciones .cz-onb{
+      position:relative;z-index:1;padding:26px 22px 46px;
+      display:flex;flex-direction:column;max-width:560px;margin:0 auto;
+    }
+    #screen-cotizaciones .cz-volver{
+      width:44px;height:44px;border-radius:50%;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;cursor:pointer;
+      border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);
+      color:#fff;margin-bottom:22px;
+    }
+    #screen-cotizaciones .cz-eyebrow{
+      align-self:flex-start;display:inline-flex;align-items:center;gap:7px;
+      border-radius:999px;padding:6px 12px;
+      border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
+      font-family:var(--cz-mono);font-size:.62rem;font-weight:600;
+      letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.86);
+    }
+    #screen-cotizaciones .cz-punto{
+      width:6px;height:6px;border-radius:50%;background:var(--cz-naranja);flex-shrink:0;
+    }
+    #screen-cotizaciones .cz-h1{
+      font-family:var(--cz-serif);font-size:clamp(1.7rem,6.8vw,2.2rem);font-weight:900;
+      line-height:1.02;letter-spacing:-.03em;color:#fff;margin:14px 0 0;text-wrap:balance;
+    }
+    #screen-cotizaciones .cz-h1 em{
+      font-style:italic;font-weight:700;color:var(--cz-naranja-soft);
+    }
+    #screen-cotizaciones .cz-bajada{
+      margin:12px 0 0;font-size:.95rem;line-height:1.55;
+      color:rgba(255,255,255,.78);max-width:46ch;
+    }
+    #screen-cotizaciones .cz-pasos{display:flex;flex-direction:column;gap:10px;margin:26px 0 0}
+    #screen-cotizaciones .cz-paso{
+      display:flex;align-items:center;gap:13px;padding:13px 14px;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:15px;
+    }
+    #screen-cotizaciones .cz-num{
+      width:38px;height:38px;flex-shrink:0;border-radius:11px;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Inter',sans-serif;font-weight:800;font-size:1rem;color:#fff;
+      background:linear-gradient(135deg,#0FBF77,#0A8A58);
+    }
+    #screen-cotizaciones .cz-paso.tres .cz-num{
+      background:linear-gradient(135deg,var(--cz-naranja),var(--cz-naranja-soft));
+    }
+    #screen-cotizaciones .cz-paso b{font-size:.92rem;color:#fff;font-weight:700;display:block}
+    #screen-cotizaciones .cz-paso small{font-size:.78rem;line-height:1.35;color:rgba(255,255,255,.74)}
+    #screen-cotizaciones .cz-onb-cta{margin-top:28px}
+    #screen-cotizaciones .cz-cta-naranja{
+      display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+      min-height:52px;padding:15px;border:none;border-radius:15px;cursor:pointer;
+      font-family:'Inter',sans-serif;font-size:.95rem;font-weight:700;letter-spacing:-.01em;color:#fff;
+      /* Naranja un punto mas hondo que el de Mercado: con #FF6B00 el texto
+         blanco queda en 2,86:1 y no llega al 3:1 que pide texto grande en
+         negrita. Este degradado pasa en los DOS extremos (4,14 y 3,07) y a
+         simple vista es el mismo naranja. */
+      background:linear-gradient(135deg,#D94F00,#F26A00);
+      box-shadow:0 12px 26px -12px rgba(217,79,0,.55);
+      transition:transform 200ms cubic-bezier(.23,1,.32,1);
+    }
+    #screen-cotizaciones .cz-cta-naranja:active{transform:scale(.98)}
+    #screen-cotizaciones .cz-cta-naranja svg{width:17px;height:17px}
+    #screen-cotizaciones .cz-hint{
+      margin:12px 0 0;text-align:center;font-family:var(--cz-mono);
+      font-size:.68rem;letter-spacing:.06em;color:rgba(255,255,255,.6);
+    }
+    #screen-cotizaciones .cz-sube{opacity:0;transform:translateY(12px);animation:czSube .62s cubic-bezier(.22,1,.36,1) forwards;animation-delay:var(--d,0ms)}
+    @keyframes czSube{to{opacity:1;transform:none}}
+    @media (prefers-reduced-motion:reduce){
+      #screen-cotizaciones .cz-sube{opacity:1;transform:none;animation:none}
+    }
+    @media (hover:hover) and (pointer:fine){
+      #screen-cotizaciones .cz-cta-naranja:hover{transform:translateY(-2px)}
+      #screen-cotizaciones .cz-volver:hover{background:rgba(255,255,255,.16)}
+    }
+
     /* Mismo lenguaje que Novedades: bandeja exterior + nucleo blanco adentro.
        Reusa los tokens --nv-* que ya define css/styles.css. */
     #screen-cotizaciones .cz-bandeja{
@@ -344,7 +439,9 @@
     const cont = $('screen-cotizaciones');
     if (!cont) return;
     let html = '';
-    if (st.cargando) html = pantallaCargando();
+    // La portada se pinta sin esperar datos: es solo explicativa.
+    if (st.vista === 'portada') html = pantallaPortada();
+    else if (st.cargando) html = pantallaCargando();
     else if (st.vista === 'login') html = pantallaLogin();
     else if (st.vista === 'publicar') html = pantallaPublicar();
     else if (st.vista === 'respuestas') html = pantallaRespuestas();
@@ -359,6 +456,65 @@
   function pantallaCargando() {
     return header('Cotizaciones') + `<div style="padding:40px;text-align:center;color:${GRIS};font-size:.85rem">Cargando...</div>`;
   }
+
+  /* ---------------- PORTADA (explica de que se trata) ----------------
+     Se muestra la primera vez que alguien entra a Cotizaciones, con el mismo
+     lenguaje visual que la portada de Mercado. Despues se va derecho al feed;
+     queda accesible desde el boton "Como funciona" del encabezado.       */
+
+  const VISTO = 'eg_cotiz_portada_vista';
+  const yaVioPortada = () => { try { return !!localStorage.getItem(VISTO); } catch (e) { return false; } };
+  const marcarPortadaVista = () => { try { localStorage.setItem(VISTO, new Date().toISOString()); } catch (e) { } };
+
+  function pantallaPortada() {
+    const prov = esProveedor();
+    const pasos = prov
+      ? [['Mirá qué se está pidiendo', 'Pedidos reales de emprendedores, con cantidad y zona.'],
+      ['Mandá tu precio', 'Precio por unidad, mínimo, entrega y formas de pago.'],
+      ['Te contactan', 'Si le sirve tu propuesta, el comprador te escribe.']]
+      : [['Publicá tu pedido', 'Qué necesitás comprar, cuánto y dónde. Un minuto.'],
+      ['Recibí cotizaciones', 'Varios proveedores mayoristas te mandan su precio.'],
+      ['Elegís y comprás', 'Comparás y contactás al que más te conviene.']];
+
+    return `<div class="cz-portada"><div class="cz-obg"></div>
+      <div class="cz-onb">
+        <button class="cz-volver cz-sube" style="--d:0ms" onclick="closeCotiz()" aria-label="Volver">${ICO.volver}</button>
+
+        <span class="cz-eyebrow cz-sube" style="--d:60ms"><span class="cz-punto"></span> ${prov ? 'Demanda real · en vivo' : 'Pedidos de cotización'}</span>
+
+        <h1 class="cz-h1 cz-sube" style="--d:140ms">${prov
+        ? 'Cotizá lo que <em>ya te están pidiendo.</em>'
+        : 'Publicá tu pedido y <em>recibí cotizaciones.</em>'}</h1>
+
+        <p class="cz-bajada cz-sube" style="--d:220ms">${prov
+        ? 'Los emprendedores publican lo que necesitan comprar. Vos mandás tu precio y competís por el pedido, sin salir a buscar clientes.'
+        : 'En vez de escribirle a diez proveedores uno por uno, publicás una sola vez y ellos te mandan su precio, su mínimo y su tiempo de entrega.'}</p>
+
+        <div class="cz-pasos">
+          ${pasos.map((p, i) => `<div class="cz-paso${i === 2 ? ' tres' : ''} cz-sube" style="--d:${300 + i * 70}ms">
+            <div class="cz-num" aria-hidden="true">${i + 1}</div>
+            <div><b>${esc(p[0])}</b><small>${esc(p[1])}</small></div>
+          </div>`).join('')}
+        </div>
+
+        <div class="cz-onb-cta cz-sube" style="--d:530ms">
+          <button class="cz-cta-naranja" onclick="cotizEmpezar()">Probar ${ICO.flecha}</button>
+          <p class="cz-hint">${prov ? 'Sin costo · No pagás por cotizar' : 'Gratis · No pagás por publicar'}</p>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  window.cotizEmpezar = async function () {
+    marcarPortadaVista();
+    vibrar('light');
+    // Sin sesion no hay feed que mostrar: se pide cuenta recien aca, cuando ya
+    // se entendio para que sirve.
+    if (!currentUser) { st.vista = 'login'; return render(); }
+    await cotizIr('feed');
+  };
+
+  window.cotizVerPortada = function () { st.vista = 'portada'; render(); };
 
   function pantallaLogin() {
     return header('Cotizaciones') + `<div style="padding:8px 16px 32px">
@@ -418,6 +574,7 @@
           <div style="font-size:.77rem;color:#41564C;line-height:1.5">${esProveedor()
         ? 'Elegí a cuáles cotizar. Mandás tu precio y, si le sirve, el comprador te contacta.'
         : 'Estos son los pedidos abiertos de la comunidad. Publicá el tuyo y recibí precios de varios proveedores.'}</div>
+          <button onclick="cotizVerPortada()" style="margin-top:8px;background:none;border:none;padding:4px 0;font-family:inherit;font-size:.76rem;font-weight:700;color:${VERDE};cursor:pointer;text-decoration:underline;text-underline-offset:3px">Cómo funciona</button>
         </div>
       </div>
       ${chipsRubro()}
@@ -994,9 +1151,12 @@
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
 
+    // La primera vez se explica de que se trata; despues se va derecho al feed.
+    // Se muestra tambien sin sesion: primero se entiende, despues se pide cuenta.
+    if (!yaVioPortada()) { st.vista = 'portada'; st.cargando = false; return render(); }
+
     if (!currentUser) { st.vista = 'login'; st.cargando = false; render(); return; }
 
-    // La portada es siempre el feed publico, para las dos puntas.
     st.cargando = true;
     st.vista = 'feed';
     st.rubro = 'Todos';
