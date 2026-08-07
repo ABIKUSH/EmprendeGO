@@ -1206,6 +1206,7 @@ function renderProvs(list) {
       <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px">${cats}</div>
       <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
+      ${(q && q.length >= 2 && typeof cotizBloqueSinResultados === 'function') ? cotizBloqueSinResultados(q) : ''}
     </div>`;
     return;
   }
@@ -4190,7 +4191,13 @@ function renderProdBuscar(filtro, query = '') {
   // Loguear la búsqueda de productos (incluye las de 0 resultados = demanda a reclutar)
   if (q) trackSearch(q, lista.length);
   if (!lista.length) {
-    el.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#999;font-size:.88rem">🔎 No encontramos productos con esos filtros.</div>';
+    // Busqueda sin resultados = demanda que hoy se pierde. En vez de dejar la
+    // pantalla muerta, ofrecemos publicar un pedido de cotizacion con el
+    // termino ya cargado. El bloque lo arma js/cotizaciones.js; si ese archivo
+    // no cargo, esto queda igual que antes.
+    const rfq = (q && typeof cotizBloqueSinResultados === 'function')
+      ? cotizBloqueSinResultados(q) : '';
+    el.innerHTML = '<div style="padding:36px 20px 8px;text-align:center;color:#999;font-size:.88rem">No encontramos productos con esos filtros.</div>' + rfq;
     el.style.display = 'block';
     return;
   }
