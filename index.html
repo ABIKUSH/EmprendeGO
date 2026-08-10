@@ -566,6 +566,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
   </div>
   <div id="buscar-productos-view">
+    <div id="buscar-aviso-prod"></div>
     <div id="buscarSummary" class="search-summary"></div>
     <div class="prod-inicio-grid" id="prodBuscarGrid" style="padding:12px 20px 0"></div>
   </div>
@@ -641,6 +642,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <option value="nuevo">🆕 Más recientes</option>
       </select>
     </div>
+    <div id="buscar-aviso-prov"></div>
     <div class="prov-list" id="provList"></div>
   </div>
   <div id="buscar-servicios-view" style="display:none">
@@ -2300,9 +2302,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <!-- ===== COTIZACIONES (módulo aislado; el contenido lo inyecta js/cotizaciones.js) ===== -->
 <div class="screen" id="screen-cotizaciones"></div>
 
-<script src="js/app.js?v=20260806-cotizaciones"></script>
+<script src="js/buscador.js?v=20260810-rescate"></script>
+<script src="js/app.js?v=20260810-rescate"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
-<script src="js/cotizaciones.js?v=20260809-limite"></script>
+<script src="js/cotizaciones.js?v=20260810-muro"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

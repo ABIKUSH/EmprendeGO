@@ -57,7 +57,9 @@
     provsCache: {},
     orden: 'recientes',  // recientes | precio
     rubro: 'Todos',
-    cargando: false
+    cargando: false,
+    prefill: null,        // pedido pre-cargado desde una busqueda sin resultados
+    errorPendiente: null  // error a mostrar al volver al formulario
   };
 
   /* ---------------- utilidades ---------------- */
@@ -462,6 +464,40 @@
      lenguaje visual que la portada de Mercado. Despues se va derecho al feed;
      queda accesible desde el boton "Como funciona" del encabezado.       */
 
+  /* ---------------- BORRADOR DEL PEDIDO ----------------
+     El muro de login va DESPUES de escribir, no antes: se pedia cuenta a
+     todo el que tocaba "Pedir cotizacion", incluso al que todavia no sabia
+     si le servia, y ahi se caia casi todo el mundo.
+
+     Publicar SIGUE exigiendo sesion: lo unico que cambia es cuando se pide.
+     Como el login con Google navega afuera y vuelve con la pagina recargada
+     (signInWithOAuth con redirectTo), el borrador no puede vivir en memoria:
+     va a localStorage y se publica solo al volver.                        */
+
+  const BORRADOR = 'eg_cotiz_borrador';
+  // Si volvio mucho despues, ya no es "estaba publicando esto": se le
+  // muestra el formulario cargado y decide el, no se publica solo.
+  const BORRADOR_VENCE = 45 * 60 * 1000;
+
+  function guardarBorrador(d) {
+    try { localStorage.setItem(BORRADOR, JSON.stringify({ ...d, ts: Date.now() })); } catch (e) { }
+  }
+
+  function leerBorrador() {
+    try {
+      const raw = localStorage.getItem(BORRADOR);
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!d || !d.titulo) return null;
+      if (Date.now() - (d.ts || 0) > BORRADOR_VENCE) { d.intento = false; }
+      return d;
+    } catch (e) { return null; }
+  }
+
+  function limpiarBorrador() {
+    try { localStorage.removeItem(BORRADOR); } catch (e) { }
+  }
+
   const VISTO = 'eg_cotiz_portada_vista';
   const yaVioPortada = () => { try { return !!localStorage.getItem(VISTO); } catch (e) { return false; } };
   const marcarPortadaVista = () => { try { localStorage.setItem(VISTO, new Date().toISOString()); } catch (e) { } };
@@ -508,22 +544,47 @@
   window.cotizEmpezar = async function () {
     marcarPortadaVista();
     vibrar('light');
-    // Sin sesion no hay feed que mostrar: se pide cuenta recien aca, cuando ya
-    // se entendio para que sirve.
-    if (!currentUser) { st.vista = 'login'; return render(); }
+    // Sin sesion no hay feed que mostrar (la RLS no deja leer los pedidos sin
+    // cuenta), pero SI se puede escribir el propio: va derecho al formulario.
+    // La cuenta se pide al publicar.
+    if (!currentUser) {
+      st.vista = 'publicar';
+      try { if (typeof trackEvent === 'function') trackEvent('rfq_form_abierto', { origen: 'portada' }); } catch (e) { }
+      return render();
+    }
     await cotizIr('feed');
   };
 
   window.cotizVerPortada = function () { st.vista = 'portada'; render(); };
 
+  // Dos versiones: la de siempre (entro sin sesion y sin haber escrito nada)
+  // y la del ultimo paso, cuando ya escribio el pedido y solo falta la cuenta.
+  // En esa segunda hay que mostrarle que lo que escribio NO se perdio, que es
+  // exactamente el miedo que hace que la gente no siga.
   function pantallaLogin() {
+    const d = leerBorrador();
+    if (d && d.intento) {
+      return header('Último paso', "cotizIr('publicar')") + `<div style="padding:8px 16px 32px">
+        <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:22px;text-align:center">
+          <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Su pedido está listo</div>
+          <div style="font-size:.85rem;color:#41564C;line-height:1.6;margin-bottom:14px">Solo falta la cuenta: los proveedores necesitan saber quién está pidiendo. Apenas inicie sesión se publica solo.</div>
+          <div style="background:#fff;border:1px solid ${BORDE};border-radius:12px;padding:12px 14px;margin-bottom:18px;text-align:left">
+            <div style="font-size:.7rem;color:${TENUE};margin-bottom:3px">Su pedido</div>
+            <div style="font-family:'Inter',sans-serif;font-size:.86rem;font-weight:700;color:#1A1A1A;line-height:1.4">${esc(d.titulo)}</div>
+            ${d.cantidad || d.rubro ? `<div style="font-size:.74rem;color:${GRIS};margin-top:5px">${esc([d.cantidad ? d.cantidad + ' unidades' : '', d.rubro || ''].filter(Boolean).join(' · '))}</div>` : ''}
+          </div>
+          ${btnPrimario('Iniciar sesión y publicar', "goTo('perfil')")}
+        </div>
+        <div style="font-size:.78rem;color:${GRIS};text-align:center;margin-top:14px;line-height:1.5">Lo que escribió queda guardado en este teléfono. Si vuelve, sigue ahí.</div>
+      </div>`;
+    }
     return header('Cotizaciones') + `<div style="padding:8px 16px 32px">
       <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:22px;text-align:center">
-        <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Pedí precio a varios proveedores de una sola vez</div>
-        <div style="font-size:.85rem;color:#41564C;line-height:1.6;margin-bottom:18px">Publicá lo que necesitás comprar y los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega. Usted elige a quién le contesta.</div>
-        ${btnPrimario('Iniciar sesión', "goTo('perfil')")}
+        <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Pida precio a varios proveedores de una sola vez</div>
+        <div style="font-size:.85rem;color:#41564C;line-height:1.6;margin-bottom:18px">Publique lo que necesita comprar y los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega. Usted elige a quién le contesta.</div>
+        ${btnPrimario('Escribir mi pedido', "cotizIr('publicar')")}
       </div>
-      <div style="font-size:.78rem;color:${GRIS};text-align:center;margin-top:14px;line-height:1.5">Hace falta una cuenta para que los proveedores sepan quién está pidiendo.</div>
+      <div style="font-size:.78rem;color:${GRIS};text-align:center;margin-top:14px;line-height:1.5">Para ver los pedidos de la comunidad hace falta iniciar sesión.</div>
     </div>`;
   }
 
@@ -750,55 +811,106 @@
   function pantallaPublicar() {
     const rubros = (typeof RUBROS_LISTA !== 'undefined' ? RUBROS_LISTA : []);
     const provs = (typeof PROVINCIAS !== 'undefined' ? PROVINCIAS : []);
-    // Viene pre-cargado si entro desde una busqueda sin resultados.
-    const pre = st.prefill || {};
+    // Se arma con lo que venga: el prefill de una busqueda sin resultados y,
+    // por encima, el borrador guardado (lo que ya habia escrito).
+    const guardadoPrevio = leerBorrador();
+    const pre = { ...(st.prefill || {}), ...(guardadoPrevio || {}) };
     st.prefill = null;   // se usa una sola vez
-    return header('Pedir una cotización', "cotizIr('feed')") + `
-      <div style="padding:18px 16px 40px">
-        <div style="display:flex;align-items:center;gap:10px;background:${SOFT};border:1px solid ${BORDE};border-radius:12px;padding:11px 13px;margin-bottom:20px">
+    const errPend = st.errorPendiente; st.errorPendiente = null;
+
+    // Si volvio al formulario, ya no esta "en el medio de publicar": estaba
+    // por publicar y se arrepintio, o vino a corregir algo. Se baja la bandera
+    // para que no se le publique solo si mas tarde inicia sesion por otra cosa.
+    // Si vuelve a tocar Publicar, se vuelve a levantar.
+    if (guardadoPrevio && guardadoPrevio.intento) guardarBorrador({ ...guardadoPrevio, intento: false });
+
+    // Sin sesion tambien se puede escribir. La cuenta se pide al publicar,
+    // pero se avisa desde el arranque: que aparezca de sorpresa al final es
+    // peor que decirlo ahora.
+    const cabecera = currentUser
+      ? `<div style="display:flex;align-items:center;gap:10px;background:${SOFT};border:1px solid ${BORDE};border-radius:12px;padding:11px 13px;margin-bottom:20px">
           ${avatar(currentUser?.name, currentUser?.picture, 34)}
           <div style="font-size:.78rem;color:#41564C;line-height:1.45">Su pedido se publica a nombre de <b style="color:#1A1A1A">${esc(currentUser?.name || '')}</b>. Los proveedores ven su nombre, no su teléfono.</div>
-        </div>
+        </div>`
+      : `<div style="background:${SOFT};border:1px solid ${BORDE};border-radius:12px;padding:11px 13px;margin-bottom:20px">
+          <div style="font-size:.78rem;color:#41564C;line-height:1.45">Escriba lo que necesita. Al publicar le vamos a pedir que inicie sesión: los proveedores necesitan saber quién está pidiendo. <b style="color:#1A1A1A">No se pierde nada de lo que escriba.</b></div>
+        </div>`;
+
+    return header('Pedir una cotización', currentUser ? "cotizIr('feed')" : 'closeCotiz()') + `
+      <div style="padding:18px 16px 40px">
+        ${cabecera}
 
         ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`)}
-        ${campo('Cantidad aproximada', `<input id="cz-cantidad" inputmode="numeric" placeholder="ej: 500" style="${INPUT_CSS}">`)}
+        ${campo('Cantidad aproximada', `<input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS}">`)}
         ${campo('Rubro', `<select id="cz-rubro" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${pre.rubro === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
-        ${campo('¿Dónde lo necesita?', `<select id="cz-prov" style="${INPUT_CSS}"><option value="">Elegir provincia</option>${provs.map(r => `<option value="${esc(r)}">${esc(r)}</option>`).join('')}</select>`)}
-        ${campo('Detalles (opcional)', `<textarea id="cz-detalles" rows="3" maxlength="600" placeholder="Colores, talles, material, packaging, plazo..." style="${INPUT_CSS};resize:vertical"></textarea>`)}
-        ${campo('Presupuesto máximo por unidad (opcional)', `<input id="cz-presup" inputmode="decimal" placeholder="$ por unidad" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
+        ${campo('¿Dónde lo necesita?', `<select id="cz-prov" style="${INPUT_CSS}"><option value="">Elegir provincia</option>${provs.map(r => `<option value="${esc(r)}"${pre.provincia === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
+        ${campo('Detalles (opcional)', `<textarea id="cz-detalles" rows="3" maxlength="600" placeholder="Colores, talles, material, packaging, plazo..." style="${INPUT_CSS};resize:vertical">${esc(pre.detalles || '')}</textarea>`)}
+        ${campo('Presupuesto máximo por unidad (opcional)', `<input id="cz-presup" inputmode="decimal" value="${esc(pre.presupuesto || '')}" placeholder="$ por unidad" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
 
-        <div id="cz-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px"></div>
+        <div id="cz-error" style="${errPend ? '' : 'display:none;'}background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px">${errPend ? esc(errPend) : ''}</div>
         ${btnPrimario('Publicar pedido', 'cotizPublicar(this)')}
         <div style="font-size:.74rem;color:${TENUE};text-align:center;margin-top:12px;line-height:1.5">El pedido queda abierto 14 días. Puede cerrarlo cuando quiera.</div>
       </div>`;
   }
 
+  // Lo que el usuario escribio, sin nada de identidad: es lo que se guarda
+  // como borrador mientras inicia sesion.
+  function leerFormulario() {
+    return {
+      titulo: ($('cz-titulo')?.value || '').trim(),
+      cantidad: ($('cz-cantidad')?.value || '').trim() || null,
+      rubro: $('cz-rubro')?.value || null,
+      provincia: $('cz-prov')?.value || null,
+      detalles: ($('cz-detalles')?.value || '').trim() || null,
+      presupuesto: parsearMonto($('cz-presup')?.value)
+    };
+  }
+
   window.cotizPublicar = async function (btn) {
-    const titulo = ($('cz-titulo')?.value || '').trim();
     const err = $('cz-error');
     const mostrarErr = m => { if (err) { err.textContent = m; err.style.display = 'block'; } vibrar('error'); };
 
-    if (titulo.length < 3) return mostrarErr('Escribí qué necesitás comprar (mínimo 3 caracteres).');
-    if (titulo.length > 160) return mostrarErr('El título es muy largo (máximo 160 caracteres).');
+    const datos = leerFormulario();
+    // Se valida ANTES de mandarlo a iniciar sesion: hacer que alguien se
+    // loguee para despues decirle que el titulo estaba vacio es la peor
+    // version de esto.
+    if (datos.titulo.length < 3) return mostrarErr('Escriba qué necesita comprar (mínimo 3 caracteres).');
+    if (datos.titulo.length > 160) return mostrarErr('El título es muy largo (máximo 160 caracteres).');
     if (err) err.style.display = 'none';
 
-    const presup = parsearMonto($('cz-presup')?.value);
+    // Sin sesion: se guarda lo escrito y se pide la cuenta. Al volver del
+    // login, intentarPublicarBorrador() lo publica solo.
+    if (!currentUser) {
+      guardarBorrador({ ...datos, intento: true });
+      try { if (typeof trackEvent === 'function') trackEvent('rfq_login_pedido', { rubro: datos.rubro || '' }); } catch (e) { }
+      vibrar('light');
+      st.vista = 'login';
+      return render();
+    }
 
+    if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; btn.style.opacity = '.7'; }
+    const r = await publicarPedido(datos);
+    if (r.ok) { limpiarBorrador(); await irAMisPedidos(); return; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Publicar pedido'; btn.style.opacity = '1'; }
+    mostrarErr(r.mensaje);
+  };
+
+  // Un solo lugar que inserta: lo usan el boton y el reintento post-login.
+  async function publicarPedido(datos) {
     const fila = {
       // usuario_id lo pone la base con auth.uid() (default). No se manda desde
       // el cliente: asi no hay forma de publicar a nombre de otro.
       usuario_email: currentUser?.email || null,
       comprador_nombre: currentUser?.name || 'Emprendedor',
       comprador_foto: currentUser?.picture || null,
-      titulo: titulo,
-      cantidad: ($('cz-cantidad')?.value || '').trim() || null,
-      rubro: $('cz-rubro')?.value || null,
-      provincia: $('cz-prov')?.value || null,
-      detalles: ($('cz-detalles')?.value || '').trim() || null,
-      presupuesto: presup
+      titulo: datos.titulo,
+      cantidad: datos.cantidad || null,
+      rubro: datos.rubro || null,
+      provincia: datos.provincia || null,
+      detalles: datos.detalles || null,
+      presupuesto: datos.presupuesto
     };
 
-    if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; btn.style.opacity = '.7'; }
     try {
       // OJO: insert() SIN .select(). Encadenar .select() hace que PostgREST
       // devuelva la fila entera, incluida usuario_email, que esta revocada a
@@ -809,22 +921,82 @@
       vibrar('success');
       toast('Pedido publicado');
       try { if (typeof trackEvent === 'function') trackEvent('rfq_publicado', { rubro: fila.rubro || '', provincia: fila.provincia || '' }); } catch (e) { }
-      await cargarMisPedidos();
-      st.vista = 'comprador';
-      render();
+      return { ok: true };
     } catch (e) {
       console.warn('[cotiz] publicar', e);
-      if (btn) { btn.disabled = false; btn.textContent = 'Publicar pedido'; btn.style.opacity = '1'; }
       // El tope de pedidos por dia lo pone un trigger en la base
       // (limite_solicitudes_por_dia). El mensaje que tira ya esta escrito para
       // que lo lea una persona, asi que se muestra tal cual: decirle "no se
       // pudo publicar" cuando en realidad llego al tope no explica nada.
       const esAviso = e?.hint === 'limite_diario' || String(e?.code || '') === 'P0001';
-      mostrarErr(esAviso && e?.message
-        ? e.message
-        : 'No se pudo publicar. Revise su conexión e intente de nuevo.');
+      return {
+        ok: false,
+        mensaje: esAviso && e?.message
+          ? e.message
+          : 'No se pudo publicar. Revise su conexión e intente de nuevo.'
+      };
     }
-  };
+  }
+
+  async function irAMisPedidos() {
+    await cargarMisPedidos();
+    st.vista = 'mis';
+    render();
+  }
+
+  /* ---------------- REINTENTO DESPUES DEL LOGIN ----------------
+     Si quedo un borrador marcado como intento, se publica apenas hay sesion.
+     Corre en los dos caminos posibles: la vuelta de Google (pagina recargada,
+     evento INITIAL_SESSION) y el login con email (sin recarga, SIGNED_IN). */
+
+  let publicandoBorrador = false;
+
+  // currentUser lo arma checkSession() de app.js y puede tardar un instante
+  // mas que el evento de auth. Se espera en vez de duplicar esa logica aca.
+  function esperarUsuario(ms) {
+    const hasta = Date.now() + (ms || 8000);
+    return new Promise(resolve => {
+      (function mirar() {
+        if (currentUser) return resolve(true);
+        if (Date.now() > hasta) return resolve(false);
+        setTimeout(mirar, 200);
+      })();
+    });
+  }
+
+  async function intentarPublicarBorrador() {
+    if (publicandoBorrador) return;
+    const d = leerBorrador();
+    if (!d || !d.intento) return;
+    publicandoBorrador = true;
+    try {
+      if (!(await esperarUsuario())) return;
+      const r = await publicarPedido(d);
+      if (r.ok) {
+        limpiarBorrador();
+        try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+        await getUid();
+        await irAMisPedidos();
+      } else {
+        // No se pudo (ej: llego al tope). Se deja de reintentar, pero no se
+        // tira lo que escribio: se le muestra el formulario cargado y el
+        // motivo, para que decida el.
+        guardarBorrador({ ...d, intento: false });
+        try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+        st.vista = 'publicar';
+        st.errorPendiente = r.mensaje;
+        render();
+      }
+    } catch (e) { console.warn('[cotiz] borrador', e); }
+    finally { publicandoBorrador = false; }
+  }
+
+  try {
+    sb.auth.onAuthStateChange((evento, sesion) => {
+      if (!sesion) return;
+      if (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION') intentarPublicarBorrador();
+    });
+  } catch (e) { console.warn('[cotiz] onAuthStateChange', e); }
 
   /* ---------------- vista RESPUESTAS (comprador ve sus cotizaciones) ---------------- */
 
@@ -1145,8 +1317,10 @@
     try { if (typeof trackEvent === 'function') trackEvent('rfq_desde_busqueda', { termino: String(termino || '') }); } catch (e) { }
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
-    if (!currentUser) { st.vista = 'login'; st.cargando = false; return render(); }
-    await getUid();
+    try { if (typeof trackEvent === 'function') trackEvent('rfq_form_abierto', { origen: 'busqueda' }); } catch (e) { }
+    // Con o sin sesion, va derecho al formulario: es el que buscaba algo y no
+    // lo encontro, ya sabe lo que quiere. Pedirle cuenta aca era donde se caia.
+    if (currentUser) await getUid();
     st.vista = 'publicar';
     st.cargando = false;
     render();
@@ -1157,6 +1331,13 @@
   window.abrirCotizaciones = async function () {
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+
+    // Si dejo un pedido escrito a medio publicar, eso manda sobre todo lo
+    // demas: mostrarle la portada explicativa seria hacerle perder el hilo.
+    const pendiente = leerBorrador();
+    if (pendiente && pendiente.intento && !currentUser) {
+      st.vista = 'login'; st.cargando = false; return render();
+    }
 
     // La primera vez se explica de que se trata; despues se va derecho al feed.
     // Se muestra tambien sin sesion: primero se entiende, despues se pide cuenta.
