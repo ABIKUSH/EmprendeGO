@@ -815,7 +815,14 @@
     } catch (e) {
       console.warn('[cotiz] publicar', e);
       if (btn) { btn.disabled = false; btn.textContent = 'Publicar pedido'; btn.style.opacity = '1'; }
-      mostrarErr('No se pudo publicar. Revisá tu conexión e intentá de nuevo.');
+      // El tope de pedidos por dia lo pone un trigger en la base
+      // (limite_solicitudes_por_dia). El mensaje que tira ya esta escrito para
+      // que lo lea una persona, asi que se muestra tal cual: decirle "no se
+      // pudo publicar" cuando en realidad llego al tope no explica nada.
+      const esAviso = e?.hint === 'limite_diario' || String(e?.code || '') === 'P0001';
+      mostrarErr(esAviso && e?.message
+        ? e.message
+        : 'No se pudo publicar. Revise su conexión e intente de nuevo.');
     }
   };
 

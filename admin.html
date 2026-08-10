@@ -248,6 +248,7 @@ tr:hover td{background:#fafbff}
     <button class="mobile-nav-btn" onclick="showPage('proveedores',this)">🏭 Proveedores</button>
     <button class="mobile-nav-btn" onclick="showPage('usuarios',this)">👥 Usuarios</button>
     <button class="mobile-nav-btn" onclick="showPage('reportes',this)">🚨 Reportes</button>
+    <button class="mobile-nav-btn" onclick="showPage('cotizaciones',this)">Cotizaciones</button>
     <button class="mobile-nav-btn" onclick="showPage('avisos',this)">📣 Avisos</button>
     <button class="mobile-nav-btn" onclick="showPage('informe',this)">📊 Informe</button>
     <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
@@ -279,6 +280,7 @@ tr:hover td{background:#fafbff}
       <div class="nav-group">
         <div class="nav-group-label">Moderación</div>
         <div class="nav-link" onclick="showPage('reportes',this)"><span class="ni">🚨</span>Reportes<span class="nav-badge" id="nav-badge-rep">0</span></div>
+        <div class="nav-link" onclick="showPage('cotizaciones',this)"><span class="ni" aria-hidden="true"><svg style="display:block;margin:0 auto" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>Cotizaciones</div>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Sistema</div>
@@ -635,6 +637,54 @@ emprendego.com.ar</textarea>
         <div id="reportes-list"><div style="color:var(--gray);text-align:center;padding:40px">Cargando reportes...</div></div>
       </div>
 
+      <!-- COTIZACIONES (RFQ) -->
+      <div class="page" id="page-cotizaciones">
+        <div class="page-title">Cotizaciones</div>
+        <div class="page-sub">Pedidos de cotización y las respuestas de los proveedores. Acá se cierran o se eliminan sin entrar por SQL.</div>
+
+        <div class="metrics-grid">
+          <div class="metric-card"><div class="metric-val" id="cotiz-m-abiertos">—</div><div class="metric-label">Pedidos abiertos</div></div>
+          <div class="metric-card"><div class="metric-val" id="cotiz-m-total">—</div><div class="metric-label">Pedidos publicados</div></div>
+          <div class="metric-card"><div class="metric-val" id="cotiz-m-cotiz">—</div><div class="metric-label">Cotizaciones recibidas</div></div>
+          <div class="metric-card"><div class="metric-val" id="cotiz-m-borrados" style="color:var(--orange)">—</div><div class="metric-label">Borrados registrados</div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Pedidos <span id="badge-cotiz" style="background:var(--blue-light);color:var(--blue);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
+            <div class="table-actions">
+              <input class="search-mini" id="cotiz-buscador" placeholder="Buscar pedido..." oninput="filtrarCotizAdmin()">
+              <select class="filter-select" id="cotiz-estado-filter" onchange="filtrarCotizAdmin()">
+                <option value="">Todos</option>
+                <option value="Abierto">Abiertos</option>
+                <option value="Cerrado">Cerrados</option>
+                <option value="Vencido">Vencidos</option>
+              </select>
+              <button class="tbl-btn view" onclick="cargarCotizacionesAdmin()">Actualizar</button>
+            </div>
+          </div>
+          <table>
+            <thead><tr><th>Comprador</th><th>Pedido</th><th>Cantidad</th><th>Rubro</th><th>Provincia</th><th>Estado</th><th>Cotiz.</th><th>Acciones</th></tr></thead>
+            <tbody id="cotiz-table">
+              <tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Registro de borrados</div>
+          </div>
+          <p style="font-size:.8rem;color:var(--gray);margin:0 0 14px">Todo pedido eliminado queda acá con su contenido y con las cotizaciones que se fueron con él en cascada. Es la única forma de saber qué pasó cuando algo desaparece.</p>
+          <table>
+            <thead><tr><th>Cuándo</th><th>Qué se borró</th><th>Quién lo publicó</th><th>Cotiz.</th><th>Lo borró</th></tr></thead>
+            <tbody id="cotiz-borrados-table">
+              <tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- CONFIGURACIÓN -->
       <div class="page" id="page-config">
         <div class="page-title">Configuración</div>
@@ -918,16 +968,34 @@ async function cargarDashboard(){
   } catch(e){ console.log('dashboard error',e); }
 }
 
+// ===== PII de proveedores (email/cuit/razon_social) =====
+// Estas columnas NO son legibles por la API pública (revocadas de anon/authenticated por privacidad).
+// El admin las obtiene por una función SECURITY DEFINER que solo responde si is_admin().
+// Se traen aparte y se "re-hidratan" en las filas ya cargadas, dejando el render igual.
+let _provPriv = null;
+async function cargarProvPrivados(){
+  const { data, error } = await sb.rpc('admin_proveedores_privados');
+  if(error){ console.warn('[admin] datos privados:', error); _provPriv = new Map(); return _provPriv; }
+  _provPriv = new Map((data||[]).map(r => [r.id, r]));
+  return _provPriv;
+}
+function mergePriv(rows){
+  const m = _provPriv || new Map();
+  (rows||[]).forEach(p => { const pv = m.get(p.id); if(pv){ p.email = pv.email; p.cuit = pv.cuit; p.razon_social = pv.razon_social; } });
+  return rows;
+}
+
 // ===== SUPABASE: PROVEEDORES PENDIENTES =====
 async function cargarProveedoresPendientes(){
   const tbody = document.getElementById('pending-table');
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('id,nombre,email,cuit,rubro,provincia,estado,created_at')
+      .select('id,nombre,rubro,provincia,estado,created_at')
       .eq('estado','pendiente')
       .order('created_at',{ascending:false});
     if(error) throw error;
+    await cargarProvPrivados(); mergePriv(data);
     if(!data?.length){
       tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">No hay solicitudes pendientes ✓</td></tr>';
       return;
@@ -990,10 +1058,11 @@ async function cargarTodosProveedores(){
   try {
     const {data, error} = await sb
       .from('proveedores')
-      .select('id,nombre,cuit,rubro,plan,plan_hasta,estado,created_at,logo_url,whatsapp,email')
+      .select('id,nombre,rubro,plan,plan_hasta,estado,created_at,logo_url,whatsapp')
       .eq('estado','aprobado')
       .order('created_at',{ascending:false});
     if(error) throw error;
+    await cargarProvPrivados(); mergePriv(data);
     if(!data?.length){
       tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados aún</td></tr>';
       return;
@@ -1100,10 +1169,11 @@ async function verProveedor(id){
   document.getElementById('provModal').classList.add('open');
 
   const [{data:prov},{data:prods}] = await Promise.all([
-    sb.from('proveedores').select('id,nombre,razon_social,cuit,email,whatsapp,rubro,provincia,descripcion,instagram,envios,pedido_minimo,foto_url,plan,estado,created_at,logo_url,visitas,plan_desde,plan_hasta,pro_desde,pro_hasta,tn_store_id,tn_categoria_map,ml_user_id').eq('id',id).single(),
+    sb.from('proveedores').select('id,nombre,whatsapp,rubro,provincia,descripcion,instagram,envios,pedido_minimo,foto_url,plan,estado,created_at,logo_url,visitas,plan_desde,plan_hasta,pro_desde,pro_hasta,tn_store_id,tn_categoria_map,ml_user_id').eq('id',id).single(),
     sb.from('productos').select('nombre,precio,imagen_url').eq('proveedor_id',id).limit(10)
   ]);
   if(!prov){ showToast('Error al cargar proveedor'); return; }
+  await cargarProvPrivados(); mergePriv([prov]);   // re-hidrata cuit/email (PII vía RPC solo-admin)
   provEditando = prov;
 
   setProvAvatar(prov);
@@ -1409,8 +1479,9 @@ function eliminarProveedorDesdeModal(){
 async function cargarPlanes(){
   const tbody = document.getElementById('planes-table');
   try {
-    const {data, error} = await sb.from('proveedores').select('id,nombre,email,plan_desde,plan_hasta').eq('plan','pro').order('plan_hasta',{ascending:true});
+    const {data, error} = await sb.from('proveedores').select('id,nombre,plan_desde,plan_hasta').eq('plan','pro').order('plan_hasta',{ascending:true});
     if(error) throw error;
+    await cargarProvPrivados(); mergePriv(data);
     const hoy = new Date();
     const activos = (data||[]).filter(p => p.plan_hasta && new Date(p.plan_hasta+'T03:00:00Z') >= hoy);
     const vencidos = (data||[]).filter(p => !p.plan_hasta || new Date(p.plan_hasta+'T03:00:00Z') < hoy);
@@ -1484,6 +1555,227 @@ async function cargarRubros(){
   } catch(e){ tbody.innerHTML='<tr><td colspan="2" style="text-align:center;color:var(--gray);padding:20px">Error cargando rubros</td></tr>'; }
 }
 
+// ===== COTIZACIONES (RFQ): moderación =====
+// Los pedidos NO se leen con sb.from('solicitudes'): usuario_email está revocado
+// de la API a propósito (es PII) y pedirlo desde el cliente devuelve 403. Todo
+// pasa por RPCs SECURITY DEFINER que adentro chequean is_admin().
+// Si el panel avisa que falta la función, hay que correr una sola vez
+// sql/2026-08-09_cotizaciones_moderacion.sql en el SQL editor de Supabase.
+let _cotizSolicitudes = [];
+
+function cotizErr(e){
+  if(!e) return 'Error desconocido';
+  const m = e.message || '';
+  if(e.code === 'PGRST202' || /Could not find the function/i.test(m))
+    return 'Falta correr sql/2026-08-09_cotizaciones_moderacion.sql en el SQL editor de Supabase.';
+  if(e.code === '42501') return 'Esta sesión no figura en la tabla admins.';
+  return m || 'Error';
+}
+
+function cotizPlata(n){
+  const v = Number(n);
+  return isFinite(v) ? '$' + v.toLocaleString('es-AR',{maximumFractionDigits:2}) : '—';
+}
+
+function cotizFecha(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return '—';
+  return d.toLocaleString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+}
+
+// El estado que se muestra no es solo la columna: un pedido "abierta" con
+// cierra_at pasado ya no se ve en el feed, y verlo como Abierto confunde.
+function cotizEstado(s){
+  if(s.estado === 'cerrada') return {txt:'Cerrado', cls:'free'};
+  if(s.estado !== 'abierta') return {txt: s.estado || '—', cls:'free'};
+  if(s.cierra_at && new Date(s.cierra_at).getTime() < Date.now()) return {txt:'Vencido', cls:'pending'};
+  return {txt:'Abierto', cls:'approved'};
+}
+
+function cotizCorto(t, n){
+  const s = String(t || '');
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+async function cargarCotizacionesAdmin(){
+  const tbody = document.getElementById('cotiz-table');
+  if(!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>';
+  try{
+    const { data, error } = await sb.rpc('admin_cotiz_solicitudes', { p_limit: 200 });
+    if(error) throw error;
+    _cotizSolicitudes = data || [];
+
+    const abiertos = _cotizSolicitudes.filter(s => cotizEstado(s).txt === 'Abierto').length;
+    const cotiz = _cotizSolicitudes.reduce((a,s) => a + Number(s.cotizaciones_n || 0), 0);
+    document.getElementById('cotiz-m-abiertos').textContent = abiertos;
+    document.getElementById('cotiz-m-total').textContent = _cotizSolicitudes.length;
+    document.getElementById('cotiz-m-cotiz').textContent = cotiz;
+    document.getElementById('badge-cotiz').textContent = _cotizSolicitudes.length;
+
+    if(!_cotizSolicitudes.length){
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">Todavía no hay pedidos publicados</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = _cotizSolicitudes.map(s => {
+      const est = cotizEstado(s);
+      const n = Number(s.cotizaciones_n || 0);
+      const abierto = est.txt === 'Abierto';
+      return `<tr data-sol="${escHtml(s.id)}" data-estado="${escHtml(est.txt)}">
+        <td>
+          <strong>${escHtml(s.comprador_nombre || '—')}</strong><br>
+          <span style="font-size:.72rem;color:var(--gray)">${escHtml(s.usuario_email || 'sin email')}</span><br>
+          <span style="font-size:.72rem;color:var(--gray)">${escHtml(cotizFecha(s.created_at))}</span>
+        </td>
+        <td style="max-width:280px">
+          <strong>${escHtml(cotizCorto(s.titulo, 90))}</strong>
+          ${s.detalles ? `<br><span style="font-size:.75rem;color:var(--gray)">${escHtml(cotizCorto(s.detalles, 140))}</span>` : ''}
+          ${s.presupuesto ? `<br><span style="font-size:.72rem;color:var(--gray)">Presupuesto: ${escHtml(cotizPlata(s.presupuesto))}/u</span>` : ''}
+        </td>
+        <td>${escHtml(s.cantidad || '—')}</td>
+        <td>${escHtml(s.rubro || '—')}</td>
+        <td>${escHtml(s.provincia || '—')}</td>
+        <td><span class="status-badge ${est.cls}">${escHtml(est.txt)}</span></td>
+        <td><strong>${n}</strong></td>
+        <td><div class="action-group">
+          <button class="tbl-btn view" data-id="${escHtml(s.id)}" onclick="verCotizacionesDe(this.dataset.id,this)">Ver${n ? ' ('+n+')' : ''}</button>
+          ${abierto ? `<button class="tbl-btn warn" data-id="${escHtml(s.id)}" onclick="cerrarSolicitudAdmin(this.dataset.id)">Cerrar</button>` : ''}
+          <button class="tbl-btn reject" data-id="${escHtml(s.id)}" data-titulo="${escHtml(s.titulo || '')}" onclick="eliminarSolicitudAdmin(this.dataset.id,this.dataset.titulo)">Eliminar</button>
+        </div></td>
+      </tr>
+      <tr class="cotiz-det" id="cotiz-det-${escHtml(s.id)}" style="display:none">
+        <td colspan="8" style="background:#fafbff">
+          <div class="cotiz-det-box" style="padding:4px 0"></div>
+        </td>
+      </tr>`;
+    }).join('');
+    filtrarCotizAdmin();
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">${escHtml(cotizErr(e))}</td></tr>`;
+  }
+}
+
+// Las cotizaciones se piden recién al desplegar: son una consulta por pedido.
+async function verCotizacionesDe(id, btn){
+  const tr = document.getElementById('cotiz-det-' + id);
+  if(!tr) return;
+  const label = btn.textContent;
+  if(tr.style.display !== 'none'){
+    tr.style.display = 'none';
+    btn.dataset.abierto = '';
+    btn.textContent = btn.dataset.label || 'Ver';
+    return;
+  }
+  if(!btn.dataset.label) btn.dataset.label = label;
+  tr.style.display = '';
+  btn.textContent = 'Ocultar';
+  const box = tr.querySelector('.cotiz-det-box');
+  box.innerHTML = '<div style="color:var(--gray);font-size:.82rem;padding:8px">Cargando cotizaciones...</div>';
+  try{
+    const { data, error } = await sb.rpc('admin_cotiz_cotizaciones', { p_solicitud_id: id });
+    if(error) throw error;
+    const lista = data || [];
+    box.innerHTML = lista.length ? lista.map(c => `
+      <div style="background:white;border:1px solid #eef0f6;border-radius:12px;padding:12px 14px;margin:8px 0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+          <div>
+            <strong style="font-size:.88rem">${escHtml(c.proveedor_nombre || 'Proveedor dado de baja')}</strong>
+            <span style="font-size:.75rem;color:var(--gray)"> · ${escHtml(c.proveedor_provincia || '—')}</span><br>
+            <span style="font-size:.75rem;color:var(--gray)">${escHtml(cotizFecha(c.created_at))}</span>
+          </div>
+          <button class="tbl-btn reject" data-id="${escHtml(c.id)}" data-sol="${escHtml(id)}" onclick="eliminarCotizacionAdmin(this.dataset.id,this.dataset.sol)">Eliminar</button>
+        </div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:.82rem">
+          <span><span style="color:var(--gray)">Por unidad:</span> <strong>${escHtml(cotizPlata(c.precio))}</strong></span>
+          <span><span style="color:var(--gray)">Entrega:</span> ${escHtml(c.entrega || '—')}</span>
+          <span><span style="color:var(--gray)">Mínimo:</span> ${escHtml(c.minimo || '—')}</span>
+          <span><span style="color:var(--gray)">Pagos:</span> ${escHtml(c.pagos || '—')}</span>
+        </div>
+        ${c.nota ? `<div style="margin-top:10px;font-size:.82rem;color:var(--gray);font-style:italic">"${escHtml(c.nota)}"</div>` : ''}
+      </div>`).join('')
+      : '<div style="color:var(--gray);font-size:.82rem;padding:8px">Este pedido todavía no recibió ninguna cotización.</div>';
+  } catch(e){
+    box.innerHTML = `<div style="color:var(--red);font-size:.82rem;padding:8px">${escHtml(cotizErr(e))}</div>`;
+  }
+}
+
+async function cerrarSolicitudAdmin(id){
+  if(!confirm('¿Cerrar este pedido?\n\nDeja de aparecer en el feed. Las cotizaciones que ya recibió quedan guardadas.')) return;
+  const { error } = await sb.rpc('admin_cotiz_cerrar', { p_id: id });
+  if(error){ showToast('No se pudo cerrar: ' + cotizErr(error)); return; }
+  showToast('Pedido cerrado');
+  cargarCotizacionesAdmin();
+}
+
+async function eliminarSolicitudAdmin(id, titulo){
+  if(!confirm(`¿Eliminar el pedido "${titulo || ''}"?\n\nSe borran también las cotizaciones que recibió. Queda una copia completa en el registro de borrados.`)) return;
+  const { error } = await sb.rpc('admin_cotiz_eliminar', { p_id: id });
+  if(error){ showToast('No se pudo eliminar: ' + cotizErr(error)); return; }
+  showToast('Pedido eliminado');
+  cargarCotizacionesAdmin();
+  cargarBorradosCotiz();
+}
+
+async function eliminarCotizacionAdmin(id, solId){
+  if(!confirm('¿Eliminar esta cotización?\n\nEl comprador deja de verla. Queda una copia en el registro de borrados.')) return;
+  const { error } = await sb.rpc('admin_cotiz_eliminar_cotizacion', { p_id: id });
+  if(error){ showToast('No se pudo eliminar: ' + cotizErr(error)); return; }
+  showToast('Cotización eliminada');
+  await cargarCotizacionesAdmin();
+  cargarBorradosCotiz();
+  const btn = document.querySelector(`#cotiz-table tr[data-sol="${solId}"] .tbl-btn.view`);
+  if(btn) verCotizacionesDe(solId, btn);
+}
+
+async function cargarBorradosCotiz(){
+  const tbody = document.getElementById('cotiz-borrados-table');
+  if(!tbody) return;
+  try{
+    const { data, error } = await sb.rpc('admin_cotiz_borrados', { p_limit: 100 });
+    if(error) throw error;
+    const filas = data || [];
+    const mb = document.getElementById('cotiz-m-borrados');
+    if(mb) mb.textContent = filas.length;
+    if(!filas.length){
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Todavía no se borró nada desde que se activó el registro</td></tr>';
+      return;
+    }
+    tbody.innerHTML = filas.map(b => {
+      const d = b.datos || {};
+      const esCot = b.tipo === 'cotizacion';
+      const detalle = esCot
+        ? `<strong>Cotización de ${escHtml(cotizPlata(d.precio))}/u</strong>${d.nota ? `<br><span style="font-size:.75rem;color:var(--gray)">${escHtml(cotizCorto(d.nota, 140))}</span>` : ''}`
+        : `<strong>${escHtml(cotizCorto(d.titulo, 90))}</strong>${d.detalles ? `<br><span style="font-size:.75rem;color:var(--gray)">${escHtml(cotizCorto(d.detalles, 140))}</span>` : ''}`;
+      return `<tr>
+        <td style="white-space:nowrap">${escHtml(cotizFecha(b.borrado_at))}<br><span style="font-size:.72rem;color:var(--gray)">${escHtml(timeAgoAdmin(b.borrado_at))}</span></td>
+        <td style="max-width:300px">${detalle}</td>
+        <td>${esCot ? '<span style="color:var(--gray)">—</span>' : `${escHtml(d.comprador_nombre || '—')}<br><span style="font-size:.72rem;color:var(--gray)">${escHtml(d.usuario_email || 'sin email')}</span>`}</td>
+        <td>${esCot ? '—' : Number(b.cotizaciones_n || 0)}</td>
+        <td><span class="status-badge ${b.por_admin ? 'pending' : 'free'}">${b.por_admin ? 'Admin' : 'El que lo publicó'}</span></td>
+      </tr>`;
+    }).join('');
+  } catch(e){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">${escHtml(cotizErr(e))}</td></tr>`;
+  }
+}
+
+// Filtro propio y no filterTable(): esa función recorre TODOS los <tr> y le
+// devolvería el display a las filas de detalle, que arrancan ocultas.
+function filtrarCotizAdmin(){
+  const q = (document.getElementById('cotiz-buscador')?.value || '').toLowerCase();
+  const estado = document.getElementById('cotiz-estado-filter')?.value || '';
+  document.querySelectorAll('#cotiz-table tr[data-sol]').forEach(row => {
+    const okTexto = !q || row.textContent.toLowerCase().includes(q);
+    const okEstado = !estado || row.dataset.estado === estado;
+    const visible = okTexto && okEstado;
+    row.style.display = visible ? '' : 'none';
+    const det = document.getElementById('cotiz-det-' + row.dataset.sol);
+    if(det && !visible) det.style.display = 'none';
+  });
+}
+
 function showPage(name, el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
@@ -1494,6 +1786,7 @@ function showPage(name, el){
   if(name==='usuarios') cargarUsuarios();
   if(name==='dashboard') cargarDashboard();
   if(name==='reportes') cargarReportes();
+  if(name==='cotizaciones'){ cargarCotizacionesAdmin(); cargarBorradosCotiz(); }
   if(name==='planes') cargarPlanes();
   if(name==='busquedas') cargarBusquedas();
   if(name==='novedades') cargarNovedadesAdmin();
