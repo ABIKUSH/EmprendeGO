@@ -440,6 +440,10 @@ body, body *{
 .prod-det-psub{font-size:.73rem;color:var(--gray)}
 
 .search-summary{padding:8px 20px 0;font-size:.78rem;color:var(--gray)}
+/* Aviso de "buscamos otra cosa". Va antes de los resultados porque explica por que
+   lo que sigue no es literalmente lo que la persona escribio. */
+.buscar-aviso{margin:10px 20px 0;padding:10px 12px;background:#F3F8F5;border:1px solid #DCE8E2;border-left:3px solid #006039;border-radius:10px;font-size:.78rem;line-height:1.45;color:#3F5147}
+.buscar-aviso strong{color:#006039;font-weight:800}
 .prod-buscar-card{background:white;border-radius:16px;overflow:hidden;border:1px solid #E5E7EB;cursor:pointer;transition:transform .18s,box-shadow .18s;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .prod-buscar-card:active{transform:scale(.97)}
 .prod-buscar-card .body{padding:9px 10px 11px}
