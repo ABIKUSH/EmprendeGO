@@ -297,6 +297,143 @@ function prodMatchesQuery(p, q) {
   return false;
 }
 
+// ===== ESCALERA DE RESCATE DEL BUSCADOR =====
+// Todo lo que sigue corre SOLO cuando la búsqueda literal ya devolvió cero, así que
+// no puede empeorar un resultado que hoy funciona. Ver js/buscador.js para el porqué.
+
+// Texto de la query tal cual se prueba en el primer intento: se le sacan los
+// espacios de sobra pero se le respeta la puntuación, porque quitarla podría perder
+// un match legítimo ("3.5mm"). La limpieza fuerte llega recién en el segundo intento.
+function egTrim(q) {
+  return (q == null ? '' : String(q)).toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+// El texto buscable de cada ficha, ya normalizado y partido en palabras. Se guarda
+// en un WeakMap para no ensuciar los objetos que vienen de Supabase.
+const _egBlobProv = new WeakMap();
+function _provBlob(p) {
+  let b = _egBlobProv.get(p);
+  if (b === undefined) {
+    b = egNorm([p.nombre, p.rubro, p.provincia, p.descripcion].join(' ')).split(' ');
+    _egBlobProv.set(p, b);
+  }
+  return b;
+}
+
+const _egBlobProd = new WeakMap();
+function _prodBlob(p) {
+  let b = _egBlobProd.get(p);
+  if (b === undefined) {
+    b = egNorm([p.nombre, p.cat, p.catPrincipal, p.provNombre, p.descripcion].join(' ')).split(' ');
+    _egBlobProd.set(p, b);
+  }
+  return b;
+}
+
+// Expansión por concepto para UNA palabra suelta. A diferencia de la que usa
+// matchesQuery, acá se exige igualdad con la subcategoría o con su primera palabra:
+// una palabra sola matcheando por substring es justo lo que hacía que "ropa"
+// arrastrara "Europa".
+function _tokenConcepto(rubroStr, token) {
+  for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
+    if (sub === token || sub.split(' ')[0] === token) {
+      if (rubros.some(r => matchesCat(rubroStr, r))) return true;
+    }
+  }
+  return false;
+}
+
+// Una palabra suelta matchea por CABEZA de palabra, nunca por pedazo del medio.
+// Con substring crudo, "ara" (de "perfumes ara") matcheaba "para" y "clara" y traía
+// 30 proveedores que no tenían nada que ver. Los tokens de 3 letras exigen igualdad
+// exacta porque a ese largo cualquier prefijo es ruido.
+function _tokenEnPalabras(palabras, t) {
+  if (t.length <= 3) return palabras.includes(t);
+  for (const w of palabras) if (w.startsWith(t)) return true;
+  return false;
+}
+
+function _contarTokens(palabras, provincia, rubroStr, tokens) {
+  let n = 0;
+  for (const t of tokens) {
+    if (_tokenEnPalabras(palabras, t) || matchesZona(provincia, t) || _tokenConcepto(rubroStr, t)) n++;
+  }
+  return n;
+}
+
+// Recorre los intentos de menor a mayor apertura y se queda con el primero que
+// devuelve algo. `modo` le dice a la UI qué aviso mostrar:
+//   ''            → la búsqueda literal anduvo, no se avisa nada
+//   'corregido'   → se buscó otra palabra ("basar" → "bazar")
+//   'tokens'      → matchearon todas las palabras, pero sueltas
+//   'relacionado' → matchearon algunas: son resultados parecidos, no exactos
+function egEscaleraBusqueda(base, q, match, contar) {
+  const literal = egTrim(q);
+  let lista = base.filter(p => match(p, literal));
+  if (lista.length) return { lista, modo: '', termino: literal };
+
+  const { texto, cambio } = egCorregirBusqueda(q);
+  if (texto && texto !== literal) {
+    lista = base.filter(p => match(p, texto));
+    if (lista.length) return { lista, modo: cambio ? 'corregido' : '', termino: texto };
+  }
+
+  const sing = egSingularBusqueda(texto || literal);
+  if (sing && sing !== texto && sing !== literal) {
+    lista = base.filter(p => match(p, sing));
+    if (lista.length) return { lista, modo: 'corregido', termino: sing };
+  }
+
+  const toks = egTokensBusqueda(q);
+  if (toks.length > 1) {
+    lista = base.filter(p => contar(p, toks) === toks.length);
+    if (lista.length) return { lista, modo: 'tokens', termino: toks.join(' ') };
+  }
+  if (toks.length) {
+    const puntuados = [];
+    for (const p of base) {
+      const n = contar(p, toks);
+      if (n > 0) puntuados.push({ p, n });
+    }
+    if (puntuados.length) {
+      puntuados.sort((a, b) => b.n - a.n);
+      return { lista: puntuados.map(x => x.p), modo: 'relacionado', termino: toks.join(' ') };
+    }
+  }
+  return { lista: [], modo: '', termino: literal };
+}
+
+// Aviso sobre los resultados. Es importante que la persona vea que le cambiamos el
+// término: si buscó "basar" y le mostramos bazar sin decirle nada, parece un bug.
+function egAvisoBusqueda(res, original) {
+  if (!res.modo) return '';
+  const orig = escHtml(egTrim(original));
+  const usado = escHtml(res.termino);
+  const texto = res.modo === 'corregido'
+    ? `No encontramos nada con <strong>${orig}</strong>. Le mostramos resultados para <strong>${usado}</strong>.`
+    : res.modo === 'tokens'
+      ? `No hay coincidencias exactas con <strong>${orig}</strong>. Le mostramos lo que contiene todas esas palabras.`
+      : `No hay coincidencias exactas con <strong>${orig}</strong>. Estos son los resultados más parecidos.`;
+  return `<div class="buscar-aviso">${texto}</div>`;
+}
+
+function egPintarAviso(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html || '';
+}
+
+// Mide cuánto está rescatando la escalera. Sin esto no hay forma de saber si el
+// 46% de búsquedas sin resultados bajó por el arreglo o por otra cosa.
+function egTrackRescate(original, res) {
+  if (!res.modo) return;
+  trackEvent('search_rescatada', {
+    desde: egTrim(original).slice(0, 60),
+    hacia: String(res.termino).slice(0, 60),
+    modo: res.modo,
+    results: res.lista.length,
+  });
+}
+
 const RUBRO_LEGACY = {
   // Old rubros → new rubros
   'Moda': 'Indumentaria', 'Hogar': 'Hogar y Deco', 'Salud': 'Belleza y Salud',
@@ -1202,7 +1339,7 @@ function renderProvs(list) {
       `<button onclick="filterCat('${r}')" style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid #DCE8E2;border-radius:20px;padding:6px 14px;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;white-space:nowrap">${RUBROS_ICONS[r] || ''} ${escHtml(r)}</button>`
     ).join('');
     el.innerHTML = `<div class="prov-list-empty" style="text-align:center;padding:40px 24px">
-      <div style="font-size:3rem;margin-bottom:14px">🔍</div>
+      <div style="margin-bottom:14px"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></div>
       <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:16px">${msg}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:20px">${cats}</div>
       <button onclick="currentCat='Todas';document.getElementById('searchInput').value='';filterProvs()" style="background:#006039;color:white;border:none;border-radius:12px;padding:13px 24px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">Ver todos los proveedores</button>
@@ -1329,15 +1466,22 @@ function filterProvs() {
   const plan = document.getElementById('fil-plan')?.value || '';
   const orden = document.getElementById('fil-orden')?.value || '';
   const rubroFil = document.getElementById('fil-rubro')?.value || '';
-  const lista = proveedoresDB.filter(p => !esProvSoloServicio(p));
-  let result = lista.filter(p => {
+  // Los filtros que no son texto (rubro, provincia, plan) se aplican primero y no
+  // se tocan nunca: el rescate juega solo con el término buscado.
+  const base = proveedoresDB.filter(p => {
     const mc = matchesCat(p.rubro, currentCat);
-    const mq = matchesQuery(p, q);
     const mp = !prov || quitarAcentos(p.provincia || '') === quitarAcentos(prov);
     const mpl = !plan || (plan === 'pro' ? p.pro === true : p.pro !== true);
     const mrb = !rubroFil || matchesCat(p.rubro, rubroFil);
-    return mc && mq && mp && mpl && mrb;
+    return !esProvSoloServicio(p) && mc && mp && mpl && mrb;
   });
+  const busq = q
+    ? egEscaleraBusqueda(base, q,
+        (p, texto) => matchesQuery(p, texto),
+        (p, toks) => _contarTokens(_provBlob(p), p.provincia, p.rubro, toks))
+    : { lista: base, modo: '', termino: '' };
+  let result = busq.lista;
+  egPintarAviso('buscar-aviso-prov', q ? egAvisoBusqueda(busq, q) : '');
   if (orden === 'rating') {
     result = result.slice().sort((a, b) => getProvRating(String(b.id)).avg - getProvRating(String(a.id)).avg);
   } else if (orden === 'minimo') {
@@ -1347,7 +1491,9 @@ function filterProvs() {
     result = result.slice().sort((a, b) => String(b.id).localeCompare(String(a.id)));
   }
   renderProvs(result);
-  if (q) trackSearch(q, result.length);
+  // Se loguea la cantidad que la persona REALMENTE vio, no la del intento literal:
+  // si el rescate le encontró resultados, eso ya no es demanda insatisfecha.
+  if (q) { trackSearch(q, result.length); egTrackRescate(q, busq); }
 }
 
 function setChip(el, cat) {
@@ -4186,10 +4332,17 @@ function renderProdBuscar(filtro, query = '') {
     if (legacyNorm.toLowerCase() === filtro.toLowerCase()) return true;
     return false;
   });
-  if (q) lista = lista.filter(p => prodMatchesQuery(p, q));
+  let busq = { lista, modo: '', termino: q };
+  if (q) {
+    busq = egEscaleraBusqueda(lista, q,
+      (p, texto) => prodMatchesQuery(p, texto),
+      (p, toks) => _contarTokens(_prodBlob(p), p.provincia, p.catPrincipal || p.cat, toks));
+    lista = busq.lista;
+  }
+  egPintarAviso('buscar-aviso-prod', q ? egAvisoBusqueda(busq, q) : '');
   if (summary) summary.textContent = lista.length ? `${lista.length} resultado${lista.length === 1 ? '' : 's'} en productos` : 'Sin resultados en productos';
   // Loguear la búsqueda de productos (incluye las de 0 resultados = demanda a reclutar)
-  if (q) trackSearch(q, lista.length);
+  if (q) { trackSearch(q, lista.length); egTrackRescate(q, busq); }
   if (!lista.length) {
     // Busqueda sin resultados = demanda que hoy se pierde. En vez de dejar la
     // pantalla muerta, ofrecemos publicar un pedido de cotizacion con el
