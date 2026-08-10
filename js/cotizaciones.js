@@ -116,6 +116,66 @@
     return s.estado === 'abierta' && new Date(s.cierra_at).getTime() > Date.now();
   }
 
+  // Los pedidos nacen con 14 dias. Se usa para el anillo y para el texto de
+  // cierre; devuelve null si la fila no trae cierra_at.
+  const DIAS_PEDIDO = 14;
+
+  function diasParaCierre(iso) {
+    if (!iso) return null;
+    const ms = new Date(iso).getTime() - Date.now();
+    if (!isFinite(ms)) return null;
+    return Math.max(0, Math.ceil(ms / 86400000));
+  }
+
+  function textoCierre(dias) {
+    if (dias === null) return 'Abierto';
+    if (dias <= 0) return 'Cierra hoy';
+    if (dias === 1) return 'Último día';
+    return 'Cierra en ' + dias + ' días';
+  }
+
+  // Anillo de tiempo restante. Es la unica pieza de la tarjeta que siempre
+  // tiene algo que mostrar, incluso en un pedido cargado solo con el titulo.
+  // rotate(-90) para que empiece a las 12 en punto.
+  function anilloTiempo(dias) {
+    const frac = dias === null ? 1 : Math.max(0, Math.min(1, dias / DIAS_PEDIDO));
+    const r = 8, circ = 2 * Math.PI * r;
+    const col = dias !== null && dias <= 2 ? '#D94F00' : VERDE;
+    return `<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" style="flex-shrink:0;transform:rotate(-90deg)">
+      <circle cx="10" cy="10" r="${r}" fill="none" stroke="#E4EBE7" stroke-width="2.4"/>
+      <circle cx="10" cy="10" r="${r}" fill="none" stroke="${col}" stroke-width="2.4" stroke-linecap="round"
+        stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${(circ * (1 - frac)).toFixed(1)}"/>
+    </svg>`;
+  }
+
+  function esDeHoy(iso) {
+    if (!iso) return false;
+    const d = new Date(iso), h = new Date();
+    return d.getFullYear() === h.getFullYear() && d.getMonth() === h.getMonth() && d.getDate() === h.getDate();
+  }
+
+  // Cuenta ascendente de los numeros del pulso. Corre despues de pintar, sobre
+  // los [data-cuenta] que quedaron en el DOM. Si el sistema pidio menos
+  // movimiento se escribe el numero final y listo.
+  function animarCifras(cont) {
+    let quieto = false;
+    try { quieto = window.matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { }
+    cont.querySelectorAll('[data-cuenta]').forEach(el => {
+      const fin = Number(el.dataset.cuenta) || 0;
+      if (quieto || fin <= 0) { el.textContent = String(fin); return; }
+      // El HTML ya trae el numero final: si esta funcion no llegara a correr
+      // (error de JS antes de tiempo), se ve el valor real y no un cero.
+      // Recien aca se lo baja a cero para animarlo.
+      el.textContent = '0';
+      const dur = 700, t0 = performance.now();
+      (function paso(t) {
+        const k = Math.min(1, (t - t0) / dur);
+        el.textContent = String(Math.round(fin * (1 - Math.pow(1 - k, 3))));
+        if (k < 1) requestAnimationFrame(paso);
+      })(t0);
+    });
+  }
+
   function iniciales(nombre) {
     return String(nombre || '?').trim().substring(0, 2).toUpperCase();
   }
@@ -162,6 +222,20 @@
   // Layout tipo Novedades: una columna en celular, dos en escritorio.
   // Va como <style> dentro de la pantalla para no tocar css/styles.css.
   const ESTILOS = `<style>
+    /* Tokens de la seccion. Antes vivian solo dentro de .cz-portada; ahora los
+       usa toda la pantalla (el pulso del feed y las tarjetas).
+
+       OJO con el !important de las fuentes: css/styles.css unifica TODA la app
+       en la fuente del sistema con \`body, body *{font-family:... !important}\`.
+       Sin repetir el !important aca, Fraunces y la mono no se aplican nunca
+       (es lo que le pasaba a la portada, que se veia en la fuente de sistema
+       aunque pidiera serif). Novedades resuelve lo mismo de esta forma. */
+    #screen-cotizaciones{
+      --cz-naranja:#FF6B00;--cz-naranja-soft:#FF8A33;--cz-naranja-luz:#FFC79A;
+      --cz-serif:'Fraunces',Georgia,'Times New Roman',serif;
+      --cz-mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
+    }
+
     #screen-cotizaciones .cz-grilla{display:flex;flex-direction:column;gap:12px;padding:4px 16px 96px}
     @media(min-width:900px){
       #screen-cotizaciones .cz-grilla{display:block;column-count:2;column-gap:20px;max-width:1000px;margin:0 auto;padding:8px 16px 96px}
@@ -208,12 +282,7 @@
        .se-* de css/styles.css estan scopeados a #screen-emprendedor, asi que
        hay que redeclararlos aca; se copian los MISMOS valores para que las dos
        pantallas se vean iguales. */
-    #screen-cotizaciones .cz-portada{
-      --cz-naranja:#FF6B00;--cz-naranja-soft:#FF8A33;--cz-naranja-luz:#FFC79A;
-      --cz-serif:'Fraunces',Georgia,'Times New Roman',serif;
-      --cz-mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
-      position:relative;min-height:100vh;overflow:hidden;
-    }
+    #screen-cotizaciones .cz-portada{position:relative;min-height:100vh;overflow:hidden}
     #screen-cotizaciones .cz-obg{
       position:absolute;inset:0;z-index:0;pointer-events:none;
       background:
@@ -236,14 +305,14 @@
       align-self:flex-start;display:inline-flex;align-items:center;gap:7px;
       border-radius:999px;padding:6px 12px;
       border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);
-      font-family:var(--cz-mono);font-size:.62rem;font-weight:600;
+      font-family:var(--cz-mono) !important;font-size:.62rem;font-weight:600;
       letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.86);
     }
     #screen-cotizaciones .cz-punto{
       width:6px;height:6px;border-radius:50%;background:var(--cz-naranja);flex-shrink:0;
     }
     #screen-cotizaciones .cz-h1{
-      font-family:var(--cz-serif);font-size:clamp(1.7rem,6.8vw,2.2rem);font-weight:900;
+      font-family:var(--cz-serif) !important;font-size:clamp(1.7rem,6.8vw,2.2rem);font-weight:900;
       line-height:1.02;letter-spacing:-.03em;color:#fff;margin:14px 0 0;text-wrap:balance;
     }
     #screen-cotizaciones .cz-h1 em{
@@ -285,8 +354,8 @@
     #screen-cotizaciones .cz-cta-naranja:active{transform:scale(.98)}
     #screen-cotizaciones .cz-cta-naranja svg{width:17px;height:17px}
     #screen-cotizaciones .cz-hint{
-      margin:12px 0 0;text-align:center;font-family:var(--cz-mono);
-      font-size:.68rem;letter-spacing:.06em;color:rgba(255,255,255,.6);
+      margin:12px 0 0;text-align:center;font-family:var(--cz-mono) !important;
+      font-size:.68rem;letter-spacing:.06em;color:rgba(255,255,255,.72);
     }
     #screen-cotizaciones .cz-sube{opacity:0;transform:translateY(12px);animation:czSube .62s cubic-bezier(.22,1,.36,1) forwards;animation-delay:var(--d,0ms)}
     @keyframes czSube{to{opacity:1;transform:none}}
@@ -335,9 +404,130 @@
     @media(max-width:1060px) and (min-width:900px){
       #screen-cotizaciones .cz-fab{right:18px}
     }
+    /* ---- PULSO: cabecera viva del feed ----
+       Reemplaza la cajita verde clara que solo tenia un titulo y una bajada.
+       Los numeros salen del feed que YA esta cargado en memoria: no hay una
+       sola consulta extra ni una columna nueva. */
+    #screen-cotizaciones .cz-pulso{
+      position:relative;overflow:hidden;border-radius:22px;padding:17px 18px 15px;
+      background:
+        radial-gradient(72% 62% at 6% -8%,rgba(28,190,124,.40),transparent 68%),
+        radial-gradient(58% 70% at 104% 4%,rgba(255,107,0,.22),transparent 62%),
+        linear-gradient(165deg,#0B3A27,#072A1D 62%,#052016);
+      box-shadow:0 16px 34px -18px rgba(5,32,22,.8);
+    }
+    /* Reticula tenue: textura de tablero, cero peso. Se desvanece hacia abajo
+       con una mascara para que no compita con el texto. */
+    #screen-cotizaciones .cz-pulso::before{
+      content:'';position:absolute;inset:0;pointer-events:none;opacity:.55;
+      background-image:
+        linear-gradient(rgba(255,255,255,.055) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.055) 1px,transparent 1px);
+      background-size:32px 32px;
+      -webkit-mask-image:radial-gradient(78% 82% at 50% 0%,#000,transparent 76%);
+              mask-image:radial-gradient(78% 82% at 50% 0%,#000,transparent 76%);
+    }
+    #screen-cotizaciones .cz-pulso > *{position:relative;z-index:1}
+    /* Solo para lectores de pantalla: el texto real detras de los numeros que
+       animan de 0 hacia arriba. */
+    #screen-cotizaciones .cz-oculto{
+      position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+      clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0;
+    }
+    #screen-cotizaciones .cz-vivo{
+      width:7px;height:7px;border-radius:50%;background:var(--cz-naranja);flex-shrink:0;
+      animation:czLatido 2.4s ease-out infinite;
+    }
+    @keyframes czLatido{
+      0%{box-shadow:0 0 0 0 rgba(255,107,0,.55)}
+      70%{box-shadow:0 0 0 8px rgba(255,107,0,0)}
+      100%{box-shadow:0 0 0 0 rgba(255,107,0,0)}
+    }
+    #screen-cotizaciones .cz-cifra{
+      font-family:var(--cz-serif) !important;
+      font-size:clamp(2.9rem,14vw,3.6rem);font-weight:900;line-height:.86;
+      letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums;
+    }
+    #screen-cotizaciones .cz-cifra-lab{
+      font-size:.87rem;font-weight:600;line-height:1.3;color:rgba(255,255,255,.82);
+    }
+    #screen-cotizaciones .cz-stats{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+    #screen-cotizaciones .cz-stat{
+      display:inline-flex;align-items:baseline;gap:5px;border-radius:999px;padding:5px 11px;
+      border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);
+      font-size:.72rem;color:rgba(255,255,255,.76);
+    }
+    #screen-cotizaciones .cz-stat b{
+      font-size:.84rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;
+    }
+    #screen-cotizaciones .cz-pulso-txt{
+      margin:13px 0 0;font-size:.79rem;line-height:1.5;
+      color:rgba(255,255,255,.76);max-width:44ch;
+    }
+    #screen-cotizaciones .cz-pulso-link{
+      margin-top:12px;min-height:38px;display:inline-flex;align-items:center;gap:7px;
+      border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;
+      border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);
+      color:#fff;font-size:.75rem;font-weight:700;
+      transition:background 220ms ease-out;
+    }
+    #screen-cotizaciones .cz-pulso-link svg{width:13px;height:13px}
+
+    /* ---- TARJETA DEL FEED ----
+       Un pedido cargado solo con titulo salia como dos renglones sueltos y
+       nada mas. Ahora el piso minimo de toda tarjeta es: quien pide, que
+       pide, cuanto le queda abierta y en que estado esta. Todo con datos que
+       ya venian en la fila. */
+    #screen-cotizaciones .cz-titulo{
+      font-size:1rem;font-weight:800;color:#1A1A1A;line-height:1.32;
+      letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance;
+    }
+    #screen-cotizaciones .cz-datos{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:11px}
+    #screen-cotizaciones .cz-dato{
+      display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:3px 9px;
+      background:#F4F7F5;border:1px solid #E7EDE9;color:#41564C;font-size:.73rem;font-weight:600;
+    }
+    #screen-cotizaciones .cz-dato.fuerte{
+      background:${SOFT};border-color:${BORDE};color:${VERDE_OSC};font-weight:800;
+    }
+    #screen-cotizaciones .cz-detalle{
+      font-size:.79rem;color:#41564C;background:#FAFBFA;border:1px solid #F0F3F1;
+      border-radius:10px;padding:9px 11px;margin:0 0 11px;line-height:1.5;
+    }
+    #screen-cotizaciones .cz-pie{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      padding-top:11px;border-top:1px solid #EEF2F0;
+    }
+    #screen-cotizaciones .cz-cierre{
+      display:inline-flex;align-items:center;gap:7px;min-width:0;
+      font-family:var(--cz-mono) !important;font-size:.65rem;font-weight:600;
+      letter-spacing:.07em;text-transform:uppercase;color:${TENUE};
+    }
+    #screen-cotizaciones .cz-estado{flex-shrink:0;font-size:.71rem;font-weight:700;color:${GRIS}}
+    #screen-cotizaciones .cz-estado.hay{color:${VERDE_OSC};font-weight:800}
+    #screen-cotizaciones .cz-cta-zona{margin-top:11px}
+    #screen-cotizaciones .cz-pastilla{
+      display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;
+      background:${SOFT};color:${VERDE_OSC};border-radius:999px;padding:11px;
+      font-size:.82rem;font-weight:700;
+    }
+
+    /* ---- ESQUELETOS ----
+       Antes se veia "Cargando..." centrado y despues saltaba todo el layout.
+       El esqueleto ocupa el mismo lugar que lo que viene. */
+    #screen-cotizaciones .cz-sk{
+      border-radius:12px;
+      background:linear-gradient(100deg,#EDF1EF 20%,#F7F9F8 42%,#EDF1EF 62%);
+      background-size:240% 100%;animation:czBrillo 1.25s linear infinite;
+    }
+    @keyframes czBrillo{from{background-position:180% 0}to{background-position:-60% 0}}
+    #screen-cotizaciones .cz-sk-pulso{height:196px;border-radius:22px}
+    #screen-cotizaciones .cz-sk-linea{height:11px;border-radius:6px}
+
     @media (hover:hover) and (pointer:fine){
       #screen-cotizaciones .cz-fab:hover{transform:translateY(-2px) scale(1.04)}
       #screen-cotizaciones .cz-bandeja:hover{transform:translateY(-2px)}
+      #screen-cotizaciones .cz-pulso-link:hover{background:rgba(255,255,255,.17)}
     }
   </style>`;
 
@@ -452,11 +642,32 @@
     else if (st.vista === 'misCotiz') html = pantallaMisCotizaciones();
     else html = pantallaFeed();
     cont.innerHTML = ESTILOS + html;
+    animarCifras(cont);
     window.scrollTo(0, 0);
   }
 
+  // Esqueleto con la forma de lo que viene: el pulso arriba y tres tarjetas.
+  // Asi la pantalla no salta cuando llegan los datos.
   function pantallaCargando() {
-    return header('Cotizaciones') + `<div style="padding:40px;text-align:center;color:${GRIS};font-size:.85rem">Cargando...</div>`;
+    const sk = `<div class="cz-bandeja"><div class="cz-nucleo">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div class="cz-sk" style="width:34px;height:34px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1">
+          <div class="cz-sk cz-sk-linea" style="width:44%;margin-bottom:7px"></div>
+          <div class="cz-sk cz-sk-linea" style="width:26%;height:9px"></div>
+        </div>
+      </div>
+      <div class="cz-sk cz-sk-linea" style="width:82%;height:14px;margin-bottom:9px"></div>
+      <div class="cz-sk cz-sk-linea" style="width:56%;height:14px;margin-bottom:15px"></div>
+      <div style="display:flex;gap:7px">
+        <div class="cz-sk" style="width:88px;height:24px;border-radius:8px"></div>
+        <div class="cz-sk" style="width:68px;height:24px;border-radius:8px"></div>
+      </div>
+    </div></div>`;
+
+    return header('Cotizaciones') + `
+      <div class="cz-ancho" style="padding:13px 16px 2px"><div class="cz-sk cz-sk-pulso"></div></div>
+      <div class="cz-grilla" aria-busy="true" aria-label="Cargando pedidos">${sk + sk + sk}</div>`;
   }
 
   /* ---------------- PORTADA (explica de que se trata) ----------------
@@ -505,12 +716,12 @@
   function pantallaPortada() {
     const prov = esProveedor();
     const pasos = prov
-      ? [['Mirá qué se está pidiendo', 'Pedidos reales de emprendedores, con cantidad y zona.'],
-      ['Mandá tu precio', 'Precio por unidad, mínimo, entrega y formas de pago.'],
-      ['Te contactan', 'Si le sirve tu propuesta, el comprador te escribe.']]
-      : [['Publicá tu pedido', 'Qué necesitás comprar, cuánto y dónde. Un minuto.'],
-      ['Recibí cotizaciones', 'Varios proveedores mayoristas te mandan su precio.'],
-      ['Elegís y comprás', 'Comparás y contactás al que más te conviene.']];
+      ? [['Mire qué se está pidiendo', 'Pedidos reales de emprendedores, con cantidad y zona.'],
+      ['Mande su precio', 'Precio por unidad, mínimo, entrega y formas de pago.'],
+      ['Lo contactan', 'Si le sirve su propuesta, el comprador le escribe.']]
+      : [['Publique su pedido', 'Qué necesita comprar, cuánto y dónde. Un minuto.'],
+      ['Reciba cotizaciones', 'Varios proveedores mayoristas le mandan su precio.'],
+      ['Elija y compre', 'Compare y contacte al que más le conviene.']];
 
     return `<div class="cz-portada"><div class="cz-obg"></div>
       <div class="cz-onb">
@@ -519,12 +730,12 @@
         <span class="cz-eyebrow cz-sube" style="--d:60ms"><span class="cz-punto"></span> ${prov ? 'Demanda real · en vivo' : 'Pedidos de cotización'}</span>
 
         <h1 class="cz-h1 cz-sube" style="--d:140ms">${prov
-        ? 'Cotizá lo que <em>ya te están pidiendo.</em>'
-        : 'Publicá tu pedido y <em>recibí cotizaciones.</em>'}</h1>
+        ? 'Cotice lo que <em>ya le están pidiendo.</em>'
+        : 'Publique su pedido y <em>reciba cotizaciones.</em>'}</h1>
 
         <p class="cz-bajada cz-sube" style="--d:220ms">${prov
-        ? 'Los emprendedores publican lo que necesitan comprar. Vos mandás tu precio y competís por el pedido, sin salir a buscar clientes.'
-        : 'En vez de escribirle a diez proveedores uno por uno, publicás una sola vez y ellos te mandan su precio, su mínimo y su tiempo de entrega.'}</p>
+        ? 'Los emprendedores publican lo que necesitan comprar. Usted manda su precio y compite por el pedido, sin salir a buscar clientes.'
+        : 'En vez de escribirle a diez proveedores uno por uno, publica una sola vez y ellos le mandan su precio, su mínimo y su tiempo de entrega.'}</p>
 
         <div class="cz-pasos">
           ${pasos.map((p, i) => `<div class="cz-paso${i === 2 ? ' tres' : ''} cz-sube" style="--d:${300 + i * 70}ms">
@@ -535,7 +746,7 @@
 
         <div class="cz-onb-cta cz-sube" style="--d:530ms">
           <button class="cz-cta-naranja" onclick="cotizEmpezar()">Probar ${ICO.flecha}</button>
-          <p class="cz-hint">${prov ? 'Sin costo · No pagás por cotizar' : 'Gratis · No pagás por publicar'}</p>
+          <p class="cz-hint">${prov ? 'Sin costo · No paga por cotizar' : 'Gratis · No paga por publicar'}</p>
         </div>
       </div>
     </div>`;
@@ -609,6 +820,42 @@
     }).join('')}</div>`;
   }
 
+  // Cabecera viva del feed. Todo lo que muestra sale de st.feed, que ya esta
+  // en memoria: ni una consulta mas. Las metricas secundarias solo aparecen si
+  // dan mayor que cero — tres ceros alineados se ven peor que no mostrar nada.
+  function pulso() {
+    const prov = esProveedor();
+    const nPedidos = st.feed.length;
+    const nCotiz = st.feed.reduce((a, s) => a + (s.respuestas || 0), 0);
+    const nRubros = rubrosDelFeed().length;
+    const nHoy = st.feed.filter(s => esDeHoy(s.created_at)).length;
+
+    const stats = [];
+    if (nCotiz) stats.push([nCotiz, nCotiz === 1 ? 'cotización enviada' : 'cotizaciones enviadas']);
+    if (nHoy) stats.push([nHoy, nHoy === 1 ? 'publicado hoy' : 'publicados hoy']);
+    if (nRubros > 1) stats.push([nRubros, 'rubros activos']);
+
+    // Los numeros arrancan en 0 y suben, asi que la version visual va con
+    // aria-hidden y al lado queda el texto real para el lector de pantalla:
+    // si no, se anuncia "0 pedidos abiertos".
+    const lab = nPedidos === 1 ? 'pedido abierto ahora mismo' : 'pedidos abiertos ahora mismo';
+
+    return `<div class="cz-pulso">
+      <span class="cz-eyebrow"><span class="cz-vivo"></span> Demanda en vivo</span>
+      <p style="display:flex;align-items:center;gap:12px;margin:16px 0 0">
+        <span class="cz-oculto">${nPedidos} ${lab}</span>
+        <span class="cz-cifra" data-cuenta="${nPedidos}" aria-hidden="true">${nPedidos}</span>
+        <span class="cz-cifra-lab" aria-hidden="true">${lab.replace(' ahora mismo', '<br>ahora mismo')}</span>
+      </p>
+      ${stats.length ? `<div class="cz-stats">${stats.map(([n, t]) =>
+      `<span class="cz-stat"><span class="cz-oculto">${n} ${esc(t)}</span><b data-cuenta="${n}" aria-hidden="true">${n}</b> <span aria-hidden="true">${esc(t)}</span></span>`).join('')}</div>` : ''}
+      <p class="cz-pulso-txt">${prov
+        ? 'Cada tarjeta es un emprendedor que ya sabe qué quiere comprar. Mande su precio y compita por el pedido, sin salir a buscar clientes.'
+        : 'Estos son los pedidos abiertos de la comunidad. Publique el suyo y reciba el precio, el mínimo y el plazo de varios proveedores a la vez.'}</p>
+      <button class="cz-pulso-link" onclick="cotizVerPortada()">Cómo funciona ${ICO.flecha}</button>
+    </div>`;
+  }
+
   function pantallaFeed() {
     const lista = st.rubro === 'Todos' ? st.feed : st.feed.filter(s => s.rubro === st.rubro);
 
@@ -623,21 +870,19 @@
         st.rubro === 'Todos'
           ? (esProveedor()
             ? 'Cuando un emprendedor publique lo que necesita comprar, va a aparecer acá.'
-            : 'Sé el primero: publicá lo que necesitás comprar y recibí precios de varios proveedores.')
-          : 'Probá con otra categoría o mirá todos los pedidos.',
+            : 'Sea el primero: publique lo que necesita comprar y reciba precios de varios proveedores.')
+          : 'Pruebe con otra categoría o mire todos los pedidos.',
         esProveedor() ? '' : btnPrimario('Pedir una cotización', "cotizIr('publicar')"))
-      : `<div class="cz-grilla">${lista.map(cardFeed).join('')}</div>`;
+      // La animacion de entrada va en un envoltorio y no en .cz-bandeja: una
+      // animacion con fill-mode forwards deja fijado transform:none y le gana
+      // al :hover{translateY(-2px)} de la bandeja.
+      : `<div class="cz-grilla">${lista.map((s, i) =>
+        `<div class="cz-sube" style="--d:${Math.min(i, 7) * 55}ms">${cardFeed(s)}</div>`).join('')}</div>`;
 
+    // Sin ningun pedido abierto el pulso seria un "0" gigante arriba del cartel
+    // de vacio, que ya dice lo mismo y mejor. En ese caso no se pinta.
     return header('Cotizaciones', null, accion) + `
-      <div class="cz-ancho" style="padding:13px 16px 2px">
-        <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:12px;padding:12px 14px">
-          <div style="font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#1A1A1A;margin-bottom:3px">${esProveedor() ? 'Emprendedores buscando proveedor' : 'Lo que se está buscando ahora'}</div>
-          <div style="font-size:.77rem;color:#41564C;line-height:1.5">${esProveedor()
-        ? 'Elegí a cuáles cotizar. Mandás tu precio y, si le sirve, el comprador te contacta.'
-        : 'Estos son los pedidos abiertos de la comunidad. Publicá el tuyo y recibí precios de varios proveedores.'}</div>
-          <button onclick="cotizVerPortada()" style="margin-top:8px;background:none;border:none;padding:4px 0;font-family:inherit;font-size:.76rem;font-weight:700;color:${VERDE};cursor:pointer;text-decoration:underline;text-underline-offset:3px">Cómo funciona</button>
-        </div>
-      </div>
+      ${st.feed.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
       ${chipsRubro()}
       ${cuerpo}
       ${esProveedor() ? '' : fabPedir()}`;
@@ -645,45 +890,58 @@
 
   // Tarjeta del feed publico. OJO: muestra la CANTIDAD de cotizaciones, nunca
   // los precios — esos solo los ve el dueño (lo impone la RLS, no esta vista).
+  //
+  // El pie (anillo de cierre + estado) va SIEMPRE, tenga la fila los campos
+  // opcionales cargados o no: un pedido publicado solo con el titulo antes
+  // salia como un nombre y un renglon, sin una sola cosa para mirar ni tocar.
   function cardFeed(s) {
     const mio = esMio(s);
     const ya = st.misCotiz[s.id];
     const n = s.respuestas || 0;
+    const dias = diasParaCierre(s.cierra_at);
 
     const accion = mio
-      ? (n > 0
-        ? btnCta(`Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`)
-        : `<div style="display:flex;align-items:center;justify-content:center;min-height:44px;background:${SOFT};color:${VERDE_OSC};border-radius:999px;padding:11px;font-size:.82rem;font-weight:700">Esperando respuestas</div>`)
+      ? (n > 0 ? btnCta(`Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`) : '')
       : esProveedor()
         ? (ya
-          ? `<div style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px;background:${SOFT};color:${VERDE_OSC};border-radius:999px;padding:11px;font-size:.82rem;font-weight:700">${ICO.ok} Cotizaste ${plata(ya.precio)} por unidad</div>`
+          ? `<div class="cz-pastilla">${ICO.ok} Cotizó ${plata(ya.precio)} por unidad</div>`
           : btnCta('Enviar cotización', `cotizAbrirForm('${s.id}')`))
         : '';
 
+    // El comprador que mira el pedido de otro no tiene accion posible, asi que
+    // el estado es lo unico que cierra la tarjeta: sin esto quedaba cortada.
+    const estado = n > 0
+      ? `<span class="cz-estado hay">${n} ${n === 1 ? 'cotización' : 'cotizaciones'}</span>`
+      : `<span class="cz-estado">Sin cotizar todavía</span>`;
+
+    const datos = [
+      s.cantidad ? `<span class="cz-dato fuerte">${esc(s.cantidad)} unidades</span>` : '',
+      s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
+      s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : '',
+      s.presupuesto ? `<span class="cz-dato">Hasta ${plata(s.presupuesto)}/u</span>` : ''
+    ].filter(Boolean).join('');
+
     return `<div class="cz-bandeja${mio ? ' cz-propia' : ''}"><div class="cz-nucleo">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         ${avatar(s.comprador_nombre, s.comprador_foto, 34)}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.comprador_nombre)}</span>
-            ${mio ? `<span style="flex-shrink:0;font-size:.62rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:2px 7px;border-radius:7px">TU PEDIDO</span>` : ''}
+            <span style="font-size:.82rem;font-weight:700;color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.comprador_nombre)}</span>
+            ${mio ? `<span style="flex-shrink:0;font-size:.62rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:2px 7px;border-radius:7px">SU PEDIDO</span>` : ''}
           </div>
           <div style="font-size:.72rem;color:${TENUE}">${esc(hace(s.created_at))}</div>
         </div>
-        ${n ? `<span style="flex-shrink:0;font-size:.7rem;font-weight:700;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">${n} ${n === 1 ? 'cotización' : 'cotizaciones'}</span>` : ''}
       </div>
 
-      <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:9px">${esc(s.titulo)}</div>
+      <h3 class="cz-titulo">${esc(s.titulo)}</h3>
+      ${datos ? `<div class="cz-datos">${datos}</div>` : ''}
+      ${s.detalles ? `<p class="cz-detalle">${esc(s.detalles)}</p>` : ''}
 
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS};margin-bottom:${s.detalles ? '9px' : '13px'}">
-        ${s.cantidad ? `<span style="font-weight:600;color:#41564C">${esc(s.cantidad)} unidades</span>` : ''}
-        ${s.rubro ? `<span style="background:#F5F7F6;color:#41564C;border-radius:8px;padding:2px 9px;font-weight:600">${esc(s.rubro)}</span>` : ''}
-        ${s.provincia ? `<span style="display:inline-flex;align-items:center;gap:3px">${ICO.pin}${esc(s.provincia)}</span>` : ''}
-        ${s.presupuesto ? `<span>Hasta ${plata(s.presupuesto)}/u</span>` : ''}
+      <div class="cz-pie">
+        <span class="cz-cierre">${anilloTiempo(dias)}${esc(textoCierre(dias))}</span>
+        ${estado}
       </div>
-
-      ${s.detalles ? `<div style="font-size:.79rem;color:#41564C;background:#FAFBFA;border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.5">${esc(s.detalles)}</div>` : ''}
-      ${accion}
+      ${accion ? `<div class="cz-cta-zona">${accion}</div>` : ''}
     </div></div>`;
   }
 
@@ -697,8 +955,8 @@
 
     if (!st.misPedidos.length) {
       return header('Mis pedidos', "cotizIr('feed')") + vacioBox(
-        'Todavía no pediste ninguna cotización',
-        'Publicá lo que necesitás comprar y recibí precios de varios proveedores mayoristas sin escribirle a uno por uno.',
+        'Todavía no pidió ninguna cotización',
+        'Publique lo que necesita comprar y reciba precios de varios proveedores mayoristas sin escribirle a uno por uno.',
         btnPrimario('Pedir una cotización', "cotizIr('publicar')"));
     }
 
@@ -745,8 +1003,8 @@
     const p = st.misPedidos.find(x => String(x.id) === String(id));
     const n = p?.respuestas || 0;
     const aviso = n > 0
-      ? `Vas a borrar este pedido y las ${n} ${n === 1 ? 'cotización que recibiste' : 'cotizaciones que recibiste'}. No se puede deshacer.`
-      : 'Vas a borrar este pedido. No se puede deshacer.';
+      ? `Va a borrar este pedido y las ${n} ${n === 1 ? 'cotización que recibió' : 'cotizaciones que recibió'}. No se puede deshacer.`
+      : 'Va a borrar este pedido. No se puede deshacer.';
     if (!confirm(aviso)) return;
     try {
       const { error } = await sb.from('solicitudes').delete().eq('id', id);
@@ -767,8 +1025,8 @@
 
     if (!enviadas.length) {
       return header('Mis cotizaciones', "cotizIr('feed')") + vacioBox(
-        'Todavía no cotizaste ningún pedido',
-        'Mirá los pedidos abiertos y mandá tu precio. El comprador compara y contacta al que le sirve.',
+        'Todavía no cotizó ningún pedido',
+        'Mire los pedidos abiertos y mande su precio. El comprador compara y contacta al que le sirve.',
         btnPrimario('Ver pedidos abiertos', "cotizIr('feed')"));
     }
 
@@ -777,7 +1035,7 @@
         ${enviadas.map(({ cot, sol }) => `
           <div style="background:#fff;border:1px solid ${BORDE};border-radius:14px;padding:14px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">Cotizaste ${plata(cot.precio)} por unidad</span>
+              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">Cotizó ${plata(cot.precio)} por unidad</span>
               <span style="font-size:.72rem;color:${TENUE};flex-shrink:0">${esc(hace(cot.created_at))}</span>
             </div>
             <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:7px">${esc(sol.titulo)}</div>
@@ -1020,7 +1278,7 @@
 
     const cuerpo = !lista.length
       ? vacioBox('Todavía no le cotizaron',
-        vigente(p) ? 'Apenas un proveedor responda, lo vas a ver acá. Los pedidos con cantidad y rubro cargados reciben más respuestas.' : 'Este pedido está cerrado.')
+        vigente(p) ? 'Apenas un proveedor responda, lo va a ver acá. Los pedidos con cantidad y rubro cargados reciben más respuestas.' : 'Este pedido está cerrado.')
       : `<div style="padding:2px 16px 30px">${lista.map(cardCotizacion).join('')}</div>`;
 
     return header('Cotizaciones recibidas', "cotizIr('feed')") + `
@@ -1092,7 +1350,7 @@
     const p = st.provsCache[provId] || {};
     const c = st.cotizaciones.find(x => String(x.id) === String(cotId));
     const ped = st.pedidoActual;
-    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. Cotizaste mi pedido "${ped?.titulo || ''}"` +
+    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. Cotizó mi pedido "${ped?.titulo || ''}"` +
       (c ? ` a ${plata(c.precio)} por unidad` : '') + '. Quería avanzar.';
     try { registrarContactoWA(provId, p); } catch (e) { }
     try { abrirWA(p.whatsapp, msg); } catch (e) { toast('WhatsApp no disponible'); }
@@ -1203,8 +1461,8 @@
     if (!s) return;
 
     const precio = parsearMonto($('cz-precio')?.value);
-    if (!precio) return mostrarErr('Poné un precio por unidad válido.');
-    if (!currentUser?.proveedorId) return mostrarErr('Tu cuenta de proveedor todavía no está aprobada.');
+    if (!precio) return mostrarErr('Ponga un precio por unidad válido.');
+    if (!currentUser?.proveedorId) return mostrarErr('Su cuenta de proveedor todavía no está aprobada.');
     if (err) err.style.display = 'none';
 
     const fila = {
@@ -1231,7 +1489,7 @@
       console.warn('[cotiz] enviar', e);
       if (btn) { btn.disabled = false; btn.textContent = 'Enviar cotización'; btn.style.opacity = '1'; }
       const dup = String(e?.code || '') === '23505';
-      mostrarErr(dup ? 'Ya cotizaste este pedido.' : 'No se pudo enviar. Revisá tu conexión e intentá de nuevo.');
+      mostrarErr(dup ? 'Ya cotizó este pedido.' : 'No se pudo enviar. Revise su conexión e intente de nuevo.');
     }
   };
 
@@ -1305,7 +1563,7 @@
       <div style="background:#fff;border-radius:20px;padding:20px 18px;text-align:center;
           box-shadow:inset 0 1px 1px rgba(255,255,255,.6)">
         <div style="font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:7px;line-height:1.35">Todavía nadie tiene “${seguro}” publicado</div>
-        <div style="font-size:.84rem;color:#41564C;line-height:1.55;margin-bottom:16px">Pedí que te coticen: los proveedores mayoristas te mandan su precio, su mínimo y su tiempo de entrega.</div>
+        <div style="font-size:.84rem;color:#41564C;line-height:1.55;margin-bottom:16px">Pida que le coticen: los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega.</div>
         ${btnCta('Pedir cotización', `cotizPedirPara('${paraJs}')`)}
       </div>
     </div>`;
