@@ -64,9 +64,6 @@ export default async function handler(req, res) {
   // Verificar que el registro existe antes de hacer PATCH
   const getUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}&select=id`;
 
-  console.log('[tn-callback] SUPABASE_URL:', process.env.SUPABASE_URL);
-  console.log('[tn-callback] KEY primeros 20:', process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20));
-
   const getRes = await fetch(getUrl, {
     headers: {
       'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
