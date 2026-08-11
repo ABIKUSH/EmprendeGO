@@ -1066,6 +1066,63 @@
 
   const INPUT_CSS = `width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.88rem;font-family:inherit;outline:none;background:#fff;box-sizing:border-box`;
 
+  const PISTA_RUBRO = 'Es lo que hace que su pedido le llegue a los proveedores de ese rubro.';
+  const PISTA_RUBRO_AUTO = 'Lo completamos según lo que escribió. Cámbielo si no corresponde.';
+
+  /* ---------------- RUBRO SUGERIDO DESDE EL TITULO ----------------
+     El rubro y la provincia pasaron a ser obligatorios: sin ellos la tarjeta
+     del feed sale con un solo dato y el pedido no le llega a nadie en
+     particular. Para que ese requisito no sea friccion pura, el rubro se
+     completa solo con rubroDeTermino(), el mismo mapa que ya usa el buscador.
+
+     Nunca pisa una eleccion manual: apenas la persona toca el select se marca
+     como tocado y el automatico se calla para siempre. */
+
+  let temporizadorRubro = null;
+
+  window.cotizAutoRubro = function () {
+    clearTimeout(temporizadorRubro);
+    temporizadorRubro = setTimeout(aplicarRubroSugerido, 250);
+  };
+
+  function aplicarRubroSugerido() {
+    const sel = $('cz-rubro'), tit = $('cz-titulo');
+    if (!sel || !tit || sel.dataset.tocado === '1') return;
+    const t = tit.value.trim();
+    // Con menos de 4 caracteres rubroDeTermino() puede enganchar por la rama
+    // de "la clave contiene lo escrito" y tirar cualquier cosa a media palabra.
+    if (t.length < 4) return;
+    const r = rubroDeTermino(t);
+    if (!r || r === sel.value) return;
+    if (!Array.from(sel.options).some(o => o.value === r)) return;
+    sel.value = r;
+    pistaRubro(PISTA_RUBRO_AUTO);
+  }
+
+  window.cotizRubroManual = function () {
+    const sel = $('cz-rubro');
+    if (!sel) return;
+    sel.dataset.tocado = '1';
+    pistaRubro(PISTA_RUBRO);
+  };
+
+  function pistaRubro(txt) {
+    const el = $('cz-rubro-pista');
+    if (el) el.textContent = txt;
+  }
+
+  // Una sola validacion para los dos caminos que publican: el boton y el
+  // reintento con el borrador guardado despues del login. Devuelve el campo a
+  // enfocar y el mensaje, o null si esta todo bien.
+  function validarPedido(d) {
+    const titulo = String(d.titulo || '').trim();
+    if (titulo.length < 3) return { campo: 'cz-titulo', msg: 'Escriba qué necesita comprar (mínimo 3 caracteres).' };
+    if (titulo.length > 160) return { campo: 'cz-titulo', msg: 'El título es muy largo (máximo 160 caracteres).' };
+    if (!d.rubro) return { campo: 'cz-rubro', msg: 'Elija el rubro: es lo que hace que su pedido le llegue a los proveedores correctos.' };
+    if (!d.provincia) return { campo: 'cz-prov', msg: 'Elija dónde necesita la mercadería.' };
+    return null;
+  }
+
   function pantallaPublicar() {
     const rubros = (typeof RUBROS_LISTA !== 'undefined' ? RUBROS_LISTA : []);
     const provs = (typeof PROVINCIAS !== 'undefined' ? PROVINCIAS : []);
@@ -1075,6 +1132,11 @@
     const pre = { ...(st.prefill || {}), ...(guardadoPrevio || {}) };
     st.prefill = null;   // se usa una sola vez
     const errPend = st.errorPendiente; st.errorPendiente = null;
+
+    // Si el rubro que viene cargado es el mismo que se deduce del titulo, es
+    // que lo pusimos nosotros (viene de una busqueda sin resultados), no la
+    // persona: se avisa, para que lo corrija si no corresponde.
+    const rubroSugerido = !!(pre.rubro && pre.titulo && rubroDeTermino(pre.titulo) === pre.rubro);
 
     // Si volvio al formulario, ya no esta "en el medio de publicar": estaba
     // por publicar y se arrepintio, o vino a corregir algo. Se baja la bandera
@@ -1098,9 +1160,10 @@
       <div style="padding:18px 16px 40px">
         ${cabecera}
 
-        ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`)}
-        ${campo('Cantidad aproximada', `<input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS}">`)}
-        ${campo('Rubro', `<select id="cz-rubro" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${pre.rubro === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
+        ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" oninput="cotizAutoRubro()" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`)}
+        ${campo('Cantidad aproximada (opcional)', `<input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS}">`)}
+        ${campo('Rubro', `<select id="cz-rubro" onchange="cotizRubroManual()" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${pre.rubro === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`,
+      rubroSugerido ? PISTA_RUBRO_AUTO : PISTA_RUBRO)}
         ${campo('¿Dónde lo necesita?', `<select id="cz-prov" style="${INPUT_CSS}"><option value="">Elegir provincia</option>${provs.map(r => `<option value="${esc(r)}"${pre.provincia === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
         ${campo('Detalles (opcional)', `<textarea id="cz-detalles" rows="3" maxlength="600" placeholder="Colores, talles, material, packaging, plazo..." style="${INPUT_CSS};resize:vertical">${esc(pre.detalles || '')}</textarea>`)}
         ${campo('Presupuesto máximo por unidad (opcional)', `<input id="cz-presup" inputmode="decimal" value="${esc(pre.presupuesto || '')}" placeholder="$ por unidad" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
@@ -1126,14 +1189,21 @@
 
   window.cotizPublicar = async function (btn) {
     const err = $('cz-error');
-    const mostrarErr = m => { if (err) { err.textContent = m; err.style.display = 'block'; } vibrar('error'); };
+    const mostrarErr = (m, campo) => {
+      if (err) { err.textContent = m; err.style.display = 'block'; }
+      vibrar('error');
+      // Llevarlo al campo que falta: el aviso vive abajo de todo y en celular
+      // puede quedar fuera de pantalla respecto del campo que hay que tocar.
+      const el = campo && $(campo);
+      if (el) { try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); } el.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+    };
 
     const datos = leerFormulario();
     // Se valida ANTES de mandarlo a iniciar sesion: hacer que alguien se
-    // loguee para despues decirle que el titulo estaba vacio es la peor
-    // version de esto.
-    if (datos.titulo.length < 3) return mostrarErr('Escriba qué necesita comprar (mínimo 3 caracteres).');
-    if (datos.titulo.length > 160) return mostrarErr('El título es muy largo (máximo 160 caracteres).');
+    // loguee para despues decirle que le falta el rubro es la peor version
+    // de esto.
+    const falla = validarPedido(datos);
+    if (falla) return mostrarErr(falla.msg, falla.campo);
     if (err) err.style.display = 'none';
 
     // Sin sesion: se guarda lo escrito y se pide la cuenta. Al volver del
@@ -1229,6 +1299,17 @@
     publicandoBorrador = true;
     try {
       if (!(await esperarUsuario())) return;
+      // Un borrador guardado antes de que el rubro y la provincia fueran
+      // obligatorios no se publica solo: se le muestra el formulario cargado
+      // con lo que falta.
+      const falla = validarPedido(d);
+      if (falla) {
+        guardarBorrador({ ...d, intento: false });
+        try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+        st.vista = 'publicar';
+        st.errorPendiente = falla.msg;
+        return render();
+      }
       const r = await publicarPedido(d);
       if (r.ok) {
         limpiarBorrador();
