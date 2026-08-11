@@ -733,9 +733,9 @@
     try { localStorage.removeItem(BORRADOR); } catch (e) { }
   }
 
-  const VISTO = 'eg_cotiz_portada_vista';
-  const yaVioPortada = () => { try { return !!localStorage.getItem(VISTO); } catch (e) { return false; } };
-  const marcarPortadaVista = () => { try { localStorage.setItem(VISTO, new Date().toISOString()); } catch (e) { } };
+  // Antes se guardaba en localStorage una marca de "portada ya vista" para
+  // mostrarla una sola vez. Se saco: ahora la portada es la puerta de entrada
+  // fija de la seccion, asi que no hay nada que recordar.
 
   function pantallaPortada() {
     const prov = esProveedor();
@@ -777,7 +777,6 @@
   }
 
   window.cotizEmpezar = async function () {
-    marcarPortadaVista();
     vibrar('light');
     // Antes, sin sesion se iba derecho al formulario porque no habia feed que
     // mostrar. Ahora si lo hay: ver primero lo que otros estan pidiendo hace
@@ -1724,20 +1723,15 @@
       st.vista = 'login'; st.cargando = false; return render();
     }
 
-    // La primera vez se explica de que se trata; despues se va derecho al feed.
-    // Se muestra tambien sin sesion: primero se entiende, despues se pide cuenta.
-    if (!yaVioPortada()) { st.vista = 'portada'; st.cargando = false; return render(); }
-
-    // Sin sesion tambien se entra al feed: antes se le mostraba un cartel
-    // pidiendo cuenta antes de dejarle ver nada, que es pedirle que confie a
-    // ciegas. Ahora ve la demanda real primero y despues decide.
-    st.cargando = true;
-    st.vista = 'feed';
+    // La portada va SIEMPRE, no solo la primera vez. Es la introduccion a una
+    // seccion que no se explica sola: caer directo en una lista de pedidos
+    // ajenos no dice para que sirve ni que se gana. Se sale con "Probar", que
+    // es el que carga el feed (cotizEmpezar).
+    //
+    // Vale para las dos puntas y con o sin sesion: primero se entiende, y la
+    // cuenta recien se pide al publicar.
+    st.vista = 'portada';
     st.rubro = 'Todos';
-    render();
-
-    await cargarDatos();
-
     st.cargando = false;
     render();
   };
