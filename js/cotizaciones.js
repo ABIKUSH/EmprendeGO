@@ -585,7 +585,31 @@
     st.misPedidos = data || [];
   }
 
+  /* Feed del visitante SIN sesion.
+     No lee la tabla: anon no tiene ningun permiso sobre solicitudes. Llama a
+     cotiz_feed_publico(), una funcion SECURITY DEFINER que filtra a los
+     pedidos abiertos y devuelve el nombre del comprador ya mascarado
+     ("María R.", o "Emprendedor" si el nombre es un token pegado tipo handle
+     de Instagram). Sin foto, sin usuario_id y sin nada de cotizaciones.
+
+     Mascarar esto en el frontend no serviria: la clave anonima esta en el JS
+     del sitio, asi que cualquiera podria pedirle los nombres completos a la
+     API. Por eso el recorte vive en la base.
+
+     Se completan los campos que la funcion no devuelve para que el resto de
+     la pantalla no tenga que saber de donde vino la fila. */
+  async function cargarFeedPublico() {
+    const { data, error } = await sb.rpc('cotiz_feed_publico', { p_limit: 60 });
+    st.misCotiz = {};
+    if (error) { console.warn('[cotiz] feed publico', error); st.feed = []; return; }
+    st.feed = (data || []).map(s => ({
+      ...s, estado: 'abierta', comprador_foto: null, usuario_id: null
+    }));
+  }
+
   async function cargarFeed() {
+    if (!currentUser) return cargarFeedPublico();
+
     const { data, error } = await sb.from('solicitudes').select(COLS_SOL)
       .eq('estado', 'abierta').gt('cierra_at', new Date().toISOString())
       .order('created_at', { ascending: false }).limit(60);
@@ -755,14 +779,10 @@
   window.cotizEmpezar = async function () {
     marcarPortadaVista();
     vibrar('light');
-    // Sin sesion no hay feed que mostrar (la RLS no deja leer los pedidos sin
-    // cuenta), pero SI se puede escribir el propio: va derecho al formulario.
-    // La cuenta se pide al publicar.
-    if (!currentUser) {
-      st.vista = 'publicar';
-      try { if (typeof trackEvent === 'function') trackEvent('rfq_form_abierto', { origen: 'portada' }); } catch (e) { }
-      return render();
-    }
+    // Antes, sin sesion se iba derecho al formulario porque no habia feed que
+    // mostrar. Ahora si lo hay: ver primero lo que otros estan pidiendo hace
+    // mas por convencer que un formulario en blanco. Publicar sigue estando a
+    // un toque, con el boton "+" y el cartel del final.
     await cotizIr('feed');
   };
 
@@ -860,9 +880,18 @@
     const lista = st.rubro === 'Todos' ? st.feed : st.feed.filter(s => s.rubro === st.rubro);
 
     const conRespuesta = st.misPedidos.filter(p => vigente(p) && (p.respuestas || 0) > 0).length;
-    const accion = esProveedor()
-      ? btnEsquina('Mis cotizaciones', "cotizIr('misCotiz')", Object.keys(st.misCotiz).length > 0)
-      : btnEsquina('Mis pedidos', "cotizIr('mis')", conRespuesta > 0);
+    // Sin sesion no hay "mis pedidos" que mostrar: el boton llevaria a una
+    // pantalla vacia. La accion para el visitante es publicar, y de eso se
+    // encargan el "+" y el cartel del final.
+    const accion = !currentUser ? ''
+      : esProveedor()
+        ? btnEsquina('Mis cotizaciones', "cotizIr('misCotiz')", Object.keys(st.misCotiz).length > 0)
+        : btnEsquina('Mis pedidos', "cotizIr('mis')", conRespuesta > 0);
+
+    // El visitante sin sesion cierra el feed con un cartel; en ese caso la
+    // grilla no tiene que reservar los 96px de abajo, que quedarian como un
+    // hueco entre la ultima tarjeta y el cartel.
+    const hayCierre = !currentUser && lista.length > 0;
 
     const cuerpo = !lista.length
       ? vacioBox(
@@ -876,8 +905,24 @@
       // La animacion de entrada va en un envoltorio y no en .cz-bandeja: una
       // animacion con fill-mode forwards deja fijado transform:none y le gana
       // al :hover{translateY(-2px)} de la bandeja.
-      : `<div class="cz-grilla">${lista.map((s, i) =>
+      : `<div class="cz-grilla"${hayCierre ? ' style="padding-bottom:12px"' : ''}>${lista.map((s, i) =>
         `<div class="cz-sube" style="--d:${Math.min(i, 7) * 55}ms">${cardFeed(s)}</div>`).join('')}</div>`;
+
+    // Al visitante sin sesion el feed le sirve de prueba, pero el unico modo
+    // de publicar seria el "+", que es un circulito facil de pasar por alto.
+    // Este cierre le pone nombre a lo que acaba de ver.
+    // 140px abajo y no 96: el "+" flotante vive entre los 84px y los 136px
+    // del borde inferior, asi que con menos aire se le monta encima al boton
+    // de este cartel cuando se llega al final del feed.
+    const cierre = hayCierre
+      ? `<div class="cz-ancho" style="padding:6px 16px 140px">
+          <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:20px 18px;text-align:center">
+            <div style="font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:6px;line-height:1.35">¿Necesita comprar algo que no ve acá?</div>
+            <div style="font-size:.83rem;color:#41564C;line-height:1.55;margin-bottom:16px">Publique su pedido y los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega. Gratis.</div>
+            ${btnPrimario('Pedir una cotización', "cotizIr('publicar')")}
+          </div>
+        </div>`
+      : '';
 
     // Sin ningun pedido abierto el pulso seria un "0" gigante arriba del cartel
     // de vacio, que ya dice lo mismo y mejor. En ese caso no se pinta.
@@ -885,6 +930,7 @@
       ${st.feed.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
       ${chipsRubro()}
       ${cuerpo}
+      ${cierre}
       ${esProveedor() ? '' : fabPedir()}`;
   }
 
@@ -1682,8 +1728,9 @@
     // Se muestra tambien sin sesion: primero se entiende, despues se pide cuenta.
     if (!yaVioPortada()) { st.vista = 'portada'; st.cargando = false; return render(); }
 
-    if (!currentUser) { st.vista = 'login'; st.cargando = false; render(); return; }
-
+    // Sin sesion tambien se entra al feed: antes se le mostraba un cartel
+    // pidiendo cuenta antes de dejarle ver nada, que es pedirle que confie a
+    // ciegas. Ahora ve la demanda real primero y despues decide.
     st.cargando = true;
     st.vista = 'feed';
     st.rubro = 'Todos';
