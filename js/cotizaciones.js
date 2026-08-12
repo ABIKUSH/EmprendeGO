@@ -411,7 +411,7 @@
        Los numeros salen del feed que YA esta cargado en memoria: no hay una
        sola consulta extra ni una columna nueva. */
     #screen-cotizaciones .cz-pulso{
-      position:relative;overflow:hidden;border-radius:22px;padding:17px 18px 15px;
+      position:relative;overflow:hidden;border-radius:20px;padding:13px 15px 14px;
       background:
         radial-gradient(72% 62% at 6% -8%,rgba(28,190,124,.40),transparent 68%),
         radial-gradient(58% 70% at 104% 4%,rgba(255,107,0,.22),transparent 62%),
@@ -447,39 +447,36 @@
     }
     #screen-cotizaciones .cz-cifra{
       font-family:var(--cz-serif) !important;
-      font-size:clamp(2.9rem,14vw,3.6rem);font-weight:900;line-height:.86;
-      letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums;
+      font-size:clamp(1.9rem,8vw,2.3rem);font-weight:900;line-height:.9;
+      letter-spacing:-.04em;color:#fff;font-variant-numeric:tabular-nums;
     }
     #screen-cotizaciones .cz-cifra-lab{
-      font-size:.87rem;font-weight:600;line-height:1.3;color:rgba(255,255,255,.82);
+      font-size:.85rem;font-weight:600;line-height:1.25;color:rgba(255,255,255,.82);
     }
-    #screen-cotizaciones .cz-stats{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
-    #screen-cotizaciones .cz-stat{
-      display:inline-flex;align-items:baseline;gap:5px;border-radius:999px;padding:5px 11px;
-      border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);
-      font-size:.72rem;color:rgba(255,255,255,.76);
+    /* Las metricas secundarias van en un renglon de texto y no en pastillas:
+       las pastillas se iban a tres filas y empujaban los pedidos fuera de la
+       primera pantalla, que es lo que la gente entra a ver. */
+    #screen-cotizaciones .cz-stats{
+      margin:9px 0 0;font-size:.73rem;line-height:1.45;color:rgba(255,255,255,.74);
     }
-    #screen-cotizaciones .cz-stat b{
-      font-size:.84rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;
-    }
-    #screen-cotizaciones .cz-pulso-txt{
-      margin:13px 0 0;font-size:.79rem;line-height:1.5;
-      color:rgba(255,255,255,.76);max-width:44ch;
+    #screen-cotizaciones .cz-stats b{font-weight:800;color:#fff;font-variant-numeric:tabular-nums}
+    #screen-cotizaciones .cz-pulso-fila{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
     }
     #screen-cotizaciones .cz-pulso-link{
-      margin-top:12px;min-height:38px;display:inline-flex;align-items:center;gap:7px;
-      border-radius:999px;padding:8px 14px;cursor:pointer;font-family:inherit;
+      flex-shrink:0;min-height:34px;display:inline-flex;align-items:center;gap:6px;
+      border-radius:999px;padding:7px 12px;cursor:pointer;font-family:inherit;
       border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);
-      color:#fff;font-size:.75rem;font-weight:700;
+      color:#fff;font-size:.72rem;font-weight:700;
       transition:background 220ms ease-out;
     }
-    #screen-cotizaciones .cz-pulso-link svg{width:13px;height:13px}
+    #screen-cotizaciones .cz-pulso-link svg{width:12px;height:12px}
 
     /* ---- CARRIL "BUSCADO SIN RESPUESTA" ----
        Va en naranja y no en verde: el verde es lo que la plataforma YA
        resuelve (pedidos, cotizaciones) y esto es justamente el agujero, la
        oportunidad. Que se distinga de un vistazo del resto del feed. */
-    #screen-cotizaciones .cz-demanda{padding:16px 15px 15px}
+    #screen-cotizaciones .cz-demanda{padding:14px 15px 13px}
     #screen-cotizaciones .cz-dem-ojo{
       display:inline-flex;align-items:center;gap:7px;
       font-family:var(--cz-mono) !important;font-size:.62rem;font-weight:700;
@@ -487,15 +484,26 @@
     }
     #screen-cotizaciones .cz-dem-ojo svg{width:13px;height:13px;flex-shrink:0}
     #screen-cotizaciones .cz-dem-tit{
-      margin:10px 0 5px;font-size:.98rem;font-weight:800;color:#1A1A1A;
+      margin:9px 0 4px;font-size:.92rem;font-weight:800;color:#1A1A1A;
       line-height:1.3;letter-spacing:-.015em;text-wrap:balance;
     }
-    #screen-cotizaciones .cz-dem-baj{margin:0 0 14px;font-size:.79rem;line-height:1.5;color:${GRIS}}
-    #screen-cotizaciones .cz-dem-chips{display:flex;gap:8px;flex-wrap:wrap}
+    #screen-cotizaciones .cz-dem-baj{margin:0 0 11px;font-size:.76rem;line-height:1.45;color:${GRIS}}
+    /* Una sola fila con scroll horizontal. Envueltos se iban a cinco filas y
+       el carril se comia la pantalla entera; los pedidos, que son el motivo
+       por el que la gente entra, quedaban abajo del todo.
+       Los margenes negativos hacen que los chips lleguen al borde de la
+       tarjeta: el que queda cortado a la derecha es lo que avisa que hay mas. */
+    #screen-cotizaciones .cz-dem-chips{
+      display:flex;gap:8px;overflow-x:auto;
+      margin:0 -15px;padding:2px 15px 4px;
+      scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    }
+    #screen-cotizaciones .cz-dem-chips::-webkit-scrollbar{display:none}
     #screen-cotizaciones .cz-dem-chip{
-      display:inline-flex;align-items:center;gap:7px;min-height:40px;
-      padding:8px 12px;border-radius:11px;font-family:inherit;
-      font-size:.83rem;font-weight:700;color:#1A1A1A;text-align:left;
+      flex-shrink:0;white-space:nowrap;
+      display:inline-flex;align-items:center;gap:7px;min-height:36px;
+      padding:7px 11px;border-radius:10px;font-family:inherit;
+      font-size:.8rem;font-weight:700;color:#1A1A1A;text-align:left;
       background:#FFF8F3;border:1.5px solid #FFD9BC;
       transition:transform 200ms cubic-bezier(.23,1,.32,1),border-color 200ms ease-out;
     }
@@ -504,9 +512,6 @@
     #screen-cotizaciones .cz-dem-n{
       flex-shrink:0;font-size:.7rem;font-weight:700;color:#B24500;background:#FFEBDC;
       border-radius:6px;padding:2px 7px;font-variant-numeric:tabular-nums;
-    }
-    #screen-cotizaciones .cz-dem-pie{
-      margin:13px 0 0;font-size:.72rem;line-height:1.45;color:${TENUE};
     }
 
     /* ---- TARJETA DEL FEED ----
@@ -901,7 +906,6 @@
   // en memoria: ni una consulta mas. Las metricas secundarias solo aparecen si
   // dan mayor que cero — tres ceros alineados se ven peor que no mostrar nada.
   function pulso() {
-    const prov = esProveedor();
     const nPedidos = st.feed.length;
     const nCotiz = st.feed.reduce((a, s) => a + (s.respuestas || 0), 0);
     const nRubros = rubrosDelFeed().length;
@@ -915,21 +919,27 @@
     // Los numeros arrancan en 0 y suben, asi que la version visual va con
     // aria-hidden y al lado queda el texto real para el lector de pantalla:
     // si no, se anuncia "0 pedidos abiertos".
-    const lab = nPedidos === 1 ? 'pedido abierto ahora mismo' : 'pedidos abiertos ahora mismo';
+    const lab = nPedidos === 1 ? 'pedido abierto' : 'pedidos abiertos';
+    const statsTxt = stats.map(([n, t]) => n + ' ' + t).join(' · ');
 
+    // Sin el parrafo explicativo que habia antes: ahora TODOS pasan por la
+    // portada al entrar a la seccion, asi que repetirlo aca era gastar media
+    // pantalla en algo que la persona acaba de leer.
     return `<div class="cz-pulso">
-      <span class="cz-eyebrow"><span class="cz-vivo"></span> Demanda en vivo</span>
-      <p style="display:flex;align-items:center;gap:12px;margin:16px 0 0">
+      <div class="cz-pulso-fila">
+        <span class="cz-eyebrow"><span class="cz-vivo"></span> Demanda en vivo</span>
+        <button class="cz-pulso-link" onclick="cotizVerPortada()">Cómo funciona ${ICO.flecha}</button>
+      </div>
+      <p style="display:flex;align-items:center;gap:10px;margin:11px 0 0">
         <span class="cz-oculto">${nPedidos} ${lab}</span>
         <span class="cz-cifra" data-cuenta="${nPedidos}" aria-hidden="true">${nPedidos}</span>
-        <span class="cz-cifra-lab" aria-hidden="true">${lab.replace(' ahora mismo', '<br>ahora mismo')}</span>
+        <span class="cz-cifra-lab" aria-hidden="true">${lab}</span>
       </p>
-      ${stats.length ? `<div class="cz-stats">${stats.map(([n, t]) =>
-      `<span class="cz-stat"><span class="cz-oculto">${n} ${esc(t)}</span><b data-cuenta="${n}" aria-hidden="true">${n}</b> <span aria-hidden="true">${esc(t)}</span></span>`).join('')}</div>` : ''}
-      <p class="cz-pulso-txt">${prov
-        ? 'Cada tarjeta es un emprendedor que ya sabe qué quiere comprar. Mande su precio y compita por el pedido, sin salir a buscar clientes.'
-        : 'Estos son los pedidos abiertos de la comunidad. Publique el suyo y reciba el precio, el mínimo y el plazo de varios proveedores a la vez.'}</p>
-      <button class="cz-pulso-link" onclick="cotizVerPortada()">Cómo funciona ${ICO.flecha}</button>
+      ${stats.length ? `<p class="cz-stats">
+        <span class="cz-oculto">${esc(statsTxt)}</span>
+        <span aria-hidden="true">${stats.map(([n, t]) =>
+        `<b data-cuenta="${n}">${n}</b> ${esc(t)}`).join(' · ')}</span>
+      </p>` : ''}
     </div>`;
   }
 
@@ -974,11 +984,10 @@
         <h3 class="cz-dem-tit">${prov
         ? 'Esto lo buscan y nadie lo ofrece'
         : 'Esto lo buscan y no lo encuentran'}</h3>
-        <p class="cz-dem-baj">${prov
-        ? `Búsquedas reales del último mes que no devolvieron ningún resultado. Si vende alguno de estos, cárguelo en su catálogo: la demanda ya está.`
-        : `Búsquedas reales del último mes que no devolvieron ningún resultado. Si necesita alguno, pídalo y los proveedores le cotizan.`}</p>
+        <p class="cz-dem-baj">${total.toLocaleString('es-AR')} búsquedas de este mes se fueron con las manos vacías. ${prov
+        ? 'Si vende alguno, cárguelo en su catálogo.'
+        : 'Toque uno para pedir cotización.'}</p>
         <div class="cz-dem-chips">${lista.map(chip).join('')}</div>
-        <p class="cz-dem-pie">${total.toLocaleString('es-AR')} búsquedas se fueron con las manos vacías.</p>
       </div></div>
     </div>`;
   }
@@ -1033,7 +1042,10 @@
 
     // Sin ningun pedido abierto el pulso seria un "0" gigante arriba del cartel
     // de vacio, que ya dice lo mismo y mejor. En ese caso no se pinta.
-    return header('Cotizaciones', null, accion) + `
+    // Con boton de volver: el feed es la pantalla donde se queda parado el que
+    // entra a la seccion, y sin flecha no habia forma de salir al inicio salvo
+    // por la barra de abajo.
+    return header('Cotizaciones', 'closeCotiz()', accion) + `
       ${st.feed.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
       ${carrilDemanda()}
       ${chipsRubro()}
