@@ -40,11 +40,40 @@
   // Columnas explicitas: `select('*')` traeria usuario_email, que esta
   // revocado de la API a proposito (PII) y devolveria 403.
   const COLS_SOL = 'id,created_at,usuario_id,comprador_nombre,comprador_foto,' +
-    'titulo,cantidad,rubro,provincia,detalles,presupuesto,estado,cierra_at,respuestas';
+    'titulo,cantidad,unidad,rubro,provincia,detalles,presupuesto,estado,cierra_at,respuestas';
   const COLS_COT = 'id,created_at,solicitud_id,proveedor_id,precio,entrega,minimo,pagos,nota';
 
   const ENTREGAS = ['24 hs', '48 hs', '3 a 5 dias', '1 semana', 'Mas de 1 semana'];
   const PAGOS = ['Transferencia', 'Efectivo', 'Mercado Pago', 'Cuotas'];
+
+  /* ---------------- UNIDAD DE MEDIDA ----------------
+     "100 unidades de textil" no le dice nada al proveedor: podian ser 100
+     metros, 100 rollos o 100 prendas, y cada una es otro precio por unidad.
+     Antes la palabra "unidades" estaba escrita a mano al lado de la cantidad;
+     ahora la elige el comprador y viaja en solicitudes.unidad.
+
+     La lista esta espejada en el CHECK de la base
+     (sql/2026-08-12_solicitudes_unidad.sql): si se agrega una, van las dos. */
+  const UNIDADES = ['unidades', 'pares', 'metros', 'rollos', 'kilos', 'cajas', 'docenas', 'packs', 'litros'];
+  const UNIDAD_SINGULAR = {
+    unidades: 'unidad', pares: 'par', metros: 'metro', rollos: 'rollo', kilos: 'kilo',
+    cajas: 'caja', docenas: 'docena', packs: 'pack', litros: 'litro'
+  };
+
+  // Los pedidos publicados antes de que existiera la columna vienen con
+  // unidad NULL: caen en "unidades", que es lo que ya decia la tarjeta.
+  // Devuelve SIEMPRE un valor de la lista, asi que lo que sale de aca nunca
+  // necesita esc(): no puede traer nada que escribio una persona.
+  function uPlural(s) {
+    const u = String((s && s.unidad) || '').trim().toLowerCase();
+    return UNIDADES.indexOf(u) >= 0 ? u : 'unidades';
+  }
+  function uSingular(s) { return UNIDAD_SINGULAR[uPlural(s)]; }
+
+  // "500 metros" / "500 unidades". Sin cantidad no hay nada que decir.
+  function cantidadTexto(s) {
+    return s && s.cantidad ? esc(s.cantidad) + ' ' + uPlural(s) : '';
+  }
 
   const st = {
     vista: 'login',      // login | feed | publicar | mis | respuestas | cotizar | misCotiz
@@ -864,7 +893,7 @@
           <div style="background:#fff;border:1px solid ${BORDE};border-radius:12px;padding:12px 14px;margin-bottom:18px;text-align:left">
             <div style="font-size:.7rem;color:${TENUE};margin-bottom:3px">Su pedido</div>
             <div style="font-family:'Inter',sans-serif;font-size:.86rem;font-weight:700;color:#1A1A1A;line-height:1.4">${esc(d.titulo)}</div>
-            ${d.cantidad || d.rubro ? `<div style="font-size:.74rem;color:${GRIS};margin-top:5px">${esc([d.cantidad ? d.cantidad + ' unidades' : '', d.rubro || ''].filter(Boolean).join(' · '))}</div>` : ''}
+            ${d.cantidad || d.rubro ? `<div style="font-size:.74rem;color:${GRIS};margin-top:5px">${[cantidadTexto(d), esc(d.rubro || '')].filter(Boolean).join(' · ')}</div>` : ''}
           </div>
           ${btnPrimario('Iniciar sesión y publicar', "goTo('perfil')")}
         </div>
@@ -1070,7 +1099,7 @@
       ? (n > 0 ? btnCta(`Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`) : '')
       : esProveedor()
         ? (ya
-          ? `<div class="cz-pastilla">${ICO.ok} Cotizó ${plata(ya.precio)} por unidad</div>`
+          ? `<div class="cz-pastilla">${ICO.ok} Cotizó ${plata(ya.precio)} por ${uSingular(s)}</div>`
           : btnCta('Enviar cotización', `cotizAbrirForm('${s.id}')`))
         : '';
 
@@ -1081,10 +1110,10 @@
       : `<span class="cz-estado">Sin cotizar todavía</span>`;
 
     const datos = [
-      s.cantidad ? `<span class="cz-dato fuerte">${esc(s.cantidad)} unidades</span>` : '',
+      s.cantidad ? `<span class="cz-dato fuerte">${cantidadTexto(s)}</span>` : '',
       s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
       s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : '',
-      s.presupuesto ? `<span class="cz-dato">Hasta ${plata(s.presupuesto)}/u</span>` : ''
+      s.presupuesto ? `<span class="cz-dato">Hasta ${plata(s.presupuesto)} por ${uSingular(s)}</span>` : ''
     ].filter(Boolean).join('');
 
     return `<div class="cz-bandeja${mio ? ' cz-propia' : ''}"><div class="cz-nucleo">
@@ -1151,7 +1180,7 @@
         </div>
         <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:9px">${esc(p.titulo)}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS}">
-          ${p.cantidad ? `<span>${esc(p.cantidad)} unidades</span>` : ''}
+          ${p.cantidad ? `<span>${cantidadTexto(p)}</span>` : ''}
           ${p.rubro ? `<span style="background:#F5F7F6;color:#41564C;border-radius:8px;padding:2px 9px;font-weight:600">${esc(p.rubro)}</span>` : ''}
           ${p.provincia ? `<span style="display:inline-flex;align-items:center;gap:3px">${ICO.pin}${esc(p.provincia)}</span>` : ''}
         </div>
@@ -1201,13 +1230,13 @@
         ${enviadas.map(({ cot, sol }) => `
           <div style="background:#fff;border:1px solid ${BORDE};border-radius:14px;padding:14px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">Cotizó ${plata(cot.precio)} por unidad</span>
+              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">Cotizó ${plata(cot.precio)} por ${uSingular(sol)}</span>
               <span style="font-size:.72rem;color:${TENUE};flex-shrink:0">${esc(hace(cot.created_at))}</span>
             </div>
             <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:7px">${esc(sol.titulo)}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS}">
               <span>${esc(sol.comprador_nombre)}</span>
-              ${sol.cantidad ? `<span>· ${esc(sol.cantidad)} unidades</span>` : ''}
+              ${sol.cantidad ? `<span>· ${cantidadTexto(sol)}</span>` : ''}
               ${sol.respuestas > 1 ? `<span>· compite con ${sol.respuestas - 1} ${sol.respuestas - 1 === 1 ? 'proveedor más' : 'proveedores más'}</span>` : ''}
             </div>
           </div>`).join('')}
@@ -1235,6 +1264,30 @@
   const PISTA_RUBRO = 'Es lo que hace que su pedido le llegue a los proveedores de ese rubro.';
   const PISTA_RUBRO_AUTO = 'Lo completamos según lo que escribió. Cámbielo si no corresponde.';
 
+  /* ---------------- TITULO DEMASIADO VAGO ----------------
+     Una sola palabra generica ("textil", "ropa", "perfumes") no es un pedido:
+     el proveedor no sabe que cotizar y no puede preguntar, porque a proposito
+     no ve el contacto del comprador. El pedido se queda sin respuestas y la
+     seccion parece muerta.
+
+     Se AVISA, no se bloquea. Poner un muro mas en el unico formulario que
+     tiene la seccion es la forma mas rapida de quedarse sin pedidos: ya se
+     pierde gente de sobra en el login. */
+  const AVISO_TITULO_VAGO = 'Con una sola palabra el proveedor no sabe qué cotizar. Agregue material, modelo, color o medida.';
+
+  function tituloVago(t) {
+    const limpio = String(t || '').trim().replace(/\s+/g, ' ');
+    if (limpio.length < 3) return false;          // de eso ya se ocupa validarPedido()
+    if (/\d/.test(limpio)) return false;          // "medias 3/4" ya dice algo
+    return limpio.indexOf(' ') === -1;            // una sola palabra
+  }
+
+  function pintarAvisoTitulo() {
+    const el = $('cz-titulo-aviso'), tit = $('cz-titulo');
+    if (!el || !tit) return;
+    el.style.display = tituloVago(tit.value) ? 'block' : 'none';
+  }
+
   /* ---------------- RUBRO SUGERIDO DESDE EL TITULO ----------------
      El rubro y la provincia pasaron a ser obligatorios: sin ellos la tarjeta
      del feed sale con un solo dato y el pedido no le llega a nadie en
@@ -1248,7 +1301,10 @@
 
   window.cotizAutoRubro = function () {
     clearTimeout(temporizadorRubro);
-    temporizadorRubro = setTimeout(aplicarRubroSugerido, 250);
+    temporizadorRubro = setTimeout(function () {
+      aplicarRubroSugerido();
+      pintarAvisoTitulo();
+    }, 250);
   };
 
   function aplicarRubroSugerido() {
@@ -1264,6 +1320,18 @@
     sel.value = r;
     pistaRubro(PISTA_RUBRO_AUTO);
   }
+
+  // El presupuesto se carga POR UNIDAD, asi que si la unidad cambia, ese
+  // campo tiene que cambiar con ella: "$100.000 por unidad" y "$100.000 por
+  // rollo" son dos pedidos distintos, y el campo se completa despues de
+  // elegir la unidad. Se toca solo el texto, nunca lo que la persona escribio.
+  window.cotizUnidadCambio = function () {
+    const u = UNIDAD_SINGULAR[$('cz-unidad')?.value] || 'unidad';
+    const inp = $('cz-presup');
+    if (inp) inp.placeholder = '$ por ' + u;
+    const lbl = document.querySelector('label[for="cz-presup"]');
+    if (lbl) lbl.textContent = `Presupuesto máximo por ${u} (opcional)`;
+  };
 
   window.cotizRubroManual = function () {
     const sel = $('cz-rubro');
@@ -1299,10 +1367,18 @@
     st.prefill = null;   // se usa una sola vez
     const errPend = st.errorPendiente; st.errorPendiente = null;
 
-    // Si el rubro que viene cargado es el mismo que se deduce del titulo, es
-    // que lo pusimos nosotros (viene de una busqueda sin resultados), no la
-    // persona: se avisa, para que lo corrija si no corresponde.
-    const rubroSugerido = !!(pre.rubro && pre.titulo && rubroDeTermino(pre.titulo) === pre.rubro);
+    // Si el rubro lo pusimos nosotros (viene de una busqueda sin resultados),
+    // se avisa, para que lo corrija si no corresponde. `rubroAuto` lo marca
+    // cotizPedirPara(); la comparacion contra el titulo queda para los
+    // borradores guardados antes de que existiera esa marca.
+    const rubroSugerido = !!(pre.rubro && (pre.rubroAuto || (pre.titulo && rubroDeTermino(pre.titulo) === pre.rubro)));
+
+    // Lo que la persona busco NO se copia al titulo: un termino de busqueda
+    // no es un pedido. "textil" entro asi y quedo un pedido que ningun
+    // proveedor puede cotizar. Se muestra como referencia y lo escribe ella.
+    const pistaTitulo = pre.termino
+      ? `Buscó <b>“${esc(pre.termino)}”</b>. Escríbalo completo: qué producto, de qué material o modelo, color y medida.`
+      : 'Cuanto más preciso, mejor le cotizan. “Remeras” no alcanza; “remeras de algodón blancas talle M” sí.';
 
     // Si volvio al formulario, ya no esta "en el medio de publicar": estaba
     // por publicar y se arrepintio, o vino a corregir algo. Se baja la bandera
@@ -1326,13 +1402,17 @@
       <div style="padding:18px 16px 40px">
         ${cabecera}
 
-        ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" oninput="cotizAutoRubro()" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`)}
-        ${campo('Cantidad aproximada (opcional)', `<input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS}">`)}
+        ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" oninput="cotizAutoRubro()" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`, pistaTitulo)}
+        <div id="cz-titulo-aviso" style="${tituloVago(pre.titulo) ? '' : 'display:none;'}background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:9px 12px;font-size:.76rem;line-height:1.45;margin:-10px 0 16px">${AVISO_TITULO_VAGO}</div>
+        ${campo('Cantidad aproximada (opcional)', `<div style="display:flex;gap:8px">
+          <input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS};flex:1;min-width:0">
+          <select id="cz-unidad" aria-label="Unidad de medida" onchange="cotizUnidadCambio()" style="${INPUT_CSS};width:138px;flex-shrink:0">${UNIDADES.map(u => `<option value="${u}"${uPlural(pre) === u ? ' selected' : ''}>${u}</option>`).join('')}</select>
+        </div>`, 'Metros, rollos, pares, kilos... La unidad cambia por completo el precio que le van a pasar.')}
         ${campo('Rubro', `<select id="cz-rubro" onchange="cotizRubroManual()" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${pre.rubro === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`,
       rubroSugerido ? PISTA_RUBRO_AUTO : PISTA_RUBRO)}
         ${campo('¿Dónde lo necesita?', `<select id="cz-prov" style="${INPUT_CSS}"><option value="">Elegir provincia</option>${provs.map(r => `<option value="${esc(r)}"${pre.provincia === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
         ${campo('Detalles (opcional)', `<textarea id="cz-detalles" rows="3" maxlength="600" placeholder="Colores, talles, material, packaging, plazo..." style="${INPUT_CSS};resize:vertical">${esc(pre.detalles || '')}</textarea>`)}
-        ${campo('Presupuesto máximo por unidad (opcional)', `<input id="cz-presup" inputmode="decimal" value="${esc(pre.presupuesto || '')}" placeholder="$ por unidad" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
+        ${campo(`Presupuesto máximo por ${uSingular(pre)} (opcional)`, `<input id="cz-presup" inputmode="decimal" value="${esc(pre.presupuesto || '')}" placeholder="$ por ${uSingular(pre)}" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
 
         <div id="cz-error" style="${errPend ? '' : 'display:none;'}background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px">${errPend ? esc(errPend) : ''}</div>
         ${btnPrimario('Publicar pedido', 'cotizPublicar(this)')}
@@ -1343,9 +1423,15 @@
   // Lo que el usuario escribio, sin nada de identidad: es lo que se guarda
   // como borrador mientras inicia sesion.
   function leerFormulario() {
+    const cantidad = ($('cz-cantidad')?.value || '').trim() || null;
+    const unidad = $('cz-unidad')?.value || '';
     return {
       titulo: ($('cz-titulo')?.value || '').trim(),
-      cantidad: ($('cz-cantidad')?.value || '').trim() || null,
+      cantidad,
+      // Sin cantidad la unidad no dice nada, y lo que llegue del select se
+      // valida contra la lista: la base tiene un CHECK con los mismos valores
+      // y un valor raro haria fallar el insert entero.
+      unidad: cantidad && UNIDADES.indexOf(unidad) >= 0 ? unidad : null,
       rubro: $('cz-rubro')?.value || null,
       provincia: $('cz-prov')?.value || null,
       detalles: ($('cz-detalles')?.value || '').trim() || null,
@@ -1399,6 +1485,7 @@
       comprador_foto: currentUser?.picture || null,
       titulo: datos.titulo,
       cantidad: datos.cantidad || null,
+      unidad: datos.unidad || null,
       rubro: datos.rubro || null,
       provincia: datos.provincia || null,
       detalles: datos.detalles || null,
@@ -1532,7 +1619,7 @@
       <div style="padding:13px 16px;background:#FAFBFA;border-bottom:1px solid ${BORDE}">
         <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;line-height:1.4;margin-bottom:5px">${esc(p.titulo)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS}">
-          ${p.cantidad ? `<span>${esc(p.cantidad)} unidades</span>` : ''}
+          ${p.cantidad ? `<span>${cantidadTexto(p)}</span>` : ''}
           ${p.provincia ? `<span style="display:inline-flex;align-items:center;gap:3px">${ICO.pin}${esc(p.provincia)}</span>` : ''}
           <span>${esc(hace(p.created_at))}</span>
         </div>
@@ -1566,7 +1653,7 @@
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
         <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
-          <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Por unidad</div>
+          <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Por ${uSingular(st.pedidoActual)}</div>
           <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800;color:${VERDE}">${plata(c.precio)}</div>
         </div>
         <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
@@ -1598,7 +1685,7 @@
     const c = st.cotizaciones.find(x => String(x.id) === String(cotId));
     const ped = st.pedidoActual;
     const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. Cotizó mi pedido "${ped?.titulo || ''}"` +
-      (c ? ` a ${plata(c.precio)} por unidad` : '') + '. Quería avanzar.';
+      (c ? ` a ${plata(c.precio)} por ${uSingular(ped)}` : '') + '. Quería avanzar.';
     try { registrarContactoWA(provId, p); } catch (e) { }
     try { abrirWA(p.whatsapp, msg); } catch (e) { toast('WhatsApp no disponible'); }
   };
@@ -1640,15 +1727,15 @@
           <div style="font-size:.78rem;font-weight:700;color:#41564C">${esc(s.comprador_nombre)}</div>
         </div>
         <div style="font-family:'Inter',sans-serif;font-size:.87rem;font-weight:800;color:#1A1A1A;line-height:1.4;margin-bottom:5px">${esc(s.titulo)}</div>
-        <div style="font-size:.75rem;color:${GRIS}">${s.cantidad ? esc(s.cantidad) + ' unidades · ' : ''}${esc(s.provincia || '')}</div>
+        <div style="font-size:.75rem;color:${GRIS}">${s.cantidad ? cantidadTexto(s) + ' · ' : ''}${esc(s.provincia || '')}</div>
         ${s.detalles ? `<div style="font-size:.78rem;color:#41564C;margin-top:8px;line-height:1.5">${esc(s.detalles)}</div>` : ''}
       </div>
 
       <div style="padding:18px 16px 40px">
-        ${campo('Precio por unidad', `<input id="cz-precio" inputmode="decimal" placeholder="$ por unidad" oninput="cotizCalcTotal()" style="${INPUT_CSS};font-size:1.05rem;font-weight:700">`)}
+        ${campo('Precio por ' + uSingular(s), `<input id="cz-precio" inputmode="decimal" placeholder="$ por ${uSingular(s)}" oninput="cotizCalcTotal()" style="${INPUT_CSS};font-size:1.05rem;font-weight:700">`)}
         <div id="cz-total" style="margin-top:-8px;margin-bottom:16px;font-size:.82rem;font-weight:700;color:${VERDE};display:none"></div>
 
-        ${campo('Mínimo de compra (opcional)', `<input id="cz-minimo" maxlength="60" placeholder="ej: 100 unidades" style="${INPUT_CSS}">`)}
+        ${campo('Mínimo de compra (opcional)', `<input id="cz-minimo" maxlength="60" placeholder="ej: 100 ${uPlural(s)}" style="${INPUT_CSS}">`)}
 
         ${campo('Tiempo de entrega', `<div id="cz-entregas" style="display:flex;gap:7px;flex-wrap:wrap">
           ${ENTREGAS.map(e => `<button type="button" data-v="${esc(e)}" onclick="cotizChip(this,'cz-entregas',true)" style="min-height:44px;padding:9px 15px;border-radius:999px;border:1.5px solid #E2E6E4;background:#fff;color:${GRIS};font-size:.79rem;font-weight:500;cursor:pointer;font-family:inherit;transition:all .18s ease-out">${esc(e)}</button>`).join('')}
@@ -1696,7 +1783,7 @@
     const cant = Number((s.cantidad || '').replace(/[^0-9]/g, ''));
     const precio = parsearMonto($('cz-precio')?.value);
     if (cant && precio) {
-      el.textContent = 'Total por ' + cant + ' unidades: ' + plata(cant * precio);
+      el.textContent = 'Total por ' + cant + ' ' + uPlural(s) + ': ' + plata(cant * precio);
       el.style.display = 'block';
     } else el.style.display = 'none';
   };
@@ -1708,7 +1795,7 @@
     if (!s) return;
 
     const precio = parsearMonto($('cz-precio')?.value);
-    if (!precio) return mostrarErr('Ponga un precio por unidad válido.');
+    if (!precio) return mostrarErr(`Ponga un precio por ${uSingular(s)} válido.`);
     if (!currentUser?.proveedorId) return mostrarErr('Su cuenta de proveedor todavía no está aprobada.');
     if (err) err.style.display = 'none';
 
@@ -1825,7 +1912,11 @@
   // el carril sirve para algo.
   window.cotizPedirPara = async function (termino, origen) {
     const boca = origen === 'carril' ? 'carril' : 'busqueda';
-    st.prefill = { titulo: String(termino || '').trim(), rubro: rubroDeTermino(termino) };
+    // El termino NO va al titulo: va como referencia arriba del campo. Una
+    // busqueda ("textil") no es un pedido, y publicada tal cual deja un pedido
+    // que nadie puede cotizar. El rubro si se deduce y se marca como puesto
+    // por nosotros, para que se pueda corregir.
+    st.prefill = { termino: String(termino || '').trim(), rubro: rubroDeTermino(termino), rubroAuto: true };
     try { if (typeof trackEvent === 'function') trackEvent('rfq_desde_busqueda', { termino: String(termino || ''), origen: boca }); } catch (e) { }
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
