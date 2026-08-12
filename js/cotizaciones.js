@@ -59,7 +59,8 @@
     rubro: 'Todos',
     cargando: false,
     prefill: null,        // pedido pre-cargado desde una busqueda sin resultados
-    errorPendiente: null  // error a mostrar al volver al formulario
+    errorPendiente: null, // error a mostrar al volver al formulario
+    demanda: null         // carril "buscado sin respuesta"; null = todavia no se pidio
   };
 
   /* ---------------- utilidades ---------------- */
@@ -197,7 +198,8 @@
     ok: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
     wa: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12 2a10 10 0 0 0-8.6 15.08L2 22l5.05-1.32A10 10 0 1 0 12 2zm0 18.2a8.17 8.17 0 0 1-4.17-1.14l-.3-.18-3 .78.8-2.92-.2-.31A8.2 8.2 0 1 1 12 20.2z"/></svg>`,
     vacio: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#B7C4BD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
-    flecha: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="9 7 17 7 17 15"/></svg>`
+    flecha: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="9 7 17 7 17 15"/></svg>`,
+    lupa: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
   };
 
   // Boton principal: reusa .nv-cta-full / .nv-redondel, que css/styles.css define
@@ -473,6 +475,40 @@
     }
     #screen-cotizaciones .cz-pulso-link svg{width:13px;height:13px}
 
+    /* ---- CARRIL "BUSCADO SIN RESPUESTA" ----
+       Va en naranja y no en verde: el verde es lo que la plataforma YA
+       resuelve (pedidos, cotizaciones) y esto es justamente el agujero, la
+       oportunidad. Que se distinga de un vistazo del resto del feed. */
+    #screen-cotizaciones .cz-demanda{padding:16px 15px 15px}
+    #screen-cotizaciones .cz-dem-ojo{
+      display:inline-flex;align-items:center;gap:7px;
+      font-family:var(--cz-mono) !important;font-size:.62rem;font-weight:700;
+      letter-spacing:.14em;text-transform:uppercase;color:#B24500;
+    }
+    #screen-cotizaciones .cz-dem-ojo svg{width:13px;height:13px;flex-shrink:0}
+    #screen-cotizaciones .cz-dem-tit{
+      margin:10px 0 5px;font-size:.98rem;font-weight:800;color:#1A1A1A;
+      line-height:1.3;letter-spacing:-.015em;text-wrap:balance;
+    }
+    #screen-cotizaciones .cz-dem-baj{margin:0 0 14px;font-size:.79rem;line-height:1.5;color:${GRIS}}
+    #screen-cotizaciones .cz-dem-chips{display:flex;gap:8px;flex-wrap:wrap}
+    #screen-cotizaciones .cz-dem-chip{
+      display:inline-flex;align-items:center;gap:7px;min-height:40px;
+      padding:8px 12px;border-radius:11px;font-family:inherit;
+      font-size:.83rem;font-weight:700;color:#1A1A1A;text-align:left;
+      background:#FFF8F3;border:1.5px solid #FFD9BC;
+      transition:transform 200ms cubic-bezier(.23,1,.32,1),border-color 200ms ease-out;
+    }
+    #screen-cotizaciones button.cz-dem-chip{cursor:pointer}
+    #screen-cotizaciones button.cz-dem-chip:active{transform:scale(.96)}
+    #screen-cotizaciones .cz-dem-n{
+      flex-shrink:0;font-size:.7rem;font-weight:700;color:#B24500;background:#FFEBDC;
+      border-radius:6px;padding:2px 7px;font-variant-numeric:tabular-nums;
+    }
+    #screen-cotizaciones .cz-dem-pie{
+      margin:13px 0 0;font-size:.72rem;line-height:1.45;color:${TENUE};
+    }
+
     /* ---- TARJETA DEL FEED ----
        Un pedido cargado solo con titulo salia como dos renglones sueltos y
        nada mas. Ahora el piso minimo de toda tarjeta es: quien pide, que
@@ -528,6 +564,7 @@
       #screen-cotizaciones .cz-fab:hover{transform:translateY(-2px) scale(1.04)}
       #screen-cotizaciones .cz-bandeja:hover{transform:translateY(-2px)}
       #screen-cotizaciones .cz-pulso-link:hover{background:rgba(255,255,255,.17)}
+      #screen-cotizaciones button.cz-dem-chip:hover{transform:translateY(-2px);border-color:#F3A268}
     }
   </style>`;
 
@@ -624,6 +661,27 @@
       const { data: mias } = await sb.from('cotizaciones').select('solicitud_id,precio,created_at')
         .eq('proveedor_id', provId);
       (mias || []).forEach(c => { st.misCotiz[c.solicitud_id] = c; });
+    }
+  }
+
+  /* Carril "buscado sin respuesta".
+     Los terminos salen ya filtrados y agregados por la base (minimo 5
+     busquedas en 3 dias distintos, sin lugares, marcas ni genericos): la
+     pantalla no decide nada, solo pinta.
+
+     Se pide una sola vez por sesion. Cambia lento y el feed se recarga en
+     cada ida y vuelta; volver a pedirlo cada vez seria puro desperdicio.
+     Ante un error se deja [] y no se reintenta: el carril simplemente no
+     aparece y la pantalla queda como estaba. */
+  async function cargarDemanda() {
+    if (st.demanda !== null) return;
+    try {
+      const { data, error } = await sb.rpc('cotiz_demanda_sin_respuesta', { p_limit: 10 });
+      if (error) throw error;
+      st.demanda = (data || []).filter(d => d && d.termino);
+    } catch (e) {
+      console.warn('[cotiz] demanda', e);
+      st.demanda = [];
     }
   }
 
@@ -875,6 +933,56 @@
     </div>`;
   }
 
+  /* Carril "buscado sin respuesta".
+
+     Lo que se muestra son BUSQUEDAS, y la pantalla lo dice con todas las
+     letras. No son pedidos: inventar pedidos de cotizacion para que el feed
+     parezca vivo seria mentirle al proveedor, que es el que despues pone
+     precio. Por eso el titulo habla de busquedas y el numero dice "veces".
+
+     Para el proveedor cambia el sentido y la accion: no es algo que pueda
+     pedir, es un agujero de catalogo que puede llenar. Ahi los chips no son
+     botones, porque no habria a donde mandarlo. */
+  function carrilDemanda() {
+    const lista = (st.demanda || []).slice(0, 10);
+    if (!lista.length) return '';
+    const prov = esProveedor();
+    const total = lista.reduce((a, d) => a + (Number(d.busquedas) || 0), 0);
+
+    const chip = d => {
+      // Se sacan los caracteres de control antes de nada: un salto de linea
+      // adentro de un string de JavaScript rompe el atributo onclick. La base
+      // ya no los deja pasar, pero la pantalla no se apoya en eso.
+      // Se filtra por codigo y no con una clase de regex para no meter
+      // caracteres de control literales en el fuente de este archivo.
+      const t = [...String(d.termino || '')].filter(c => c.charCodeAt(0) > 31 && c.charCodeAt(0) !== 127).join('').trim();
+      const n = Number(d.busquedas) || 0;
+      if (!t) return '';
+      const dentro = `${esc(t)}<span class="cz-dem-n">${n}</span>`;
+      if (prov) return `<span class="cz-dem-chip">${dentro}</span>`;
+      // El termino sale de la base ya acotado a letras, numeros y espacios,
+      // pero igual se escapa dos veces: primero para JavaScript y despues
+      // para HTML, porque termina adentro de un atributo onclick.
+      const paraJs = esc(t.replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+      return `<button type="button" class="cz-dem-chip" onclick="cotizPedirPara('${paraJs}','carril')"
+        aria-label="Pedir cotización de ${esc(t)}, buscado ${n} veces sin resultado">${dentro}</button>`;
+    };
+
+    return `<div class="cz-ancho" style="padding:12px 16px 0">
+      <div class="cz-bandeja"><div class="cz-nucleo cz-demanda">
+        <span class="cz-dem-ojo">${ICO.lupa} Buscado sin respuesta</span>
+        <h3 class="cz-dem-tit">${prov
+        ? 'Esto lo buscan y nadie lo ofrece'
+        : 'Esto lo buscan y no lo encuentran'}</h3>
+        <p class="cz-dem-baj">${prov
+        ? `Búsquedas reales del último mes que no devolvieron ningún resultado. Si vende alguno de estos, cárguelo en su catálogo: la demanda ya está.`
+        : `Búsquedas reales del último mes que no devolvieron ningún resultado. Si necesita alguno, pídalo y los proveedores le cotizan.`}</p>
+        <div class="cz-dem-chips">${lista.map(chip).join('')}</div>
+        <p class="cz-dem-pie">${total.toLocaleString('es-AR')} búsquedas se fueron con las manos vacías.</p>
+      </div></div>
+    </div>`;
+  }
+
   function pantallaFeed() {
     const lista = st.rubro === 'Todos' ? st.feed : st.feed.filter(s => s.rubro === st.rubro);
 
@@ -927,6 +1035,7 @@
     // de vacio, que ya dice lo mismo y mejor. En ese caso no se pinta.
     return header('Cotizaciones', null, accion) + `
       ${st.feed.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
+      ${carrilDemanda()}
       ${chipsRubro()}
       ${cuerpo}
       ${cierre}
@@ -1639,7 +1748,9 @@
   async function cargarDatos() {
     try {
       await getUid();
-      await (esProveedor() ? cargarFeed() : Promise.all([cargarFeed(), cargarMisPedidos()]));
+      await (esProveedor()
+        ? Promise.all([cargarFeed(), cargarDemanda()])
+        : Promise.all([cargarFeed(), cargarMisPedidos(), cargarDemanda()]));
     } catch (e) { console.warn('[cotiz] cargarDatos', e); }
   }
 
@@ -1696,12 +1807,17 @@
   };
 
   // Abre el formulario ya cargado con lo que la persona busco.
-  window.cotizPedirPara = async function (termino) {
+  // `origen` separa las dos bocas de entrada: el bloque que aparece cuando una
+  // busqueda no da resultados ('busqueda') y el carril del feed ('carril').
+  // Sin esto las dos caian en la misma metrica y no habria forma de saber si
+  // el carril sirve para algo.
+  window.cotizPedirPara = async function (termino, origen) {
+    const boca = origen === 'carril' ? 'carril' : 'busqueda';
     st.prefill = { titulo: String(termino || '').trim(), rubro: rubroDeTermino(termino) };
-    try { if (typeof trackEvent === 'function') trackEvent('rfq_desde_busqueda', { termino: String(termino || '') }); } catch (e) { }
+    try { if (typeof trackEvent === 'function') trackEvent('rfq_desde_busqueda', { termino: String(termino || ''), origen: boca }); } catch (e) { }
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
-    try { if (typeof trackEvent === 'function') trackEvent('rfq_form_abierto', { origen: 'busqueda' }); } catch (e) { }
+    try { if (typeof trackEvent === 'function') trackEvent('rfq_form_abierto', { origen: boca }); } catch (e) { }
     // Con o sin sesion, va derecho al formulario: es el que buscaba algo y no
     // lo encontro, ya sabe lo que quiere. Pedirle cuenta aca era donde se caia.
     if (currentUser) await getUid();
