@@ -1586,9 +1586,120 @@
   try {
     sb.auth.onAuthStateChange((evento, sesion) => {
       if (!sesion) return;
-      if (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION') intentarPublicarBorrador();
+      if (evento === 'SIGNED_IN' || evento === 'INITIAL_SESSION') {
+        intentarPublicarBorrador();
+        // Se cuelga del mismo evento para no tocar app.js: el modulo se entera
+        // solo de que hay sesion y decide si tiene algo para avisar.
+        esperarUsuario(8000).then(ok => { if (ok) avisarCotizacionesNuevas(); });
+      }
     });
   } catch (e) { console.warn('[cotiz] onAuthStateChange', e); }
+
+  /* ---------------- AVISO: "LE COTIZARON" ----------------
+     Espejo del cartel de intencion de catalogo que ya ve el proveedor al
+     entrar (app.js, mostrarAvisoIntencion): mismo lugar, misma cadencia de
+     una vez por dia, misma espera de 5 segundos para no tapar la pantalla
+     apenas abre.
+
+     Sin columnas nuevas: lo que se vio se recuerda en localStorage, igual que
+     eg_avisoint_ / eg_consulta_ / eg_intentocat_. Se compara el contador
+     denormalizado solicitudes.respuestas contra el ultimo valor visto. La
+     contra es que es por dispositivo: si entra desde otro telefono lo vuelve
+     a ver una vez. Es el mismo trato que ya hacen los otros avisos.
+
+     Solo para compradores: al proveedor le puede estar por saltar el cartel
+     de catalogo en la misma carga y dos modales encimados es peor que nada. */
+
+  const VISTAS = id => 'eg_cotvistas_' + id;
+  const AVISO_DIA = 'eg_cotaviso_dia';
+
+  function vistasDe(id) {
+    try { return parseInt(localStorage.getItem(VISTAS(id)) || '0', 10) || 0; } catch (e) { return 0; }
+  }
+
+  function marcarVistas(id, n) {
+    try { localStorage.setItem(VISTAS(id), String(n || 0)); } catch (e) { }
+  }
+
+  async function avisarCotizacionesNuevas() {
+    try {
+      if (!currentUser || esProveedor()) return;
+      const hoy = new Date().toISOString().slice(0, 10);
+      let yaHoy = false;
+      try { yaHoy = localStorage.getItem(AVISO_DIA) === hoy; } catch (e) { }
+      if (yaHoy) return;
+
+      const uid = await getUid();
+      if (!uid) return;
+
+      const { data, error } = await sb.from('solicitudes')
+        .select('id,titulo,respuestas,estado,cierra_at')
+        .eq('usuario_id', uid).gt('respuestas', 0)
+        .order('created_at', { ascending: false }).limit(20);
+      if (error || !data || !data.length) return;
+
+      let nuevas = 0, pedidos = 0, ultimo = null;
+      data.forEach(p => {
+        const d = (p.respuestas || 0) - vistasDe(p.id);
+        if (d > 0) { nuevas += d; pedidos++; ultimo = p; }
+      });
+      if (nuevas <= 0) return;
+
+      try { localStorage.setItem(AVISO_DIA, hoy); } catch (e) { }
+      setTimeout(() => pintarAvisoCotiz(nuevas, pedidos, ultimo), 5000);
+    } catch (e) { console.warn('[cotiz] aviso', e); }
+  }
+
+  function pintarAvisoCotiz(nuevas, pedidos, ultimo) {
+    if (document.getElementById('modal-aviso-cotiz')) return;
+    // Si el proveedor ya tiene abierto su propio cartel, no encimar otro.
+    if (document.getElementById('modal-aviso-intencion')) return;
+
+    let quieto = false;
+    try { quieto = window.matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { }
+
+    const titulo = nuevas === 1 ? 'cotización nueva' : 'cotizaciones nuevas';
+    const detalle = pedidos === 1 && ultimo
+      ? `En su pedido “${esc(ultimo.titulo)}”. Compare precio, mínimo y entrega, y contacte al que le sirva.`
+      : `En ${pedidos} de sus pedidos. Compare precio, mínimo y entrega, y contacte al que le sirva.`;
+    // Con un solo pedido se entra derecho a sus cotizaciones; con varios, a la lista.
+    const accion = pedidos === 1 && ultimo
+      ? `cerrarAvisoCotiz();abrirCotizaciones().then(function(){cotizVerRespuestas('${esc(String(ultimo.id))}')})`
+      : `cerrarAvisoCotiz();abrirCotizaciones().then(function(){cotizIr('mis')})`;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'modal-aviso-cotiz';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s ease';
+    overlay.innerHTML = `<div class="cz-aviso-card" role="dialog" aria-modal="true" aria-labelledby="cz-aviso-tit"
+        style="background:#fff;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative;transform:scale(.94);opacity:0;transition:transform .32s cubic-bezier(.2,.8,.25,1),opacity .3s ease">
+      <button onclick="cerrarAvisoCotiz()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
+      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">Le cotizaron</div>
+      <div id="cz-aviso-tit" style="display:flex;align-items:baseline;gap:9px;margin-bottom:6px">
+        <span style="font-size:2.6rem;font-weight:900;color:${VERDE};line-height:1;font-variant-numeric:tabular-nums">${nuevas}</span>
+        <span style="font-size:.92rem;font-weight:800;color:#1A1A1A;line-height:1.2">${titulo}</span>
+      </div>
+      <div style="font-size:.82rem;color:#777;line-height:1.5;margin-bottom:18px">${detalle}</div>
+      <button onclick="${accion}" style="width:100%;background:${VERDE};color:#fff;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">Ver las cotizaciones</button>
+      <button onclick="cerrarAvisoCotiz()" style="width:100%;background:none;border:none;color:#999;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px">Ver más tarde</button>
+    </div>`;
+    overlay.onclick = e => { if (e.target === overlay) cerrarAvisoCotiz(); };
+    document.body.appendChild(overlay);
+
+    const card = overlay.querySelector('.cz-aviso-card');
+    if (quieto) { overlay.style.opacity = '1'; if (card) { card.style.transform = 'none'; card.style.opacity = '1'; } }
+    else requestAnimationFrame(() => {
+      overlay.style.opacity = '1';
+      if (card) { card.style.transform = 'scale(1)'; card.style.opacity = '1'; }
+    });
+
+    try { if (typeof trackEvent === 'function') trackEvent('rfq_aviso_visto', { cotizaciones: nuevas }); } catch (e) { }
+    vibrar('light');
+  }
+
+  window.cerrarAvisoCotiz = function () {
+    const el = document.getElementById('modal-aviso-cotiz');
+    if (el) el.remove();
+  };
 
   /* ---------------- vista RESPUESTAS (comprador ve sus cotizaciones) ---------------- */
 
@@ -1600,6 +1711,11 @@
     st.pedidoActual = p;
     st.cargando = true; render();
     await cargarCotizaciones(p.id);
+    // Recien aca se dan por vistas: entrar a "Mis pedidos" y ver el contador no
+    // es lo mismo que haber mirado las cotizaciones. Se guarda el largo real de
+    // la lista y no p.respuestas, que es el contador denormalizado y podria ir
+    // adelantado si una cotizacion fue borrada.
+    marcarVistas(p.id, Math.max(st.cotizaciones.length, p.respuestas || 0));
     st.cargando = false; st.vista = 'respuestas'; render();
   };
 
