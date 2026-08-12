@@ -880,18 +880,19 @@ function setDashDate(){
 async function cargarDashboard(){
   try {
     const [
-      {data:provs}, {data:users}, {data:busqs}, {data:reportes},
+      {data:provs}, {data:users}, {count:totalBusqs}, {data:reportes},
       {count:totalProductos}, {count:totalMensajes},
-      {data:ultProvs}, {data:ultUsers}
+      {data:ultProvs}, {data:ultUsers}, busqs
     ] = await Promise.all([
       sb.from('proveedores').select('id,plan,estado,rubro,provincia,nombre,created_at').order('created_at',{ascending:false}),
       sb.from('usuarios').select('id,nombre,email,created_at').order('created_at',{ascending:false}),
-      sb.from('busquedas').select('termino'),
+      sb.from('busquedas').select('*', {count:'exact',head:true}),
       sb.from('reportes').select('id,estado'),
       sb.from('productos').select('*', {count:'exact',head:true}),
       sb.from('mensajes').select('*', {count:'exact',head:true}),
       sb.from('proveedores').select('nombre,created_at').order('created_at',{ascending:false}).limit(5),
-      sb.from('usuarios').select('nombre,email,created_at').order('created_at',{ascending:false}).limit(5)
+      sb.from('usuarios').select('nombre,email,created_at').order('created_at',{ascending:false}).limit(5),
+      traerTodasLasBusquedas()
     ]);
 
     const activos = provs?.filter(p=>p.estado==='aprobado').length || 0;
@@ -899,7 +900,6 @@ async function cargarDashboard(){
     const totalPend = provs?.filter(p=>p.estado==='pendiente').length || 0;
     const proPlan = provs?.filter(p=>p.plan==='pro').length || 0;
     const gratisActivos = provs?.filter(p=>p.estado==='aprobado'&&p.plan!=='pro').length || 0;
-    const totalBusqs = busqs?.length || 0;
     const reportesSinResolver = reportes?.filter(r=>r.estado!=='resuelto').length || 0;
 
     // Métricas
@@ -909,7 +909,7 @@ async function cargarDashboard(){
     document.getElementById('metric-pro').textContent = proPlan;
     document.getElementById('metric-productos').textContent = (totalProductos || 0).toLocaleString('es-AR');
     document.getElementById('metric-mensajes').textContent = (totalMensajes || 0).toLocaleString('es-AR');
-    document.getElementById('metric-busquedas').textContent = totalBusqs.toLocaleString('es-AR');
+    document.getElementById('metric-busquedas').textContent = (totalBusqs || 0).toLocaleString('es-AR');
     document.getElementById('metric-reportes').textContent = reportesSinResolver;
     document.getElementById('trend-pendientes').textContent = totalPend > 0 ? 'Requiere atención' : 'Todo al día ✓';
     const trendRep = document.getElementById('trend-reportes');
@@ -1510,9 +1510,28 @@ async function cargarPlanes(){
 }
 
 // ===== BÚSQUEDAS =====
+// La API de Supabase corta en 1000 filas sin avisar: hay que paginar con .range()
+// o el panel se queda mostrando siempre las búsquedas más viejas.
+let _busqCache = null;
+async function traerTodasLasBusquedas(){
+  if (_busqCache) return _busqCache;
+  const PAGE = 1000, todas = [];
+  for (let desde = 0; ; desde += PAGE){
+    const {data, error} = await sb.from('busquedas')
+      .select('termino,resultados')
+      .order('created_at',{ascending:false})
+      .range(desde, desde + PAGE - 1);
+    if (error || !data || !data.length) break;
+    todas.push(...data);
+    if (data.length < PAGE) break;
+  }
+  _busqCache = todas;
+  return todas;
+}
+
 async function cargarBusquedas(){
   try {
-    const {data} = await sb.from('busquedas').select('termino,resultados');
+    const data = await traerTodasLasBusquedas();
     // Solo búsquedas REALES del buscador (tienen la columna 'resultados' cargada).
     // Las filas históricas de nombres de proveedor (resultados nulo) quedan afuera.
     const reales = (data||[]).filter(b=> b.termino && b.resultados !== null && b.resultados !== undefined);
