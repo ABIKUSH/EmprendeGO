@@ -11,6 +11,10 @@ export default async function handler(req, res) {
   // No comparte nada con el flujo de abajo salvo el cliente de Resend.
   if (req.query?.action === 'anuncio') return handlerAnuncio(req, res);
 
+  // Rama de "le cotizaron su pedido" (?action=cotizacion). Va aca por el mismo
+  // motivo que la de arriba: no entra un archivo mas en api/.
+  if (req.query?.action === 'cotizacion') return handlerCotizacion(req, res);
+
   // Endpoint público que dispara emails: limitar para evitar spam masivo.
   if (!applyRateLimit(req, res, { bucket: 'notificar', limit: 10, windowMs: 60000 })) return;
 
@@ -111,6 +115,160 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('[notificar-mensaje] error inesperado:', err.message);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+}
+
+
+/* =====================================================================
+   "LE COTIZARON SU PEDIDO"  (?action=cotizacion)
+   =====================================================================
+
+   POST /api/notificar-mensaje?action=cotizacion
+     body: { solicitud_id: "<uuid>" }
+
+   Lo dispara el frontend despues de que un proveedor manda una cotizacion.
+   El comprador publica su pedido, se va, y sin esto no se entera nunca:
+   no importa cuantas cotizaciones lleguen si nadie vuelve a mirarlas.
+
+   El contenido NO viaja en el request: lo arma el backend con lo que hay
+   en la base. Asi el endpoint no sirve para mandar texto arbitrario.
+
+   Tres frenos, porque el solicitud_id lo elige quien llama:
+
+     1. Solo se manda si REALMENTE entro una cotizacion en los ultimos 3
+        minutos. Sin esto, alguien podria pedir mails en loop para pedidos
+        ajenos con solo tener el id.
+     2. Enfriamiento de 15 minutos por comprador, igual que el de
+        proveedores: si le cotizan cinco veces seguidas, recibe un mail.
+     3. Limite de tasa por IP, como el resto del endpoint.
+
+   La baja se respeta por email contra email_optouts, que es la misma tabla
+   que usa el "Cancelar suscripcion" de los anuncios.
+   ===================================================================== */
+
+async function handlerCotizacion(req, res) {
+  if (!applyRateLimit(req, res, { bucket: 'cotiz-notif', limit: 20, windowMs: 60000 })) return;
+
+  const { solicitud_id } = req.body || {};
+  if (!esUUID(solicitud_id)) return res.status(400).json({ error: 'missing fields' });
+
+  // El service-role es obligatorio: solicitudes.usuario_email esta revocado de
+  // la API a proposito (es PII) y email_optouts no tiene policy de lectura.
+  const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!apiKey || !SUPABASE_BASE) {
+    console.error('[notificar-cotiz] falta SUPABASE_SERVICE_ROLE_KEY o SUPABASE_URL');
+    return res.status(500).json({ error: 'server config error' });
+  }
+  const headers = { apikey: apiKey, Authorization: `Bearer ${apiKey}` };
+  // Todo lo que no corresponde mandar sale con 200: no es un error del que
+  // llama, y devolver 4xx solo llenaria la consola del navegador.
+  const saltear = motivo => res.status(200).json({ ok: true, skipped: motivo });
+
+  try {
+    const solRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/solicitudes?id=eq.${encodeURIComponent(solicitud_id)}` +
+      `&select=usuario_id,usuario_email,titulo,respuestas`, { headers });
+    const sol = (await solRes.json())?.[0];
+    if (!sol) return res.status(404).json({ error: 'not found' });
+    if (!sol.usuario_email) return saltear('sin_email');
+
+    // Freno 1: que haya una cotizacion de verdad, y recien.
+    const desde = new Date(Date.now() - 3 * 60000).toISOString();
+    const cotRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/cotizaciones?solicitud_id=eq.${encodeURIComponent(solicitud_id)}` +
+      `&created_at=gte.${encodeURIComponent(desde)}&select=id&limit=1`, { headers });
+    if (!(await cotRes.json())?.[0]) return saltear('sin_cotizacion_reciente');
+
+    // Baja: guardada por email para que sobreviva a borrar y recrear la cuenta.
+    const outRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/email_optouts?email=eq.${encodeURIComponent(sol.usuario_email)}` +
+      `&select=email&limit=1`, { headers });
+    if ((await outRes.json())?.[0]) return saltear('dado_de_baja');
+
+    // Freno 2: enfriamiento por comprador.
+    if (sol.usuario_id) {
+      const uRes = await fetch(
+        `${SUPABASE_BASE}/rest/v1/usuarios?id=eq.${encodeURIComponent(sol.usuario_id)}` +
+        `&select=last_notified_at`, { headers });
+      const usuario = (await uRes.json())?.[0];
+      if (usuario?.last_notified_at) {
+        const minutos = (Date.now() - new Date(usuario.last_notified_at).getTime()) / 60000;
+        if (minutos < 15) return saltear('cooldown');
+      }
+    }
+
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey) {
+      console.error('[notificar-cotiz] RESEND_API_KEY no configurado');
+      return res.status(200).json({ ok: false, error: 'no_resend_key' });
+    }
+
+    const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
+    const unsubUrl = sol.usuario_id
+      ? `${appUrl}/api/unsub?u=${encodeURIComponent(sol.usuario_id)}&c=cotizaciones`
+      : appUrl;
+    // El titulo lo escribio el comprador: se escapa antes de meterlo en el HTML.
+    const tituloSafe = escHtml(String(sol.titulo || 'su pedido').slice(0, 120));
+    const n = Number(sol.respuestas) || 1;
+    const cuantas = n === 1 ? 'una cotización' : `${n} cotizaciones`;
+    const VERDE = '#006039';
+
+    const emailRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: 'EmprendeGO <notificaciones@emprendego.com.ar>',
+        to: [sol.usuario_email],
+        subject: `Le cotizaron “${String(sol.titulo || 'su pedido').slice(0, 60)}”`,
+        // Gmail muestra el boton nativo de baja con estas dos cabeceras, y
+        // api/unsub ya acepta el POST de un solo clic que exige la segunda.
+        headers: {
+          'List-Unsubscribe': `<${unsubUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+        },
+        html: `
+          <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f4f5f3;">
+            <div style="background:#fff;border-radius:14px;padding:30px 28px;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;color:${VERDE};margin-bottom:20px;">EmprendeGO</div>
+              <h2 style="margin:0 0 10px;font-size:19px;color:#2c3330;">Ya tiene ${cuantas}</h2>
+              <p style="margin:0 0 8px;font-size:14.5px;line-height:1.6;color:#5c6661;">
+                Su pedido <strong style="color:#2c3330;">${tituloSafe}</strong> recibió respuesta de proveedores mayoristas.
+              </p>
+              <p style="margin:0 0 24px;font-size:14.5px;line-height:1.6;color:#5c6661;">
+                Entre a comparar precio, mínimo de compra y tiempo de entrega, y contacte al que le sirva.
+              </p>
+              <a href="${appUrl}" style="display:inline-block;background:${VERDE};color:#fff;padding:13px 26px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14.5px;">
+                Ver las cotizaciones
+              </a>
+            </div>
+            <p style="margin-top:20px;font-size:12px;color:#9aa5a0;text-align:center;line-height:1.5;">
+              Recibe este correo porque publicó un pedido de cotización en EmprendeGO.<br>
+              <a href="${unsubUrl}" style="color:#9aa5a0;">Dejar de recibir estos avisos</a>
+            </p>
+          </div>`
+      })
+    });
+
+    if (!emailRes.ok) {
+      const err = await emailRes.json().catch(() => ({}));
+      console.error('[notificar-cotiz] Resend error:', JSON.stringify(err));
+      return res.status(200).json({ ok: false, error: 'email_send_failed' });
+    }
+
+    if (sol.usuario_id) {
+      await fetch(`${SUPABASE_BASE}/rest/v1/usuarios?id=eq.${encodeURIComponent(sol.usuario_id)}`, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ last_notified_at: new Date().toISOString() })
+      });
+    }
+
+    console.log(`[notificar-cotiz] email enviado por la solicitud ${solicitud_id}`);
+    return res.status(200).json({ ok: true });
+
+  } catch (err) {
+    console.error('[notificar-cotiz] error inesperado:', err.message);
     return res.status(200).json({ ok: false, error: err.message });
   }
 }

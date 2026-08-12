@@ -1932,6 +1932,18 @@
       vibrar('success');
       toast('Cotización enviada');
       try { if (typeof trackEvent === 'function') trackEvent('rfq_cotizado', { rubro: s.rubro || '' }); } catch (e) { }
+
+      // Avisarle por mail al comprador. Se dispara y se sigue de largo: si el
+      // mail falla, la cotizacion ya esta guardada y no hay nada que deshacer.
+      // El backend decide si corresponde mandarlo (baja, enfriamiento, y que
+      // la cotizacion exista de verdad); desde aca solo se pasa el id.
+      try {
+        fetch('/api/notificar-mensaje?action=cotizacion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ solicitud_id: s.id })
+        }).catch(() => { });
+      } catch (e) { }
       await cargarFeed();
       st.vista = 'feed';
       render();
