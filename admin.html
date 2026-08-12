@@ -132,6 +132,18 @@ tr:hover td{background:#fafbff}
 .tbl-btn.view{background:var(--blue-light);color:var(--blue)}
 .tbl-btn.warn{background:#fff3e0;color:var(--orange)}
 .tbl-btn.ban{background:#fee2e2;color:var(--red)}
+/* Botón de anuncio por mail — sección Usuarios. Clases propias para no
+   alterar el aspecto de ningún botón que ya estaba en el panel. */
+.tbl-btn.mail{background:#e6faf4;color:#00a274}
+.tbl-btn.mail-hecho{background:#f1f5f9;color:#64748b;cursor:default}
+.tbl-btn.mail-baja{background:#f8fafc;color:#94a3b8;cursor:default}
+.tbl-btn.mail-load{background:#f1f5f9;color:#64748b;cursor:progress}
+.tbl-btn.mail-error{background:#fee2e2;color:var(--red)}
+.mail-spin{display:inline-block;width:10px;height:10px;border:2px solid #cbd5e1;border-top-color:#64748b;border-radius:50%;animation:mailspin .6s linear infinite;vertical-align:-1px}
+@keyframes mailspin{to{transform:rotate(360deg)}}
+.contador-anuncio{display:inline-flex;align-items:center;gap:6px;background:#e6faf4;color:#00a274;font-size:.72rem;font-weight:700;padding:6px 12px;border-radius:20px;white-space:nowrap}
+.contador-anuncio.medio{background:#fff3e0;color:var(--orange)}
+.contador-anuncio.tope{background:#fee2e2;color:var(--red)}
 .avatar-cell{display:flex;align-items:center;gap:8px}
 .cell-avatar{width:30px;height:30px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:.75rem;color:var(--blue);flex-shrink:0}
 .cell-avatar-img{width:30px;height:30px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#fff;border:1px solid #eef}
@@ -396,6 +408,9 @@ tr:hover td{background:#fafbff}
           <div class="table-header">
             <div class="table-title">Todos los usuarios <span id="badge-usuarios" style="color:var(--gray);font-weight:400;font-size:.85rem"></span></div>
             <div class="table-actions">
+              <!-- Contador de envíos del anuncio por mail. Oculto hasta que
+                   cargarUsuarios() confirma que las tablas de email existen. -->
+              <span class="contador-anuncio" id="contador-anuncio" style="display:none" title="Anuncio de Cotizaciones enviado hoy"></span>
               <input class="search-mini" placeholder="Buscar usuario..." oninput="filterTable(this,'user-table')">
               <select class="filter-select">
                 <option>Todos</option>
@@ -1122,15 +1137,182 @@ async function cargarTodosProveedores(){
   } catch(e){ console.log('proveedores error',e); }
 }
 
+/* =====================================================================
+   ANUNCIO POR MAIL — envío individual desde la tabla de Usuarios.
+
+   Manda UN mail a UN usuario por clic, siempre con confirmación previa.
+   No hay envío masivo ni bucles automáticos en ningún lado.
+
+   Lo de acá es la capa visual. La barrera real está en el backend
+   (/api/notificar-mensaje?action=anuncio), que revalida sesión de admin,
+   duplicados y tope diario antes de mandar nada: si alguien manipulara
+   este JS, no lograría un envío que el servidor no permita.
+
+   Si las tablas email_logs / email_optouts no existen o la RLS las niega,
+   anuncioDisponible queda en false y NO se pinta ningún botón: la tabla
+   de usuarios sigue funcionando exactamente como antes.
+   ===================================================================== */
+
+const ANUNCIO_CAMPANA = 'anuncio_cotizaciones';  // debe coincidir con api/notificar-mensaje.js
+const ANUNCIO_LIMITE_DIARIO = 60;                // idem
+const ANUNCIO_NOMBRE = 'Cotizaciones';
+
+let anuncioLogs = new Map();      // usuario_id -> fila de email_logs
+let anuncioBajas = new Set();     // emails (minúscula) dados de baja
+let anuncioDisponible = false;
+let anuncioEnviadosHoy = 0;
+
+// Argentina no aplica horario de verano: siempre UTC-3. El corte de "hoy"
+// tiene que ser la medianoche de acá; con la de UTC, los envíos hechos
+// entre las 21:00 y las 24:00 contarían para el día siguiente.
+function anuncioInicioDiaAR(){
+  const ar = new Date(Date.now() - 3*3600*1000);
+  return new Date(Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate(), 3, 0, 0));
+}
+
+function anuncioFecha(iso){
+  if(!iso) return '';
+  try {
+    return new Date(iso).toLocaleString('es-AR',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  } catch(e){ return ''; }
+}
+
+// Tooltip del botón "Enviado". Sin fecha (pasa sólo si el backend detectó el
+// duplicado en una carrera) se cae a un texto genérico en vez de "Enviado el ".
+function anuncioTitulo(iso){
+  const f = anuncioFecha(iso);
+  return f ? `Enviado el ${f}` : 'Ya se le envió este anuncio';
+}
+
+function cargarEstadoAnuncios(logsRes, bajasRes){
+  anuncioDisponible = !logsRes?.error && !bajasRes?.error;
+  anuncioLogs = new Map();
+  anuncioBajas = new Set();
+  anuncioEnviadosHoy = 0;
+  if(!anuncioDisponible){ actualizarContadorAnuncio(); return; }
+
+  const desde = anuncioInicioDiaAR();
+  for(const l of (logsRes.data || [])){
+    if(l.estado !== 'enviado') continue;   // los intentos fallidos no bloquean el reenvío
+    anuncioLogs.set(l.usuario_id, l);
+    if(new Date(l.enviado_at) >= desde) anuncioEnviadosHoy++;
+  }
+  for(const b of (bajasRes.data || [])) anuncioBajas.add(String(b.email||'').toLowerCase());
+  actualizarContadorAnuncio();
+}
+
+function actualizarContadorAnuncio(){
+  const el = document.getElementById('contador-anuncio');
+  if(!el) return;
+  if(!anuncioDisponible){ el.style.display='none'; return; }
+  el.style.display = '';
+  el.textContent = `Anuncio ${ANUNCIO_NOMBRE} · Enviados hoy: ${anuncioEnviadosHoy}/${ANUNCIO_LIMITE_DIARIO}`;
+  el.classList.toggle('medio', anuncioEnviadosHoy >= ANUNCIO_LIMITE_DIARIO*0.8 && anuncioEnviadosHoy < ANUNCIO_LIMITE_DIARIO);
+  el.classList.toggle('tope',  anuncioEnviadosHoy >= ANUNCIO_LIMITE_DIARIO);
+}
+
+// Cuatro estados posibles del botón, más el caso "sin email" (no se pinta).
+function botonAnuncio(u){
+  if(!anuncioDisponible) return '';
+  const email = String(u.email||'').trim().toLowerCase();
+  if(!email) return '';
+
+  const log = anuncioLogs.get(u.id);
+  if(log) return `<button class="tbl-btn mail-hecho" disabled title="${escHtml(anuncioTitulo(log.enviado_at))}">✓ Enviado</button>`;
+
+  if(anuncioBajas.has(email)) return `<button class="tbl-btn mail-baja" disabled title="Se dio de baja de estos avisos">Baja</button>`;
+
+  return `<button class="tbl-btn mail" data-uid="${escHtml(u.id)}" data-nombre="${escHtml(u.nombre||'')}" data-email="${escHtml(email)}" onclick="enviarAnuncioUsuario(this)" title="Enviar el anuncio de ${ANUNCIO_NOMBRE}">Enviar mail</button>`;
+}
+
+// Repinta UN botón in situ. No vuelve a renderizar la tabla a propósito:
+// así un envío no altera el scroll, el filtro ni el resto de las filas.
+function pintarBotonAnuncio(btn, clase, html, titulo){
+  btn.className = `tbl-btn ${clase}`;
+  btn.innerHTML = html;
+  btn.title = titulo || '';
+}
+
+async function enviarAnuncioUsuario(btn){
+  const uid = btn.dataset.uid;
+  const nombre = btn.dataset.nombre || 'este usuario';
+  const email = btn.dataset.email || '';
+  if(!uid) return;
+
+  if(!confirm(`¿Enviar a ${nombre} — ${email}?`)) return;
+  if(anuncioEnviadosHoy >= ANUNCIO_LIMITE_DIARIO &&
+     !confirm(`Ya enviaste ${anuncioEnviadosHoy} hoy (tope: ${ANUNCIO_LIMITE_DIARIO}).\n\n¿Enviar igual?`)) return;
+
+  const etiquetaOriginal = btn.innerHTML;
+  btn.disabled = true;
+  pintarBotonAnuncio(btn, 'mail-load', '<span class="mail-spin"></span> Enviando', 'Enviando...');
+
+  try {
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session) throw { detalle:'Tu sesión venció. Volvé a entrar al panel.' };
+
+    const r = await fetch('/api/notificar-mensaje?action=anuncio', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}` },
+      body: JSON.stringify({ usuario_id: uid })
+    });
+    const j = await r.json().catch(()=>({}));
+
+    if(r.ok){
+      const cuando = j.enviado_at || new Date().toISOString();
+      anuncioLogs.set(uid, { usuario_id:uid, estado:'enviado', enviado_at:cuando });
+      anuncioEnviadosHoy = Number.isFinite(j.enviados_hoy) ? j.enviados_hoy : anuncioEnviadosHoy + 1;
+      actualizarContadorAnuncio();
+      pintarBotonAnuncio(btn, 'mail-hecho', '✓ Enviado', anuncioTitulo(cuando));
+      showToast(`Anuncio enviado a ${nombre}`);
+      return;
+    }
+
+    // El backend sabía algo que el panel no (otra pestaña, otra sesión):
+    // se refleja en el botón sin obligar a recargar.
+    if(j.error === 'duplicado'){
+      anuncioLogs.set(uid, { usuario_id:uid, estado:'enviado', enviado_at:j.enviado_at });
+      pintarBotonAnuncio(btn, 'mail-hecho', '✓ Enviado', anuncioTitulo(j.enviado_at));
+      showToast('Ese usuario ya había recibido el anuncio');
+      return;
+    }
+    if(j.error === 'baja'){
+      anuncioBajas.add(email);
+      pintarBotonAnuncio(btn, 'mail-baja', 'Baja', 'Se dio de baja de estos avisos');
+      showToast('Ese usuario se dio de baja de estos avisos');
+      return;
+    }
+    throw j;
+
+  } catch(err){
+    const msg = err?.detalle || 'No se pudo enviar. Intentá de nuevo.';
+    console.error('[anuncio] falló el envío:', err);
+    pintarBotonAnuncio(btn, 'mail-error', 'Error', msg);
+    showToast(msg);
+    // Vuelve solo a su estado original para poder reintentar sin recargar.
+    setTimeout(()=>{
+      btn.disabled = false;
+      pintarBotonAnuncio(btn, 'mail', etiquetaOriginal, `Enviar el anuncio de ${ANUNCIO_NOMBRE}`);
+    }, 4000);
+  }
+}
+
 // ===== SUPABASE: USUARIOS =====
 async function cargarUsuarios(){
   const tbody = document.getElementById('user-table');
   try {
-    const {data, error} = await sb
-      .from('usuarios')
-      .select('*')
-      .order('created_at',{ascending:false});
+    // Las tres consultas van en paralelo. Las dos de email están envueltas en
+    // un catch propio: si esas tablas todavía no existen (o falla la RLS), la
+    // tabla de usuarios tiene que seguir cargando igual que siempre.
+    const [{data, error}, logsRes, bajasRes] = await Promise.all([
+      sb.from('usuarios').select('*').order('created_at',{ascending:false}),
+      sb.from('email_logs').select('usuario_id,estado,enviado_at').eq('campana', ANUNCIO_CAMPANA).then(r=>r, ()=>({error:true})),
+      sb.from('email_optouts').select('email').then(r=>r, ()=>({error:true}))
+    ]);
     if(error) throw error;
+
+    cargarEstadoAnuncios(logsRes, bajasRes);
+
     const badgeU = document.getElementById('badge-usuarios');
     if(badgeU) badgeU.textContent = data?.length ? `(${data.length.toLocaleString('es-AR')} total)` : '';
     if(!data?.length){
@@ -1151,6 +1333,7 @@ async function cargarUsuarios(){
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="showToast('Ver perfil')">👁</button>
           <button class="tbl-btn reject" onclick="showToast('Usuario suspendido')">🚫</button>
+          ${botonAnuncio(u)}
         </div></td>
       </tr>`).join('');
   } catch(e){ console.log('usuarios error',e); }

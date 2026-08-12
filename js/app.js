@@ -683,6 +683,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (irParam === 'planes') {
     history.replaceState({}, '', window.location.pathname);
     setTimeout(() => { try { goTo('planes'); } catch (e) { } }, 600);
+  } else if (irParam === 'cotizaciones') {
+    // Deep-link a Cotizaciones (ej: el botón del mail de anuncio).
+    // cotizaciones.js se carga DESPUÉS que app.js, así que se reintenta un
+    // momento por si el módulo todavía no registró su entrada global.
+    history.replaceState({}, '', window.location.pathname);
+    let intentosCotiz = 0;
+    const abrirCotiz = () => {
+      if (typeof window.abrirCotizaciones === 'function') {
+        try { window.abrirCotizaciones(); } catch (e) { }
+        return;
+      }
+      if (++intentosCotiz < 10) setTimeout(abrirCotiz, 300);
+    };
+    setTimeout(abrirCotiz, 600);
   }
 });
 setTimeout(checkReveal, 500);
