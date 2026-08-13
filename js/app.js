@@ -927,7 +927,7 @@ async function renderRatingSummary(provId) {
   // Lista de reseñas
   if (listEl) {
     if (!resenas.length) {
-      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Sé el primero en dejar una reseña ✍️</p>';
+      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Todavía no tiene reseñas. Sea el primero en dejar una.</p>';
     } else {
       listEl.innerHTML = resenas.slice(0, 5).map(r => {
         const fechaStr = r.fecha ? timeAgo(new Date(r.fecha)) : 'Reciente';
@@ -952,7 +952,7 @@ async function renderRatingSummary(provId) {
 let resenaRatingActual = 0;
 function openResenaModal() {
   if (!provActual) return;
-  if (!currentUser) { showToast('Iniciá sesión para dejar una reseña'); return; }
+  if (!currentUser) { showToast('Inicie sesión para dejar una reseña'); return; }
   resenaRatingActual = 0;
   document.getElementById('resena-prov-name').textContent = provActual.nombre;
   // El nombre queda fijado a la cuenta (no editable) para que no se puedan
@@ -972,7 +972,7 @@ function closeResenaOnBg(e) { if (e.target === document.getElementById('resenaMo
 
 function setResenaRating(val) {
   resenaRatingActual = val;
-  const labels = ['', 'Muy malo 😕', 'Malo 😐', 'Regular 🙂', 'Bueno 😊', 'Excelente 🤩'];
+  const labels = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
   document.getElementById('resena-rating-label').textContent = labels[val] || '';
   document.querySelectorAll('#resenaStars .star').forEach(s => {
     s.classList.toggle('filled', parseInt(s.dataset.val) <= val);
@@ -980,10 +980,10 @@ function setResenaRating(val) {
 }
 
 async function submitResena() {
-  if (!currentUser) { showToast('Iniciá sesión para dejar una reseña'); return; }
-  if (!resenaRatingActual) { showToast('Por favor calificá primero'); return; }
+  if (!currentUser) { showToast('Inicie sesión para dejar una reseña'); return; }
+  if (!resenaRatingActual) { showToast('Elija de 1 a 5 estrellas'); return; }
   const texto = document.getElementById('resena-texto-input').value.trim();
-  if (!texto) { showToast('Escribí tu experiencia'); return; }
+  if (!texto) { showToast('Cuente cómo fue su experiencia'); return; }
 
   // El nombre lo tomamos de la cuenta logueada, NO del input (que es de solo
   // lectura). Guardamos también el email para poder rastrear reseñas falsas.
@@ -1006,7 +1006,7 @@ async function submitResena() {
     if (!resenasCache[pid]) resenasCache[pid] = [];
     const normalizada = { ...data, autor: data.usuario_nombre, rating: data.estrellas, fecha: data.created_at };
     resenasCache[pid].unshift(normalizada);
-    showToast('Reseña publicada. ¡Gracias!');
+    showToast('Reseña publicada. Gracias.');
   } catch (e) {
     console.error('Error guardando reseña:', e);
     // Fallback local si falla Supabase
@@ -1851,17 +1851,26 @@ function abrirDetalle(id) {
   document.getElementById('det-fav-btn').textContent = esFav(p.id) ? '❤️' : '♡';
   document.getElementById('det-wa-btn').style.display = (p.whatsapp) ? 'flex' : 'none';
 
-  // Reseñas solo para plan Pro
+  // Reseñas para TODOS los proveedores, no solo Pro.
+  //
+  // Estaban detras del muro Pro y eso las mataba: hoy hay 4 Pro vigentes, asi
+  // que casi todo el que cotiza es Free y su reseña nacia invisible. Con el
+  // cierre de pedido en Cotizaciones pidiendo calificacion, eso pasaba a ser
+  // pedirle al comprador que califique al vacio.
+  //
+  // Ademas la reputacion no es una funcion premium: es el incentivo para que
+  // un Free se enganche. Nadie paga por poder mostrar reseñas cuando todavia
+  // no tiene ninguna.
   const resenasSection = document.getElementById('det-resenas-section');
-  if (resenasSection) resenasSection.style.display = p.pro ? 'block' : 'none';
+  if (resenasSection) resenasSection.style.display = 'block';
 
   // Reset calc
   ['calc-costo', 'calc-venta', 'calc-cantidad'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   const cr = document.getElementById('calc-result');
   if (cr) cr.style.display = 'none';
 
-  // Rating (async — carga desde Supabase, solo Pro)
-  if (p.pro) renderRatingSummary(p.id);
+  // Rating (async — carga desde Supabase, para todos)
+  renderRatingSummary(p.id);
 
   // Comp button
   updateDetCompBtn();

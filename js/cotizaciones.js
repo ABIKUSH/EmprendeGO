@@ -719,13 +719,18 @@
     }
   }
 
-  async function cargarCotizaciones(solId) {
+  /* Trae las cotizaciones de UN pedido y deja sus proveedores en provsCache.
+     Devuelve la lista en vez de escribir st.cotizaciones porque tambien la
+     llama el cierre del pedido desde "Mis pedidos", donde st.pedidoActual
+     puede ser otro pedido (o ninguno): escribir el estado ahi dejaria la
+     pantalla mostrando las cotizaciones equivocadas. */
+  async function traerCotizaciones(solId) {
     const { data, error } = await sb.from('cotizaciones').select(COLS_COT)
       .eq('solicitud_id', solId).order('created_at', { ascending: false });
-    if (error) { console.warn('[cotiz] cotizaciones', error); st.cotizaciones = []; return; }
-    st.cotizaciones = data || [];
+    if (error) { console.warn('[cotiz] cotizaciones', error); return []; }
+    const lista = data || [];
 
-    const faltan = [...new Set(st.cotizaciones.map(c => c.proveedor_id))]
+    const faltan = [...new Set(lista.map(c => c.proveedor_id))]
       .filter(id => !st.provsCache[id]);
     if (faltan.length) {
       const { data: provs } = await sb.from('proveedores')
@@ -733,6 +738,11 @@
         .in('id', faltan);
       (provs || []).forEach(p => { st.provsCache[p.id] = p; });
     }
+    return lista;
+  }
+
+  async function cargarCotizaciones(solId) {
+    st.cotizaciones = await traerCotizaciones(solId);
   }
 
   function esPro(p) {
@@ -1812,15 +1822,318 @@
     try { abrirDetalle(provId); } catch (e) { toast('No se pudo abrir el perfil'); }
   };
 
+  /* ---------------- CIERRE DEL PEDIDO + RESEÑA ----------------
+
+     Cerrar el pedido era un update y nada mas. Ahora es el unico momento
+     del producto en el que preguntar "como le fue" tiene sentido: el
+     comprador acaba de terminar (o de descartar) una operacion y todavia
+     se acuerda.
+
+     Y hay algo que solo se sabe ACA: quien le cotizo a quien. Una reseña
+     que nace de este flujo no es "una estrella que puso cualquiera", es
+     una estrella que puso alguien a quien ese proveedor efectivamente le
+     paso un precio. Por eso viaja con solicitud_id, y por eso la base
+     tiene una policy RESTRICTIVE que verifica el vinculo
+     (sql/2026-08-12_resenas_cotizaciones.sql) — el frontend propone, pero
+     el que decide si esa reseña es legitima es Postgres.
+
+     Tres reglas que no se negocian:
+     - Cerrar el pedido NUNCA depende de que la reseña se guarde. Si el
+       insert falla, se avisa y el pedido se cierra igual.
+     - Calificar es siempre salteable, en los dos pasos.
+     - Si al pedido no le cotizo nadie no hay a quien calificar: se cierra
+       derecho, como antes. */
+
+  /* Doble escapado para un valor que termina DENTRO de una cadena de
+     JavaScript que a su vez vive dentro de un atributo HTML
+     (onclick="fn('...')"). Primero se neutraliza lo que rompe la cadena de
+     JS, despues lo que rompe el atributo; con un solo escapado, en
+     cualquiera de los dos ordenes, el otro vector pasa.
+
+     Hoy lo unico que se le pasa son uuid de la base, que no pueden traer
+     ni comillas ni barras. Va igual: el dia que alguien meta ahi algo que
+     escribio una persona, esto ya esta puesto. */
+  function jsArg(v) {
+    return esc(String(v ?? '')
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\r?\n/g, '\\n'));
+  }
+
+  // Estrella en SVG y no el caracter tipografico: es la unica forma de que
+  // se vea igual en Android, iOS y escritorio (y de que no la reemplace el
+  // sistema por su propio emoji).
+  function estrellaSVG(llena, px) {
+    return `<svg width="${px}" height="${px}" viewBox="0 0 24 24" aria-hidden="true"
+      fill="${llena ? '#F59E0B' : 'none'}" stroke="${llena ? '#F59E0B' : '#C3CDC8'}"
+      stroke-width="1.7" stroke-linejoin="round" style="display:block">
+      <polygon points="12 2.7 15.1 9 22 10 17 14.9 18.2 21.8 12 18.5 5.8 21.8 7 14.9 2 10 8.9 9 12 2.7"/></svg>`;
+  }
+
+  const ESTRELLA_TXT = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+
+  // Estado del cierre en curso. Vive aparte de st.pedidoActual porque el
+  // cierre se puede disparar desde "Mis pedidos", donde el pedido abierto
+  // en pantalla es otro.
+  st.cierre = null;
+
   window.cotizCerrar = async function (id) {
+    const p = st.misPedidos.find(x => String(x.id) === String(id))
+      || (st.pedidoActual && String(st.pedidoActual.id) === String(id) ? st.pedidoActual : null);
+
+    // Las cotizaciones ya estan a mano si viene de la pantalla de
+    // respuestas; desde "Mis pedidos" hay que ir a buscarlas.
+    let cots = (st.pedidoActual && String(st.pedidoActual.id) === String(id))
+      ? st.cotizaciones
+      : null;
+    if (!cots) {
+      st.cargando = true; render();
+      cots = await traerCotizaciones(id);
+      // Sin este segundo render la pantalla se queda con el esqueleto de carga
+      // pintado debajo del modal, y si el comprador cancela queda ahi para
+      // siempre: nada mas vuelve a llamar a render() en ese camino.
+      st.cargando = false; render();
+    }
+
+    const candidatos = cots
+      .map(c => ({ prov: st.provsCache[c.proveedor_id], cot: c }))
+      .filter(x => x.prov);
+
+    // Sin cotizaciones no hay a quien calificar: se cierra como siempre.
+    if (!candidatos.length) return cerrarPedido(id);
+
+    st.cierre = {
+      id: String(id),
+      titulo: p ? p.titulo : '',
+      candidatos,
+      elegido: null,
+      estrellas: 0,
+      comentario: '',
+      guardando: false
+    };
+    pintarCierre();
+  };
+
+  // El update de siempre. `avisar` en false cuando ya se mostro un toast
+  // mas especifico (el de la reseña guardada).
+  async function cerrarPedido(id, avisar) {
     try {
       const { error } = await sb.from('solicitudes').update({ estado: 'cerrada' }).eq('id', id);
       if (error) throw error;
-      toast('Pedido cerrado');
+      if (avisar !== false) toast('Pedido cerrado');
       // Se cierra -> sale del feed publico, asi que hay que refrescar los dos.
       await Promise.all([cargarMisPedidos(), cargarFeed()]);
       st.vista = 'mis'; render();
     } catch (e) { console.warn('[cotiz] cerrar', e); toast('No se pudo cerrar'); }
+  }
+
+  function cerrarModalCierre() {
+    const el = $('modal-cierre-cotiz');
+    if (el) el.remove();
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', escCierre);
+  }
+
+  function escCierre(e) {
+    if (e.key === 'Escape') { st.cierre = null; cerrarModalCierre(); }
+  }
+
+  function pintarCierre() {
+    const c = st.cierre;
+    if (!c) return;
+
+    let overlay = $('modal-cierre-cotiz');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'modal-cierre-cotiz';
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+      // Tocar afuera cancela el cierre entero: no cierra el pedido ni
+      // guarda nada. Cerrar un pedido por accidente no se puede deshacer.
+      overlay.onclick = e => { if (e.target === overlay) { st.cierre = null; cerrarModalCierre(); } };
+      document.body.appendChild(overlay);
+      document.body.style.overflow = 'hidden';
+      document.addEventListener('keydown', escCierre);
+    }
+
+    // min-width:0 no es decorativo: la tarjeta es un flex item del overlay y
+    // por defecto su min-width es `auto`, o sea su min-content. Con un nombre
+    // de proveedor largo el min-content pasa los 400px y la tarjeta se estira
+    // hasta el borde de la pantalla, comiendose el margen de los costados.
+    // Medido: con "<img src=x onerror=...>Proveedor" pasaba de 350 a 390px de
+    // ancho en una pantalla de 390.
+    overlay.innerHTML = `<div role="dialog" aria-modal="true" aria-labelledby="cz-cierre-tit"
+      style="background:#fff;border-radius:22px;padding:22px 20px 18px;width:100%;max-width:400px;min-width:0;position:relative;margin:auto">
+      ${c.elegido ? pasoEstrellas(c) : pasoQuien(c)}
+    </div>`;
+  }
+
+  /* Paso 1 — con quien cerro. */
+  function pasoQuien(c) {
+    const fila = x => {
+      const p = x.prov;
+      const foto = p.logo_url
+        ? `<div style="width:38px;height:38px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${esc(p.logo_url)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()"></div>`
+        : avatar(p.nombre, null, 38);
+      return `<button type="button" onclick="cotizCierreElegir('${jsArg(p.id)}')"
+        style="display:flex;align-items:center;gap:11px;width:100%;text-align:left;min-height:44px;background:#fff;border:1.5px solid ${BORDE};border-radius:13px;padding:11px 13px;margin-bottom:8px;cursor:pointer;font-family:inherit;transition:border-color .18s ease-out,background .18s ease-out"
+        onmouseover="this.style.borderColor='${VERDE}';this.style.background='${SOFT}'"
+        onmouseout="this.style.borderColor='${BORDE}';this.style.background='#fff'">
+        ${foto}
+        <span style="flex:1;min-width:0">
+          <span style="display:block;font-family:'Inter',sans-serif;font-size:.86rem;font-weight:800;color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || 'Proveedor')}</span>
+          <span style="display:block;font-size:.74rem;color:${TENUE};margin-top:1px">Cotizó ${plata(x.cot.precio)}</span>
+        </span>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${VERDE}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;display:block"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
+    };
+
+    return `
+      <button onclick="cotizCierreCancelar()" aria-label="Cancelar"
+        style="position:absolute;top:7px;right:7px;width:44px;height:44px;background:none;border:none;color:#9AA8A1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:10px">Cerrar pedido</div>
+      <div id="cz-cierre-tit" style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800;color:#1A1A1A;line-height:1.3;margin-bottom:5px">¿A quién le compró?</div>
+      <div style="font-size:.81rem;color:${GRIS};line-height:1.5;margin-bottom:16px">Su calificación es lo único que tienen los demás compradores para saber con quién conviene trabajar.</div>
+
+      <div style="max-height:44vh;overflow-y:auto;margin:0 -2px 4px;padding:0 2px">
+        ${c.candidatos.map(fila).join('')}
+      </div>
+
+      <button onclick="cotizCierreNinguno()"
+        style="width:100%;min-height:44px;background:none;border:none;color:${GRIS};font-family:inherit;font-size:.82rem;font-weight:700;cursor:pointer;padding:11px 4px;margin-top:4px">
+        No le compré a ninguno
+      </button>`;
+  }
+
+  /* Paso 2 — estrellas y comentario. */
+  function pasoEstrellas(c) {
+    const p = (c.candidatos.find(x => String(x.prov.id) === String(c.elegido)) || {}).prov || {};
+    const n = c.estrellas;
+
+    const estrellas = [1, 2, 3, 4, 5].map(i => `
+      <button type="button" onclick="cotizCierreEstrellas(${i})" aria-label="${i} de 5"
+        aria-pressed="${n === i}"
+        style="background:none;border:none;padding:5px;cursor:pointer;display:flex;border-radius:8px">
+        ${estrellaSVG(i <= n, 32)}
+      </button>`).join('');
+
+    return `
+      <button onclick="cotizCierreVolver()" aria-label="Volver"
+        style="position:absolute;top:7px;left:7px;width:44px;height:44px;background:none;border:none;color:#9AA8A1;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+
+      <div style="text-align:center;padding-top:14px">
+        <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:11px">Su calificación</div>
+        <div id="cz-cierre-tit" style="font-family:'Inter',sans-serif;font-size:1.02rem;font-weight:800;color:#1A1A1A;line-height:1.35;margin-bottom:3px">¿Cómo le fue con ${esc(p.nombre || 'este proveedor')}?</div>
+        <div style="font-size:.79rem;color:${TENUE};margin-bottom:14px">Precio, cumplimiento y trato.</div>
+
+        <div style="display:flex;justify-content:center;gap:2px;margin-bottom:6px">${estrellas}</div>
+        <div style="font-size:.82rem;font-weight:800;color:${n ? VERDE : TENUE};min-height:20px;margin-bottom:15px">${n ? esc(ESTRELLA_TXT[n]) : 'Toque para calificar'}</div>
+      </div>
+
+      <textarea id="cz-cierre-texto" rows="3" maxlength="500"
+        oninput="cotizCierreTexto(this.value)"
+        placeholder="Si quiere, cuente cómo fue (opcional)"
+        style="width:100%;padding:11px 13px;border:1.5px solid #E2E6E4;border-radius:11px;font-size:.86rem;font-family:inherit;outline:none;background:#fff;box-sizing:border-box;resize:none;line-height:1.5;margin-bottom:13px">${esc(c.comentario)}</textarea>
+
+      <button onclick="cotizCierreEnviar()" ${c.guardando ? 'disabled' : ''}
+        style="width:100%;min-height:48px;background:${n && !c.guardando ? VERDE : '#C9D6D0'};color:#fff;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:.89rem;font-weight:800;cursor:${n && !c.guardando ? 'pointer' : 'default'};margin-bottom:6px">
+        ${c.guardando ? 'Guardando...' : 'Calificar y cerrar el pedido'}
+      </button>
+      <button onclick="cotizCierreOmitir()"
+        style="width:100%;min-height:44px;background:none;border:none;color:${GRIS};font-family:inherit;font-size:.81rem;font-weight:700;cursor:pointer;padding:9px 4px">
+        Cerrar sin calificar
+      </button>`;
+  }
+
+  window.cotizCierreElegir = function (provId) {
+    if (!st.cierre) return;
+    st.cierre.elegido = String(provId);
+    vibrar('light');
+    pintarCierre();
+  };
+
+  window.cotizCierreVolver = function () {
+    if (!st.cierre) return;
+    st.cierre.elegido = null;
+    pintarCierre();
+  };
+
+  window.cotizCierreEstrellas = function (n) {
+    if (!st.cierre) return;
+    st.cierre.estrellas = Number(n) || 0;
+    vibrar('light');
+    pintarCierre();
+    // Repintar mata el foco del teclado: se lo devuelve a la estrella tocada.
+    const btns = document.querySelectorAll('#modal-cierre-cotiz [aria-pressed]');
+    if (btns[n - 1]) btns[n - 1].focus({ preventScroll: true });
+  };
+
+  // No repinta: escribir no puede reconstruir el textarea abajo del cursor.
+  window.cotizCierreTexto = function (v) {
+    if (st.cierre) st.cierre.comentario = String(v || '');
+  };
+
+  window.cotizCierreCancelar = function () {
+    st.cierre = null;
+    cerrarModalCierre();
+  };
+
+  // "No le compre a ninguno" y "Cerrar sin calificar" hacen lo mismo: el
+  // pedido se cierra, sin reseña. Son dos botones porque son dos momentos
+  // distintos del recorrido, no dos acciones distintas.
+  window.cotizCierreNinguno = function () {
+    const id = st.cierre && st.cierre.id;
+    st.cierre = null;
+    cerrarModalCierre();
+    if (id) cerrarPedido(id);
+  };
+  window.cotizCierreOmitir = window.cotizCierreNinguno;
+
+  window.cotizCierreEnviar = async function () {
+    const c = st.cierre;
+    if (!c || c.guardando) return;
+    if (!c.estrellas) { toast('Elija de 1 a 5 estrellas'); return; }
+
+    c.guardando = true; pintarCierre();
+
+    const provId = c.elegido;
+    const fila = {
+      solicitud_id: c.id,
+      proveedor_id: provId,
+      // El nombre sale de la cuenta y no de un input, igual que en el modal
+      // del perfil: una reseña no se firma con un nombre inventado.
+      usuario_nombre: (currentUser && (currentUser.name || currentUser.email)) || 'Usuario',
+      usuario_email: (currentUser && currentUser.email) || '',
+      estrellas: c.estrellas,
+      texto: c.comentario.trim()
+    };
+
+    let msg = 'Pedido cerrado. Gracias por calificar.';
+    try {
+      const { error } = await sb.from('resenas').insert(fila);
+      if (error) throw error;
+      try { if (typeof trackEvent === 'function') trackEvent('rfq_resena', { estrellas: fila.estrellas }); } catch (e) { }
+      // El perfil del proveedor cachea sus reseñas en app.js. Sin invalidar,
+      // el comprador entra al perfil y no ve la que acaba de dejar.
+      try { if (typeof resenasCache === 'object' && resenasCache) delete resenasCache[String(provId)]; } catch (e) { }
+      vibrar('success');
+    } catch (e) {
+      console.warn('[cotiz] resena', e);
+      // 23505 = el indice unico (solicitud_id, proveedor_id). No es un error
+      // del usuario: ya califico a este proveedor por este pedido.
+      msg = e && e.code === '23505'
+        ? 'Ya había calificado a este proveedor por este pedido. El pedido se cerró.'
+        : 'No se pudo guardar la calificación, pero el pedido se cerró.';
+    }
+
+    st.cierre = null;
+    cerrarModalCierre();
+    toast(msg);
+    await cerrarPedido(c.id, false);
   };
 
   /* ---------------- vista COTIZAR (proveedor responde) ---------------- */
