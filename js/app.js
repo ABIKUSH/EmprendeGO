@@ -6428,7 +6428,7 @@ function conectarTiendaNube(btn) {
   if (!proveedorId) return;
   btn.disabled = true;
   btn.textContent = 'Redirigiendo...';
-  window.location.href = '/api/tiendanube-auth?proveedor_id=' + encodeURIComponent(proveedorId);
+  window.location.href = '/api/tiendanube?action=auth&proveedor_id=' + encodeURIComponent(proveedorId);
 }
 
 async function sincronizarTiendaNube(btn) {
@@ -6437,7 +6437,7 @@ async function sincronizarTiendaNube(btn) {
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';
   try {
-    const res = await fetch('/api/tiendanube-sync', {
+    const res = await fetch('/api/tiendanube?action=sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ proveedor_id: proveedorId })

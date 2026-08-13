@@ -26,7 +26,7 @@ npx vercel dev   # runs static site + serverless functions locally
 - [js/app.js](js/app.js) — all application logic (~3,200 lines)
 - [api/crear-pago.js](api/crear-pago.js) — Mercado Pago checkout preference creation
 - [api/ml.js](api/ml.js) — multi-purpose router: ML product proxy (`?id=`) + ML OAuth flow (start, callback) + ML sync (`?action=sync`)
-- [api/tiendanube-auth.js](api/tiendanube-auth.js) + [api/tiendanube-callback.js](api/tiendanube-callback.js) + [api/tiendanube-sync.js](api/tiendanube-sync.js) — Tienda Nube OAuth + product import (Plan Pro only)
+- [api/tiendanube.js](api/tiendanube.js) — multi-purpose router: Tienda Nube OAuth (`?action=auth`, `?action=callback`) + product import (`?action=sync`) + privacy/data-deletion URL (`?action=privacy`). Plan Pro only.
 - [api/webhook-mp.js](api/webhook-mp.js) — Mercado Pago webhook handler (updates provider plan)
 
 ⚠️ **Vercel Hobby plan limits API functions to 12.** When adding new logic, prefer extending an existing handler (branching by query/method) over creating a new `api/*.js` file. ML and TN integrations both live in their own routers for this reason.
@@ -90,7 +90,7 @@ A 403 from PostgREST when the frontend reads a column → missing column-level G
   - `GET  /api/ml?proveedor_id={uuid}` — starts OAuth flow, redirects to `auth.mercadolibre.com.ar` with `state=proveedor_id`.
   - `GET  /api/ml?code={code}&state={proveedor_id}` — OAuth callback (the redirect URI configured in ML Developers must be `https://emprendego.com.ar/api/ml`). Exchanges `code` for `access_token`+`refresh_token`, fetches nickname, saves to `proveedores`, redirects to `/?ml=ok` or `/?ml=error&reason=X`.
   - `POST /api/ml?action=sync` body `{proveedor_id}` — validates Plan Pro in backend, refreshes token if expiring within 5 min, lists all active items from ML, multi-gets details in batches of 20, maps categories, upserts into `productos` keyed on `(proveedor_id, ml_item_id)`. Returns `{importados, total, ocultados, categorias_ml}`. Items no longer active in ML are marked `visible=false`. If refresh fails with 400/401, `ml_connected` is set to `false` and the UI prompts reconnection.
-- **Tienda Nube** (separate files, same conceptual flow): `tiendanube-auth.js`, `tiendanube-callback.js`, `tiendanube-sync.js`.
+- **`api/tiendanube.js` (multi-purpose router)** — mismo flujo conceptual que ML, ramificando por `?action=auth|callback|sync|privacy`. Las URLs viejas `/api/tiendanube-callback` y `/api/tn-privacy` están registradas en el panel de Tienda Nube y siguen funcionando vía rewrites en `vercel.json`: no se pueden cambiar.
 
 ### PWA
 
