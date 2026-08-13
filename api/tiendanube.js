@@ -17,27 +17,15 @@ export default async function handler(req, res) {
   const q = req.query || {};
 
   // Red de seguridad: si el rewrite no propagara ?action, deducimos la acción
-  // por la forma de la request. Nunca debería hacer falta, pero si falla el
-  // merge de query params preferimos degradar a funcionar antes que romper
-  // la conexión de tiendas de los proveedores Pro.
+  // por la forma de la request. Verificado el 2026-08-13 en un preview: Vercel
+  // SÍ fusiona los query params (llegan code, state y action juntos), así que
+  // hoy esta rama no se usa. Queda como resguardo por si ese comportamiento
+  // cambiara, para no romper la conexión de tiendas de los proveedores Pro.
   let action = q.action;
   if (!action) {
     if (q.code && q.state) action = 'callback';
     else if (q.proveedor_id) action = 'auth';
   }
-
-  // ---- DIAGNÓSTICO TEMPORAL — BORRAR ANTES DE MERGEAR A main ----
-  // Sirve para comprobar en un preview que el rewrite de
-  // /api/tiendanube-callback conserva code y state además de agregar action.
-  if (q.diag === '1') {
-    return res.status(200).json({
-      method: req.method,
-      url: req.url,
-      query: q,
-      action_resuelta: action || null
-    });
-  }
-  // ---- FIN DIAGNÓSTICO TEMPORAL ----
 
   switch (action) {
     case 'auth':     return handlerAuth(req, res);
