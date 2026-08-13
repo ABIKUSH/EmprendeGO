@@ -4232,12 +4232,30 @@ async function cargarProductosReales() {
   const grid = document.getElementById('home-prod-grid');
   if (grid) grid.innerHTML = Array(6).fill('<div class="skel" style="height:220px;border-radius:14px"></div>').join('');
   try {
+    let data = [];
+
+    // Camino rápido: endpoint cacheado en el CDN de Vercel (s-maxage=60). Evita
+    // que CADA visita pegue 2 veces contra Supabase por ~1,71 MB de catálogo.
+    // Devuelve las filas crudas, con la misma forma que el select de abajo, así
+    // que el mapeo y el barajado que siguen no cambian en nada.
+    try {
+      const r = await fetch('/api/catalogo');
+      if (r.ok) {
+        const j = await r.json();
+        if (Array.isArray(j)) data = j;
+      }
+    } catch (e) { }
+
+    // Fallback: si el endpoint falla, se lee directo de Supabase como siempre.
+    // La bandera se calcula UNA vez a propósito: si se condicionara el for a
+    // data.length===0, la primera página llenaría data y el bucle cortaría ahí,
+    // truncando el catálogo de respaldo en 1.000 productos.
+    const usoCache = data.length > 0;
     // Catálogo completo paginado. El filtrado/búsqueda de la pantalla Buscar es
     // client-side sobre productosReales; un límite fijo dejaba afuera en silencio
     // a las categorías más antiguas cuando el catálogo supera ese tope.
     const PAGE = 1000;
-    let data = [];
-    for (let desde = 0; desde < 50000; desde += PAGE) {
+    for (let desde = 0; !usoCache && desde < 50000; desde += PAGE) {
       // Columnas explícitas en vez de '*': el catálogo entero viaja en CADA carga
       // de la app, así que cada columna de más se multiplica por todas las visitas.
       // Medido sobre 1000 filas: '*' devolvía 1,22 MB y esta lista 1,02 MB (-16%).

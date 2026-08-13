@@ -67,10 +67,13 @@ export default async function handler(req, res) {
       if (page.length < PAGE) break;
     }
 
-    // s-maxage: cuánto lo cachea el CDN. stale-while-revalidate: cuánto puede
-    // seguir sirviendo la copia vieja mientras refresca por detrás, para que
-    // ningún visitante pague la espera del refresco.
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300');
+    // max-age=0: el NAVEGADOR siempre revalida. Sin esto Vercel manda solo
+    // "public" downstream y el navegador puede cachear por heurística un rato
+    // impredecible — un proveedor cargaría un producto y no lo vería aparecer.
+    // s-maxage=60: cuánto lo cachea el CDN, que es donde está la ganancia.
+    // stale-while-revalidate: puede seguir sirviendo la copia vieja mientras
+    // refresca por detrás, así ningún visitante paga la espera del refresco.
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
     console.log('[catalogo] filas servidas:', filas.length);
     return res.status(200).json(filas);
