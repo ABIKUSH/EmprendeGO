@@ -308,50 +308,62 @@ notify pgrst, 'reload schema';
 
 
 -- =====================================================================
--- COMPROBACION — correr y pegar la salida.
+-- COMPROBACION — es la ultima consulta del archivo a proposito.
+--
+-- El editor de Supabase muestra solo el resultado del ULTIMO select, asi
+-- que va todo junto en una sola tabla en vez de seis consultas sueltas.
+-- Se corre sola con seleccionarla y ejecutar.
+--
+-- Lo que TIENE que verse:
+--   grant-columna  anon           SELECT   -> todas menos usuario_email
+--   grant-columna  anon           INSERT   -> NO tiene que aparecer
+--   grant-columna  authenticated  INSERT   -> las 6 columnas
+--   grant-tabla    anon/PUBLIC    INSERT   -> NO tiene que aparecer
+--   policy         resenas_insert_vinculo_real  INSERT / RESTRICTIVE
+--   indice         uq_resenas_solicitud_proveedor
+--   fk             resenas_solicitud_id_fkey
+--   filas          4 reseñas, 0 con pedido (las viejas quedan sueltas)
 -- =====================================================================
 
--- 7.1) La foto que importa. Lo que TIENE que verse:
---        anon          -> SELECT en todas menos usuario_email. Ningun INSERT.
---        authenticated -> SELECT igual, e INSERT en las 6 columnas listadas.
-select grantee,
-       privilege_type,
-       string_agg(column_name, ', ' order by column_name) as columnas
-  from information_schema.column_privileges
- where table_schema = 'public'
-   and table_name   = 'resenas'
-   and grantee in ('anon', 'authenticated')
- group by grantee, privilege_type
- order by grantee, privilege_type;
+select 'grant-columna'::text as que,
+       g.grantee::text       as quien,
+       g.privilege_type::text as permiso,
+       string_agg(g.column_name::text, ', ' order by g.column_name::text) as detalle
+  from information_schema.column_privileges g
+ where g.table_schema = 'public' and g.table_name = 'resenas'
+   and g.grantee::text in ('anon', 'authenticated')
+ group by g.grantee::text, g.privilege_type::text
 
--- 7.2) Que no haya quedado un privilegio de tabla entera colgado.
-select grantee, privilege_type
-  from information_schema.table_privileges
- where table_schema = 'public' and table_name = 'resenas'
-   and grantee in ('anon', 'authenticated', 'PUBLIC')
- order by 1, 2;
+union all
+select 'grant-tabla', t.grantee::text, t.privilege_type::text, '(tabla entera)'
+  from information_schema.table_privileges t
+ where t.table_schema = 'public' and t.table_name = 'resenas'
+   and t.grantee::text in ('anon', 'authenticated', 'PUBLIC')
 
--- 7.3) Las policies, con la restrictive a la vista.
-select policyname, cmd, permissive, roles, with_check
-  from pg_policies
- where schemaname = 'public' and tablename = 'resenas'
- order by permissive desc, policyname;
+union all
+select 'policy', p.policyname::text, (p.cmd || ' / ' || p.permissive)::text,
+       coalesce(p.with_check, p.qual, '')::text
+  from pg_policies p
+ where p.schemaname = 'public' and p.tablename = 'resenas'
 
--- 7.4) El indice y la FK.
-select indexname, indexdef
-  from pg_indexes
- where schemaname = 'public' and tablename = 'resenas'
-   and indexname = 'uq_resenas_solicitud_proveedor';
+union all
+select 'indice', i.indexname::text, '', i.indexdef::text
+  from pg_indexes i
+ where i.schemaname = 'public' and i.tablename = 'resenas'
+   and i.indexname = 'uq_resenas_solicitud_proveedor'
 
-select conname, pg_get_constraintdef(oid) as definicion
-  from pg_constraint
- where conrelid = 'public.resenas'::regclass and contype = 'f';
+union all
+select 'fk', c.conname::text, '', pg_get_constraintdef(c.oid)::text
+  from pg_constraint c
+ where c.conrelid = 'public.resenas'::regclass and c.contype = 'f'
 
--- 7.5) Que las 4 reseñas viejas sigan ahi y sin vinculo.
-select count(*) as total,
-       count(solicitud_id) as con_pedido,
-       count(*) - count(solicitud_id) as sueltas
-  from public.resenas;
+union all
+select 'filas', 'resenas', count(*)::text,
+       count(solicitud_id)::text || ' con pedido, ' ||
+       (count(*) - count(solicitud_id))::text || ' sueltas'
+  from public.resenas
+
+order by 1, 2, 3;
 
 
 -- =====================================================================
