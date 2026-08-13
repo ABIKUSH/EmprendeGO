@@ -260,8 +260,13 @@ async function handlerSync(req, res) {
       ? categoriaMap[categoria_tn]
       : 'Otros';
 
+    // on_conflict explícito: sin él, PostgREST resuelve merge-duplicates contra
+    // la primary key (id), que es un gen_random_uuid() nuevo en cada request.
+    // Nunca colisiona por id, así que intenta un INSERT limpio y choca con el
+    // índice productos_proveedor_tn_unique → toda re-sincronización devolvía
+    // 0 importados en silencio. Mismo patrón que api/ml.js.
     const upsertRes = await fetch(
-      `${supabaseUrl}/rest/v1/productos`,
+      `${supabaseUrl}/rest/v1/productos?on_conflict=proveedor_id,tn_product_id`,
       {
         method: 'POST',
         headers: {
@@ -279,8 +284,11 @@ async function handlerSync(req, res) {
           imagen_url,
           imagenes,
           categoria_tn,
-          categoria_principal,
-          visible: true
+          categoria_principal
+          // 'visible' se omite a propósito: con el upsert arreglado, mandarlo
+          // pisaría en cada re-sincronización los productos que el proveedor
+          // ocultó a mano. Los productos nuevos entran visibles igual, porque
+          // la columna productos.visible tiene DEFAULT true.
         })
       }
     );
