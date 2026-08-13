@@ -31,6 +31,8 @@ npx vercel dev   # runs static site + serverless functions locally
 
 ⚠️ **Vercel Hobby plan limits API functions to 12.** When adding new logic, prefer extending an existing handler (branching by query/method) over creating a new `api/*.js` file. ML and TN integrations both live in their own routers for this reason.
 
+**Verificado el 2026-08-13**, no asumido: se pusheó una rama descartable con una 13ª función y el build falló con *"No more than 12 Serverless Functions can be added to a Deployment on the Hobby plan. Create a team (Pro plan) to deploy more."* El proyecto está en Hobby y hoy usa 12 de 12. Ojo: la doc pública de Vercel (`/docs/plans/hobby` y `/docs/functions/limitations`) **no** menciona este tope, así que no sirve para desmentirlo — el error del build es la única fuente fiable. Para probarlo de nuevo, hacerlo siempre en una rama: Vercel solo despliega `main` a producción y las demás ramas generan un preview aislado.
+
 ### Screen-Based Navigation
 
 The SPA renders all screens as `<div class="screen" id="screen-{name}">` elements in `index.html`. Navigation is handled by `goTo(screenName)` in `app.js`, which hides all screens and shows the target one.
