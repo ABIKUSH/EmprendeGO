@@ -115,19 +115,22 @@ end $$;
 -- cuelga todo esto, y que los uuid sean uuid de verdad. Si algo no esta,
 -- se corta aca y no queda la base a medio migrar.
 -- ---------------------------------------------------------------------
+-- Junta TODO lo que no cuadra y lo informa de una sola vez. La version
+-- anterior abortaba en el primer problema, asi que cada tipo inesperado
+-- costaba una corrida entera para enterarse del siguiente.
 do $$
 declare
-  v_col  text;
-  v_tipo text;
+  v_col   text;
+  v_tipo  text;
+  v_faltan text := '';
 begin
-  if to_regclass('public.resenas') is null then
-    raise exception 'Falta la tabla public.resenas.';
-  end if;
-  if to_regclass('public.solicitudes') is null then
-    raise exception 'Falta la tabla public.solicitudes.';
-  end if;
-  if to_regclass('public.cotizaciones') is null then
-    raise exception 'Falta la tabla public.cotizaciones.';
+  foreach v_col in array array['public.resenas','public.solicitudes','public.cotizaciones'] loop
+    if to_regclass(v_col) is null then
+      v_faltan := v_faltan || E'\n  - falta la tabla ' || v_col;
+    end if;
+  end loop;
+  if v_faltan <> '' then
+    raise exception 'No se puede migrar:%', v_faltan;
   end if;
 
   foreach v_col in array array['id','proveedor_id','usuario_nombre','estrellas','texto','created_at'] loop
@@ -136,25 +139,35 @@ begin
        where a.attrelid = 'public.resenas'::regclass
          and a.attname = v_col and a.attnum > 0 and not a.attisdropped
     ) then
-      raise exception 'A public.resenas le falta la columna %', v_col;
+      v_faltan := v_faltan || E'\n  - a public.resenas le falta la columna ' || v_col;
     end if;
   end loop;
 
-  -- solicitudes.usuario_id es el que se compara contra auth.uid() en la
-  -- policy de mas abajo. Si no fuera uuid, la comparacion explotaria en
-  -- tiempo de insert (o peor, compararia texto) en vez de aca.
+  -- Los unicos dos tipos de los que este archivo DEPENDE de verdad:
+  --
+  --   solicitudes.id        -> la FK y la columna nueva son uuid.
+  --   solicitudes.usuario_id-> se compara contra auth.uid(), que es uuid.
+  --
+  -- Los proveedor_id NO se chequean a proposito: resenas.proveedor_id
+  -- resulto ser text (no uuid, a diferencia del resto de la app), asi que
+  -- todas las comparaciones de proveedor de mas abajo van casteadas a text
+  -- y funcionan con cualquiera de los dos tipos. Ver la nota del final.
   select format_type(a.atttypid, null) into v_tipo
     from pg_attribute a
-   where a.attrelid = 'public.solicitudes'::regclass and a.attname = 'usuario_id';
+   where a.attrelid = 'public.solicitudes'::regclass and a.attname = 'id';
   if v_tipo is distinct from 'uuid' then
-    raise exception 'public.solicitudes.usuario_id deberia ser uuid y es %', coalesce(v_tipo, '(no existe)');
+    v_faltan := v_faltan || E'\n  - public.solicitudes.id deberia ser uuid y es ' || coalesce(v_tipo, '(no existe)');
   end if;
 
   select format_type(a.atttypid, null) into v_tipo
     from pg_attribute a
-   where a.attrelid = 'public.resenas'::regclass and a.attname = 'proveedor_id';
+   where a.attrelid = 'public.solicitudes'::regclass and a.attname = 'usuario_id';
   if v_tipo is distinct from 'uuid' then
-    raise exception 'public.resenas.proveedor_id deberia ser uuid y es %', coalesce(v_tipo, '(no existe)');
+    v_faltan := v_faltan || E'\n  - public.solicitudes.usuario_id deberia ser uuid y es ' || coalesce(v_tipo, '(no existe)');
+  end if;
+
+  if v_faltan <> '' then
+    raise exception 'No se puede migrar:%', v_faltan;
   end if;
 end $$;
 
@@ -231,7 +244,11 @@ create unique index if not exists uq_resenas_solicitud_proveedor
 -- teniendo que adivinar dos uuid al mismo tiempo, si le cotizaron un
 -- pedido que ademas tiene que ser suyo.
 -- ---------------------------------------------------------------------
-create or replace function public.resena_de_operacion(p_solicitud uuid, p_proveedor uuid)
+-- El proveedor entra como TEXT y se compara casteado. No es prolijidad de
+-- mas: public.resenas.proveedor_id es text mientras que el resto de la app
+-- usa uuid (ver la nota del final). Casteando los dos lados, la funcion
+-- anda igual con text o con uuid, hoy y si algun dia se unifican.
+create or replace function public.resena_de_operacion(p_solicitud uuid, p_proveedor text)
 returns boolean
 language sql
 stable
@@ -241,15 +258,15 @@ as $$
   select exists (
     select 1
       from public.solicitudes s
-      join public.cotizaciones c on c.solicitud_id = s.id
+      join public.cotizaciones c on c.solicitud_id::text = s.id::text
      where s.id = p_solicitud
        and s.usuario_id = auth.uid()
-       and c.proveedor_id = p_proveedor
+       and c.proveedor_id::text = p_proveedor
   );
 $$;
 
-revoke all on function public.resena_de_operacion(uuid, uuid) from public, anon, authenticated;
-grant execute on function public.resena_de_operacion(uuid, uuid) to authenticated;
+revoke all on function public.resena_de_operacion(uuid, text) from public, anon, authenticated;
+grant execute on function public.resena_de_operacion(uuid, text) to authenticated;
 
 
 -- ---------------------------------------------------------------------
@@ -274,7 +291,7 @@ create policy resenas_insert_vinculo_real
   to authenticated
   with check (
     solicitud_id is null
-    or public.resena_de_operacion(solicitud_id, proveedor_id)
+    or public.resena_de_operacion(solicitud_id, proveedor_id::text)
   );
 
 -- Si NO habia ninguna policy de insert, la tabla quedaria sin ninguna
@@ -429,7 +446,7 @@ order by 1, 2, 3;
 --   begin;
 --   drop policy if exists resenas_insert_vinculo_real on public.resenas;
 --   drop policy if exists resenas_insert_con_cuenta   on public.resenas;
---   drop function if exists public.resena_de_operacion(uuid, uuid);
+--   drop function if exists public.resena_de_operacion(uuid, text);
 --   drop index if exists public.uq_resenas_solicitud_proveedor;
 --   alter table public.resenas drop constraint if exists resenas_solicitud_id_fkey;
 --   alter table public.resenas drop column if exists solicitud_id;
@@ -444,4 +461,26 @@ order by 1, 2, 3;
 -- El frontend degrada solo: si la columna no esta, el insert de la
 -- reseña falla, se avisa por toast y el pedido se cierra igual. Cerrar
 -- el pedido nunca depende de que la reseña se haya guardado.
+-- =====================================================================
+
+
+-- =====================================================================
+-- NOTA — resenas.proveedor_id es TEXT, no uuid.
+--
+-- Salio del chequeo previo de este archivo, en la primera corrida:
+--   ERROR: public.resenas.proveedor_id deberia ser uuid y es text
+--
+-- El resto de la app usa uuid para los proveedores. Que esta columna sea
+-- text es una inconsistencia vieja, y ademas no tiene FK a proveedores
+-- (verificado: PostgREST no encuentra la relacion). O sea que hoy nada
+-- impide que quede una reseña apuntando a un proveedor que no existe.
+--
+-- NO se arregla aca a proposito. Cambiar el tipo de una columna es otra
+-- migracion, con su propia prueba, y meterla en la misma corrida que una
+-- funcion nueva era pedir que fallen las dos juntas. Lo que hace este
+-- archivo es convivir: todas las comparaciones de proveedor van con
+-- ::text en los dos lados, asi que funcionan con text y con uuid.
+--
+-- Si algun dia se unifica (alter column type uuid using proveedor_id::uuid
+-- + FK a proveedores), este archivo sigue andando sin tocarlo.
 -- =====================================================================
