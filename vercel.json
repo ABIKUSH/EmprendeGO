@@ -1,6 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/tiendanube-callback", "destination": "/api/tiendanube-callback" },
+    { "source": "/api/tiendanube-callback", "destination": "/api/tiendanube?action=callback" },
+    { "source": "/api/tn-privacy", "destination": "/api/tiendanube?action=privacy" },
     { "source": "/sitemap.xml", "destination": "/api/keepalive?mode=sitemap" },
     { "source": "/privacidad", "destination": "/privacidad.html" }
   ],
@@ -34,7 +35,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://api.mercadolibre.com https://*.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://cdn.jsdelivr.net; frame-src https://accounts.google.com https://*.mercadopago.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mercadopago.com https://api.mercadolibre.com https://*.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://www.google-analytics.com https://cdn.jsdelivr.net https://www.facebook.com https://connect.facebook.net; frame-src https://accounts.google.com https://*.mercadopago.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests"
         }
       ]
     }
