@@ -45,30 +45,68 @@
 
 
 -- =====================================================================
--- PASO 0 — FOTO DE COMO ESTA HOY.
+-- COMO SE CORRE
 --
--- Correr ESTO SOLO (seleccionarlo y ejecutar) ANTES de correr el resto,
--- y guardar la salida. Es la unica forma de poder volver atras con
--- exactitud si algo sale mal, porque mas abajo se revocan privilegios
--- que no se pueden adivinar despues.
+-- Se selecciona TODO el archivo y se ejecuta de una sola vez. No hay
+-- pasos previos ni posteriores: la copia de seguridad se la guarda solo
+-- (seccion 0) y la comprobacion es la ultima consulta, asi que el
+-- resultado que muestra el editor al terminar ya es el informe final.
 --
---   select grantee, privilege_type, column_name
---     from information_schema.column_privileges
---    where table_schema = 'public' and table_name = 'resenas'
---    union all
---   select grantee, privilege_type, '(tabla entera)'
---     from information_schema.table_privileges
---    where table_schema = 'public' and table_name = 'resenas'
---    order by 1, 2, 3;
---
---   select policyname, cmd, permissive, roles, qual, with_check
---     from pg_policies
---    where schemaname = 'public' and tablename = 'resenas';
---
+-- Correrlo dos veces no rompe nada ni pisa la copia de seguridad.
 -- =====================================================================
 
 
 begin;
+
+-- ---------------------------------------------------------------------
+-- 0) COPIA DE SEGURIDAD DE LOS PERMISOS ACTUALES
+--
+-- Mas abajo se revocan privilegios, y un privilegio revocado no deja
+-- rastro de que existia: sin esta foto no habria forma de devolver las
+-- cosas a como estaban. Antes esto era un paso manual ("corra esto y
+-- guarde la salida"), que es justo la clase de paso que uno se saltea.
+-- Ahora se guarda solo, en la base, y queda para siempre.
+--
+-- Sin grants y con RLS prendida: no se lee desde la API con ninguna
+-- clave, solo desde el editor SQL.
+--
+-- El `if not exists` es lo que hace que correr el archivo dos veces no
+-- pise la foto original con la de despues de migrar, que no serviria
+-- para nada.
+-- ---------------------------------------------------------------------
+create table if not exists public.resenas_permisos_backup (
+  tomado_at timestamptz not null default now(),
+  que       text,
+  quien     text,
+  permiso   text,
+  detalle   text
+);
+
+alter table public.resenas_permisos_backup enable row level security;
+revoke all on public.resenas_permisos_backup from anon, authenticated;
+
+do $$
+begin
+  if not exists (select 1 from public.resenas_permisos_backup) then
+    insert into public.resenas_permisos_backup (que, quien, permiso, detalle)
+    select 'grant-columna', g.grantee::text, g.privilege_type::text, g.column_name::text
+      from information_schema.column_privileges g
+     where g.table_schema = 'public' and g.table_name = 'resenas'
+    union all
+    select 'grant-tabla', t.grantee::text, t.privilege_type::text, '(tabla entera)'
+      from information_schema.table_privileges t
+     where t.table_schema = 'public' and t.table_name = 'resenas'
+    union all
+    select 'policy', p.policyname::text, (p.cmd || ' / ' || p.permissive)::text,
+           coalesce(p.with_check, p.qual, '')::text
+      from pg_policies p
+     where p.schemaname = 'public' and p.tablename = 'resenas';
+
+    raise notice 'Permisos de resenas guardados en public.resenas_permisos_backup.';
+  else
+    raise notice 'Ya habia una copia en public.resenas_permisos_backup: se deja la original.';
+  end if;
+end $$;
 
 -- ---------------------------------------------------------------------
 -- 1) CHEQUEO PREVIO
@@ -395,9 +433,13 @@ order by 1, 2, 3;
 --   drop index if exists public.uq_resenas_solicitud_proveedor;
 --   alter table public.resenas drop constraint if exists resenas_solicitud_id_fkey;
 --   alter table public.resenas drop column if exists solicitud_id;
---   -- y devolver los privilegios de INSERT segun la foto del PASO 0.
 --   commit;
 --   notify pgrst, 'reload schema';
+--
+-- Y para devolver los privilegios de INSERT tal como estaban, mirar la
+-- copia que la seccion 0 guardo sola:
+--
+--   select * from public.resenas_permisos_backup order by tomado_at, que, quien;
 --
 -- El frontend degrada solo: si la columna no esta, el insert de la
 -- reseña falla, se avisa por toast y el pedido se cierra igual. Cerrar
