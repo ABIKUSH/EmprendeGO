@@ -1386,13 +1386,13 @@ function renderProvCards(el, list) {
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:flex-start;gap:6px">
-            <div style="font-family:'Inter',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${escHtml(p.nombre)}</div>
-            ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);letter-spacing:.04em;flex-shrink:0;margin-top:1px">PRO</span>' : ''}
+          <div title="${escHtml(p.nombre)}" style="font-family:'Inter',sans-serif;font-size:.93rem;font-weight:800;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere">${escHtml(p.nombre)}</div>
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin-top:4px">
+            <span style="font-size:.72rem;color:#6B7A99;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</span>
+            ${p.pro ? '<span style="font-size:.6rem;font-weight:800;padding:2px 7px;border-radius:20px;background:linear-gradient(135deg,#064E3B,#022C22);color:#F0C775;border:1px solid rgba(233,185,73,.4);letter-spacing:.04em;flex-shrink:0">PRO</span>' : ''}
+            ${count > 0 ? `<span style="font-size:.72rem;font-weight:700;color:#F59E0B;flex-shrink:0">${avg.toFixed(1)} ★</span>` : ''}
           </div>
-          <div style="font-size:.72rem;color:#6B7A99;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provincia || p.rubro || 'General')}</div>
         </div>
-        ${count > 0 ? `<div style="font-size:.75rem;font-weight:700;color:#F59E0B;flex-shrink:0;margin-top:2px">${avg.toFixed(1)} ★</div>` : ''}
       </div>
       <div style="padding:0 14px 13px;display:flex;flex-direction:column;flex:1">
         <p style="font-size:.79rem;color:#6B7A99;line-height:1.45;margin-bottom:0">${escHtml(p.desc || '')}</p>
