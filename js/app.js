@@ -124,7 +124,11 @@ const SUBCATEGORIA_MAP = {
   'iluminacion': ['Iluminación'], 'automotor': ['Automotor'], 'servicios': ['Servicios'],
 };
 
-const CAT_PRINCIPAL = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+// Rubros que se pueden elegir al cargar un producto (carga múltiple, import de
+// Excel). Tiene que cubrir los mismos rubros que RUBROS_LISTA: 'Lencería' y
+// 'Calzado' faltaban acá, así que un proveedor de esos rubros no tenía forma de
+// elegirlos y sus productos terminaban cayendo en Indumentaria.
+const CAT_PRINCIPAL = ['Tecnología','Indumentaria','Calzado','Lencería','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 
 const CAT_SUBCATS = {
   'Tecnología': ['Smartphones', 'Computadoras', 'Tablets', 'Accesorios', 'Periféricos'],
@@ -6477,7 +6481,11 @@ async function sincronizarTiendaNube(btn) {
   btn.textContent = '🔄 Sincronizar productos';
 }
 
-const TN_CATEGORIAS_EG = ['Tecnología','Indumentaria','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+// Opciones del desplegable que usa el proveedor para mapear sus categorías de
+// Tienda Nube y de Mercado Libre a rubros de EmprendeGO. Faltaban 'Lencería' y
+// 'Calzado': sin ellas, un proveedor de lencería no podía elegir su propio
+// rubro aunque quisiera, y todo su catálogo caía en Indumentaria.
+const TN_CATEGORIAS_EG = ['Tecnología','Indumentaria','Calzado','Lencería','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 
 function mostrarMapeoTN(categorias_tn) {
   const list = document.getElementById('tn-mapeo-list');
@@ -6493,6 +6501,50 @@ function mostrarMapeoTN(categorias_tn) {
     </div>`;
   }).join('');
   document.getElementById('tnMapeoModal').classList.add('open');
+}
+
+// Espejo de api/_rubros.js. Las dos copias tienen que decir lo mismo: si tocás
+// una, tocá la otra. Ver ese archivo para el detalle de por qué cada palabra
+// está o no está en la lista.
+const LENCERIA_RE = /\b(colaless|corpi[ñn]o|soutien|bombacha|tanga|portaliga|lencer[íi]a|brasier|bralette|vedetina|culotte|cachetero|camis[óo]n|boxers?\b|slips?\b)/i;
+const NO_LENCERIA_RE = /\b(beb[ée]|ni[ñn][oa]|nen[ae]|infantil|chupet[íi]n|splash|perfume|cable|collar|cervical)/i;
+const NUCLEO_RE = /\b(conjunto|body)\b/i;
+const SENAL_RE = /\bless\b|taza\s*(soft|doble)|sin\s*taza|puntilla|push\s*up|tri[áa]ngulo\s*soft|triangulo\s*soft|\baro\b|\barco\b|encaje|bralette/i;
+const RUBROS_GENERICOS = ['Indumentaria', 'Otros', 'Otro'];
+
+function esLenceria(nombre) {
+  const n = nombre || '';
+  if (NO_LENCERIA_RE.test(n)) return false;
+  return LENCERIA_RE.test(n) || (NUCLEO_RE.test(n) && SENAL_RE.test(n));
+}
+
+// Al confirmar el mapeo, los updates de arriba pisan TODOS los productos de una
+// categoría de origen con un mismo rubro. Eso deshace el afinado que hizo el
+// sync, porque TN y ML devuelven una sola categoría para catálogos enteros.
+// Este repaso vuelve a separar la lencería usando la misma regla del backend.
+async function reafinarLenceria(proveedorId) {
+  const genericos = [];
+  // Paginado: la API de Supabase corta en 1000 filas sin avisar.
+  for (let desde = 0; ; desde += 1000) {
+    const { data, error } = await sb.from('productos')
+      .select('id,nombre')
+      .eq('proveedor_id', proveedorId)
+      .in('categoria_principal', RUBROS_GENERICOS)
+      .range(desde, desde + 999);
+    if (error || !data?.length) break;
+    genericos.push(...data);
+    if (data.length < 1000) break;
+  }
+
+  const ids = genericos.filter(p => esLenceria(p.nombre)).map(p => p.id);
+  if (!ids.length) return 0;
+
+  for (let i = 0; i < ids.length; i += 100) {
+    await sb.from('productos')
+      .update({ categoria_principal: 'Lencería' })
+      .in('id', ids.slice(i, i + 100));
+  }
+  return ids.length;
 }
 
 async function confirmarMapeoTN(btn) {
@@ -6511,6 +6563,7 @@ async function confirmarMapeoTN(btn) {
       .eq('proveedor_id', proveedorId).eq('categoria_tn', tnCat)
   );
   await Promise.all(updates);
+  await reafinarLenceria(proveedorId);
 
   // Guardar mapa en proveedores para futuras sincronizaciones
   await sb.from('proveedores').update({ tn_categoria_map: map }).eq('id', proveedorId);
@@ -6647,6 +6700,7 @@ async function confirmarMapeoML(btn) {
       .eq('proveedor_id', proveedorId).eq('categoria_ml', mlCat)
   );
   await Promise.all(updates);
+  await reafinarLenceria(proveedorId);
 
   // Persistir mapa para futuras sincronizaciones
   await sb.from('proveedores').update({ ml_categoria_map: map }).eq('id', proveedorId);

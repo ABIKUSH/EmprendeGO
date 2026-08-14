@@ -1,4 +1,5 @@
 import { applyRateLimit, esUUID } from './_ratelimit.js';
+import { afinarRubro } from './_rubros.js';
 
 const ALLOWED_ORIGINS = [
   'https://emprendego.com.ar',
@@ -726,16 +727,20 @@ async function handleMLSync(req, res) {
         .map(u => u.replace(/^http:/, 'https:'))
         .slice(0, 8);
       const pic = pics[0] || (it.thumbnail || '').replace(/^http:/, 'https:');
+      const nombre = it.title || 'Sin nombre';
+      const rubroMapeado = (categoriaML && catMap[categoriaML]) || 'Otros';
       return {
         proveedor_id: proveedorId,
         ml_item_id: String(it.id),
-        nombre: it.title || 'Sin nombre',
+        nombre,
         precio: parseFloat(it.price) || 0,
         stock: parseInt(it.available_quantity, 10) || 0,
         imagen_url: pic,
         imagenes: pics.length ? pics : null,
         categoria_ml: categoriaML,
-        categoria_principal: (categoriaML && catMap[categoriaML]) || 'Otros',
+        // Igual que en TN: la categoría de origen es demasiado gruesa para
+        // separar la lencería de la ropa común, así que se afina por nombre.
+        categoria_principal: afinarRubro(nombre, rubroMapeado),
         visible: true
       };
     });
