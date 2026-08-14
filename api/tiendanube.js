@@ -12,6 +12,7 @@
 // a los rewrites de vercel.json, que apuntan acá con el action correspondiente.
 
 import { applyRateLimit, esUUID } from './_ratelimit.js';
+import { afinarRubro } from './_rubros.js';
 
 export default async function handler(req, res) {
   const q = req.query || {};
@@ -256,9 +257,13 @@ async function handlerSync(req, res) {
     if (categoria_tn) categoriasSet.add(categoria_tn);
 
     // Aplicar mapa existente; si no hay mapeo previo, default 'Otros'
-    const categoria_principal = categoria_tn && categoriaMap[categoria_tn]
+    const rubroMapeado = categoria_tn && categoriaMap[categoria_tn]
       ? categoriaMap[categoria_tn]
       : 'Otros';
+    // TN suele traer todo el catálogo bajo una sola categoría ("Ropa y
+    // accesorios"), así que el mapeo no alcanza para separar la lencería de la
+    // ropa común. Se afina por nombre de producto.
+    const categoria_principal = afinarRubro(nombre, rubroMapeado);
 
     // on_conflict explícito: sin él, PostgREST resuelve merge-duplicates contra
     // la primary key (id), que es un gen_random_uuid() nuevo en cada request.
