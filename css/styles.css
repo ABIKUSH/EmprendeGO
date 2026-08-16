@@ -646,6 +646,22 @@ body, body *{
   background-size:200% 100%;
 }
 
+/* Imagen remota mientras baja. El shimmer va como FONDO del propio <img>:
+   se ve por el hueco vacio y queda tapado en cuanto la foto pinta, sin
+   ningun nodo extra ni capa absoluta (o sea, cero riesgo de layout shift).
+
+   No reusa .skeleton a proposito: esa clase lleva pointer-events:none y
+   varias de estas imagenes son clickeables (las miniaturas de la galeria
+   abren la foto grande). El JS saca la clase en onload/onerror. */
+.img-cargando{
+  background:linear-gradient(90deg,var(--sk-1) 0%,var(--sk-2) 50%,var(--sk-1) 100%);
+  background-size:200% 100%;
+  animation:shimmer var(--sk-vel) ease-in-out infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  .img-cargando{animation:none;background:var(--sk-2)}
+}
+
 /* Contenedor de un item. NO lleva shimmer: es el marco, no el hueso. */
 .skeleton-card{
   background:#fff;border:1px solid #eee;border-radius:14px;

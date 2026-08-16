@@ -793,7 +793,7 @@ function renderFavs() {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #DCE8E2;margin-bottom:12px;overflow:hidden;cursor:pointer">
       <div style="display:flex;align-items:center;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
@@ -1313,7 +1313,7 @@ function renderProvCardMini(p, i) {
   return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
       ${p.logo_url
-        ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
+        ? `<div style="width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:#fff"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
         : `<div style="width:48px;height:48px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;font-family:'Inter',sans-serif;flex-shrink:0">${ini}</div>`
       }
       <div style="flex:1;min-width:0">
@@ -1583,7 +1583,7 @@ function renderProvCards(el, list) {
     return `<div data-id="${pid}" style="background:white;border-radius:16px;border:1px solid #DCE8E2;overflow:hidden;cursor:pointer;display:flex;flex-direction:column">
       <div style="display:flex;align-items:flex-start;gap:11px;padding:12px 14px 8px">
         ${p.logo_url
-        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
+        ? `<div style="width:44px;height:44px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:44px;height:44px;border-radius:11px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
         <div style="flex:1;min-width:0">
@@ -1985,7 +1985,7 @@ async function renderDetalleProductos(proveedorId) {
     const prodId = 'real_' + p.id;
     const emoji = getEmojiCat(p.categoria_principal || p.categoria);
     const imgHtml = p.imagen_url
-      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
+      ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imagen_url, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
       : `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
     return `<div onclick="abrirDetalleProd('${escHtml(prodId)}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
       ${imgHtml}
@@ -3288,7 +3288,7 @@ async function cargarHistorial() {
       const bg = _monoColor(p.id);
       return `<div class="hist-item" onclick="abrirDetalle('${p.id}')">
           ${p.logo_url
-          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
+          ? `<div class="hist-logo" style="background:#fff;padding:0;overflow:hidden"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;border-radius:9px"></div>`
           : `<div class="hist-logo" style="background:${bg}">${escHtml(ini)}</div>`
         }
           <div class="hist-info"><strong>${escHtml(p.nombre)}</strong><span>${escHtml(p.rubro || '')}${p.pro ? ' · PRO' : ''}</span></div>
@@ -3420,7 +3420,7 @@ function renderProdGrid() {
   el.innerHTML = productos.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#F3F4F6;${oculto ? 'opacity:.45' : ''}">`
+      ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:56px;height:56px;object-fit:cover;border-radius:10px;background:#F3F4F6;${oculto ? 'opacity:.45' : ''}">`
       : `<div style="width:56px;height:56px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;${oculto ? 'opacity:.45' : ''}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#f8f8f8' : 'white'};border-radius:12px;padding:12px;border:1.5px solid ${oculto ? '#e0e0e0' : '#eee'};display:flex;align-items:center;gap:12px;margin-bottom:8px">
       ${img}
@@ -4495,7 +4495,7 @@ function renderRecomendaciones(ranked, rubroSel) {
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
       <div style="display:flex;align-items:center;gap:12px;margin-top:${i === 0 ? '6px' : '0'}">
         ${p.logo_url
-        ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
+        ? `<div style="width:46px;height:46px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6" alt=""></div>`
         : `<div style="width:46px;height:46px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;color:white;font-family:'Inter',sans-serif;flex-shrink:0">${ini}</div>`}
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
@@ -4689,7 +4689,7 @@ function renderHomeProdCard(p) {
   const color = catColors[p.cat] || '#065F46';
   return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
     <div class="prod-img-wrap" style="position:relative">
-      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       <span class="prod-inicio-badge" style="position:absolute;top:7px;left:7px;background:${color}">${escHtml(p.cat)}</span>
     </div>
     <div class="prod-inicio-body">
@@ -4703,7 +4703,7 @@ function renderHomeProdCard(p) {
 function renderProdBuscarCard(p) {
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:140px;max-width:140px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06);flex-shrink:0">
     <div class="prod-img-wrap">
-      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
     </div>
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
@@ -4863,7 +4863,7 @@ function _drawBuscarGrid(el) {
   el.innerHTML = slice.map(p => `
     <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
       <div class="prod-img-wrap">
-        ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+        ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div class="body">
         <div class="title">${escHtml(p.nombre)}</div>
@@ -5067,7 +5067,8 @@ function abrirDetalleProd(id) {
       pav.style.background = '#fff';
       pav.style.padding = '0';
       pav.style.overflow = 'hidden';
-      pav.innerHTML = `<img src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px">`;
+      // Shimmer de fondo del propio <img> hasta que el logo termina de bajar.
+      pav.innerHTML = `<img class="img-cargando" src="${escHtml(prov.logo_url)}" style="width:100%;height:100%;object-fit:cover;border-radius:9px" onload="this.classList.remove('img-cargando')" onerror="this.classList.remove('img-cargando')">`;
     } else {
       pav.style.background = p.provColor;
       pav.style.padding = '';
@@ -5165,7 +5166,7 @@ function renderProdThumbs(imgs) {
   if (!cont) return;
   if (_prodGalleryImgs.length < 2) { cont.style.display = 'none'; cont.innerHTML = ''; return; }
   cont.innerHTML = _prodGalleryImgs.slice(0, 8).map((u, i) =>
-    `<img class="pd-thumb" data-i="${i}" src="${escHtml(u)}" onclick="setProdMainImgByIdx(${i}, this)" style="width:54px;height:54px;flex:0 0 auto;object-fit:cover;border-radius:9px;border:2px solid ${i === 0 ? '#065F46' : 'transparent'};cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)" onerror="this.style.display='none'">`
+    `<img class="pd-thumb img-cargando" data-i="${i}" src="${escHtml(u)}" onclick="setProdMainImgByIdx(${i}, this)" style="width:54px;height:54px;flex:0 0 auto;object-fit:cover;border-radius:9px;border:2px solid ${i === 0 ? '#065F46' : 'transparent'};cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.08)" onload="this.classList.remove('img-cargando')" onerror="this.classList.remove('img-cargando');this.style.display='none'">`
   ).join('');
   cont.style.display = 'flex';
 }
@@ -5205,7 +5206,7 @@ function renderProdRelacionados(p) {
   const _boxIcon = `<div style="height:90px;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const cards = items.map(pp => {
     const imgHtml = pp.imgUrl
-      ? `<img loading="lazy" src="${escHtml(imgThumb(pp.imgUrl, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
+      ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(pp.imgUrl, 400, 70))}" style="width:100%;height:90px;object-fit:cover;display:block;background:#F3F4F6" onerror="this.style.display='none'">`
       : _boxIcon;
     return `<div onclick="abrirDetalleProd('${escHtml(String(pp.id))}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.05)">
       ${imgHtml}
@@ -6320,7 +6321,7 @@ function buscarMisProds(query) {
   el.innerHTML = filtrados.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
+      ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
@@ -6382,7 +6383,7 @@ function ordenarMisProds(tipo) {
   egSkFin(el, sorted.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
-      ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
+      ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
       : `<div style="width:52px;height:52px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>`;
     return `<div style="background:${oculto ? '#fafafa' : 'white'};border-radius:12px;padding:12px;border:1px solid ${oculto ? '#fca5a5' : '#eee'};display:flex;align-items:center;gap:12px">
       ${img}
@@ -6407,7 +6408,7 @@ function ordenarMisProds(tipo) {
 function renderProdCard(p) {
   return `<div onclick="abrirDetalleProd('${escHtml(p.id)}')" style="min-width:150px;max-width:150px;background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.06)">
     <div class="prod-img-wrap">
-      ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+      ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
     </div>
     <div style="padding:8px 10px">
       <div style="font-size:.78rem;font-weight:700;color:#111;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.nombre)}</div>
@@ -6439,7 +6440,7 @@ function renderDetCarousels(prodsDetalle) {
   const cards = visibles.map(p => {
     return `<div onclick="abrirDetalleProd('${p.id}')" style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.06)">
       <div class="prod-img-wrap">
-        ${p.imgUrl ? `<img loading="lazy" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
+        ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
       </div>
       <div style="padding:7px 8px 9px">
         <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${escHtml(p.nombre)}</div>
@@ -6490,7 +6491,7 @@ function renderProvDestacados() {
     const avgR = p.avgR > 0 ? p.avgR.toFixed(1) : '—';
     return `<div onclick="abrirDetalle('${p.id}')" style="flex-shrink:0;width:130px;background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05)">
       ${p.logo_url
-        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
+        ? `<div style="width:48px;height:48px;border-radius:12px;overflow:hidden;flex-shrink:0"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
         : `<div style="width:48px;height:48px;border-radius:12px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.95rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
       }
       <div style="font-family:'Inter',sans-serif;font-size:.78rem;font-weight:800;color:#1A1A1A;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;width:100%">${escHtml(p.nombre)}</div>
@@ -6527,7 +6528,7 @@ async function renderRecienLlegados() {
       const badge = dias === 0 ? 'Hoy' : dias === 1 ? 'Ayer' : 'Hace ' + dias + ' días';
       return `<div onclick="abrirDetalle('${p.id}')" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer">
         ${p.logo_url
-          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
+          ? `<div style="width:40px;height:40px;border-radius:10px;overflow:hidden;flex-shrink:0"><img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.logo_url, 200, 75))}" style="width:100%;height:100%;object-fit:cover;background:#F3F4F6"></div>`
           : `<div style="width:40px;height:40px;border-radius:10px;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.88rem;color:white;flex-shrink:0;font-family:'Inter',sans-serif">${escHtml(ini)}</div>`
         }
         <div style="flex:1;min-width:0">
