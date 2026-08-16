@@ -157,9 +157,9 @@
         <div class="se-scroll">
           <div class="se-searchbar" id="se-open-search">${icoSearch('var(--se-ink3)')}<span class="se-search-ph">Buscar un producto…</span></div>
           <div class="se-seclabel"><div class="se-h3">Lo más buscado en el mercado</div><span class="se-mono se-muted" id="se-trend-src">cargando…</span></div>
-          <div id="se-buscado">${loading()}</div>
+          <div id="se-buscado" class="skeleton-stagger">${hTendGrid(6)}</div>
           <div class="se-seclabel"><div class="se-h3">Qué se busca en cada rubro</div></div>
-          <div class="se-catgrid" id="se-catgrid">${loading()}</div>
+          <div class="se-catgrid skeleton-stagger" id="se-catgrid">${egSkRepetir(hCat(), 4)}</div>
           <p class="se-mono se-fuente">TENDENCIAS DEL MERCADO · PROVEEDORES DE EMPRENDEGO</p>
         </div>
       </section>
@@ -184,7 +184,7 @@
         </div>
         <div class="se-scroll">
           <div class="se-cat-hero"><div class="se-h2" id="se-cat-h">—</div><p class="se-sub" id="se-cat-sub">—</p></div>
-          <div id="se-cat-list">${loading()}</div>
+          <div id="se-cat-list" class="skeleton-stagger">${egSkRepetir(hFila(), 4)}</div>
         </div>
       </section>
 
@@ -197,7 +197,7 @@
         <div class="se-scroll">
           <div class="se-prodhero" id="se-prodhero"></div>
           <div class="se-seclabel"><div class="se-h3">Quién te lo vende</div></div>
-          <div id="se-prov-list">${loading()}</div>
+          <div id="se-prov-list" class="skeleton-stagger">${egSkRepetir(hProv(), 3)}</div>
           <p class="se-mono se-fuente">PROVEEDORES Y PRECIOS · EMPRENDEGO</p>
         </div>
       </section>
@@ -224,6 +224,52 @@
   function icoWa() { return '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 00-8.6 15l-1.3 4.7 4.8-1.3A10 10 0 1012 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.5c-.2.2-.3.4-.1.7.2.3.9 1.4 1.9 2.3 1.3 1.1 2.3 1.5 2.6 1.6.3.1.5.1.7-.1l.7-.9c.2-.3.4-.2.7-.1l2 .9c.3.1.5.2.5.4.1.1.1.6-.1 1.3z"/></svg>'; }
   function icoCheck() { return '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1l2.6 1.9 3.2-.2 1 3 2.6 1.9-1 3 1 3-2.6 1.9-1 3-3.2-.2L12 23l-2.6-1.9-3.2.2-1-3L2.6 16.4l1-3-1-3 2.6-1.9 1-3 3.2.2L12 1z"/><path d="M8 12l2.5 2.5L16 9" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'; }
   function loading() { return '<div class="se-loading"><span class="se-spin"></span></div>'; }
+
+  /* ---- ESQUELETOS ----
+     Antes cada pantalla mostraba un spinner centrado: no decia nada de lo
+     que venia y el layout saltaba entero al llegar los datos.
+
+     Cada hueso reusa la clase real de su tarjeta (.se-tcard, .se-catcard,
+     .se-prodrow, .se-supp) en vez de copiarle los estilos: asi hereda
+     padding, borde y radio exactos y no se puede desincronizar del CSS.
+     Los helpers (egSkRepetir, egSkPintar, egSkFin) vienen de app.js, que
+     se carga antes que este archivo. */
+  function hTend() {
+    return `<div class="se-tcard" style="pointer-events:none">
+      <span class="skeleton" style="width:26px;height:11px"></span>
+      <span class="skeleton" style="width:74%;height:14px"></span>
+      <span class="skeleton" style="width:52%;height:11px"></span>
+    </div>`;
+  }
+  function hCat() {
+    return `<div class="se-catcard" style="pointer-events:none">
+      <span class="skeleton" style="width:66%;height:13px"></span>
+      <span class="skeleton" style="width:44%;height:10px"></span>
+    </div>`;
+  }
+  function hFila() {
+    return `<div class="se-prodrow" style="pointer-events:none">
+      <div class="skeleton" style="width:42px;height:42px;border-radius:12px;flex:0 0 42px"></div>
+      <div class="se-prodinfo" style="flex:1;min-width:0">
+        <div class="skeleton" style="width:70%;height:12px;margin-bottom:6px"></div>
+        <div class="skeleton" style="width:44%;height:10px"></div>
+      </div>
+    </div>`;
+  }
+  function hProv() {
+    return `<div class="se-supp" style="pointer-events:none;margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <div class="skeleton" style="width:42px;height:42px;border-radius:12px;flex:0 0 42px"></div>
+        <div style="flex:1;min-width:0">
+          <div class="skeleton" style="width:58%;height:13px;margin-bottom:6px"></div>
+          <div class="skeleton" style="width:38%;height:10px"></div>
+        </div>
+      </div>
+      <div class="skeleton" style="width:100%;height:34px;border-radius:11px;margin-top:8px"></div>
+    </div>`;
+  }
+  // Las tendencias van dentro de .se-tgrid, igual que las tarjetas reales.
+  function hTendGrid(n) { return '<div class="se-tgrid">' + egSkRepetir(hTend(), n || 6) + '</div>'; }
   function fotoBox(p, cls) {
     const url = fotoDe(p);
     if (url) return '<div class="' + cls + '" style="background-image:url(\'' + esc(url) + '\')"></div>';
@@ -377,8 +423,12 @@
           <span class="se-cat-name">${esc(x.c.key)}</span>
           <span class="se-cat-n se-mono">${x.n} proveedor${x.n !== 1 ? 'es' : ''}</span>
         </button>`).join('');
-    cont.innerHTML = cards || '<p class="se-muted" style="padding:8px 2px">Sin categorías disponibles.</p>';
-    cont.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => verCategoria(b.dataset.cat)));
+    // Los listeners van DENTRO del callback: egSkFin escribe el contenido
+    // recien despues del fundido del esqueleto, asi que engancharlos afuera
+    // los dejaria colgados de nodos que todavia no existen.
+    egSkFin(cont, cards || '<p class="se-muted" style="padding:8px 2px">Sin categorías disponibles.</p>', function () {
+      cont.querySelectorAll('[data-cat]').forEach(b => b.addEventListener('click', () => verCategoria(b.dataset.cat)));
+    });
   }
 
   async function renderMasBuscado() {
@@ -408,10 +458,11 @@
     }
     const src = $('se-trend-src');
     if (src) src.textContent = fromMarket ? 'Mercado, hoy' : 'Demanda en EmprendeGO';
-    if (!terms.length) { cont.innerHTML = '<p class="se-muted" style="padding:8px 2px">Todavía no hay datos de tendencias.</p>'; return; }
-    cont.innerHTML = '<div class="se-tgrid">' + terms.map((t, i) => cardTendencia(t, i)).join('') + '</div>';
-    // Tocar una tendencia = matchear con proveedores de EmprendeGO.
-    cont.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
+    if (!terms.length) { egSkFin(cont, '<p class="se-muted" style="padding:8px 2px">Todavía no hay datos de tendencias.</p>'); return; }
+    egSkFin(cont, '<div class="se-tgrid">' + terms.map((t, i) => cardTendencia(t, i)).join('') + '</div>', function () {
+      // Tocar una tendencia = matchear con proveedores de EmprendeGO.
+      cont.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
+    });
   }
 
   // Tarjeta de tendencia. Solo datos verificables: la posicion es la que devuelve
@@ -460,7 +511,11 @@
     const provs = provsDeCat(cat);
     $('se-cat-sub').textContent = provs.length + ' proveedor' + (provs.length !== 1 ? 'es' : '') + ' del rubro en EmprendeGO';
     const list = $('se-cat-list');
-    list.innerHTML = loading();
+    egSkPintar(list, egSkRepetir(hFila(), 4), {
+      stagger: true,
+      errorMsg: 'No pudimos cargar este rubro.',
+      reintentar: function () { verCategoria(key); }
+    });
     show('categoria');
 
     // 1) Tendencias del rubro. Si ML no puede filtrar por esa categoria devuelve
@@ -495,12 +550,13 @@
     }
 
     if (!html) {
-      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Sin datos de ${esc(key)} por ahora</div><p class="se-muted">Probá con el buscador.</p></div>`;
+      egSkFin(list, `<div class="se-empty"><div class="se-empty-t">Sin datos de ${esc(key)} por ahora</div><p class="se-muted">Probá con el buscador.</p></div>`);
       return;
     }
-    list.innerHTML = html;
-    list.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
-    ligarCardsProveedor(list);
+    egSkFin(list, html, function () {
+      list.querySelectorAll('[data-term]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.term)));
+      ligarCardsProveedor(list);
+    });
   }
 
   function rowProducto(p, prov) {
@@ -522,7 +578,11 @@
     $('se-prod-title').textContent = t;
     $('se-prodhero').innerHTML = '';
     const list = $('se-prov-list');
-    list.innerHTML = loading();
+    egSkPintar(list, egSkRepetir(hProv(), 3), {
+      stagger: true,
+      errorMsg: 'No pudimos cargar los proveedores.',
+      reintentar: function () { abrirProducto(term); }
+    });
     show('prod');
     await Promise.all([cargarProveedores(), cargarIndice()]);
 
@@ -561,15 +621,15 @@
       if (delRubro.length) {
         const cards = ordenarProveedores(delRubro)
           .map((p, i) => cardProveedor(p, { min: null, count: 0, rubroOnly: true }, t, i)).join('');
-        list.innerHTML =
+        egSkFin(list,
           `<div class="se-nota">
              <div class="se-nota-t">Sin publicaciones</div>
              <p class="se-muted">Te mostramos ${delRubro.length} proveedores del rubro ${esc(cat.key)}.</p>
-           </div><div class="se-sgrid">${cards}</div>`;
-        ligarCardsProveedor(list);
+           </div><div class="se-sgrid">${cards}</div>`,
+          function () { ligarCardsProveedor(list); });
         return;
       }
-      list.innerHTML = `<div class="se-empty"><div class="se-empty-t">Todavía no tenemos proveedores con “${esc(t)}” publicado</div><p class="se-muted">Probá con un término más general, o mirá las categorías.</p></div>`;
+      egSkFin(list, `<div class="se-empty"><div class="se-empty-t">Todavía no tenemos proveedores con “${esc(t)}” publicado</div><p class="se-muted">Probá con un término más general, o mirá las categorías.</p></div>`);
       return;
     }
 
@@ -579,10 +639,10 @@
       .filter(x => x.prov)
       .sort((a, b) => (a.info.min || 9e9) - (b.info.min || 9e9))
       .map((x, i) => cardProveedor(x.prov, x.info, t, i)).join('');
-    list.innerHTML = cards
+    egSkFin(list, cards
       ? `<div class="se-sgrid">${cards}</div>`
-      : `<div class="se-empty"><div class="se-empty-t">Proveedores no disponibles ahora</div></div>`;
-    ligarCardsProveedor(list);
+      : `<div class="se-empty"><div class="se-empty-t">Proveedores no disponibles ahora</div></div>`,
+      function () { ligarCardsProveedor(list); });
   }
 
   // Tap en la ficha = perfil del proveedor (abrirDetalle vive en app.js).
@@ -645,7 +705,9 @@
     const t = norm(q);
     clearTimeout(buscarT);
     if (t.length < 2) { cont.innerHTML = '<p class="se-muted se-mono" style="padding:12px 2px">Escribí al menos 2 letras…</p>'; return; }
-    cont.innerHTML = loading();
+    // Sin timeout: el debounce de abajo lo repinta en cada tecla y un cartel
+    // de error saltando mientras se escribe seria peor que la espera.
+    egSkPintar(cont, egSkRepetir(hFila(), 3), { stagger: true, timeout: false });
     buscarT = setTimeout(async () => {
       await Promise.all([cargarProveedores(), cargarIndice()]);
 
@@ -661,10 +723,10 @@
 
       if (!top.length && !provs.length) {
         const cat = catDeTermino(t);
-        cont.innerHTML = `<div class="se-empty">
+        egSkFin(cont, `<div class="se-empty">
             <div class="se-empty-t">Nadie tiene “${esc(q.trim())}” publicado</div>
             <p class="se-muted">${cat ? 'Probá mirando la categoría ' + esc(cat.key) + ', o buscá un término más general.' : 'Probá con un término más general.'}</p>
-          </div>`;
+          </div>`);
         return;
       }
 
@@ -690,9 +752,10 @@
           nombre: p.nombre, precio: p.precio, imagen_url: fotos[p.id] || ''
         }, byId[p.prov])).join('');
       }
-      cont.innerHTML = html;
-      cont.querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.prod)));
-      ligarCardsProveedor(cont);
+      egSkFin(cont, html, function () {
+        cont.querySelectorAll('[data-prod]').forEach(b => b.addEventListener('click', () => abrirProducto(b.dataset.prod)));
+        ligarCardsProveedor(cont);
+      });
     }, 200);
   }
 

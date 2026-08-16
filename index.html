@@ -80,7 +80,7 @@ src="https://www.facebook.com/tr?id=1032515699633074&ev=PageView&noscript=1"
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260713-nov7">
+<link rel="stylesheet" href="css/styles.css?v=20260814-skel5">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -1578,7 +1578,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
           <span id="dash-msgs-new" style="position:absolute;top:8px;right:8px;background:#EF4444;color:white;font-size:.55rem;font-weight:800;padding:2px 6px;border-radius:8px;display:none">NEW</span>
         </button>
-        <button class="dash-action-btn" onclick="exportarContactosCSV();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="exportarContactosCSV(this);haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
           <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Contactos</div><div style="font-size:.7rem;color:#999">exportar CSV</div></div>
         </button>
@@ -1686,7 +1686,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div class="form-group"><label>WhatsApp</label><input type="tel" id="edit-wa" placeholder="+54 9 11 1234-5678"></div>
         <div class="form-group"><label>Instagram</label><input type="text" id="edit-instagram" placeholder="@minegocio"></div>
         <div class="form-group"><label>Rubros <span style="font-size:.75rem;color:var(--gray);font-weight:400">(hasta 3)</span></label><div id="edit-rubros-picker" class="rubros-picker"></div></div>
-        <button class="submit-btn" id="btn-guardar-perfil" onclick="guardarCambiosPerfil()">Guardar cambios</button>
+        <button class="submit-btn" id="btn-guardar-perfil" onclick="guardarCambiosPerfil(this)">Guardar cambios</button>
       </div>
     </div>
   </div>
@@ -1825,7 +1825,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <label>Su experiencia</label>
         <textarea id="resena-texto-input" placeholder="Cuente cómo fue su experiencia con este proveedor..." style="min-height:100px"></textarea>
       </div>
-      <button class="submit-btn" onclick="submitResena()">Publicar reseña</button>
+      <button class="submit-btn" onclick="submitResena(this)">Publicar reseña</button>
     </div>
   </div>
 </div>
@@ -1894,7 +1894,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           </div>
           <div class="form-group"><label>Descripción (opcional)</label><textarea id="new-prod-desc" placeholder="Breve descripción del producto..." style="min-height:60px"></textarea></div>
         </div>
-        <button class="submit-btn" style="margin-top:16px" onclick="addProduct()">
+        <button class="submit-btn" style="margin-top:16px" onclick="addProduct(this)">
           <span id="add-btn-text">Agregar al catálogo ✓</span>
         </button>
       </div>
@@ -1909,7 +1909,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <label>Link de MercadoLibre *</label>
           <input type="url" id="ml-url-input" placeholder="https://articulo.mercadolibre.com.ar/MLA-..." style="font-size:.85rem">
         </div>
-        <button onclick="importarDesdeML()" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
+        <button onclick="importarDesdeML(this)" style="width:100%;background:linear-gradient(135deg,#FFE600,#f5c800);color:#333;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer;margin-bottom:16px">
           <span id="ml-import-btn-text">🔍 Traer datos del producto</span>
         </button>
 
@@ -1944,7 +1944,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           </div>
         </div>
 
-        <button id="ml-save-btn" onclick="guardarProductoML()" style="display:none;width:100%" class="submit-btn">
+        <button id="ml-save-btn" onclick="guardarProductoML(this)" style="display:none;width:100%" class="submit-btn">
           Agregar al catálogo ✓
         </button>
 
@@ -1988,7 +1988,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         </div>
         <div id="multi-prod-list" style="display:flex;flex-direction:column;gap:10px"></div>
         <button onclick="agregarFilaMulti()" style="width:100%;background:var(--blue-light);color:var(--blue);border:none;border-radius:12px;padding:11px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;margin-top:8px">+ Agregar otra fila</button>
-        <button class="submit-btn" style="margin-top:12px" onclick="addProductosMultiples()">
+        <button class="submit-btn" style="margin-top:12px" onclick="addProductosMultiples(this)">
           <span id="multi-btn-text">Guardar todos los productos ✓</span>
         </button>
       </div>
@@ -2033,7 +2033,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <input type="file" id="edit-foto-extra-input" accept="image/*" multiple style="display:none" onchange="addEditFotosExtra(this)">
   </div>
 </div>
-        <button class="submit-btn" onclick="guardarEdicionProducto()">Guardar cambios ✓</button>
+        <button class="submit-btn" onclick="guardarEdicionProducto(this)">Guardar cambios ✓</button>
       </div>
     </div>
   </div>
@@ -2303,9 +2303,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div class="screen" id="screen-cotizaciones"></div>
 
 <script src="js/buscador.js?v=20260810-rescate"></script>
-<script src="js/app.js?v=20260812-resenas"></script>
+<script src="js/app.js?v=20260814-skel5"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
-<script src="js/cotizaciones.js?v=20260812-resenas"></script>
+<script src="js/cotizaciones.js?v=20260814-skel5"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

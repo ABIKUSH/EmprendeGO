@@ -584,13 +584,18 @@
 
     /* ---- ESQUELETOS ----
        Antes se veia "Cargando..." centrado y despues saltaba todo el layout.
-       El esqueleto ocupa el mismo lugar que lo que viene. */
+       El esqueleto ocupa el mismo lugar que lo que viene.
+
+       Usa el @keyframes shimmer y la duracion (--sk-vel) del sistema base
+       de css/styles.css, no uno propio: si el feed se ve al lado de otra
+       seccion, los dos esqueletos tienen que latir al mismo compas.
+       La paleta SI es propia: el gris generico ensucia este fondo. */
     #screen-cotizaciones .cz-sk{
       border-radius:12px;
-      background:linear-gradient(100deg,#EDF1EF 20%,#F7F9F8 42%,#EDF1EF 62%);
-      background-size:240% 100%;animation:czBrillo 1.25s linear infinite;
+      background:linear-gradient(90deg,#EDF1EF 0%,#F7F9F8 50%,#EDF1EF 100%);
+      background-size:200% 100%;
+      animation:shimmer var(--sk-vel,1.5s) ease-in-out infinite;
     }
-    @keyframes czBrillo{from{background-position:180% 0}to{background-position:-60% 0}}
     #screen-cotizaciones .cz-sk-pulso{height:196px;border-radius:22px}
     #screen-cotizaciones .cz-sk-linea{height:11px;border-radius:6px}
 

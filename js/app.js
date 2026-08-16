@@ -892,12 +892,32 @@ function getProvRating(provId) {
   return calcRatingStats(cached);
 }
 
+/* Hueso de una reseña: reusa .resena-card / .resena-header para heredar
+   el padding, el borde y el radio exactos. */
+function skelResena() {
+  return `<div class="resena-card" style="margin-bottom:8px">
+    <div class="resena-header">
+      <div style="flex:1">
+        <div class="skeleton" style="height:12px;width:38%;margin-bottom:6px"></div>
+        <div class="skeleton" style="height:10px;width:66px"></div>
+      </div>
+      <div class="skeleton" style="height:10px;width:30px;flex-shrink:0"></div>
+    </div>
+    <div class="skeleton" style="height:10px;width:96%;margin-bottom:6px"></div>
+    <div class="skeleton" style="height:10px;width:72%"></div>
+  </div>`;
+}
+
 async function renderRatingSummary(provId) {
   const pid = String(provId);
 
-  // Mostrar loading mientras carga
+  // Esqueleto con la forma de dos reseñas en vez del "Cargando reseñas..."
   const listEl = document.getElementById('det-resenas-list');
-  if (listEl) listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:12px 0">Cargando reseñas...</p>';
+  egSkPintar(listEl, egSkRepetir(skelResena(), 2), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar las reseñas.',
+    reintentar: function () { renderRatingSummary(provId); }
+  });
 
   const resenas = await cargarResenas(pid);
   const { avg, count, dist } = calcRatingStats(resenas);
@@ -931,9 +951,9 @@ async function renderRatingSummary(provId) {
   // Lista de reseñas
   if (listEl) {
     if (!resenas.length) {
-      listEl.innerHTML = '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Todavía no tiene reseñas. Sea el primero en dejar una.</p>';
+      egSkFin(listEl, '<p style="font-size:.82rem;color:var(--gray);text-align:center;padding:8px 0">Todavía no tiene reseñas. Sea el primero en dejar una.</p>');
     } else {
-      listEl.innerHTML = resenas.slice(0, 5).map(r => {
+      egSkFin(listEl, resenas.slice(0, 5).map(r => {
         const fechaStr = r.fecha ? timeAgo(new Date(r.fecha)) : 'Reciente';
         return `<div class="resena-card">
           <div class="resena-header">
@@ -945,7 +965,7 @@ async function renderRatingSummary(provId) {
           </div>
           <div class="resena-texto">${escHtml(r.texto)}</div>
         </div>`;
-      }).join('');
+      }).join(''));
     }
   }
 
@@ -983,11 +1003,12 @@ function setResenaRating(val) {
   });
 }
 
-async function submitResena() {
+async function submitResena(btnEl) {
   if (!currentUser) { showToast('Inicie sesión para dejar una reseña'); return; }
   if (!resenaRatingActual) { showToast('Elija de 1 a 5 estrellas'); return; }
   const texto = document.getElementById('resena-texto-input').value.trim();
   if (!texto) { showToast('Cuente cómo fue su experiencia'); return; }
+  if (!egBtnCargando(btnEl, 'Publicando…')) return;
 
   // El nombre lo tomamos de la cuenta logueada, NO del input (que es de solo
   // lectura). Guardamos también el email para poder rastrear reseñas falsas.
@@ -1019,6 +1040,7 @@ async function submitResena() {
     showToast('Reseña guardada (sin conexión)');
   }
 
+  egBtnListo(btnEl);
   closeResenaModal();
   renderRatingSummary(pid);
 }
@@ -1343,6 +1365,185 @@ function skelProvHoriz(n = 5) {
       <div class="skel" style="height:11px;width:80%"></div>
       <div class="skel" style="height:9px;width:55%"></div>
     </div>`).join('');
+}
+
+/* ===== SISTEMA DE SKELETONS — helpers ============================
+   Capa 100% visual: no toca queries, ni orden de datos, ni validaciones.
+   Solo decide QUE se ve mientras se espera una respuesta.
+
+   Uso tipico:
+     egSkPintar('mi-lista', egSkRepetir(miTarjetaHueso(), 3), {stagger:true});
+     try {
+       const { data } = await sb.from('tabla').select('*');   // <- intacto
+       egSkFin('mi-lista', armarHTML(data));
+     } catch (e) {
+       egSkError('mi-lista', null, () => cargarMiLista());
+     }
+
+   Cruce: primero se desvanece el esqueleto (180ms) y recien despues
+   entra el contenido. No se superponen: si se dibujaran los dos a la
+   vez el contenedor duplicaria su alto por un instante y saltaria.
+
+   Los contenedores tienen que ser "puros" (solo la lista). Si el nodo
+   tambien contiene encabezado fijo, hay que apuntar al hijo que lista. */
+
+const EG_SK_SALIDA = 180;      // dura el fade-out del esqueleto
+const EG_SK_TIMEOUT = 12000;   // techo antes de dar la carga por fallada
+
+function _egSkEl(ref) {
+  if (!ref) return null;
+  return typeof ref === 'string' ? document.getElementById(ref) : ref;
+}
+
+// Repite el mismo hueso N veces. Devuelve solo los items, sin envoltorio,
+// para no romper los display:grid / display:flex que ya tienen los padres.
+function egSkRepetir(itemHtml, n) {
+  return new Array(Math.max(1, n || 3)).fill(itemHtml).join('');
+}
+
+function egSkPintar(ref, html, opciones) {
+  const el = _egSkEl(ref);
+  if (!el) return null;
+  const o = opciones || {};
+  clearTimeout(el._egSkT);
+  el.classList.remove('content-in', 'skeleton-out', 'skeleton-stagger');
+  el.setAttribute('aria-busy', 'true');
+  if (o.stagger) el.classList.add('skeleton-stagger');
+  el.innerHTML = html;
+  // Sin esto, un fetch colgado deja el esqueleto latiendo para siempre.
+  if (o.timeout !== false) {
+    el._egSkT = setTimeout(function () {
+      egSkError(el, o.errorMsg, o.reintentar);
+    }, o.timeout || EG_SK_TIMEOUT);
+  }
+  return el;
+}
+
+function egSkFin(ref, html, alTerminar) {
+  const el = _egSkEl(ref);
+  if (!el) return;
+  clearTimeout(el._egSkT); el._egSkT = null;
+  el.removeAttribute('aria-busy');
+
+  const teniaHueso = !!el.querySelector('.skeleton,.skel');
+  const aplicar = function () {
+    el.classList.remove('skeleton-out', 'skeleton-stagger');
+    if (html != null) el.innerHTML = html;
+    // El fundido SOLO cuando venia de un esqueleto. Varias de estas listas
+    // tambien se repintan al filtrar o al ordenar (el buscador del catalogo
+    // repinta en cada tecla): ahi un fade seria un parpadeo permanente.
+    if (teniaHueso) {
+      el.classList.remove('content-in');
+      void el.offsetWidth;          // reinicia la animacion si se re-render
+      el.classList.add('content-in');
+      setTimeout(function () { el.classList.remove('content-in'); }, 420);
+    }
+    if (alTerminar) { try { alTerminar(el); } catch (e) { } }
+  };
+
+  // Si nunca llego a verse un esqueleto (respuesta instantanea o cache),
+  // no tiene sentido cobrar los 180ms de salida.
+  if (!teniaHueso) { aplicar(); return; }
+  el.classList.add('skeleton-out');
+  setTimeout(aplicar, EG_SK_SALIDA);
+}
+
+/* Cancela el estado de carga SIN animar ni tocar el contenido.
+   Para cuando otro camino ya pinto el contenedor por su cuenta (ej: el
+   proveedor escribe en el buscador mientras el esqueleto sigue arriba).
+   Sin esto, el timeout armado por egSkPintar seguiria vivo y a los 12s
+   le borraria los resultados para poner el cartel de error. */
+function egSkLimpiar(ref) {
+  const el = _egSkEl(ref);
+  if (!el) return;
+  clearTimeout(el._egSkT); el._egSkT = null;
+  el.removeAttribute('aria-busy');
+  el.classList.remove('skeleton-out', 'skeleton-stagger', 'content-in');
+}
+
+function egSkError(ref, msg, reintentar) {
+  const el = _egSkEl(ref);
+  if (!el) return;
+  clearTimeout(el._egSkT); el._egSkT = null;
+  el.removeAttribute('aria-busy');
+  el.classList.remove('skeleton-out', 'skeleton-stagger');
+  const texto = msg || 'No pudimos cargar esto. Pruebe de nuevo.';
+  el.innerHTML = '<div class="eg-carga-error"><p>' + escHtml(texto) + '</p>' +
+    (reintentar ? '<button type="button" class="eg-error-btn">Probar de nuevo</button>' : '') +
+    '</div>';
+  const btn = el.querySelector('.eg-error-btn');
+  if (btn && reintentar) btn.addEventListener('click', function () { try { reintentar(); } catch (e) { } });
+}
+
+/* ---- numeros sueltos (stats del dashboard) ----
+   No son listas: es un <div> con un numero adentro. Arrancaban en "0"
+   hardcodeado en el HTML y saltaban al valor real, que se lee como si
+   el proveedor tuviera cero visitas por medio segundo.
+
+   El hueso va DENTRO del nodo, con alto menor al de su propia caja de
+   linea, asi no cambia el alto del contenedor y no hay salto.
+
+   `claro` = va sobre fondo blanco (usa el gris del sistema); por defecto
+   asume el header verde oscuro del dashboard, que es donde estan casi
+   todos los numeros. */
+function egSkNum(el, ancho, alto, claro) {
+  const n = _egSkEl(el);
+  if (!n) return;
+  n.innerHTML = '<span class="skeleton' + (claro ? '' : ' oscuro') + '" style="display:inline-block;vertical-align:middle;' +
+    'width:' + ancho + ';height:' + alto + ';border-radius:6px"></span>';
+}
+
+function egNum(el, valor) {
+  const n = _egSkEl(el);
+  if (!n) return;
+  n.textContent = valor;
+  n.classList.remove('content-in');
+  void n.offsetWidth;
+  n.classList.add('content-in');
+  setTimeout(function () { n.classList.remove('content-in'); }, 420);
+}
+
+/* ---- subida de avatar / logo ----
+   Comprime y sube hasta 3MB al bucket Avatares: puede tardar segundos y lo
+   unico que habia era un toast que se iba solo a los 2s. El hueso va como
+   capa absoluta sobre .avatar-upload-wrap (que ya es position:relative),
+   asi no cambia el tamano de nada. Va en variante oscura porque los dos
+   avatares viven sobre el header verde. */
+function egAvatarCargando(wrap, radio) {
+  if (!wrap || wrap.querySelector('.eg-avatar-hueso')) return;
+  const d = document.createElement('div');
+  d.className = 'skeleton oscuro eg-avatar-hueso';
+  d.style.cssText = 'position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:' + (radio || '50%');
+  wrap.appendChild(d);
+}
+
+function egAvatarListo(wrap) {
+  const d = wrap && wrap.querySelector('.eg-avatar-hueso');
+  if (d) d.remove();
+}
+
+/* ---- botones que disparan una accion async ----
+   Guarda el estado previo en el propio nodo y lo restaura. Deshabilitar
+   de verdad (no solo el look) es lo que evita el doble tap. */
+function egBtnCargando(btn, texto) {
+  if (!btn || btn._egBtnPrev != null) return false;   // ya esta en curso
+  btn._egBtnPrev = btn.innerHTML;
+  btn._egBtnDis = btn.disabled;
+  btn.disabled = true;
+  btn.classList.add('btn-cargando');
+  btn.setAttribute('aria-busy', 'true');
+  btn.innerHTML = '<span class="eg-btn-spin"></span>' + escHtml(texto || 'Un momento…');
+  return true;
+}
+
+function egBtnListo(btn, htmlFinal) {
+  if (!btn || btn._egBtnPrev == null) return;
+  btn.innerHTML = htmlFinal != null ? htmlFinal : btn._egBtnPrev;
+  btn.disabled = !!btn._egBtnDis;
+  btn.classList.remove('btn-cargando');
+  btn.removeAttribute('aria-busy');
+  btn._egBtnPrev = null;
+  btn._egBtnDis = null;
 }
 
 // ===== RENDER PROVEEDORES =====
@@ -1673,12 +1874,34 @@ function mensajeWAProd(prod, prov) {
   return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
 }
 
+/* Hueso de la tarjeta chica del catalogo del proveedor: foto de 90px de
+   alto (no cuadrada), titulo de dos lineas, precio y stock. Mismo borde,
+   radio y padding que la tarjeta real. */
+function skelProdMini() {
+  return `<div style="background:white;border-radius:12px;overflow:hidden;border:1px solid #eee;box-shadow:0 1px 6px rgba(0,0,0,.05)">
+    <div class="skeleton" style="height:90px;border-radius:0"></div>
+    <div style="padding:8px 9px 10px">
+      <div class="skeleton" style="height:10px;width:92%;margin-bottom:5px"></div>
+      <div class="skeleton" style="height:10px;width:58%;margin-bottom:7px"></div>
+      <div class="skeleton" style="height:13px;width:52%;margin-bottom:5px"></div>
+      <div class="skeleton" style="height:8px;width:40%"></div>
+    </div>
+  </div>`;
+}
+
 async function cargarProductosDetalle(proveedorId) {
   provDetalleData = [];
   provDetalleOffset = 0;
   const el = document.getElementById('det-productos-carousels');
   if (!el) return;
-  el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Cargando productos...</div>';
+  // Grilla de 3 columnas igual a la real (ver renderDetalleProductos): foto
+  // de 90px, dos lineas de titulo, precio y stock. 6 huesos = dos filas.
+  el.style.cssText = '';
+  egSkPintar(el, '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" class="skeleton-stagger">' +
+    egSkRepetir(skelProdMini(), 6) + '</div>', {
+    errorMsg: 'No pudimos cargar este catálogo.',
+    reintentar: function () { cargarProductosDetalle(proveedorId); }
+  });
   try {
     const hasta = provActual?.plan_hasta ?? null;
     // provActual.pro es booleano (pro: p.plan==='pro'), no existe campo .plan
@@ -1693,7 +1916,7 @@ async function cargarProductosDetalle(proveedorId) {
       // intencion. Asi capturamos la demanda hacia proveedores vacios (a quien empujar a cargar).
       // pedirMasCatalogo ya cuenta el intento y deja la opcion de WhatsApp en su mensaje.
       const intentoBtn = `<button onclick="pedirMasCatalogo('${escHtml(String(proveedorId))}')" style="margin-top:14px;display:inline-block;background:linear-gradient(135deg,#006039,#12855C);border:none;border-radius:12px;padding:13px 22px;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:800;color:#fff;cursor:pointer;box-shadow:0 8px 18px -8px rgba(0,60,36,.55)">Quiero ver más productos</button>`;
-      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavía no cargó su catálogo acá.<br>' + intentoBtn + '</div>';
+      egSkFin(el, '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">Este proveedor todavía no cargó su catálogo acá.<br>' + intentoBtn + '</div>');
       return;
     }
     const bgsColores = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
@@ -1721,8 +1944,9 @@ async function cargarProductosDetalle(proveedorId) {
     if (cajaBusq) cajaBusq.style.display = data.length >= 8 ? 'block' : 'none';
     await renderDetalleProductos(proveedorId);
   } catch (e) {
-    const el2 = document.getElementById('det-productos-carousels');
-    if (el2) el2.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--gray);font-size:.82rem">No se pudieron cargar los productos.</div>';
+    egSkError(document.getElementById('det-productos-carousels'),
+      'No pudimos cargar este catálogo.',
+      function () { cargarProductosDetalle(proveedorId); });
   }
 }
 
@@ -1751,7 +1975,7 @@ async function renderDetalleProductos(proveedorId) {
     : provDetalleData;
   if (palabras.length && !data.length) {
     el.style.cssText = '';
-    el.innerHTML = `<div style="text-align:center;padding:22px 14px;color:var(--gray);font-size:.82rem">Sin resultados para “${escHtml(provDetalleFiltro.trim())}” en este catálogo.</div>`;
+    egSkFin(el, `<div style="text-align:center;padding:22px 14px;color:var(--gray);font-size:.82rem">Sin resultados para “${escHtml(provDetalleFiltro.trim())}” en este catálogo.</div>`);
     return;
   }
   const slice = data.slice(0, (provDetalleOffset + 1) * DETALLE_PAGE_SIZE);
@@ -1789,14 +2013,14 @@ async function renderDetalleProductos(proveedorId) {
     const label = esCapado ? 'Quiero ver el catálogo completo' : 'Quiero ver más productos';
     intentoBtn = `<button onclick="pedirMasCatalogo('${escHtml(String(proveedorId))}')" style="width:100%;background:linear-gradient(135deg,#006039,#12855C);border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.84rem;font-weight:800;color:#fff;cursor:pointer;margin-top:10px;box-shadow:0 8px 18px -8px rgba(0,60,36,.55)">${label}</button>`;
   }
-  el.innerHTML = `
+  egSkFin(el, `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:${(resto > 0 || notaLimite || intentoBtn) ? '12px' : '0'}">
       ${cards}
     </div>
     ${resto > 0 ? `<button onclick="provDetalleOffset++;renderDetalleProductos('${proveedorId}')" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${Math.min(resto, DETALLE_PAGE_SIZE)} producto${Math.min(resto, DETALLE_PAGE_SIZE) > 1 ? 's' : ''} más →</button>` : ''}
     ${notaLimite}
     ${intentoBtn}
-  `;
+  `);
 }
 
 // ===== DETALLE PROVEEDOR =====
@@ -1934,6 +2158,12 @@ async function abrirChatDirecto(id) {
   chatMsgs = [];
   renderChat();
   goTo('chat');
+  // La pantalla se abria vacia y las burbujas caian de golpe cuando llegaba
+  // el historial. Hueso de burbujas hasta que responda la consulta.
+  egSkPintar('chat-msgs', skelChat(), {
+    errorMsg: 'No pudimos abrir esta conversación.',
+    reintentar: function () { abrirChatDirecto(id); }
+  });
 
   // Cargar historial filtrado por proveedor_id: mensajes del usuario + respuestas del proveedor
   try {
@@ -1951,7 +2181,7 @@ async function abrirChatDirecto(id) {
         dbId: m.id,
         nombre: m.de_tipo === 'proveedor' ? p.nombre : null
       }));
-      renderChat();
+      renderChat(true);
       // Marcar mensajes del proveedor como leídos para este usuario (fire-and-forget)
       sb.from('mensajes').update({ leido: true })
         .eq('proveedor_id', p.id)
@@ -1961,11 +2191,11 @@ async function abrirChatDirecto(id) {
         .then(() => {});
     } else {
       chatMsgs = [{ tipo: 'recv', texto: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', hora: '', nombre: p.nombre }];
-      renderChat();
+      renderChat(true);
     }
   } catch (e) {
     chatMsgs = [{ tipo: 'recv', texto: 'Hola! Soy ' + p.nombre + '. En que te puedo ayudar?', hora: '', nombre: p.nombre }];
-    renderChat();
+    renderChat(true);
   }
 
   iniciarChatPolling(p.id);
@@ -1978,6 +2208,30 @@ function volverChat() {
 }
 
 // ===== MENSAJES USUARIO (buyer) =====
+/* Hueso de una fila de conversacion. Copia la caja real de .conv-item:
+   avatar de 46px, dos lineas de texto y la hora a la derecha. */
+function skelConversacion() {
+  return `<div style="display:flex;align-items:center;gap:12px;padding:14px 12px;background:white;border-radius:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,.07)">
+    <div class="skeleton skeleton-avatar" style="width:46px;height:46px"></div>
+    <div style="flex:1;min-width:0">
+      <div class="skeleton" style="height:13px;width:52%;margin-bottom:6px"></div>
+      <div class="skeleton" style="height:10px;width:80%"></div>
+    </div>
+    <div class="skeleton" style="width:34px;height:10px;flex-shrink:0"></div>
+  </div>`;
+}
+
+/* Hueso del hilo de chat: burbujas alternadas, con el mismo radio y la
+   misma altura aproximada que .chat-msg (padding 10/14 + una linea). */
+function skelChat() {
+  const burbuja = (ancho, propia) => `<div style="display:flex;justify-content:${propia ? 'flex-end' : 'flex-start'}">
+    <div class="skeleton" style="width:${ancho};height:44px;border-radius:16px;border-bottom-${propia ? 'right' : 'left'}-radius:4px"></div>
+  </div>`;
+  return `<div style="display:flex;flex-direction:column;gap:10px;padding:4px 0">
+    ${burbuja('62%', false)}${burbuja('48%', true)}${burbuja('70%', false)}
+  </div>`;
+}
+
 async function cargarMensajesUsuario() {
   const el = document.getElementById('mensajes-list');
   if (!el) return;
@@ -1993,7 +2247,11 @@ async function cargarMensajesUsuario() {
     return;
   }
 
-  el.innerHTML = '<div style="text-align:center;padding:40px;color:#aaa;font-size:.85rem">Cargando...</div>';
+  egSkPintar(el, egSkRepetir(skelConversacion(), 4), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar sus mensajes.',
+    reintentar: cargarMensajesUsuario
+  });
 
   try {
     const { data, error } = await sb.from('mensajes')
@@ -2004,13 +2262,13 @@ async function cargarMensajesUsuario() {
     if (error) throw error;
 
     if (!data || !data.length) {
-      el.innerHTML = `
+      egSkFin(el, `
         <div style="text-align:center;padding:60px 20px">
           <div style="font-size:2.5rem;margin-bottom:14px">💬</div>
           <div style="font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700;color:#111;margin-bottom:6px">Todavía no hablaste con ningún proveedor</div>
           <div style="font-size:.83rem;color:#888;margin-bottom:24px;line-height:1.5">Encontrá uno y escribile directo</div>
           <button onclick="goTo('buscar')" style="background:#006039;color:white;border:none;border-radius:12px;padding:12px 24px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:700;cursor:pointer">Buscar proveedores</button>
-        </div>`;
+        </div>`);
       return;
     }
 
@@ -2034,7 +2292,7 @@ async function cargarMensajesUsuario() {
       if (provData) provData.forEach(p => { provsInfo[String(p.id)] = p; });
     }
 
-    el.innerHTML = convs.map(c => {
+    egSkFin(el, convs.map(c => {
       const prov = provsInfo[c.provId];
       const nombre = prov?.nombre || 'Proveedor';
       const rubro = prov?.rubro || '';
@@ -2053,21 +2311,30 @@ async function cargarMensajesUsuario() {
           <div style="font-size:.7rem;color:#bbb">${escHtml(tiempo)}</div>
         </div>
       </div>`;
-    }).join('');
+    }).join(''));
 
   } catch (e) {
-    el.innerHTML = '<div style="text-align:center;padding:30px;color:#bbb;font-size:.85rem">Error al cargar mensajes.</div>';
+    egSkError(el, 'No pudimos cargar sus mensajes.', cargarMensajesUsuario);
   }
 }
 
 function getHora() { return new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }); }
-function renderChat() {
+/* `conFundido` solo lo usa la apertura del chat, para cruzar desde el
+   hueso. El polling y el envio de mensajes siguen llamando renderChat()
+   pelado: ahi un fundido de toda la lista en cada mensaje nuevo seria un
+   parpadeo, no un pulido. */
+function renderChat(conFundido) {
   const el = document.getElementById('chat-msgs');
   if (!el) return;
-  el.innerHTML = chatMsgs.map(m => {
+  const html = chatMsgs.map(m => {
     const nombre = m.tipo === 'recv' && m.nombre ? '<div style="font-size:.68rem;font-weight:700;color:var(--blue);margin-bottom:3px">' + escHtml(m.nombre) + '</div>' : '';
     return '<div style="display:flex;flex-direction:column;align-items:' + (m.tipo === 'sent' ? 'flex-end' : 'flex-start') + '">' + nombre + '<div class="chat-msg ' + m.tipo + '">' + escHtml(m.texto || '').replace(/\n/g, '<br>') + '<div class="chat-msg-time">' + escHtml(m.hora) + '</div></div></div>';
   }).join('');
+  if (conFundido) {
+    egSkFin(el, html, function () { el.scrollTop = el.scrollHeight; });
+    return;
+  }
+  el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
 }
 let chatPollingInterval = null;
@@ -2744,12 +3011,20 @@ function renderConsultasTrend(provId, consultas, visitas) {
 async function cargarStatsDashboard() {
   if (!currentUser || !currentUser.proveedorId) return;
   const esPro = esProvPro();
+  // Huesos sobre los cuatro numeros mientras viaja la consulta. El "0" del
+  // HTML se leia como un dato real ("no tengo ninguna visita") hasta que
+  // llegaba el valor de verdad. Los anchos salen del tamano tipico del
+  // numero, y el alto es menor al de la caja de linea: no mueven nada.
+  egSkNum('stat-consultas', '58px', '28px');
+  egSkNum('stat-visitas', '38px', '20px');
+  egSkNum('stat-leads', '38px', '20px');
+  egSkNum('dash-prodstat-count', '38px', '20px');
   try {
     const { data: prov } = await sb.from('proveedores').select('visitas,consultas').eq('id', currentUser.proveedorId).single();
     if (prov) {
       // Consultas por WhatsApp: visible siempre (free y Pro) — es la prueba de valor.
       const elC = document.getElementById('stat-consultas');
-      if (elC) elC.textContent = prov.consultas || 0;
+      if (elC) egNum(elC, prov.consultas || 0);
       renderConsultasTrend(currentUser.proveedorId, prov.consultas || 0, prov.visitas || 0);
 
       // Dato REAL del mes desde la base (tabla consultas con fecha). Sobrescribe el delta
@@ -2790,7 +3065,7 @@ async function cargarStatsDashboard() {
 
       const el = document.getElementById('stat-visitas');
       if (el) {
-        el.textContent = prov.visitas || 0; // número real siempre; el free lo ve borroso
+        egNum(el, prov.visitas || 0); // número real siempre; el free lo ve borroso
         el.style.filter = esPro ? '' : 'blur(6px)';
         el.style.userSelect = esPro ? '' : 'none';
       }
@@ -2806,11 +3081,11 @@ async function cargarStatsDashboard() {
         .eq('proveedor_id', currentUser.proveedorId)
         .eq('visible', true);
       const elProd = document.getElementById('dash-prodstat-count');
-      if (elProd) elProd.textContent = prodCount || 0;
+      if (elProd) egNum(elProd, prodCount || 0);
     } catch (e) { }
     const elLeads = document.getElementById('stat-leads');
     if (elLeads) {
-      elLeads.textContent = totalMsgs; // real siempre; el free lo ve borroso
+      egNum(elLeads, totalMsgs); // real siempre; el free lo ve borroso
       elLeads.style.filter = esPro ? '' : 'blur(6px)';
       elLeads.style.userSelect = esPro ? '' : 'none';
     }
@@ -2847,6 +3122,13 @@ async function cargarStatsDashboard() {
       if (cta) cta.remove();
     }
   } catch (e) { }
+  // Red de seguridad: si algo de arriba fallo (o `prov` vino vacio), el
+  // numero que no se llego a escribir se quedaria como hueso latiendo para
+  // siempre. Cualquiera que siga en esqueleto vuelve al 0 del HTML.
+  ['stat-consultas', 'stat-visitas', 'stat-leads', 'dash-prodstat-count'].forEach(function (id) {
+    const n = document.getElementById(id);
+    if (n && n.querySelector('.skeleton')) egNum(n, '0');
+  });
 }
 
 // ===== CARTEL DE INTENCION AL ENTRAR AL PANEL =====
@@ -2934,7 +3216,11 @@ async function cargarRankingRubro() {
     const puesto = cohorte.findIndex(p => String(p.id) === miId) + 1;
     const total = cohorte.length;
     if (puesto < 1 || total < 2) { card.style.display = 'none'; return; } // sin competencia no hay pitch
+    // Seccion condicional: puede no aparecer nunca (sin rubro, sin cohorte).
+    // Por eso NO lleva esqueleto — reservarle lugar prometeria algo que a
+    // veces no llega. Entra con un fundido y listo.
     card.style.display = 'block';
+    card.classList.add('content-in');
     if (esProvPro()) {
       card.innerHTML = `<div style="display:flex;align-items:center;gap:13px;background:#fdf6e6;border:1.5px solid #ecd9a8;border-radius:16px;padding:14px 15px">
         <span style="width:46px;height:46px;border-radius:13px;background:rgba(200,150,46,.16);display:grid;place-items:center;flex-shrink:0">
@@ -3020,9 +3306,27 @@ function leerConvUsuario(row, provId) {
   abrirChatDirecto(provId);
 }
 
+/* Hueso de .hist-item (lo usan "Mis conversaciones" y el historial):
+   logo 40px radio 10, dos lineas y la hora. Reusa las clases reales. */
+function skelHistItem() {
+  return `<div class="hist-item" style="pointer-events:none">
+    <div class="skeleton" style="width:40px;height:40px;border-radius:10px;flex-shrink:0"></div>
+    <div class="hist-info">
+      <div class="skeleton" style="height:13px;width:46%;margin-bottom:6px"></div>
+      <div class="skeleton" style="height:10px;width:72%"></div>
+    </div>
+    <div class="skeleton" style="width:26px;height:10px;flex-shrink:0"></div>
+  </div>`;
+}
+
 async function cargarMisConversaciones() {
   const el = document.getElementById('mis-conversaciones-list');
   if (!el || !currentUser) return;
+  egSkPintar(el, egSkRepetir(skelHistItem(), 3), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar sus conversaciones.',
+    reintentar: cargarMisConversaciones
+  });
   try {
     // Paso 1: traer todos los proveedor_id donde el usuario envió mensajes
     const { data: misEnvios } = await sb.from('mensajes')
@@ -3032,7 +3336,7 @@ async function cargarMisConversaciones() {
 
     const provIds = [...new Set((misEnvios || []).map(m => m.proveedor_id).filter(Boolean))];
     if (!provIds.length) {
-      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      egSkFin(el, '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>');
       return;
     }
 
@@ -3052,7 +3356,7 @@ async function cargarMisConversaciones() {
       .order('created_at', { ascending: false });
 
     if (!todosLosMsgs || !todosLosMsgs.length) {
-      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      egSkFin(el, '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>');
       return;
     }
 
@@ -3079,12 +3383,12 @@ async function cargarMisConversaciones() {
 
     const convs = Object.values(convMap).slice(0, 8);
     if (!convs.length) {
-      el.innerHTML = '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>';
+      egSkFin(el, '<div class="empty-state"><div class="ei">💬</div><p style="font-size:.85rem">Todavía no hablaste con ningún proveedor.</p></div>');
       return;
     }
 
     const bgs = ['#065F46', '#FF6B00', '#00A651', '#047857', '#15803D'];
-    el.innerHTML = convs.map((c, i) => {
+    egSkFin(el, convs.map((c, i) => {
       const ini = escHtml(c.provNombre.substring(0, 2).toUpperCase());
       const preview = escHtml((c.ultimoMsg || '').split(String.fromCharCode(10)).join(' ').substring(0, 45) + ((c.ultimoMsg || '').length > 45 ? '...' : ''));
       const badgeId = `conv-badge-${c.provId}`;
@@ -3095,9 +3399,10 @@ async function cargarMisConversaciones() {
         `<span class="hist-time">${escHtml(timeAgo(new Date(c.ultimaFecha)))}</span>` +
         (c.noLeidos > 0 ? `<span id="${escHtml(badgeId)}" style="background:var(--blue);color:white;font-size:.62rem;font-weight:800;padding:2px 6px;border-radius:10px">${c.noLeidos}</span>` : '') +
         '</div></div>';
-    }).join('');
+    }).join(''));
   } catch (e) {
     console.error('Error cargando conversaciones:', e);
+    egSkError(el, 'No pudimos cargar sus conversaciones.', cargarMisConversaciones);
   }
 }
 function timeAgo(date) {
@@ -3135,8 +3440,37 @@ function renderProdGrid() {
     </div>`;
   }).join('');
 }
+// Hueso de una fila de "Mis productos": miniatura 52px, tres lineas de
+// texto y la columna de botones. Mismo padding/borde/radio que la fila real.
+function skelProdFila() {
+  return `<div style="background:white;border-radius:12px;padding:12px;border:1px solid #eee;display:flex;align-items:center;gap:12px">
+    <div class="skeleton" style="width:52px;height:52px;border-radius:10px;flex-shrink:0"></div>
+    <div style="flex:1;min-width:0">
+      <div class="skeleton" style="height:12px;width:72%;margin-bottom:7px"></div>
+      <div class="skeleton" style="height:14px;width:42%;margin-bottom:7px"></div>
+      <div class="skeleton" style="height:10px;width:58%"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+      <div class="skeleton" style="width:56px;height:24px;border-radius:6px"></div>
+      <div class="skeleton" style="width:56px;height:24px;border-radius:6px"></div>
+      <div class="skeleton" style="width:56px;height:24px;border-radius:6px"></div>
+    </div>
+  </div>`;
+}
+
+// Bandera solo de presentacion: si el proveedor abre "Mis productos" antes
+// de que termine la consulta, el modal mostraba la lista vacia (y su cartel
+// de "todavia no tenes productos", que es mentira mientras esta cargando).
+let _egProdsCargando = false;
+
 async function cargarProductosProveedor() {
   if (!currentUser || !currentUser.proveedorId) { productos = []; renderProdGrid(); return; }
+  _egProdsCargando = true;
+  egSkNum('dash-prod-count', '74px', '11px', true);
+  const listaModal = document.getElementById('misProductosList');
+  if (listaModal && document.getElementById('misProductosModal')?.classList.contains('open')) {
+    egSkPintar(listaModal, egSkRepetir(skelProdFila(), 3), { stagger: true });
+  }
   try {
     const esPro = esProvPro();
     const { data } = await sb.from('productos').select('*').eq('proveedor_id', currentUser.proveedorId).order('created_at', { ascending: false });
@@ -3155,9 +3489,12 @@ async function cargarProductosProveedor() {
       productos = productos.slice(0, 30);
     }
   } catch (e) { productos = []; }
+  _egProdsCargando = false;
   renderProdGrid();
   const countEl = document.getElementById('dash-prod-count');
-  if (countEl) countEl.textContent = productos.length + (productos.length === 1 ? ' publicado' : ' publicados');
+  if (countEl) egNum(countEl, productos.length + (productos.length === 1 ? ' publicado' : ' publicados'));
+  // Si el modal quedo abierto esperando, ahora si se puede pintar de verdad.
+  if (document.getElementById('misProductosModal')?.classList.contains('open')) ordenarMisProds(_misProdSort);
 }
 async function deleteProduct(id) {
   if (!currentUser?.proveedorId) return;
@@ -3368,15 +3705,15 @@ function extraerMLId(url) {
   return null;
 }
 
-async function importarDesdeML() {
+async function importarDesdeML(btnEl) {
   const url = document.getElementById('ml-url-input').value.trim();
   if (!url) { showToast('Pegá el link de MercadoLibre'); return; }
 
   const itemId = extraerMLId(url);
   if (!itemId) { showToast('Link inválido. Copiá la URL completa del producto'); return; }
 
-  const btn = document.getElementById('ml-import-btn-text');
-  btn.textContent = '⏳ Buscando producto...';
+  // Pega contra /api/ml con 15s de timeout: es la espera mas larga del alta.
+  if (!egBtnCargando(btnEl, 'Buscando producto…')) return;
 
   try {
     const controller = new AbortController();
@@ -3421,22 +3758,23 @@ async function importarDesdeML() {
 
     document.getElementById('ml-preview').style.display = 'block';
     document.getElementById('ml-save-btn').style.display = 'block';
-    btn.textContent = '🔍 Traer datos del producto';
+    egBtnListo(btnEl);
     showToast('✓ Producto encontrado');
 
   } catch (e) {
-    btn.textContent = '🔍 Traer datos del producto';
+    egBtnListo(btnEl);
     const msg = e.name === 'AbortError' ? 'Tiempo de espera agotado. Intentá de nuevo.' : 'No se pudo importar. Verificá el link.';
     showToast(msg);
   }
 }
 
-async function guardarProductoML() {
+async function guardarProductoML(btnEl) {
   if (!mlProductoImportado) return;
   const precio = parseFloat(document.getElementById('ml-precio-edit').value);
   const stock = parseInt(document.getElementById('ml-stock-edit').value) || null;
   const cat = document.getElementById('ml-cat-edit').value;
   if (!precio) { showToast('Ingresá el precio mayorista'); return; }
+  if (!egBtnCargando(btnEl, 'Guardando…')) return;
 
   const newProd = {
     nombre: mlProductoImportado.nombre,
@@ -3471,6 +3809,7 @@ async function guardarProductoML() {
   const labelEl = document.getElementById('ml-importados-label');
   importadosEl.style.display = 'block';
   labelEl.textContent = `✓ ${mlImportadosCount} producto${mlImportadosCount !== 1 ? 's' : ''} importado${mlImportadosCount !== 1 ? 's' : ''} en esta sesión`;
+  egBtnListo(btnEl);
 }
 
 function importarOtro() {
@@ -3518,7 +3857,7 @@ function renderFilasMulti() {
     </div>`).join('');
 }
 
-async function addProductosMultiples() {
+async function addProductosMultiples(btnEl) {
   const rows = document.querySelectorAll('#multi-prod-list [data-field="nombre"]');
   const prods = [];
   let hayError = false;
@@ -3533,8 +3872,8 @@ async function addProductosMultiples() {
   });
   if (hayError) { showToast('Completá nombre y precio en todas las filas'); return; }
   if (!prods.length) { showToast('No hay productos para guardar'); return; }
-  const btn = document.getElementById('multi-btn-text');
-  if (btn) btn.textContent = 'Guardando...';
+  // Inserta un lote entero de una: un doble tap duplicaba todo el lote.
+  if (!egBtnCargando(btnEl, 'Guardando…')) return;
   try {
     const { data } = await sb.from('productos').insert(prods).select();
     (data || prods.map((p, i) => ({ ...p, id: Date.now() + i }))).forEach(p => productos.unshift(p));
@@ -3545,7 +3884,7 @@ async function addProductosMultiples() {
   }
   renderProdGrid();
   closeAddProduct();
-  if (btn) btn.textContent = 'Guardar todos los productos ✓';
+  egBtnListo(btnEl);
 }
 
 function openAddProduct() {
@@ -3569,7 +3908,7 @@ function openAddProduct() {
 function closeAddProduct() { document.getElementById('addProdModal').classList.remove('open'); document.body.style.overflow = ''; }
 function closeAddProductOnBg(e) { if (e.target === document.getElementById('addProdModal')) closeAddProduct(); }
 
-async function addProduct() {
+async function addProduct(btnEl) {
   if (!currentUser?.proveedorId) { showToast('Solo proveedores pueden agregar productos'); return; }
   const name = document.getElementById('new-prod-name').value.trim();
   const price = document.getElementById('new-prod-price').value;
@@ -3579,8 +3918,13 @@ async function addProduct() {
   const desc = document.getElementById('new-prod-desc')?.value?.trim() || null;
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
 
-  const btn = document.getElementById('add-btn-text');
-  if (btn) btn.textContent = 'Guardando...';
+  // El boton se bloquea DESPUES de validar: si falla la validacion no hay
+  // nada que esperar y dejarlo deshabilitado seria un cepo.
+  // Antes solo cambiaba el texto y seguia clickeable: dos toques seguidos
+  // (o un toque doble en mobile) insertaban el producto dos veces.
+  // egBtnCargando guarda y restaura el innerHTML entero del boton, asi que
+  // el <span id="add-btn-text"> vuelve solo: ya no hace falta tocarlo.
+  if (!egBtnCargando(btnEl, 'Guardando…')) return;   // ya hay uno en curso
 
   // Subir foto principal + fotos extra de la galería
   const imgUrls = [];
@@ -3616,7 +3960,7 @@ async function addProduct() {
   renderProdGrid();
   closeAddProduct();
   showToast('✓ Producto guardado');
-  if (btn) btn.textContent = 'Agregar al catálogo ✓';
+  egBtnListo(btnEl);
 }
 function editarProducto(id, nombre, precio, stock, cat, catPrincipal) {
   document.getElementById('edit-prod-id').value = id;
@@ -3675,7 +4019,7 @@ function removeEditFoto() {
   document.getElementById('edit-foto-remove-btn').style.display = 'none';
   document.getElementById('edit-foto-input').value = '';
 }
-async function guardarEdicionProducto() {
+async function guardarEdicionProducto(btnEl) {
   const id = document.getElementById('edit-prod-id').value;
   const name = document.getElementById('edit-prod-name').value.trim();
   const price = document.getElementById('edit-prod-price').value;
@@ -3683,6 +4027,8 @@ async function guardarEdicionProducto() {
   const catPrincipal = document.getElementById('edit-prod-cat-principal')?.value || 'Otro';
   const catSub = document.getElementById('edit-prod-cat-sub')?.value || '';
   if (!name || !price) { showToast('Completá nombre y precio'); return; }
+  // Puede tardar: sube la foto principal y todas las extra antes del update.
+  if (!egBtnCargando(btnEl, 'Guardando…')) return;
   // Foto principal: si eligió una nueva, reemplaza; si no, se conserva la actual.
   let mainUrl;
   if (editFotoFile && currentUser?.proveedorId) {
@@ -3716,6 +4062,7 @@ async function guardarEdicionProducto() {
     if (idx >= 0) productos[idx] = { ...productos[idx], nombre: name, precio: parseFloat(price), stock: stock ? parseInt(stock) : null, categoria: catSub || catPrincipal, categoria_principal: catPrincipal, imagenes: upd.imagenes, ...(mainUrl ? { imagen_url: mainUrl } : {}) };
     renderProdGrid(); closeEditProduct(); showToast('Producto actualizado!');
   } catch (e) { showToast('Error al guardar'); }
+  egBtnListo(btnEl);
 }
 
 // ===== NAV =====
@@ -4699,7 +5046,12 @@ function abrirDetalleProd(id) {
   const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.9"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const _shareIcon = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#065F46" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>`;
   const _imgs = (Array.isArray(p.imagenes) && p.imagenes.length) ? p.imagenes : (p.imgUrl ? [p.imgUrl] : []);
-  document.getElementById('prod-det-emoji').innerHTML = `${_imgs.length ? `<img id="prod-det-main-img" src="${escHtml(_imgs[0])}" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none'">` : _boxIcon}
+  // Hueso detras de la foto principal: .prod-det-img ya es position:relative
+  // con aspect-ratio 1/1, asi que la capa absoluta no mueve nada. La foto
+  // entra recien cuando termino de bajar (onload) y ahi se saca el hueso.
+  const _hueso = `<div class="skeleton" id="prod-det-img-hueso" style="position:absolute;inset:0;border-radius:0"></div>`;
+  const _sacarHueso = `var h=document.getElementById('prod-det-img-hueso');if(h)h.remove();`;
+  document.getElementById('prod-det-emoji').innerHTML = `${_imgs.length ? _hueso + `<img id="prod-det-main-img" src="${escHtml(_imgs[0])}" style="width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .25s ease" onload="this.style.opacity=1;${_sacarHueso}" onerror="this.style.display='none';${_sacarHueso}">` : _boxIcon}
     <button class="prod-det-back" onclick="volverDetProd()">← Volver</button>
     <button onclick="event.stopPropagation();shareProducto();" aria-label="Compartir" style="position:absolute;top:14px;right:58px;background:rgba(255,255,255,.9);border:none;border-radius:10px;padding:7px 10px;cursor:pointer;display:flex;align-items:center;justify-content:center">${_shareIcon}</button>
     <button class="prod-det-fav" id="prod-det-fav-btn" onclick="event.stopPropagation();toggleFav(String(productoActual.provId));">${esFav(String(p.provId)) ? _heartFilled : _heartEmpty}</button>`;
@@ -4907,11 +5259,29 @@ function calcProdDet() {
 // ===== CHAT REAL PROVEEDOR =====
 let convActual = null; // { de_nombre, msgs }
 
+/* Hueso de la bandeja del proveedor. Reusa la clase .conv-item real en vez
+   de copiarle los estilos: asi hereda padding, borde y radio exactos, y no
+   hay forma de que se desincronice si manana se cambia el CSS. */
+function skelConvProv() {
+  return `<div class="conv-item" style="pointer-events:none">
+    <div class="skeleton" style="width:42px;height:42px;border-radius:11px;flex-shrink:0"></div>
+    <div class="conv-info">
+      <div class="skeleton" style="height:13px;width:48%;margin-bottom:6px"></div>
+      <div class="skeleton" style="height:10px;width:76%"></div>
+    </div>
+    <div class="conv-meta"><div class="skeleton" style="width:32px;height:10px"></div></div>
+  </div>`;
+}
+
 async function cargarConversaciones() {
   if (!currentUser || !currentUser.proveedorId) return;
   const el = document.getElementById('conv-list-el');
   if (!el) return;
-  el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Cargando...</div>';
+  egSkPintar(el, egSkRepetir(skelConvProv(), 4), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar su bandeja.',
+    reintentar: cargarConversaciones
+  });
 
   try {
     // Traer todos los mensajes de este proveedor agrupados por remitente
@@ -4924,7 +5294,7 @@ async function cargarConversaciones() {
     if (error) throw error;
 
     if (!data || !data.length) {
-      el.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:10px">💬</div><p style="font-size:.85rem;line-height:1.6">Todavía no recibiste mensajes.<br>Cuando un emprendedor te escriba, aparece acá.</p></div>';
+      egSkFin(el, '<div style="text-align:center;padding:40px 20px;color:var(--gray)"><div style="font-size:2rem;margin-bottom:10px">💬</div><p style="font-size:.85rem;line-height:1.6">Todavía no recibiste mensajes.<br>Cuando un emprendedor te escriba, aparece acá.</p></div>');
       return;
     }
 
@@ -4944,7 +5314,7 @@ async function cargarConversaciones() {
     const badge = document.getElementById('msgs-badge');
     if (badge) badge.classList.toggle('show', totalNoLeidos > 0);
 
-    el.innerHTML = convs.map((c, i) => {
+    egSkFin(el, convs.map((c, i) => {
       const ini = c.nombre.substring(0, 2).toUpperCase();
       const ultimo = c.ultimo;
       const preview = (ultimo.texto || '').replace(/\n/g, ' ').substring(0, 50) + (ultimo.texto && ultimo.texto.length > 50 ? '...' : '');
@@ -4960,10 +5330,10 @@ async function cargarConversaciones() {
           ${c.noLeidos > 0 ? `<div class="conv-unread-badge">${c.noLeidos}</div>` : ''}
         </div>
       </div>`;
-    }).join('');
+    }).join(''));
 
   } catch (e) {
-    el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--gray);font-size:.85rem">Error cargando mensajes.</div>';
+    egSkError(el, 'No pudimos cargar su bandeja.', cargarConversaciones);
   }
 }
 
@@ -4972,9 +5342,12 @@ async function abrirConvProveedor(nombre) {
   document.getElementById('prov-chat-nombre').textContent = nombre;
   document.getElementById('prov-chat-sub').textContent = 'Emprendedor';
   const msgsEl = document.getElementById('prov-chat-msgs');
-  msgsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray);font-size:.82rem">Cargando...</div>';
   document.getElementById('provChatModal').classList.add('open');
   document.body.style.overflow = 'hidden';
+  egSkPintar(msgsEl, skelChat(), {
+    errorMsg: 'No pudimos abrir esta conversación.',
+    reintentar: function () { abrirConvProveedor(nombre); }
+  });
   try {
     // Traer mensajes del usuario en esta conversacion
     const { data: msgsUsuario } = await sb.from('mensajes').select('*')
@@ -5001,20 +5374,23 @@ async function abrirConvProveedor(nombre) {
     await sb.from('mensajes').update({ leido: true })
       .eq('proveedor_id', currentUser.proveedorId)
       .eq('de_nombre', nombre).eq('de_tipo', 'usuario');
-    renderProvChat();
+    renderProvChat(true);
   } catch (e) {
-    msgsEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray)">Error cargando mensajes.</div>';
+    egSkError(msgsEl, 'No pudimos abrir esta conversación.', function () { abrirConvProveedor(nombre); });
   }
 }
 
-function renderProvChat() {
+// `conFundido`: mismo criterio que renderChat — solo al abrir la
+// conversacion, no en cada mensaje que se manda.
+function renderProvChat(conFundido) {
   const el = document.getElementById('prov-chat-msgs');
   if (!el || !convActual) return;
   if (!convActual.msgs.length) {
-    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:.85rem">No hay mensajes aún.</div>';
+    const vacio = '<div style="text-align:center;padding:40px;color:var(--gray);font-size:.85rem">No hay mensajes aún.</div>';
+    if (conFundido) egSkFin(el, vacio); else el.innerHTML = vacio;
     return;
   }
-  el.innerHTML = convActual.msgs.map(m => {
+  const html = convActual.msgs.map(m => {
     const esProveedor = m.de_tipo === 'proveedor';
     const tipo = esProveedor ? 'sent' : 'recv';
     const hora = m.created_at ? timeAgo(new Date(m.created_at)) : 'Ahora';
@@ -5024,6 +5400,11 @@ function renderProvChat() {
       <div class="chat-msg ${tipo}">${escHtml(m.texto || '').replace(/\n/g, '<br>')}<div class="chat-msg-time">${escHtml(hora)}</div></div>
     </div>`;
   }).join('');
+  if (conFundido) {
+    egSkFin(el, html, function () { el.scrollTop = el.scrollHeight; });
+    return;
+  }
+  el.innerHTML = html;
   el.scrollTop = el.scrollHeight;
 }
 
@@ -5328,9 +5709,31 @@ const ESTADO_LABEL = {
 };
 let pedidoActual = null;
 
+// Hueso de una tarjeta de pedido. Copia la caja real (padding 14, borde
+// 1.5px, radio 12) y las tres filas de adentro, asi el alto coincide y la
+// lista no salta cuando llegan los pedidos de verdad.
+function skelPedido() {
+  return `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div class="skeleton" style="height:13px;width:42%"></div>
+      <div class="skeleton" style="height:15px;width:68px;border-radius:20px"></div>
+    </div>
+    <div class="skeleton" style="height:11px;width:78%;margin-bottom:6px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="skeleton" style="height:15px;width:32%"></div>
+      <div class="skeleton" style="height:11px;width:38%"></div>
+    </div>
+  </div>`;
+}
+
 async function cargarPedidosRecientes() {
   const el = document.getElementById('dash-pedidos-list');
   if (!el || !currentUser?.proveedorId) return;
+  egSkPintar(el, egSkRepetir(skelPedido(), 2), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar sus pedidos.',
+    reintentar: cargarPedidosRecientes
+  });
   try {
     const { data } = await sb.from('pedidos')
       .select('*')
@@ -5340,14 +5743,14 @@ async function cargarPedidosRecientes() {
       .limit(10);
     pedidosCache = data || [];
     if (!pedidosCache.length) {
-      el.innerHTML = `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
+      egSkFin(el, `<div style="background:white;border-radius:12px;padding:14px;border:1.5px solid #eee;display:flex;align-items:center;gap:12px">
         <div style="width:40px;height:40px;border-radius:10px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📦</div>
         <div><div style="font-size:.82rem;font-weight:700;color:#111">Todavía no recibiste pedidos</div>
         <div style="font-size:.72rem;color:#999">Los pedidos del carrito aparecen acá</div></div>
-      </div>`;
+      </div>`);
       return;
     }
-    el.innerHTML = pedidosCache.map((p, idx) => {
+    egSkFin(el, pedidosCache.map((p, idx) => {
       const items = (() => { try { return JSON.parse(p.items); } catch (e) { return []; } })();
       const resumen = items.map(i => `${i.nombre} x${i.cantidad}`).join(', ');
       const fecha = new Date(p.created_at);
@@ -5366,9 +5769,9 @@ async function cargarPedidosRecientes() {
           <div style="font-size:.68rem;color:#065F46;font-weight:700">${tiempo} · Ver detalle →</div>
         </div>
       </div>`;
-    }).join('');
+    }).join(''));
   } catch (e) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:#999;font-size:.82rem">Error al cargar pedidos</div>';
+    egSkError(el, 'No pudimos cargar sus pedidos.', cargarPedidosRecientes);
   }
 }
 
@@ -5441,24 +5844,29 @@ function renderAccionesPedido(p) {
   const btnLabel = { confirmado: '✓ Confirmar pedido', 'pago recibido': '💳 Marcar pago recibido', 'en preparacion': '📦 En preparación', enviado: '🚀 Marcar como enviado' };
   const sigEstado = siguiente[p.estado];
   el.innerHTML = `
-    ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}')" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
-    ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado')" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
-    ${['enviado', 'cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
-    ${!['enviado', 'cancelado', 'archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado')" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
+    ${sigEstado ? `<button onclick="avanzarEstadoPedido('${p.id}','${sigEstado}',this)" style="width:100%;background:#006039;color:white;border:none;border-radius:12px;padding:14px;font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;cursor:pointer">${btnLabel[sigEstado]}</button>` : ''}
+    ${p.estado === 'pendiente' ? `<button onclick="avanzarEstadoPedido('${p.id}','cancelado',this)" style="width:100%;background:#fff0f0;color:#ef4444;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer">✕ Cancelar pedido</button>` : ''}
+    ${['enviado', 'cancelado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado',this)" style="width:100%;background:#f5f5f5;color:#666;border:none;border-radius:12px;padding:12px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">🗂 Archivar pedido</button>` : ''}
+    ${!['enviado', 'cancelado', 'archivado'].includes(p.estado) ? `<button onclick="avanzarEstadoPedido('${p.id}','archivado',this)" style="width:100%;background:#f5f5f5;color:#999;border:none;border-radius:12px;padding:10px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:600;cursor:pointer">Archivar</button>` : ''}
   `;
 }
 
-async function avanzarEstadoPedido(id, estado) {
-  showToast('Actualizando...');
+async function avanzarEstadoPedido(id, estado, btnEl) {
+  // Cambia el estado de un pedido real: dos toques mandaban dos updates y
+  // podian saltear un paso del flujo (confirmado -> enviado sin preparacion).
+  if (!egBtnCargando(btnEl, 'Actualizando…')) return;
   try {
     const idVal = isNaN(Number(id)) ? id : Number(id);
     const { error } = await sb.from('pedidos').update({ estado }).eq('id', idVal);
-    if (error) { showToast('Error: ' + error.message); return; }
+    if (error) { showToast('Error: ' + error.message); egBtnListo(btnEl); return; }
     pedidoActual = { ...pedidoActual, estado };
     if (estado === 'archivado') { cerrarDetallePedido(); showToast('Pedido archivado'); }
     else { renderAccionesPedido(pedidoActual); abrirDetallePedido(pedidoActual); showToast('Estado actualizado ✓'); }
     cargarPedidosRecientes();
   } catch (e) { showToast('Error: ' + (e?.message || 'desconocido')); }
+  // renderAccionesPedido repinta los botones, asi que el nodo original puede
+  // ya no estar en el DOM. egBtnListo igual lo deja consistente.
+  egBtnListo(btnEl);
 }
 
 function cerrarDetallePedido() {
@@ -5469,14 +5877,25 @@ function cerrarDetallePedido() {
 async function verPedidosArchivados() {
   const el = document.getElementById('dash-pedidos-list');
   if (!el || !currentUser?.proveedorId) return;
+  egSkPintar(el, egSkRepetir(skelPedido(), 2), {
+    stagger: true,
+    errorMsg: 'No pudimos cargar los archivados.',
+    reintentar: verPedidosArchivados
+  });
   const { data } = await sb.from('pedidos')
     .select('*')
     .eq('proveedor_id', String(currentUser.proveedorId))
     .eq('estado', 'archivado')
     .order('created_at', { ascending: false });
   pedidosCache = data || [];
-  if (!pedidosCache.length) { showToast('No tenés pedidos archivados'); return; }
-  el.innerHTML = `<div style="font-size:.75rem;color:#999;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between">
+  if (!pedidosCache.length) {
+    showToast('No tenés pedidos archivados');
+    // El esqueleto ya tapo la lista activa: hay que devolverla, si no queda
+    // latiendo para siempre. Vuelve a pintar los pedidos activos.
+    cargarPedidosRecientes();
+    return;
+  }
+  egSkFin(el, `<div style="font-size:.75rem;color:#999;font-weight:700;margin-bottom:6px;display:flex;justify-content:space-between">
     <span>🗂 Pedidos archivados</span>
     <span onclick="cargarPedidosRecientes()" style="color:#006039;cursor:pointer">← Ver activos</span>
   </div>` + pedidosCache.map((p, idx) => {
@@ -5491,7 +5910,7 @@ async function verPedidosArchivados() {
       <div style="font-size:.72rem;color:#999;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${resumen}</div>
       <div style="font-size:.88rem;font-weight:900;color:#999">$${Number(p.total).toLocaleString('es-AR')}</div>
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 
@@ -5522,9 +5941,11 @@ async function subirAvatar(file, carpeta) {
 async function subirAvatarUsuario(input) {
   const file = input.files[0];
   if (!file) return;
+  const wrap = document.getElementById('user-avatar-img')?.parentElement;
+  egAvatarCargando(wrap, '50%');
   showToast('Subiendo foto...');
   const url = await subirAvatar(file, 'usuarios');
-  if (!url) return;
+  if (!url) { egAvatarListo(wrap); return; }
   // Mostrar en la UI
   const img = document.getElementById('user-avatar-img');
   img.src = url;
@@ -5536,15 +5957,18 @@ async function subirAvatarUsuario(input) {
       await sb.from('usuarios').upsert({ email: currentUser.email, foto_url: url }, { onConflict: 'email' });
     }
   } catch (e) { }
+  egAvatarListo(wrap);
   showToast('✓ Foto actualizada');
 }
 
 async function subirLogoProveedor(input) {
   const file = input.files[0];
   if (!file) return;
+  const wrap = document.getElementById('dash-avatar-el')?.parentElement;
+  egAvatarCargando(wrap, '14px');   // el logo es cuadrado con esquinas de 14
   showToast('Subiendo logo...');
   const url = await subirAvatar(file, 'proveedores');
-  if (!url) return;
+  if (!url) { egAvatarListo(wrap); return; }
   // Mostrar en la UI
   const img = document.getElementById('dash-avatar-img');
   if (img) { img.src = url; img.style.display = 'block'; }
@@ -5560,6 +5984,7 @@ async function subirLogoProveedor(input) {
       calcularCompletitudPerfil();
     }
   } catch (e) { }
+  egAvatarListo(wrap);
   showToast('✓ Logo actualizado');
 }
 
@@ -5569,7 +5994,14 @@ async function cargarAvatarUsuario() {
     const { data } = await sb.from('usuarios').select('foto_url').eq('email', currentUser.email).single();
     if (data?.foto_url) {
       const img = document.getElementById('user-avatar-img');
-      if (img) { img.src = data.foto_url; img.style.display = 'block'; }
+      // Se desvanece al ENTRAR la imagen, no al pedirla: si se pinta antes
+      // de que baje, se ve el hueco blanco y despues aparece la foto de golpe.
+      // Las iniciales quedan abajo hasta ese momento (dicen mas que un hueso).
+      if (img) {
+        img.onload = function () { img.classList.add('content-in'); };
+        img.src = data.foto_url;
+        img.style.display = 'block';
+      }
       const ph = document.getElementById('user-avatar-placeholder');
       if (ph) ph.style.display = 'none';
     }
@@ -5582,7 +6014,11 @@ async function cargarLogoProveedor() {
     const { data } = await sb.from('proveedores').select('logo_url').eq('id', currentUser.proveedorId).single();
     if (data?.logo_url) {
       const img = document.getElementById('dash-avatar-img');
-      if (img) { img.src = data.logo_url; img.style.display = 'block'; }
+      if (img) {
+        img.onload = function () { img.classList.add('content-in'); };
+        img.src = data.logo_url;
+        img.style.display = 'block';
+      }
       const initials = document.getElementById('dash-avatar-initials');
       if (initials) initials.style.display = 'none';
       if (currentUser.provData) currentUser.provData.logo_url = data.logo_url;
@@ -5593,7 +6029,7 @@ async function cargarLogoProveedor() {
   } catch (e) { }
 }
 
-async function guardarCambiosPerfil() {
+async function guardarCambiosPerfil(btnEl) {
   if (!currentUser?.proveedorId) return;
   const nombre = (document.getElementById('edit-nombre')?.value || '').trim();
   const desc = (document.getElementById('edit-desc')?.value || '').trim();
@@ -5601,7 +6037,9 @@ async function guardarCambiosPerfil() {
   const ig = (document.getElementById('edit-instagram')?.value || '').trim();
   const rubro = getRubrosSeleccionados('edit-rubros-picker').join(', ') || (currentUser.provData?.rubro || '');
   if (!nombre) { showToast('El nombre no puede estar vacío'); return; }
-  showToast('Guardando...');
+  // El toast "Guardando..." se iba solo a los 2s aunque siguiera guardando;
+  // el estado ahora vive en el boton, que ademas queda bloqueado.
+  if (!egBtnCargando(btnEl, 'Guardando…')) return;
   try {
     const { error } = await sb.from('proveedores').update({ nombre, descripcion: desc, whatsapp: wa, instagram: ig, rubro }).eq('id', currentUser.proveedorId);
     if (error) throw error;
@@ -5618,6 +6056,7 @@ async function guardarCambiosPerfil() {
     calcularCompletitudPerfil();
     showToast('✓ Cambios guardados');
   } catch (e) { showToast('Error al guardar'); }
+  egBtnListo(btnEl);
 }
 
 // ===== EXCEL IMPORT =====
@@ -5859,6 +6298,13 @@ function abrirMisProductos() {
   document.getElementById('misProductosModal').classList.add('open');
   const s = document.getElementById('mis-prod-search');
   if (s) s.value = '';
+  // Si el catalogo todavia viaja, hueso en vez del cartel de "no tenes
+  // productos". cargarProductosProveedor repinta al terminar.
+  if (_egProdsCargando) {
+    _misProdSort = 'nuevo';
+    egSkPintar('misProductosList', egSkRepetir(skelProdFila(), 3), { stagger: true });
+    return;
+  }
   ordenarMisProds('nuevo');
 }
 
@@ -5867,6 +6313,9 @@ function buscarMisProds(query) {
   const filtrados = q ? productos.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q) || (p.categoria_principal || '').toLowerCase().includes(q)) : productos;
   const el = document.getElementById('misProductosList');
   if (!el) return;
+  // Filtra sobre lo que ya esta en memoria: es instantaneo y no lleva
+  // esqueleto. Pero si venia uno puesto, hay que desarmarlo (ver egSkLimpiar).
+  egSkLimpiar(el);
   if (!filtrados.length) { el.innerHTML = '<div style="text-align:center;padding:30px;color:#999;font-size:.85rem">Sin resultados para "' + query + '"</div>'; return; }
   el.innerHTML = filtrados.map(p => {
     const oculto = p.visible === false;
@@ -5907,7 +6356,7 @@ function ordenarMisProds(tipo) {
   const el = document.getElementById('misProductosList');
   if (!el) return;
   if (!sorted.length) {
-    el.innerHTML = `<div style="padding:20px 0">
+    egSkFin(el, `<div style="padding:20px 0">
       <div style="text-align:center;margin-bottom:16px">
         <div style="font-size:1.8rem;margin-bottom:6px">📦</div>
         <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#333;margin-bottom:4px">Todavía no tenés productos</div>
@@ -5927,10 +6376,10 @@ function ordenarMisProds(tipo) {
           <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Importar desde MercadoLibre</div><div style="font-size:.72rem;color:#999">Pegá el link y traemos los datos</div></div>
         </button>
       </div>
-    </div>`;
+    </div>`);
     return;
   }
-  el.innerHTML = sorted.map(p => {
+  egSkFin(el, sorted.map(p => {
     const oculto = p.visible === false;
     const img = p.imagen_url
       ? `<img loading="lazy" src="${escHtml(imgThumb(p.imagen_url, 150, 70))}" style="width:52px;height:52px;object-fit:cover;border-radius:10px;flex-shrink:0;background:#F3F4F6">`
@@ -5951,7 +6400,7 @@ function ordenarMisProds(tipo) {
           : ''}
       </div>
     </div>`;
-  }).join('');
+  }).join(''));
 }
 
 // ===== HOME CAROUSELS =====
@@ -6416,6 +6865,10 @@ async function renderTiendaNubeSection() {
 
   // Si no es Pro, mostrar botón bloqueado
   if (!esProvPro()) {
+    // Este camino no pasa por egSkFin. Si una llamada anterior dejo un
+    // esqueleto (ej: se le vencio el Pro entre una y otra), hay que
+    // desarmarlo o su timeout terminaria borrando este boton.
+    egSkLimpiar(btnArea);
     const card = document.getElementById('tn-card');
     if (card) card.style.background = '#fff';
     statusLabel.textContent = 'Disponible en Plan Pro';
@@ -6423,6 +6876,15 @@ async function renderTiendaNubeSection() {
     btnArea.innerHTML = `<button onclick="showModalPro('Tienda Nube')" style="width:100%;background:#f1f3f0;color:#6b756e;border:1px solid #e5e8e2;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Tienda Nube · Solo Pro</button>`;
     return;
   }
+
+  // Hueso con la forma exacta del boton (41px de alto, radio 10) mientras
+  // se averigua si la tienda esta conectada. Antes el tile aparecia de golpe
+  // y cambiaba de "Conectar" a "Sincronizar" delante del proveedor.
+  egSkPintar('tn-btn-area', '<div class="skeleton" style="height:41px;border-radius:10px"></div>', {
+    timeout: 9000,
+    errorMsg: 'No pudimos consultar su Tienda Nube.',
+    reintentar: renderTiendaNubeSection
+  });
 
   // Query fresca para obtener estado actual de tn_store_id
   const { data } = await sb.from('proveedores').select('tn_store_id').eq('id', proveedorId).single();
@@ -6436,12 +6898,12 @@ async function renderTiendaNubeSection() {
     statusLabel.textContent = 'Conectada · Store #' + tnStoreId;
     statusLabel.style.color = '#0b6b45';
     if (card) card.style.background = '#fff';
-    btnArea.innerHTML = `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+    egSkFin(btnArea, `<button onclick="sincronizarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`);
   } else {
     statusLabel.textContent = 'Importá tus productos con fotos automáticamente';
     statusLabel.style.color = '#5f6f66';
     if (card) card.style.background = '#fff';
-    btnArea.innerHTML = `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`;
+    egSkFin(btnArea, `<button onclick="conectarTiendaNube(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Tienda Nube</button>`);
   }
 }
 
@@ -6590,6 +7052,7 @@ async function renderMercadoLibreSection() {
 
   // Si no es Pro -> tarjeta gris bloqueada
   if (!esProvPro()) {
+    egSkLimpiar(btnArea);   // mismo motivo que en Tienda Nube
     card.style.background = '#fff';
     statusLabel.textContent = 'Disponible en Plan Pro';
     statusLabel.style.color = '#8a948d';
@@ -6597,6 +7060,13 @@ async function renderMercadoLibreSection() {
     btnArea.innerHTML = `<button onclick="showModalPro('Mercado Libre')" style="width:100%;background:#f1f3f0;color:#6b756e;border:1px solid #e5e8e2;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Conectar Mercado Libre · Solo Pro</button>`;
     return;
   }
+
+  // Mismo hueso que el tile de Tienda Nube: 41px de alto, radio 10.
+  egSkPintar('ml-btn-area', '<div class="skeleton" style="height:41px;border-radius:10px"></div>', {
+    timeout: 9000,
+    errorMsg: 'No pudimos consultar su Mercado Libre.',
+    reintentar: renderMercadoLibreSection
+  });
 
   // Query fresca para obtener estado actual de ML
   const { data } = await sb.from('proveedores').select('ml_connected,ml_user_id,ml_nickname,ml_categoria_map').eq('id', proveedorId).single();
@@ -6617,12 +7087,12 @@ async function renderMercadoLibreSection() {
     card.style.background = '#fff';
     statusLabel.textContent = data.ml_nickname ? `Conectada · @${data.ml_nickname}` : 'Conectada';
     statusLabel.style.color = '#0b6b45';
-    btnArea.innerHTML = `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`;
+    egSkFin(btnArea, `<button onclick="sincronizarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sincronizar productos</button>`);
   } else {
     card.style.background = '#fff';
     statusLabel.textContent = 'Importá tus publicaciones automáticamente';
     statusLabel.style.color = '#5f6f66';
-    btnArea.innerHTML = `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`;
+    egSkFin(btnArea, `<button onclick="conectarMercadoLibre(this)" style="width:100%;background:#0b6b45;color:#fff;border:none;border-radius:10px;padding:11px;font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Conectar con Mercado Libre</button>`);
   }
 }
 
@@ -6714,12 +7184,12 @@ async function confirmarMapeoML(btn) {
 }
 
 // ===== EXPORTAR CONTACTOS CSV (Solo Pro) =====
-async function exportarContactosCSV() {
+async function exportarContactosCSV(btnEl) {
   if (!esProvPro()) { showModalPro('Exportar contactos'); return; }
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
+  if (!egBtnCargando(btnEl, 'Generando CSV…')) return;
   try {
-    showToast('Generando CSV...');
     const { data, error } = await sb.from('mensajes')
       .select('de_nombre,de_email,created_at,texto')
       .eq('proveedor_id', proveedorId)
@@ -6755,6 +7225,9 @@ async function exportarContactosCSV() {
     URL.revokeObjectURL(url);
     showToast('✓ CSV exportado con ' + Object.keys(mapa).length + ' contactos');
   } catch (e) { showToast('Error al exportar contactos'); }
+  // finally: adentro del try hay un return anticipado (cuando no hay
+  // contactos). Sin esto el boton quedaba bloqueado para siempre.
+  finally { egBtnListo(btnEl); }
 }
 
 function renderBannerProDashboard() {
@@ -7277,7 +7750,11 @@ async function cargarMisNovedades() {
 
   if (!data.length) { ocultar(); return; }
 
+  // Igual que la tarjeta de ranking: seccion condicional (solo Pro y solo
+  // si publico algo). Fundido de entrada, sin esqueleto: no hay que
+  // reservarle alto a algo que la mayoria de las veces no aparece.
   caja.style.display = 'block';
+  caja.classList.add('content-in');
   caja.innerHTML = `
     <p class="nv-mias-titulo">Tus novedades <span class="nv-mias-cupo">${vivas} de ${NV_MAX_ACTIVAS}</span></p>
     <div class="nv-mias-lista">
