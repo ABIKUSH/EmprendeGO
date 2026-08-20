@@ -53,13 +53,9 @@ body, body *{
 #screen-inicio .notif-bell{background:rgba(255,255,255,.16);color:#fff}
 #screen-inicio .topbar-btn{background:#fff;color:#0a5c3c}
 .topbar-right{display:flex;align-items:center;gap:10px}
-/* Burbuja flotante del recomendador: "sale" del logo del home, aparece a los 3s */
-#recoBubble{position:absolute;top:100%;left:14px;margin-top:8px;z-index:120;display:none;max-width:236px;background:#fff;color:#0F172A;border:1px solid #DCE8E2;border-radius:14px;padding:11px 30px 11px 13px;box-shadow:0 12px 34px rgba(0,0,0,.22);cursor:pointer;transform:translateY(-8px) scale(.96);opacity:0;transition:opacity .25s ease,transform .25s ease}
-#recoBubble.show{opacity:1;transform:translateY(0) scale(1)}
-#recoBubble::before{content:"";position:absolute;top:-6px;left:52px;width:12px;height:12px;background:#fff;border-left:1px solid #DCE8E2;border-top:1px solid #DCE8E2;transform:rotate(45deg)}
-.reco-bubble-title{font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;line-height:1.25;color:#006039;position:relative;z-index:1}
-.reco-bubble-sub{font-size:.72rem;color:#64748B;margin-top:3px;line-height:1.3;position:relative;z-index:1}
-.reco-bubble-x{position:absolute;top:5px;right:7px;background:#F1F5F9;border:none;color:#64748B;width:19px;height:19px;border-radius:50%;font-size:.9rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+/* La burbuja del recomendador se saco del home: interrumpia a los 3 segundos,
+ antes de que la persona hubiera leido nada. El test sigue disponible desde el
+ menu ("Encontrar proveedor ideal"). */
 
 /* NOTIF BELL */
 .notif-bell{position:relative;background:var(--blue-light);border:none;border-radius:10px;padding:8px 10px;cursor:pointer;font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center}
@@ -280,15 +276,9 @@ body, body *{
 .nav-item.active .nav-icon{color:#006039}
 .nav-label{font-size:.6rem;font-weight:700;color:#aab2cc;letter-spacing:.03em;text-transform:uppercase}
 .nav-item.active .nav-label{color:#006039}
-@keyframes statShimmer{0%,100%{opacity:.35}50%{opacity:.8}}
-.stat-loading{animation:statShimmer 1.2s ease-in-out infinite}
 
-/* ===== BUSCADOR DEL HERO ===== */
-.hero-searchbar{transition:box-shadow .22s ease}
-.hero-searchbar:focus-within{box-shadow:0 0 0 3px rgba(74,222,128,.55),0 12px 30px -10px rgba(0,0,0,.45)}
-.hero-searchbar button{transition:filter .18s ease,transform .12s ease}
-.hero-searchbar button:hover{filter:brightness(1.08)}
-.hero-searchbar button:active{transform:translateY(1px)}
+/* El buscador del hero se fue con el hero viejo: el campo nuevo (.hero-m-fila)
+ vive al final de este archivo, sobre el mosaico de mercaderia. */
 
 /* ===== HAMBURGER BUTTON ===== */
 .hamburger-btn{display:flex;align-items:center;justify-content:center;background:none;border:none;padding:6px;cursor:pointer;color:var(--navy);border-radius:8px;flex-shrink:0;-webkit-tap-highlight-color:transparent}
@@ -2370,4 +2360,175 @@ select:focus { outline: none; }
   #screen-emprendedor .se-spin,#screen-emprendedor .se-livedot,#screen-emprendedor .se-pulse{animation:none}
   #screen-emprendedor .se-rise,#screen-emprendedor .se-tcard,#screen-emprendedor .se-supp{animation:none}
   #screen-emprendedor .se-tcard::after{transition:none}
+}
+
+/* =====================================================================
+   HOME — HERO DE MERCADERIA
+   =====================================================================
+   Antes el hero era un degradado verde con un titular que prometia
+   "Encontra el proveedor que tu negocio necesita". Esa promesa fallaba en
+   la mitad de las busquedas (8.321 de 16.745 en 30 dias volvian con cero
+   resultados), y una home de marketplace que se explica con texto en vez
+   de mostrar mercaderia se lee como plantilla.
+
+   Ahora el fondo del hero SON los productos. La foto contesta "donde
+   estoy" antes de que nadie lea una palabra.
+   ===================================================================== */
+
+/* ---- LIQUID GLASS PARA FONDO OSCURO ----
+   OJO: NO son los tokens de Cotizaciones. Los de alla
+   (--cz-glass-bg: rgba(241,248,244,.74)) estan medidos contra fondos
+   CLAROS (#fff, #FAFBFA). Puestos sobre las fotos oscuras del hero se ven
+   como una placa blanca opaca, no como vidrio.
+
+   Sobre fondo oscuro el material se invierte: muchisima menos opacidad y
+   el canto de luz mas marcado, que es lo unico que le da espesor.
+
+   Y aca el vidrio no es decoracion: sobre fotos que sube cualquiera el
+   contraste del fondo es impredecible, y el blur mas el velo son lo que
+   garantiza que el texto se lea igual. Es el UNICO vidrio del home; si se
+   agrega un segundo, deja de leerse como material y pasa a leerse como
+   filtro. */
+.hero-m{
+  --v-bg:rgba(255,255,255,.13);
+  --v-solido:#0E4B33;
+  --v-borde:rgba(255,255,255,.24);
+  --v-luz:rgba(255,255,255,.32);
+  position:relative;overflow:hidden;
+  min-height:370px;background:#0B2B1E;
+  border-radius:0 0 26px 26px;
+  box-shadow:0 20px 44px -30px rgba(3,40,26,.6);
+}
+.eg-vidrio{
+  background:var(--v-bg);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+          backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid var(--v-borde);
+  box-shadow:inset 0 1px 0 var(--v-luz),0 12px 28px -18px rgba(3,24,16,.7);
+}
+/* Los dos fallbacks redefinen TOKENS y no reglas, para que cualquier
+   superficie que se agregue despues quede cubierta sola. El @supports
+   pregunta por las dos formas porque Safari viejo entiende
+   -webkit-backdrop-filter pero no la version sin prefijo. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .hero-m{--v-bg:var(--v-solido);--v-borde:rgba(255,255,255,.3)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .hero-m{--v-bg:var(--v-solido);--v-borde:rgba(255,255,255,.3)}
+  .eg-vidrio{-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+
+/* El mosaico. 3x3 fijo: con menos de 9 fotos utiles el JS no lo pinta y
+   queda el verde de marca, que es un fondo digno y no un hueco. */
+.hero-m-mosaico{
+  position:absolute;inset:0;display:grid;
+  grid-template-columns:repeat(3,1fr);grid-auto-rows:1fr;gap:3px;
+}
+.hero-m-mosaico img{width:100%;height:100%;object-fit:cover;display:block;background:#123D2B}
+/* Mientras carga el catalogo, el degradado de siempre: el primer cuadro no
+   puede ser un rectangulo negro. */
+.hero-m-mosaico:empty{
+  background:radial-gradient(120% 78% at 84% 4%,rgba(224,123,46,.2),transparent 46%),
+             linear-gradient(168deg,#0a5c3c 0%,#074a30 58%,#053521 100%);
+}
+/* El velo es lo que hace legible el texto sobre CUALQUIER foto: opaco
+   abajo, donde vive el contenido, y abierto arriba para que la mercaderia
+   se vea. Sin esto no hay contraste garantizado. */
+.hero-m-velo{
+  position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to top,
+    rgba(4,26,18,.95) 32%,rgba(4,26,18,.74) 60%,rgba(4,26,18,.30) 100%);
+}
+.hero-m-cont{position:relative;z-index:1;padding:120px 20px 22px;color:#fff}
+.hero-m-tit{
+  font-family:'Inter','DM Sans',sans-serif;
+  font-size:clamp(2rem,7.5vw,2.6rem);font-weight:800;line-height:1.02;
+  letter-spacing:-.043em;margin:0 0 10px;text-wrap:balance;color:#fff;
+}
+.hero-m-tit em{font-style:normal;color:#F6B877}
+.hero-m-sub{
+  font-family:'DM Sans',sans-serif;font-size:.85rem;line-height:1.45;
+  color:rgba(255,255,255,.85);margin:0 0 15px;
+}
+
+/* Forma de buscador, promesa de cotizacion. La forma conocida hace que
+   nadie tenga que aprender nada; la palabra del boton hace el resto. */
+.hero-m-fila{display:flex;align-items:center;border-radius:14px;padding:5px 5px 5px 14px;gap:8px}
+.hero-m-fila input{
+  flex:1;min-width:0;border:none;background:none;outline:none;padding:12px 0;
+  font-family:'DM Sans',sans-serif;font-size:.88rem;color:#fff;
+}
+.hero-m-fila input::placeholder{color:rgba(255,255,255,.62)}
+.hero-m-fila input:focus-visible{outline:2px solid rgba(255,255,255,.9);outline-offset:3px;border-radius:4px}
+/* Blanco y no naranja: blanco sobre #FF6B00 da 2,85:1 y no pasa AA. El
+   verde de marca sobre blanco da 7,68:1, y ademas sobre fondo oscuro el
+   boton blanco es lo que mas separa. */
+.hero-m-fila button{
+  flex-shrink:0;border:none;border-radius:11px;padding:12px 17px;cursor:pointer;
+  background:#fff;color:#0a5c3c;
+  font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:800;white-space:nowrap;
+  transition:transform 180ms cubic-bezier(.23,1,.32,1);
+}
+.hero-m-fila button:active{transform:scale(.97)}
+
+/* La salida al catalogo. Discreta pero SIEMPRE presente: es lo que se usa
+   16.745 veces por mes y no puede quedarse sin puerta en el home. */
+.hero-m-link{
+  font-family:'DM Sans',sans-serif;font-size:.76rem;
+  color:rgba(255,255,255,.72);margin:13px 0 0;
+}
+.hero-m-link button{
+  background:none;border:none;padding:0;cursor:pointer;font:inherit;
+  color:#fff;font-weight:700;text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:rgba(255,255,255,.4);
+}
+
+/* ---- ASI FUNCIONA ----
+   Cambia la densidad respecto del hero a proposito: de una foto a sangre a
+   una caja con filas de datos. Ese cambio de ritmo es lo que evita que la
+   pagina se lea como una pila de tarjetas iguales. */
+.comof{padding:24px 20px 0}
+.comof-lin{
+  font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+  font-size:.62rem;letter-spacing:.11em;text-transform:uppercase;
+  color:#5F6E66;margin-bottom:8px;
+}
+.comof-tit{
+  font-family:'Inter','DM Sans',sans-serif;font-size:1.15rem;font-weight:800;
+  letter-spacing:-.026em;line-height:1.2;margin:0 0 14px;color:#1A1A1A;
+}
+.comof-caja{border:1px solid #DCE8E2;border-radius:15px;overflow:hidden;background:#fff}
+.comof-ped{background:#EFF6F2;padding:12px 14px;border-bottom:1px solid #DCE8E2}
+.comof-q{font-family:'Inter',sans-serif;font-size:.86rem;font-weight:750;line-height:1.3;color:#1A1A1A}
+.comof-m{font-size:.71rem;color:#5F6E66;margin-top:3px}
+.comof-r{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid #EEF3F0}
+.comof-r:last-child{border-bottom:none}
+/* El fondo lo pone _monoColor(), y esa paleta es TODA oscura (#065F46,
+   #6D28D9, #9D174D...). Por eso las iniciales van en blanco: el más claro de
+   los ocho es #0E7C5A y da 5,19:1 contra blanco, el más flojo #B45309 da
+   5,02:1. Los dos pasan AA. Con texto oscuro esto no se leía en ninguno. */
+.comof-av{
+  width:26px;height:26px;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Inter',sans-serif;font-size:.6rem;font-weight:800;color:#fff;
+}
+.comof-n{flex:1;min-width:0;font-size:.79rem;font-weight:650;color:#1A1A1A;line-height:1.3}
+.comof-n em{font-style:normal;display:block;font-size:.68rem;font-weight:500;color:#5F6E66;margin-top:1px}
+.comof-p{font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;white-space:nowrap;color:#1A1A1A}
+.comof-pie{font-size:.76rem;color:#5F6E66;margin:12px 0 0;line-height:1.5}
+.comof-pie button{
+  background:none;border:none;padding:0;cursor:pointer;font:inherit;
+  color:#006039;font-weight:700;text-decoration:underline;text-underline-offset:3px;
+}
+
+/* ---- CIERRE DEL MAYORISTA ----
+   Reemplaza dos tarjetas que tenian anatomia identica (cuadrado de 44px con
+   icono, titulo, subtitulo gris, chevron) para dos audiencias distintas.
+   Esta es la SEGUNDA audiencia del sitio: una oracion alcanza. */
+.home-cierre{
+  margin:26px 20px 30px;padding:0;font-size:.8rem;line-height:1.55;color:#41564C;
+}
+.home-cierre button{
+  background:none;border:none;padding:0;cursor:pointer;font:inherit;
+  color:#006039;font-weight:750;text-decoration:underline;text-underline-offset:3px;
 }

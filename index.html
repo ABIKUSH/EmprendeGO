@@ -308,93 +308,62 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" aria-label="Notificaciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot" id="notifDot"></span></button>
       <button class="topbar-btn" id="topbar-login-btn" onclick="goTo('perfil')">&#8594; Ingresar</button>
     </div>
-    <!-- Burbuja flotante del recomendador (se muestra a los 3s, 1 vez por sesión) -->
-    <div id="recoBubble" onclick="abrirTestDesdeBurbuja()" role="button" aria-label="Encontrá tu proveedor ideal">
-      <button class="reco-bubble-x" onclick="cerrarBurbujaReco(event)" aria-label="Cerrar">&times;</button>
-      <div class="reco-bubble-title">¿No sabés a quién comprarle? 🤔</div>
-      <div class="reco-bubble-sub">Respondé 4 preguntas y te encuentro el proveedor ideal.</div>
+  </div>
+
+  <!-- ===== HERO: LA MERCADERIA ES EL HERO =====
+       Nueve fotos reales de producto a sangre, un velo encima y el campo en
+       vidrio. El orden importa y es lo unico que hay que respetar si esto se
+       toca: la foto contesta "donde estoy" antes de que nadie lea una palabra,
+       y el bloque "Asi funciona" de abajo contesta "que se puede hacer aca".
+       Antes habia un titular que prometia encontrar proveedor; esa promesa
+       fallaba en la mitad de las busquedas.
+
+       El mosaico lo llena cargarMosaicoHero() (js/app.js) con los productos que
+       YA estan en memoria: ni una consulta nueva. NO es automatico por fecha ni
+       por cantidad — el porque esta escrito en esa funcion. -->
+  <div class="hero-m">
+    <div class="hero-m-mosaico" id="hero-mosaico" aria-hidden="true"></div>
+    <div class="hero-m-velo"></div>
+    <div class="hero-m-cont">
+      <h1 class="hero-m-tit">Todo lo que se vende <em>por mayor.</em></h1>
+      <p class="hero-m-sub">Buscalo, o pedí que te coticen lo que no encontrás.</p>
+      <!-- Forma de buscador, promesa de cotizacion. La gente ya sabe usar un
+           campo con un boton al lado; lo unico nuevo es lo que dice el boton. -->
+      <div class="hero-m-fila eg-vidrio">
+        <input type="text" id="hero-pedido-input" placeholder="500 remeras lisas"
+          aria-label="Qué necesitás comprar" autocomplete="off"
+          onkeydown="if(event.key==='Enter') heroPedir()">
+        <button type="button" onclick="heroPedir()">Pedir precio</button>
+      </div>
+      <p class="hero-m-link">
+        o <button type="button" onclick="goTo('buscar')">mirá el catálogo</button>
+        de <span id="hero-m-nprov">149</span> mayoristas verificados
+      </p>
     </div>
   </div>
 
-  <!-- HERO CON GRADIENTE -->
-  <div style="position:relative;background:radial-gradient(120% 78% at 84% 4%,rgba(224,123,46,.20),transparent 46%),linear-gradient(168deg,#0a5c3c 0%,#074a30 58%,#053521 100%);overflow:hidden;border-radius:0 0 28px 28px;box-shadow:0 20px 44px -30px rgba(3,40,26,.6)">
-    <div style="position:relative;z-index:1;padding:24px 22px 20px">
-      <!-- Greeting personalizado -->
-      <div id="hero-greeting" style="display:none;font-size:.8rem;font-weight:700;color:rgba(255,255,255,.85);margin-bottom:14px;letter-spacing:.01em"></div>
-      <!-- Prueba social: caras + verificación -->
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
-        <div style="display:flex;flex-shrink:0">
-          <span id="hero-logo-0" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;margin-right:-9px;overflow:hidden;display:block;background:linear-gradient(140deg,#cdd6ce,#8fa89a);transition:opacity .35s"></span>
-          <span id="hero-logo-1" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;margin-right:-9px;overflow:hidden;display:block;background:linear-gradient(140deg,#d8cbb8,#b09a7d);transition:opacity .35s"></span>
-          <span id="hero-logo-2" style="width:28px;height:28px;border-radius:50%;border:2px solid #0a5c3c;overflow:hidden;display:block;background:linear-gradient(140deg,#b7c6d1,#8098a8);transition:opacity .35s"></span>
-        </div>
-        <span style="color:rgba(255,255,255,.85);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;line-height:1.3">Proveedores verificados en toda Argentina</span>
-      </div>
-      <!-- Título grande con palabra destacada -->
-      <h1 style="font-family:'Inter','DM Sans',sans-serif;font-size:clamp(2.7rem,9vw,3.5rem);font-weight:800;line-height:1.02;color:#fff;margin-bottom:22px;letter-spacing:-0.035em;text-wrap:balance">
-        Encontrá el<br><span style="color:#f6b877">proveedor</span><br>que tu negocio<br>necesita.
-      </h1>
-      <!-- Barra de búsqueda -->
-      <div class="hero-searchbar" style="display:flex;align-items:center;background:white;border-radius:14px;padding:5px 5px 5px 14px;margin-bottom:11px;box-shadow:0 12px 30px -14px rgba(3,40,26,.7)">
-        <div style="display:flex;align-items:center;flex-shrink:0;margin-right:9px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2.4"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-        <input type="text" id="hero-search-input" placeholder="Rubro, provincia o producto..." style="flex:1;border:none;outline:none;padding:11px 0;font-family:'DM Sans',sans-serif;font-size:.88rem;color:#16201b;background:transparent;min-width:0" onkeydown="if(event.key==='Enter') heroSearch(this.value)">
-        <button onclick="heroSearch(document.getElementById('hero-search-input').value)" style="background:#0b6b45;color:white;padding:11px 17px;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;border:none">Buscar</button>
-      </div>
-      <!-- Publicar negocio button -->
-      <button onclick="goTo('landing-prov')" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:rgba(255,255,255,.06);color:white;border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Publicar mi negocio · gratis</button>
-    </div>
+  <!-- ===== ASI FUNCIONA =====
+       El bloque que ensena el modelo nuevo. No explica que es pedir una
+       cotizacion: muestra un pedido real y las respuestas que recibio.
 
-    <!-- Social proof carrusel -->
-    <div style="position:relative;z-index:1;margin:18px 18px 20px">
-      <div id="testimonios-wrap" style="position:relative;min-height:70px">
-        <div class="testim-slide" style="background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#cdd6ce,#93a89a);display:flex;align-items:center;justify-content:center;color:#0a3a28;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">SR</div>
-          <div style="flex:1;min-width:0">
-            <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Buscaba telas por mayor hacía meses. Acá di con un proveedor de Once en una tarde."</div>
-            <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Sofía R. · Local de indumentaria, La Plata</div>
-          </div>
-          <div style="color:#F59E0B;font-size:.75rem;flex-shrink:0">★★★★★</div>
-        </div>
-        <div class="testim-slide" style="display:none;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#d8cbb8,#b09a7d);display:flex;align-items:center;justify-content:center;color:#4a3a22;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">PV</div>
-          <div style="flex:1;min-width:0">
-            <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Abrí mi local de blanquería y surtí todo desde acá. Sábanas y toallones a precio mayorista de verdad."</div>
-            <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Paula V. · Blanquería, Mar del Plata</div>
-          </div>
-          <div style="color:#F59E0B;font-size:.75rem;flex-shrink:0">★★★★★</div>
-        </div>
-        <div class="testim-slide" style="display:none;background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;align-items:center;gap:11px">
-          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(140deg,#b7c6d1,#8098a8);display:flex;align-items:center;justify-content:center;color:#22323f;font-family:'DM Sans',sans-serif;font-weight:800;font-size:.78rem;flex-shrink:0">RT</div>
-          <div style="flex:1;min-width:0">
-            <div style="color:white;font-size:.78rem;font-weight:600;line-height:1.4">"Verifican en serio. Dejé de perder tiempo con vendedores truchos de los grupos de Facebook."</div>
-            <div style="color:rgba(255,255,255,.55);font-size:.67rem;margin-top:3px">Romina T. · Distribuidora de cosmética, Santa Fe</div>
-          </div>
-          <div style="color:#F59E0B;font-size:.75rem;flex-shrink:0">★★★★★</div>
-        </div>
+       Nace oculto y lo enciende cargarComoFunciona() SOLO si la base devuelve
+       un ejemplo de verdad. Sin la migracion corrida, o sin ningun pedido con
+       respuestas, no se pinta: un ejemplo inventado seria exactamente la clase
+       de maqueta que estamos sacando del home. -->
+  <div class="comof" id="comof" style="display:none">
+    <div class="comof-lin">Así funciona</div>
+    <h2 class="comof-tit">Pedís una vez. Te cotizan varios.</h2>
+    <div class="comof-caja">
+      <div class="comof-ped">
+        <div class="comof-q" id="comof-q"></div>
+        <div class="comof-m" id="comof-m"></div>
       </div>
-      <!-- dots -->
-      <div style="display:flex;justify-content:center;gap:5px;margin-top:8px">
-        <div class="testim-dot" style="width:20px;height:5px;border-radius:3px;background:rgba(255,255,255,.8);transition:all .3s"></div>
-        <div class="testim-dot" style="width:8px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);transition:all .3s"></div>
-        <div class="testim-dot" style="width:8px;height:5px;border-radius:3px;background:rgba(255,255,255,.3);transition:all .3s"></div>
-      </div>
+      <div id="comof-rs"></div>
     </div>
-
-    <!-- Stats en línea sobre el verde -->
-    <div class="reveal" style="position:relative;z-index:1;display:flex;gap:6px;margin:6px 22px 26px;padding-top:16px;border-top:1px solid rgba(255,255,255,.14)">
-      <div style="flex:1;text-align:center">
-        <div id="hero-stat-provs" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
-        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Proveedores</div>
-      </div>
-      <div style="flex:1;text-align:center">
-        <div id="hero-stat-prods" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
-        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Productos</div>
-      </div>
-      <div style="flex:1;text-align:center">
-        <div id="hero-stat-rubros" class="stat-loading" style="font-family:'Inter','DM Sans',sans-serif;font-size:1.4rem;font-weight:800;color:#fff;font-variant-numeric:tabular-nums;letter-spacing:-.02em">…</div>
-        <div style="font-family:'Inter','DM Sans',sans-serif;font-size:.6rem;color:rgba(255,255,255,.6);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-top:3px">Rubros</div>
-      </div>
-    </div>
+    <p class="comof-pie">
+      Gratis, y no te compromete a nada.
+      <button type="button" onclick="abrirCotizaciones()">Ver los pedidos abiertos</button>
+    </p>
   </div>
 
   <!-- CÓMO FUNCIONA (oculta temporalmente para probar el nuevo layout) -->
@@ -489,25 +458,22 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     <button id="home-ver-mas-btn" onclick="cargarMasHomeProductos()" style="display:none;width:100%;margin-top:14px;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver más productos →</button>
   </div>
 
-  <!-- BANNER TEST -->
-  <div onclick="openTest()" style="margin:20px 20px 0;background:#006039;border-radius:14px;padding:16px 18px;cursor:pointer;display:flex;align-items:center;gap:14px">
-    <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
-    <div style="flex:1">
-      <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:white;margin-bottom:2px">¿No sabés a qué proveedor comprarle?</div>
-      <div style="font-size:.76rem;color:rgba(255,255,255,.65)">Respondé 4 preguntas y te encontramos el ideal</div>
-    </div>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-  </div>
+  <!-- CIERRE PARA EL MAYORISTA
+       Acá vivían DOS tarjetas: "¿No sabés a qué proveedor comprarle?" y "Sos
+       mayorista?". Tenían anatomía idéntica — cuadrado de 44px con ícono,
+       título en negrita, subtítulo gris, chevron — para dos audiencias
+       distintas, una arriba de la otra. Es el patrón que más delataba que el
+       home salía de una plantilla.
 
-  <!-- PUBLICAR NEGOCIO -->
-  <div style="margin:12px 20px 28px;background:white;border:1.5px solid #E5E5E5;border-radius:14px;padding:16px 18px;display:flex;align-items:center;gap:14px;cursor:pointer" onclick="goTo('landing-prov')">
-    <div style="width:44px;height:44px;border-radius:12px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a4 4 0 0 0-8 0v2"/></svg></div>
-    <div style="flex:1">
-      <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;margin-bottom:2px">Sos mayorista?</div>
-      <div style="font-size:.76rem;color:#777;line-height:1.4">Publicá gratis y llegá a miles de emprendedores.</div>
-    </div>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-  </div>
+       La del recomendador se fue: compite de frente con pedir cotización, que
+       es lo mismo pero mejor, y el test sigue disponible desde el menú.
+       La del mayorista es esta línea. Es la SEGUNDA audiencia del sitio: no
+       necesita el mismo peso visual que la primera. -->
+  <p class="home-cierre">
+    ¿Vendés por mayor?
+    <button type="button" onclick="goTo('landing-prov')">Publicá gratis</button>
+    y respondé los pedidos de tu rubro.
+  </p>
 </div>
 
 <!-- ===== BUSCAR ===== -->

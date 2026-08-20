@@ -4939,7 +4939,11 @@
   // Sin esto las dos caian en la misma metrica y no habria forma de saber si
   // el carril sirve para algo.
   window.cotizPedirPara = async function (termino, origen) {
-    const boca = origen === 'carril' ? 'carril' : 'busqueda';
+    // 'home' es la tercera boca: el campo del hero, que ya no dice "Buscar"
+    // sino "Pedir precio". Sin nombrarla, todo lo que entra por ahi se
+    // contaria como si viniera de una busqueda sin resultados y no habria
+    // forma de saber si el hero nuevo sirve.
+    const boca = origen === 'carril' ? 'carril' : origen === 'home' ? 'home' : 'busqueda';
     // El termino NO va al titulo: va como referencia arriba del campo. Una
     // busqueda ("textil") no es un pedido, y publicada tal cual deja un pedido
     // que nadie puede cotizar. El rubro si se deduce y se marca como puesto

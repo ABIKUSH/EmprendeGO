@@ -804,7 +804,6 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   setTimeout(checkReveal, 200);
-  setTimeout(mostrarBurbujaReco, 3000);
   document.addEventListener('click', e => {
     if (!e.target.closest('#search-dropdown') && !e.target.closest('#searchInput')) {
       hideSearchDropdown();
@@ -2966,17 +2965,10 @@ function updateDrawerUser() {
 function updateTopbar() {
   const btn = document.getElementById('topbar-login-btn');
   if (btn) btn.textContent = currentUser ? currentUser.name.split(' ')[0] : '→ Ingresar';
-  const greet = document.getElementById('hero-greeting');
-  if (greet) {
-    if (currentUser) {
-      const hora = new Date().getHours();
-      const saludo = hora < 13 ? 'Buenos días' : hora < 20 ? 'Buenas tardes' : 'Buenas noches';
-      greet.textContent = saludo + ', ' + currentUser.name.split(' ')[0] + '! 👋';
-      greet.style.display = 'block';
-    } else {
-      greet.style.display = 'none';
-    }
-  }
+  // Acá se pintaba "Buenas tardes, {nombre}! 👋" arriba del titular del hero.
+  // Se fue con el hero viejo por dos motivos: el emoji va contra la regla de
+  // no usarlos en ningún lado, y el saludo le robaba la primera línea al
+  // titular, que ahora tiene que hacer todo el trabajo solo.
 }
 function updatePerfilUI() {
   if (!currentUser) return;
@@ -4525,31 +4517,17 @@ function openTest() {
   document.body.style.overflow = 'hidden';
 }
 
-// Burbuja flotante que invita al recomendador. Aparece 1 vez por sesión, 3s
-// después de entrar, y solo si el usuario está parado en el inicio.
-function mostrarBurbujaReco() {
-  return; // Burbuja del recomendador desactivada temporalmente.
-  try { if (sessionStorage.getItem('eg_reco_bubble')) return; } catch (e) { }
-  const inicio = document.getElementById('screen-inicio');
-  const bubble = document.getElementById('recoBubble');
-  if (!bubble || !inicio || !inicio.classList.contains('active')) return;
-  try { sessionStorage.setItem('eg_reco_bubble', '1'); } catch (e) { }
-  bubble.style.display = 'block';
-  requestAnimationFrame(() => bubble.classList.add('show'));
-  clearTimeout(window._recoBubbleTO);
-  window._recoBubbleTO = setTimeout(cerrarBurbujaReco, 10000);
-}
-function cerrarBurbujaReco(ev) {
-  if (ev) ev.stopPropagation();
-  const bubble = document.getElementById('recoBubble');
-  if (!bubble) return;
-  bubble.classList.remove('show');
-  setTimeout(() => { bubble.style.display = 'none'; }, 250);
-}
-function abrirTestDesdeBurbuja() {
-  cerrarBurbujaReco();
-  openTest();
-}
+// Acá vivían mostrarBurbujaReco() / cerrarBurbujaReco() / abrirTestDesdeBurbuja():
+// una burbuja que salía del logo a los 3 segundos de entrar para ofrecer el
+// recomendador. Ya venía desactivada con un `return` al principio, y ahora se
+// fue del todo junto con su HTML y su CSS.
+//
+// El motivo de fondo: interrumpía antes de que la persona hubiera leído nada.
+// Interrumpir a alguien que todavía no entendió dónde está es la forma más
+// rápida de que se vaya.
+//
+// El recomendador NO se fue: openTest() sigue colgado del botón "Encontrar
+// proveedor ideal" del menú.
 function closeTest() { document.getElementById('testModal').classList.remove('open'); document.body.style.overflow = ''; }
 function closeTestOnBg(e) { if (e.target === document.getElementById('testModal')) closeTest(); }
 function resetTest() {
@@ -4831,6 +4809,9 @@ async function cargarProductosReales() {
   renderHomeGrid();
   renderProdBuscar();
   abrirDeepLinkProd();
+  // Recién ahora hay productos en memoria: el mosaico del hero sale de acá y
+  // no de una consulta propia.
+  try { cargarMosaicoHero(); } catch (e) { }
 }
 
 // Abre el producto indicado por ?p=<id> una sola vez, ya cargado el catálogo.
@@ -6723,68 +6704,179 @@ async function renderRecienLlegados() {
   } catch (e) { }
 }
 
-// ===== HERO STATS =====
-async function cargarHeroStats() {
+// ===== HERO: EL MOSAICO DE MERCADERIA =====
+//
+// Acá vivían cargarHeroStats() (la fila de Proveedores / Productos / Rubros) y
+// cargarHeroLogos() (los tres círculos con logos rotando). Se fueron las dos
+// con el hero viejo: la banda de tres cifras grandes es de los tics más
+// reconocibles de página generada, y encima medía la OFERTA cuando lo que hay
+// que contar ahora es la demanda.
+//
+// El fondo del hero pasó a ser mercadería real. Nueve fotos de productos que
+// ya están cargados, a sangre, con el velo encima.
+//
+// NO PEGA NI UNA CONSULTA: sale de productosReales, que ya lo trajo
+// cargarProductosReales() desde /api/catalogo (cacheado en el CDN). Por eso se
+// llama DESPUÉS de esa función y no en el arranque.
+
+const MOSAICO_N = 9;
+
+// Rubros que no entran al mosaico, por nombre y a propósito.
+//
+// Lencería tiene 59 fotos cargadas y todo el derecho a estar en el catálogo:
+// eso no se discute y no cambia. Lo que no puede pasar es que caiga en la
+// PORTADA. El home es la página de destino de los avisos de Meta y es lo que
+// se ve en cualquier captura, y ya está decidido que esas fotos no van ni en
+// creativos ni en portada justamente por el riesgo de que restrinjan la cuenta
+// publicitaria.
+//
+// Si algún día alguien saca esta línea "por prolijidad", el mosaico las va a
+// meter solo. Va con el motivo escrito al lado para que eso no pase.
+const MOSAICO_FUERA = ['lencería', 'lenceria'];
+
+function cargarMosaicoHero() {
+  const cont = document.getElementById('hero-mosaico');
+  if (!cont || !productosReales.length) return;
+
+  const fuera = p => MOSAICO_FUERA.indexOf(String(p.catPrincipal || p.cat || '').toLowerCase()) >= 0;
+
+  /* Dos pasadas, y el orden importa.
+
+     La primera exige rubro Y proveedor distintos. Sin eso el mosaico se llena
+     solo: hay 666 fotos de Librería y Papelería salidas de DOS cuentas, así
+     que cualquier criterio por fecha o por cantidad deja el home pareciendo
+     una librería.
+
+     La segunda afloja el rubro pero mantiene el proveedor, para poder llenar
+     los nueve cuadros cuando no hay nueve rubros con foto. Sigue sin poder
+     dominar nadie: un proveedor, un cuadro. */
+  const elegidos = [], rubrosUsados = new Set(), provsUsados = new Set();
+
+  const juntar = pedirRubroNuevo => {
+    for (const p of productosReales) {
+      if (elegidos.length >= MOSAICO_N) return;
+      if (!p.imgUrl || fuera(p)) continue;
+      const rubro = String(p.catPrincipal || p.cat || '');
+      if (provsUsados.has(p.provId)) continue;
+      if (pedirRubroNuevo && rubrosUsados.has(rubro)) continue;
+      rubrosUsados.add(rubro);
+      provsUsados.add(p.provId);
+      elegidos.push(p);
+    }
+  };
+  juntar(true);
+  juntar(false);
+
+  // Con menos de nueve queda el degradado verde de marca (.hero-m-mosaico:empty).
+  // Un mosaico incompleto es peor que no tener mosaico: se ven los huecos.
+  if (elegidos.length < MOSAICO_N) return;
+
+  cont.innerHTML = elegidos.map(p =>
+    `<img src="${escHtml(imgThumb(p.imgUrl, 240, 68))}" alt="" onerror="this.remove()">`
+  ).join('');
+}
+
+// El contador de mayoristas del link al catálogo. Es el único número que
+// quedó en el hero, y va en una oración, no en una banda de estadísticas.
+async function cargarNProveedores() {
+  const el = document.getElementById('hero-m-nprov');
+  if (!el) return;
   try {
-    // Para el total real de productos usamos count exacto: un select normal
-    // trae como mucho 1000 filas (tope de PostgREST) y mostraba "+1000" fijo.
-    const [{ data: provs }, { count: prodsCount }] = await Promise.all([
-      sb.from('proveedores').select('id, rubro').eq('estado', 'aprobado'),
-      sb.from('productos').select('id', { count: 'exact', head: true })
-    ]);
-    const numProvs = provs?.length || 0;
-    const numProds = prodsCount || 0;
-    const rubros = new Set((provs || []).map(p => p.rubro).filter(Boolean));
-    const numRubros = rubros.size;
-    const e1 = document.getElementById('hero-stat-provs');
-    const e2 = document.getElementById('hero-stat-prods');
-    const e3 = document.getElementById('hero-stat-rubros');
-    if (e1) { e1.classList.remove('stat-loading'); animarContador(e1, numProvs, '+'); }
-    if (e2) { e2.classList.remove('stat-loading'); animarContador(e2, numProds, '+'); }
-    if (e3) { e3.classList.remove('stat-loading'); animarContador(e3, numRubros, '+'); }
+    const { count } = await sb.from('proveedores')
+      .select('id', { count: 'exact', head: true }).eq('estado', 'aprobado');
+    if (count) el.textContent = String(count);
+  } catch (e) { }
+}
+
+// ===== HERO: EL CAMPO =====
+//
+// Con algo escrito va derecho al formulario de producto con el término puesto.
+// Vacío abre la bifurcación, que pregunta qué clase de pedido es: preguntarle
+// eso a quien YA escribió "500 remeras" sería preguntarle algo que acaba de
+// contestar.
+function heroPedir() {
+  const inp = document.getElementById('hero-pedido-input');
+  const t = (inp?.value || '').trim();
+  try {
+    if (t) return cotizPedirPara(t, 'home');
+    return cotizPedir();
   } catch (e) {
-    const e1 = document.getElementById('hero-stat-provs');
-    const e2 = document.getElementById('hero-stat-prods');
-    const e3 = document.getElementById('hero-stat-rubros');
-    if (e1) { e1.classList.remove('stat-loading'); e1.textContent = '—'; }
-    if (e2) { e2.classList.remove('stat-loading'); e2.textContent = '—'; }
-    if (e3) { e3.classList.remove('stat-loading'); e3.textContent = '—'; }
+    // Si el módulo de Cotizaciones todavía no cargó, el campo no puede quedar
+    // muerto: lo que escribió sirve igual como búsqueda.
+    heroSearch(t);
   }
 }
 
-// ===== HERO: logos de proveedores rotando en los círculos =====
-async function cargarHeroLogos() {
-  const slots = [0, 1, 2].map(i => document.getElementById('hero-logo-' + i));
-  if (slots.some(s => !s)) return;
-  let pool = [];
+// ===== ASÍ FUNCIONA =====
+//
+// El bloque que enseña el modelo nuevo mostrando un pedido REAL y las
+// respuestas que recibió. No explica qué es pedir una cotización: lo muestra.
+//
+// Los precios de una cotización sólo los puede ver el comprador dueño del
+// pedido — lo impone la RLS (cot_select), no la pantalla. Por eso esto no lee
+// la tabla: llama a cotiz_ejemplo_home(), una función SECURITY DEFINER que
+// devuelve UN ejemplo ya recortado, con las iniciales del proveedor en vez del
+// nombre. Mismo patrón que cotiz_feed_publico().
+//
+// Nace oculto y sólo se enciende si la base devuelve un ejemplo de verdad. Sin
+// la migración corrida, o sin ningún pedido con al menos dos respuestas, el
+// bloque no se pinta. Inventar el ejemplo sería exactamente la clase de maqueta
+// que estamos sacando del home.
+async function cargarComoFunciona() {
+  const caja = document.getElementById('comof');
+  if (!caja) return;
   try {
-    const { data } = await sb.from('proveedores')
-      .select('logo_url')
-      .eq('estado', 'aprobado')
-      .not('logo_url', 'is', null)
-      .neq('logo_url', '')
-      .limit(48);
-    pool = (data || []).map(p => p.logo_url).filter(Boolean);
-  } catch (e) { return; }
-  if (pool.length < 3) return;
-  // barajar el pool para que no siempre arranque igual
-  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
-  function setLogo(slot, url) {
-    slot.style.opacity = '0';
-    setTimeout(() => {
-      slot.innerHTML = `<img src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
-      slot.style.opacity = '1';
-    }, 200);
+    const { data, error } = await sb.rpc('cotiz_ejemplo_home');
+    if (error) throw error;
+
+    const ej = Array.isArray(data) ? data[0] : data;
+    const rs = (ej && Array.isArray(ej.respuestas)) ? ej.respuestas : [];
+    // Con una sola respuesta el bloque no demuestra nada: la idea entera es
+    // que te cotizan VARIOS.
+    if (!ej || !ej.titulo || rs.length < 2) return;
+
+    const q = document.getElementById('comof-q');
+    const m = document.getElementById('comof-m');
+    const cont = document.getElementById('comof-rs');
+    if (!q || !m || !cont) return;
+
+    q.textContent = ej.titulo;
+    m.textContent = [ej.rubro, ej.provincia, hacecuanto(ej.created_at)]
+      .filter(Boolean).join(' · ');
+
+    cont.innerHTML = rs.slice(0, 3).map(r => {
+      const cond = [r.minimo, r.envio].filter(Boolean).join(' · ');
+      return `<div class="comof-r">
+        <span class="comof-av" style="background:${_monoColor(r.iniciales || '?')}">${escHtml(r.iniciales || '?')}</span>
+        <span class="comof-n">${escHtml(r.nombre || 'Un mayorista verificado')}${cond ? `<em>${escHtml(cond)}</em>` : ''}</span>
+        <span class="comof-p">${escHtml(r.precio_txt || '')}</span>
+      </div>`;
+    }).join('');
+
+    caja.style.display = 'block';
+  } catch (e) {
+    // Falta correr sql/2026-08-20_ejemplo_home.sql, o no hay ningún pedido con
+    // respuestas todavía. En los dos casos el home queda con el hero y la
+    // mercadería, que se sostiene solo.
+    console.warn('[home] así funciona: sin ejemplo para mostrar', e);
   }
-  slots.forEach((s, i) => setLogo(s, pool[i]));
-  // rota un círculo por vez para un efecto escalonado
-  let idx = 3, turn = 0;
-  setInterval(() => {
-    setLogo(slots[turn % 3], pool[idx % pool.length]);
-    idx++; turn++;
-  }, 2200);
 }
 
+// "hace 2 horas" para el pie del ejemplo. Cotizaciones tiene su propia
+// versión adentro del módulo; esta es para el home, que carga antes.
+function hacecuanto(iso) {
+  if (!iso) return '';
+  const d = new Date(iso), ahora = new Date();
+  const min = Math.floor((ahora - d) / 60000);
+  if (!isFinite(min) || min < 0) return '';
+  if (min < 60) return 'hace un rato';
+  const hs = Math.floor(min / 60);
+  if (hs < 24) return 'hace ' + hs + (hs === 1 ? ' hora' : ' horas');
+  const ds = Math.floor(hs / 24);
+  if (ds === 1) return 'ayer';
+  if (ds < 30) return 'hace ' + ds + ' días';
+  return '';
+}
 // ===== ONBOARDING =====
 let obSlide = 0;
 const OB_SLIDES = 3;
@@ -6894,25 +6986,13 @@ function abrirDeepLinkProv() {
   setTimeout(() => { try { abrirDetalle(wanted); } catch (e) { } }, 60);
 }
 
-// ===== CARRUSEL TESTIMONIOS =====
-(function initTestimonios() {
-  const slides = document.querySelectorAll('.testim-slide');
-  const dots = document.querySelectorAll('.testim-dot');
-  if (!slides.length) return;
-  let cur = 0;
-  function goTo(n) {
-    slides[cur].style.display = 'none';
-    dots[cur].style.width = '8px';
-    dots[cur].style.background = 'rgba(255,255,255,.3)';
-    cur = n % slides.length;
-    slides[cur].style.display = 'flex';
-    slides[cur].style.opacity = '0';
-    dots[cur].style.width = '20px';
-    dots[cur].style.background = 'rgba(255,255,255,.8)';
-    setTimeout(() => { slides[cur].style.transition = 'opacity .4s'; slides[cur].style.opacity = '1'; }, 10);
-  }
-  setInterval(() => goTo(cur + 1), 3500);
-})();
+// El carrusel de testimonios del hero se fue con el hero viejo. Eran tres
+// testimonios con cinco estrellas cada uno y puntitos abajo: cinco de cinco en
+// los tres es justamente la parte que no se cree. Un testimonio real, con
+// nombre y sin estrellas, convence más que tres perfectos.
+//
+// OJO si alguna vez vuelven: tenía un setInterval cada 3,5 s que corría para
+// siempre, también con la pantalla de inicio oculta.
 
 initOnboarding();
 
@@ -6999,8 +7079,10 @@ sb.auth.onAuthStateChange((event, session) => {
     setTimeout(() => checkSession(session), 0);
   }
 });
-cargarHeroStats();
-cargarHeroLogos();
+// El mosaico NO va acá: necesita productosReales, que llena
+// cargarProductosReales(). Se dispara al final de esa función.
+cargarNProveedores();
+cargarComoFunciona();
 renderRecienLlegados();
 cargarProductosReales();
 setTimeout(() => { try { renderProdBuscar(currentCat, ''); } catch (e) { } }, 300);
