@@ -145,14 +145,23 @@ notify pgrst, 'reload schema';
 
 -- =====================================================================
 -- COMPROBACION
--- Tiene que devolver UNA fila con:
---   columna = 'foto_url', select_ok = true, insert_ok = true,
---   anon_no_lee = false, tiene_check = true, feed_la_devuelve = true
+-- Tiene que devolver UNA fila con estos valores:
+--
+--   columna          = 'foto_url'
+--   select_ok        = true   -> el frontend puede leer la foto
+--   insert_ok        = true   -> puede guardarla al publicar
+--   anon_lee_directo = false  -> el visitante sin sesion NO toca la tabla.
+--                               Igual ve las fotos, pero a traves de
+--                               cotiz_feed_publico(), que es SECURITY DEFINER.
+--   tiene_check      = true   -> solo entran URLs del Storage propio
+--   feed_la_devuelve = true   -> la funcion del feed publico la incluye
 -- =====================================================================
 select 'foto_url' as columna,
        has_column_privilege('authenticated', 'public.solicitudes', 'foto_url', 'SELECT') as select_ok,
        has_column_privilege('authenticated', 'public.solicitudes', 'foto_url', 'INSERT') as insert_ok,
-       has_column_privilege('anon',          'public.solicitudes', 'foto_url', 'SELECT') as anon_no_lee,
+       -- Se llamaba anon_no_lee y confundia: la pregunta es si anon TIENE
+       -- permiso, asi que lo que queremos ver es un false.
+       has_column_privilege('anon',          'public.solicitudes', 'foto_url', 'SELECT') as anon_lee_directo,
        exists (select 1 from pg_constraint
                 where conname = 'solicitudes_foto_url_chk'
                   and conrelid = 'public.solicitudes'::regclass)                        as tiene_check,
