@@ -42,27 +42,148 @@
   const COLS_SOL = 'id,created_at,usuario_id,comprador_nombre,comprador_foto,' +
     'titulo,cantidad,unidad,rubro,provincia,detalles,presupuesto,estado,cierra_at,respuestas';
 
-  /* foto_url llega con sql/2026-08-19_solicitudes_foto.sql.
-     OJO: pedir en el select una columna que no existe no devuelve esa columna
-     vacia, hace fallar la consulta ENTERA. O sea que pushear el frontend antes
-     de correr la migracion dejaria el feed en cero.
-     Se pide optimista y, si la base contesta que no existe, se baja la bandera
-     y se reintenta sin ella. Pasa una sola vez por sesion.
-     Cuando la migracion este corrida en produccion esto se puede simplificar a
-     pegar foto_url dentro de COLS_SOL y borrar traerSolicitudes(). */
-  let hayFotoUrl = true;
-  const colsSol = () => COLS_SOL + (hayFotoUrl ? ',foto_url' : '');
+  /* ---------------- QUE MIGRACIONES ESTAN CORRIDAS ----------------
 
-  async function traerSolicitudes(armarConsulta) {
-    let r = await armarConsulta(colsSol());
-    if (r && r.error && hayFotoUrl && esColumnaFaltante(r.error)) {
-      console.warn('[cotiz] la base todavia no tiene solicitudes.foto_url', r.error);
-      hayFotoUrl = false;
-      r = await armarConsulta(colsSol());
+     OJO, esto no es paranoia: pedir en un select una columna que no existe
+     NO devuelve ese campo vacio, hace fallar la consulta ENTERA. Pushear el
+     frontend antes de correr la migracion dejaria el feed en cero.
+
+     Las migraciones son acumulativas y estan encadenadas (la de 2026-08-20
+     aborta si no corrio la de 2026-08-19), asi que alcanza con un solo
+     numero en vez de una bandera por columna:
+
+       2 = las dos corridas      -> tipo, productos, cubre... todo disponible
+       1 = solo la de la foto    -> hay foto_url, no hay pedidos tipo B
+       0 = ninguna               -> la seccion funciona como antes de todo esto
+
+     Arranca optimista en 2 y BAJA sola si la base se queja. Pasa una vez por
+     sesion; despues ya se sabe. Cuando las dos esten corridas en produccion
+     esto se puede aplanar pegando las columnas dentro de COLS_SOL/COLS_COT y
+     borrando conFallback(). */
+  let nivelSql = 2;
+
+  const colsSol = () => COLS_SOL
+    + (nivelSql >= 1 ? ',foto_url' : '')
+    + (nivelSql >= 2 ? ',tipo,productos,ya_vende,inversion' : '');
+
+  const colsCot = () => COLS_COT
+    + (nivelSql >= 2 ? ',tipo,cubre,envio' : '');
+
+  // El error no dice QUE columna falta, asi que se baja un escalon y se
+  // reintenta. Como mucho da dos vueltas extra, y una sola vez por sesion.
+  async function conFallback(armarConsulta) {
+    let r = await armarConsulta();
+    while (r && r.error && nivelSql > 0 && esColumnaFaltante(r.error)) {
+      nivelSql--;
+      console.warn('[cotiz] falta correr una migracion; bajando a nivel ' + nivelSql, r.error);
+      r = await armarConsulta();
     }
     return r;
   }
+
+  /* El formulario B necesita SI o SI las columnas de la fase 4. FORM_B_LISTO
+     dice que el codigo esta listo; nivelSql dice que la base tambien. Hacen
+     falta las dos: si se pushea antes de correr el SQL, la bifurcacion no
+     aparece y la seccion sigue funcionando como hoy, en vez de ofrecer un
+     formulario que no puede guardar nada. */
+  const formBDisponible = () => FORM_B_LISTO && nivelSql >= 2;
   const COLS_COT = 'id,created_at,solicitud_id,proveedor_id,precio,entrega,minimo,pagos,nota';
+
+  /* ---------------- LOS DOS TIPOS DE PEDIDO ----------------
+     A ('producto')  = "necesito 500 remeras". Tiene cantidad, unidad y se
+                       responde con un precio por unidad.
+     B ('proveedor') = "necesito quien me abastezca". No tiene cantidad ni
+                       precio: tiene una LISTA de productos y un rango de
+                       inversion, y se responde como un remito (que puedo
+                       abastecer, cual es mi minimo, como envio).
+
+     Las filas viejas no tienen la columna: caen en 'producto', que es lo que
+     efectivamente son. */
+  const TIPO_B = 'proveedor';
+  const esPedidoB = s => !!s && s.tipo === TIPO_B;
+  const esRespuestaB = c => !!c && c.tipo === TIPO_B;
+
+  /* Estas tres listas estan ESPEJADAS en los CHECK de la base
+     (sql/2026-08-20_pedidos_de_proveedor.sql). Si se agrega una opcion aca,
+     va tambien alla, o el insert entero se cae con un 23514. */
+  const YA_VENDE = [
+    ['vendiendo', 'Ya tengo el negocio funcionando'],
+    ['arrancando', 'Estoy por arrancar']
+  ];
+
+  // El tercer valor es el TECHO en pesos, para cruzarlo contra el pedido
+  // minimo de cada proveedor. null = no filtra nada.
+  const INVERSIONES = [
+    ['0-100', 'Hasta $100.000', 100000],
+    ['100-300', '$100.000 a $300.000', 300000],
+    ['300-1000', '$300.000 a $1.000.000', 1000000],
+    ['1000+', 'Más de $1.000.000', Infinity],
+    ['nosabe', 'No sé todavía', null]
+  ];
+
+  const ENVIOS = [
+    'Envío gratis a todo el país',
+    'Envío gratis a CABA y GBA',
+    'Envío a cargo del comprador',
+    'El comprador retira',
+    'A convenir'
+  ];
+
+  const etiquetaDe = (lista, val) => (lista.find(x => x[0] === val) || [])[1] || '';
+  const techoInversion = val => {
+    const f = INVERSIONES.find(x => x[0] === val);
+    return f ? f[2] : null;
+  };
+
+  /* Una columna jsonb de tipo array llega como array de JavaScript. Se
+     normaliza igual porque la misma fila puede venir por dos caminos (la
+     tabla y la funcion del feed publico) y porque una fila vieja trae null.
+     Todo lo que salga de aca es texto: la pantalla nunca tiene que pintar
+     un [object Object]. */
+  function listaTexto(v) {
+    if (!v) return [];
+    let arr = v;
+    if (typeof arr === 'string') { try { arr = JSON.parse(arr); } catch (e) { return []; } }
+    if (!Array.isArray(arr)) return [];
+    return arr.map(x => String(x == null ? '' : x).trim()).filter(Boolean).slice(0, 12);
+  }
+
+  const productosDe = s => listaTexto(s && s.productos);
+  const cubreDe = c => listaTexto(c && c.cubre);
+
+  /* Como se resume una respuesta en un renglon. Hay tres pantallas que
+     mostraban "Cotizó $X por unidad" leyendo cot.precio derecho; con un
+     pedido de proveedor eso no existe, asi que todas pasan por aca.
+
+     Un pedido de producto se resume por su precio. Uno de proveedor se
+     resume por cuanto del surtido cubre, que es la unica cifra que importa
+     de ese lado. */
+  function resumenCotiz(cot, sol) {
+    if (!cot) return '';
+    if (esRespuestaB(cot) || esPedidoB(sol)) {
+      const cubre = cubreDe(cot).length;
+      const total = productosDe(sol).length;
+      if (!cubre) return 'Respondió';
+      return total ? `Cubre ${cubre} de ${total}` : `Cubre ${cubre} ${cubre === 1 ? 'producto' : 'productos'}`;
+    }
+    const p = plata(cot.precio);
+    return p ? `Cotizó ${p} por ${uSingular(sol)}` : 'Cotizó';
+  }
+
+  /* Pedido minimo del proveedor, en pesos. Es texto libre de un selector fijo
+     ("Sin mínimo", "Desde $5.000" ... "Desde $100.000+").
+
+     No se reusa el num() del buscador de app.js: ese devuelve 999999 cuando
+     no encuentra digitos, asi que manda "Sin mínimo" al fondo de la lista de
+     "menor pedido mínimo", justo al reves de lo que corresponde. Aca "sin
+     minimo" es 0, que es lo que significa. */
+  function minimoEnPesos(txt) {
+    const s = String(txt || '').toLowerCase();
+    if (!s.trim()) return 0;
+    if (s.includes('sin')) return 0;
+    const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
+    return isFinite(n) ? n : 0;
+  }
 
   const ENTREGAS = ['24 hs', '48 hs', '3 a 5 dias', '1 semana', 'Mas de 1 semana'];
   const PAGOS = ['Transferencia', 'Efectivo', 'Mercado Pago', 'Cuotas'];
@@ -138,7 +259,13 @@
     return 'hace ' + Math.floor(d / 30) + ' meses';
   }
 
+  /* OJO con el null. Number(null) es 0 y isFinite(0) es true, asi que antes
+     plata(null) devolvia "$0". Mientras precio fue NOT NULL nadie lo noto,
+     pero desde que una respuesta de tipo proveedor puede no tener precio
+     (sql/2026-08-20_pedidos_de_proveedor.sql), "$0" seria un precio inventado
+     puesto en pantalla. Vacio es la unica respuesta honesta. */
   function plata(n) {
+    if (n === null || n === undefined || n === '') return '';
     const v = Number(n);
     if (!isFinite(v)) return '';
     return '$' + v.toLocaleString('es-AR', { maximumFractionDigits: 2 });
@@ -262,7 +389,10 @@
     camara: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><path d="M9 6V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/></svg>`,
     chequeRedondo: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
     alerta: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
-    cruz: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
+    cruz: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+    // ICO.lupa no trae medidas (la dimensiona el CSS de su contenedor). Esta
+    // se usa suelta dentro de un parrafo, asi que las necesita.
+    lupaChica: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
   };
 
   // Boton principal: reusa .nv-cta-full / .nv-redondel, que css/styles.css define
@@ -467,6 +597,156 @@
       transition:text-decoration-color 180ms ease-out;
     }
     #screen-cotizaciones .cz-link:active{text-decoration-color:${VERDE_OSC}}
+
+    /* ---- FORMULARIO B: PASOS PROGRESIVOS ----
+       Los cinco pasos no estan todos a la vista desde el arranque. Un
+       formulario de cinco bloques asusta antes de que la persona escriba la
+       primera palabra; de a uno, cada paso llega cuando el anterior ya le dio
+       sentido. El que todavia no corresponde no esta atenuado: no esta. */
+    #screen-cotizaciones .cz-paso-b{margin-bottom:22px}
+    #screen-cotizaciones .cz-paso-b.entra{
+      animation:czSube .38s cubic-bezier(.22,1,.36,1) both;
+    }
+    @media (prefers-reduced-motion:reduce){
+      #screen-cotizaciones .cz-paso-b.entra{animation:none}
+    }
+    #screen-cotizaciones .cz-paso-cab{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+    #screen-cotizaciones .cz-paso-n{
+      width:24px;height:24px;flex-shrink:0;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:${VERDE};color:#fff;font-size:.7rem;font-weight:800;
+    }
+    #screen-cotizaciones .cz-paso-tit{font-size:.88rem;font-weight:700;color:#1A1A1A;line-height:1.3}
+    #screen-cotizaciones .cz-paso-ayuda{font-size:.75rem;line-height:1.45;color:${TENUE};margin:0 0 10px}
+
+    /* Los chips de producto son sugerencias derivadas de lo que la persona
+       escribio, NUNCA una lista fija. Por eso al lado siempre hay una forma
+       de agregar el propio: si lo que vende no esta, el formulario no puede
+       obligarla a elegir algo que no es. */
+    #screen-cotizaciones .cz-chips-prod{display:flex;flex-wrap:wrap;gap:8px}
+    #screen-cotizaciones .cz-chip-prod{
+      min-height:44px;padding:9px 16px;border-radius:999px;cursor:pointer;
+      font-family:inherit;font-size:.81rem;font-weight:600;
+      border:1.5px solid #E2E6E4;background:#fff;color:${GRIS};
+      transition:background-color 180ms ease-out,border-color 180ms ease-out,
+                 color 180ms ease-out,transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-chip-prod:active{transform:scale(.96)}
+    #screen-cotizaciones .cz-chip-prod[aria-pressed="true"]{
+      background:${VERDE};border-color:${VERDE};color:#fff;font-weight:700;
+    }
+    #screen-cotizaciones .cz-chip-prod.propio{border-style:dashed}
+    #screen-cotizaciones .cz-sumar{display:flex;gap:8px;margin-top:10px}
+    #screen-cotizaciones .cz-sumar input{flex:1;min-width:0}
+    #screen-cotizaciones .cz-sumar button{
+      flex-shrink:0;min-height:44px;padding:10px 16px;border-radius:12px;cursor:pointer;
+      font-family:inherit;font-size:.8rem;font-weight:700;
+      background:${SOFT};color:${VERDE_OSC};border:1.5px solid ${BORDE};
+      transition:transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-sumar button:active{transform:scale(.97)}
+
+    /* Los dos botones de "¿ya vende?": mismo peso, uno al lado del otro. */
+    #screen-cotizaciones .cz-dos{display:flex;gap:8px}
+    #screen-cotizaciones .cz-dos button{
+      flex:1;min-height:56px;padding:12px;border-radius:14px;cursor:pointer;
+      font-family:inherit;font-size:.81rem;font-weight:600;line-height:1.35;
+      border:1.5px solid #E2E6E4;background:#fff;color:#1A1A1A;text-wrap:balance;
+      transition:background-color 180ms ease-out,border-color 180ms ease-out,
+                 color 180ms ease-out,transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-dos button:active{transform:scale(.97)}
+    #screen-cotizaciones .cz-dos button[aria-pressed="true"]{
+      background:${VERDE};border-color:${VERDE};color:#fff;font-weight:700;
+    }
+
+    /* ---- RESULTADO EN VIVO ----
+       Superficie de vidrio. Es la unica pieza del formulario que le contesta
+       algo mientras lo completa: cuantos proveedores lo van a ver y cuantos
+       trabajan con minimos que puede pagar. Los numeros salen de la base, no
+       de una estimacion.
+       OJO: junto con el encabezado y la barra de accion, esta pantalla llega
+       a 3 capas de vidrio simultaneas, que es el tope. No agregar una cuarta. */
+    #screen-cotizaciones .cz-vivo-caja{
+      border-radius:16px;padding:15px;margin-bottom:6px;
+      -webkit-backdrop-filter:blur(14px) saturate(var(--cz-glass-sat));
+              backdrop-filter:blur(14px) saturate(var(--cz-glass-sat));
+      background:var(--cz-glass-bg-fuerte);
+      border:1px solid var(--cz-glass-borde);
+      box-shadow:inset 0 1px 0 var(--cz-glass-luz),var(--cz-glass-sombra);
+    }
+    #screen-cotizaciones .cz-vivo-fila{display:flex;align-items:flex-start;gap:9px}
+    #screen-cotizaciones .cz-vivo-fila + .cz-vivo-fila{margin-top:9px}
+    #screen-cotizaciones .cz-vivo-fila svg{flex-shrink:0;margin-top:2px;color:${VERDE}}
+    /* #065F46 sobre el vidrio fuerte: 7,1:1 con fondo claro por debajo, que
+       es lo unico que puede pasar por detras de este bloque (el formulario es
+       todo blanco). Verificado, no estimado. */
+    #screen-cotizaciones .cz-vivo-txt{font-size:.84rem;line-height:1.5;color:#065F46}
+    #screen-cotizaciones .cz-vivo-txt b{font-weight:800}
+
+    /* ---- REMITO DEL PROVEEDOR ----
+       Marcar que puede abastecer es la accion principal de la pantalla, asi
+       que son filas grandes y tocables enteras, no casillas chiquitas al lado
+       de un texto. */
+    #screen-cotizaciones .cz-check{
+      display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+      min-height:52px;padding:12px 14px;margin-bottom:8px;cursor:pointer;
+      font-family:inherit;font-size:.86rem;font-weight:600;color:#1A1A1A;
+      background:#fff;border:1.5px solid ${BORDE};border-radius:12px;
+      transition:background-color 180ms ease-out,border-color 180ms ease-out,
+                 transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-check:active{transform:scale(.985)}
+    #screen-cotizaciones .cz-check[aria-pressed="true"]{
+      border-color:${VERDE};background:${SOFT};
+    }
+    #screen-cotizaciones .cz-check-caja{
+      width:23px;height:23px;flex-shrink:0;border-radius:7px;
+      display:flex;align-items:center;justify-content:center;
+      border:2px solid ${BORDE};background:#fff;color:#fff;
+      transition:background-color 180ms ease-out,border-color 180ms ease-out;
+    }
+    #screen-cotizaciones .cz-check[aria-pressed="true"] .cz-check-caja{
+      background:${VERDE};border-color:${VERDE};
+    }
+    #screen-cotizaciones .cz-check-caja svg{opacity:0;transition:opacity 140ms ease-out}
+    #screen-cotizaciones .cz-check[aria-pressed="true"] .cz-check-caja svg{opacity:1}
+
+    /* Contexto del comprador: lo que el proveedor necesita saber para decidir
+       si le sirve el pedido. Nunca su contacto. */
+    #screen-cotizaciones .cz-ctx{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+    #screen-cotizaciones .cz-ctx span{
+      font-size:.72rem;font-weight:600;border-radius:8px;padding:4px 9px;
+      background:${SOFT};color:${VERDE_OSC};
+    }
+
+    /* ---- COBERTURA ----
+       La cifra que reemplaza al precio en los pedidos de proveedor. La barra
+       no es decoracion: "4 de 5" se lee, pero lo que hace que el comprador
+       compare de un vistazo es el largo relativo de las barras entre
+       tarjetas. Por eso el ancho sale del dato y no de un valor fijo. */
+    #screen-cotizaciones .cz-cob{margin-bottom:11px}
+    #screen-cotizaciones .cz-cob-fila{
+      display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px;
+    }
+    #screen-cotizaciones .cz-cob-n{font-size:.86rem;font-weight:800;color:${VERDE_OSC}}
+    #screen-cotizaciones .cz-cob-falta{font-size:.72rem;color:${TENUE};text-align:right;min-width:0}
+    #screen-cotizaciones .cz-cob-barra{
+      height:7px;border-radius:4px;background:#E4EBE7;overflow:hidden;
+    }
+    #screen-cotizaciones .cz-cob-relleno{
+      height:100%;border-radius:4px;background:${VERDE};
+      transition:width 320ms var(--cz-salida);
+    }
+    /* Cobertura total: se distingue del resto sin gritar. */
+    #screen-cotizaciones .cz-cob.completa .cz-cob-relleno{
+      background:linear-gradient(90deg,#0A7A4B,${VERDE});
+    }
+    /* La tarjeta del que quedo fuera del presupuesto declarado. No se
+       esconde ni se tacha: se corre abajo y se explica por que. */
+    #screen-cotizaciones .cz-bandeja.cz-fuera{
+      border-color:#FDE68A;background:rgba(253,230,138,.16);
+    }
 
     /* ---- ACUSE DE RECIBO ----
        El titular es el unico texto grande de la seccion que puede llevar un
@@ -1045,7 +1325,7 @@
   async function cargarMisPedidos() {
     const uid = await getUid();
     if (!uid) { st.misPedidos = []; return; }
-    const { data, error } = await traerSolicitudes(cols => sb.from('solicitudes').select(cols)
+    const { data, error } = await conFallback(() => sb.from('solicitudes').select(colsSol())
       .eq('usuario_id', uid).order('created_at', { ascending: false }).limit(50));
     if (error) { console.warn('[cotiz] misPedidos', error); st.misPedidos = []; return; }
     st.misPedidos = data || [];
@@ -1071,12 +1351,22 @@
     st.feed = (data || []).map(s => ({
       ...s, estado: 'abierta', comprador_foto: null, usuario_id: null
     }));
+
+    /* El visitante sin sesion no toca la tabla, asi que conFallback() nunca
+       corre y nivelSql se quedaria en 2 aunque la migracion no este. La
+       funcion del feed publico lista sus columnas una por una: si las filas
+       vuelven sin `tipo`, es que el SQL de la fase 4 todavia no se corrio.
+       Sin esto, un visitante veria la bifurcacion y recien se enteraria al
+       final, despues de iniciar sesion, de que su pedido no se puede guardar. */
+    if (st.feed.length && st.feed[0].tipo === undefined && nivelSql >= 2) {
+      nivelSql = 1;
+    }
   }
 
   async function cargarFeed() {
     if (!currentUser) return cargarFeedPublico();
 
-    const { data, error } = await traerSolicitudes(cols => sb.from('solicitudes').select(cols)
+    const { data, error } = await conFallback(() => sb.from('solicitudes').select(colsSol())
       .eq('estado', 'abierta').gt('cierra_at', new Date().toISOString())
       .order('created_at', { ascending: false }).limit(60));
     if (error) { console.warn('[cotiz] feed', error); st.feed = []; return; }
@@ -1087,8 +1377,11 @@
     st.misCotiz = {};
     if (provId) {
       // created_at hace falta para la pantalla "Mis cotizaciones" (el "hace X").
-      const { data: mias } = await sb.from('cotizaciones').select('solicitud_id,precio,created_at')
-        .eq('proveedor_id', provId);
+      // tipo y cubre, para que la pastilla de "ya respondio" diga lo correcto
+      // en un pedido de proveedor, donde no hay precio que mostrar.
+      const { data: mias } = await conFallback(() => sb.from('cotizaciones')
+        .select('solicitud_id,precio,created_at' + (nivelSql >= 2 ? ',tipo,cubre' : ''))
+        .eq('proveedor_id', provId));
       (mias || []).forEach(c => { st.misCotiz[c.solicitud_id] = c; });
     }
   }
@@ -1120,8 +1413,8 @@
      puede ser otro pedido (o ninguno): escribir el estado ahi dejaria la
      pantalla mostrando las cotizaciones equivocadas. */
   async function traerCotizaciones(solId) {
-    const { data, error } = await sb.from('cotizaciones').select(COLS_COT)
-      .eq('solicitud_id', solId).order('created_at', { ascending: false });
+    const { data, error } = await conFallback(() => sb.from('cotizaciones').select(colsCot())
+      .eq('solicitud_id', solId).order('created_at', { ascending: false }));
     if (error) { console.warn('[cotiz] cotizaciones', error); return []; }
     const lista = data || [];
 
@@ -1158,9 +1451,12 @@
     else if (st.vista === 'login') html = pantallaLogin();
     else if (st.vista === 'bifurcacion') html = pantallaBifurcacion();
     else if (st.vista === 'confirmado') html = pantallaConfirmado();
+    else if (st.vista === 'publicarB') html = pantallaPublicarB();
+    else if (st.vista === 'resultadoB') html = pantallaResultadoB();
     else if (st.vista === 'publicar') html = pantallaPublicar();
     else if (st.vista === 'respuestas') html = pantallaRespuestas();
     else if (st.vista === 'cotizar') html = pantallaCotizar();
+    else if (st.vista === 'cotizarB') html = pantallaCotizarB();
     else if (st.vista === 'mis') html = pantallaMisPedidos();
     else if (st.vista === 'misCotiz') html = pantallaMisCotizaciones();
     else html = pantallaFeed();
@@ -1170,6 +1466,8 @@
     // cantidad, foto) y no por template: se los monta recien ahora, cuando el
     // HTML ya esta en el DOM.
     if (st.vista === 'publicar') montarFormularioA();
+    if (st.vista === 'publicarB') pintarFormB();
+    if (st.vista === 'cotizarB') montarRemito();
     window.scrollTo(0, 0);
   }
 
@@ -1519,25 +1817,42 @@
     const dias = diasParaCierre(s.cierra_at);
 
     const accion = mio
-      ? (n > 0 ? btnCta(`Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`) : '')
+      ? (n > 0 ? btnCta(esPedidoB(s)
+        ? `Ver ${n} ${n === 1 ? 'respuesta' : 'respuestas'}`
+        : `Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`) : '')
       : esProveedor()
         ? (ya
-          ? `<div class="cz-pastilla">${ICO.ok} Cotizó ${plata(ya.precio)} por ${uSingular(s)}</div>`
-          : btnCta('Enviar cotización', `cotizAbrirForm('${s.id}')`))
+          ? `<div class="cz-pastilla">${ICO.ok} ${esc(resumenCotiz(ya, s))}</div>`
+          : btnCta(esPedidoB(s) ? 'Responder este pedido' : 'Enviar cotización', `cotizAbrirForm('${s.id}')`))
         : '';
 
     // El comprador que mira el pedido de otro no tiene accion posible, asi que
     // el estado es lo unico que cierra la tarjeta: sin esto quedaba cortada.
     const estado = n > 0
-      ? `<span class="cz-estado hay">${n} ${n === 1 ? 'cotización' : 'cotizaciones'}</span>`
-      : `<span class="cz-estado">Sin cotizar todavía</span>`;
+      ? `<span class="cz-estado hay">${n} ${esPedidoB(s)
+        ? (n === 1 ? 'respuesta' : 'respuestas')
+        : (n === 1 ? 'cotización' : 'cotizaciones')}</span>`
+      : `<span class="cz-estado">${esPedidoB(s) ? 'Sin respuestas todavía' : 'Sin cotizar todavía'}</span>`;
 
-    const datos = [
-      s.cantidad ? `<span class="cz-dato fuerte">${cantidadTexto(s)}</span>` : '',
-      s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
-      s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : '',
-      s.presupuesto ? `<span class="cz-dato">Hasta ${plata(s.presupuesto)} por ${uSingular(s)}</span>` : ''
-    ].filter(Boolean).join('');
+    /* Un pedido de proveedor no tiene cantidad ni presupuesto por unidad: lo
+       que lo describe es la LISTA de productos que quiere que le abastezcan.
+       Se muestra como datos y no como parrafo para que se lea de un vistazo,
+       que es como el proveedor decide si le sirve. */
+    const tipoB = esPedidoB(s);
+    const productos = productosDe(s);
+    const datos = (tipoB
+      ? [
+        `<span class="cz-dato fuerte">Busca proveedor</span>`,
+        s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
+        s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : ''
+      ].concat(productos.slice(0, 5).map(x => `<span class="cz-dato">${esc(x)}</span>`))
+        .concat(productos.length > 5 ? [`<span class="cz-dato">y ${productos.length - 5} más</span>`] : [])
+      : [
+        s.cantidad ? `<span class="cz-dato fuerte">${cantidadTexto(s)}</span>` : '',
+        s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
+        s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : '',
+        s.presupuesto ? `<span class="cz-dato">Hasta ${plata(s.presupuesto)} por ${uSingular(s)}</span>` : ''
+      ]).filter(Boolean).join('');
 
     return `<div class="cz-bandeja${mio ? ' cz-propia' : ''}"><div class="cz-nucleo">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -1607,7 +1922,9 @@
     const badge = !viv
       ? `<span style="font-size:.7rem;font-weight:700;background:#F1F3F2;color:${GRIS};padding:3px 9px;border-radius:10px">Cerrado</span>`
       : n > 0
-        ? `<span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">${n} ${n === 1 ? 'cotización' : 'cotizaciones'}</span>`
+        ? `<span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">${n} ${esPedidoB(p)
+          ? (n === 1 ? 'respuesta' : 'respuestas')
+          : (n === 1 ? 'cotización' : 'cotizaciones')}</span>`
         : `<span style="font-size:.7rem;font-weight:700;background:#F1F3F2;color:${GRIS};padding:3px 9px;border-radius:10px">Esperando respuestas</span>`;
 
     return `<div style="background:#fff;border:1px solid ${BORDE};border-radius:14px;padding:14px;margin-bottom:10px;${!viv ? 'opacity:.7' : ''}">
@@ -1619,6 +1936,7 @@
         <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:9px">${esc(p.titulo)}</div>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS}">
           ${p.cantidad ? `<span>${cantidadTexto(p)}</span>` : ''}
+          ${esPedidoB(p) && productosDe(p).length ? `<span>${productosDe(p).length} ${productosDe(p).length === 1 ? 'producto' : 'productos'}</span>` : ''}
           ${p.rubro ? `<span style="background:#F5F7F6;color:#41564C;border-radius:8px;padding:2px 9px;font-weight:600">${esc(p.rubro)}</span>` : ''}
           ${p.provincia ? `<span style="display:inline-flex;align-items:center;gap:3px">${ICO.pin}${esc(p.provincia)}</span>` : ''}
         </div>
@@ -1668,7 +1986,7 @@
         ${enviadas.map(({ cot, sol }) => `
           <div style="background:#fff;border:1px solid ${BORDE};border-radius:14px;padding:14px;margin-bottom:10px">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px">
-              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">Cotizó ${plata(cot.precio)} por ${uSingular(sol)}</span>
+              <span style="font-size:.7rem;font-weight:800;background:${SOFT};color:${VERDE_OSC};padding:3px 9px;border-radius:10px">${esc(resumenCotiz(cot, sol))}</span>
               <span style="font-size:.72rem;color:${TENUE};flex-shrink:0">${esc(hace(cot.created_at))}</span>
             </div>
             <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:700;color:#1A1A1A;line-height:1.4;margin-bottom:7px">${esc(sol.titulo)}</div>
@@ -1693,14 +2011,15 @@
      Meterlos en un solo formulario obliga a preguntar cantidad exacta a
      alguien que todavia no sabe que va a vender, que es donde se caia.
 
-     EL INTERRUPTOR: el formulario B llega en la fase 4 y necesita columnas
-     nuevas en la base. Mientras FORM_B_LISTO este en false, el boton "+" y
-     todos los "Pedir una cotizacion" van DERECHO al formulario A, igual que
-     hasta hoy: nadie ve una opcion que no lleva a ningun lado. La pantalla ya
-     esta escrita y se puede revisar, pero no esta en el camino de nadie.
-     En la fase 4 esto pasa a true y la bifurcacion entra en el flujo. */
+     EL INTERRUPTOR: FORM_B_LISTO dice que el CODIGO del formulario B esta
+     terminado. No alcanza con eso: formBDisponible() exige ademas que la
+     base tenga las columnas de la fase 4 (nivelSql >= 2). Si esto se pushea
+     antes de correr sql/2026-08-20_pedidos_de_proveedor.sql, la bifurcacion
+     no aparece, el "+" sigue yendo derecho al formulario A y la seccion
+     funciona igual que antes. Nadie ve una opcion que no lleva a ningun lado.
+     Ponerlo en false vuelve a apagar toda la fase 4 de un solo lugar. */
 
-  const FORM_B_LISTO = false;
+  const FORM_B_LISTO = true;
 
   function pantallaBifurcacion() {
     const opcion = (accion, ico, titulo, bajada, ejemplo) =>
@@ -1732,7 +2051,434 @@
      busqueda sin resultados YA sabe que quiere un producto puntual, y hacerlo
      elegir de nuevo seria preguntarle algo que acaba de contestar. */
   window.cotizPedir = function () {
-    return cotizIr(FORM_B_LISTO ? 'bifurcacion' : 'publicar');
+    return cotizIr(formBDisponible() ? 'bifurcacion' : 'publicar');
+  };
+
+  /* ---------------- FORMULARIO B: BUSCAR QUIEN ME ABASTEZCA ----------------
+
+     Cinco pasos que aparecen de a uno. El formulario ARRANCA VACIO: el
+     prototipo lo mostraba precargado con "blanquería" y eso escondia
+     justamente el momento que importa, que es la persona escribiendo lo que
+     quiere vender sin saber todavia como se llama el rubro.
+
+     Los chips del paso 2 son SUGERENCIAS derivadas de lo que escribio, nunca
+     una lista fija: salen de CAT_SUBCATS (app.js) a traves del rubro que
+     deduce rubroDeTermino(). Si no se deduce nada, no hay chips impuestos: se
+     le pide que escriba los suyos. Y aunque haya, siempre puede sumar el
+     propio, porque ninguna taxonomia nuestra le va a acertar a todos. */
+
+  function chipsSugeridos(texto) {
+    const r = rubroDeTermino(texto || '');
+    if (!r) return [];
+    try {
+      if (typeof CAT_SUBCATS === 'object' && CAT_SUBCATS && Array.isArray(CAT_SUBCATS[r])) {
+        return CAT_SUBCATS[r].slice(0, 8);
+      }
+    } catch (e) { }
+    return [];
+  }
+
+  function estadoB() {
+    if (!st.formB) {
+      st.formB = {
+        texto: '', sugeridos: [], elegidos: [],
+        yaVende: '', inversion: '', provincia: '',
+        rubro: '', conteo: null, contando: false
+      };
+    }
+    return st.formB;
+  }
+
+  function pantallaPublicarB() {
+    const b = estadoB();
+    const provs = (typeof PROVINCIAS !== 'undefined' ? PROVINCIAS : []);
+
+    const cab = (n, tit) => `<div class="cz-paso-cab">
+      <span class="cz-paso-n" aria-hidden="true">${n}</span>
+      <span class="cz-paso-tit">${esc(tit)}</span>
+    </div>`;
+
+    return header('Buscar un proveedor', "cotizIr('bifurcacion')") + `
+      <div class="cz-form">
+
+        <div class="cz-paso-b">
+          ${cab(1, '¿Qué quiere vender?')}
+          <p class="cz-paso-ayuda">Escríbalo como se le ocurra. No hace falta que sepa cómo se llama el rubro.</p>
+          <input id="cz-b-texto" maxlength="80" value="${esc(b.texto)}" oninput="cotizBTexto()"
+            placeholder="ej: blanquería, ropa de bebé, bazar" style="${INPUT_CSS}">
+        </div>
+
+        <div id="cz-b-paso2" class="cz-paso-b" style="display:none">
+          ${cab(2, '¿Cuáles de estos vende?')}
+          <p class="cz-paso-ayuda" id="cz-b-ayuda2">Toque los que le sirvan. Si falta alguno, agréguelo.</p>
+          <div id="cz-b-chips" class="cz-chips-prod"></div>
+          <div class="cz-sumar">
+            <input id="cz-b-propio" maxlength="40" placeholder="Otro producto que venda"
+              aria-label="Agregar otro producto" onkeydown="cotizBTecla(event)" style="${INPUT_CSS}">
+            <button type="button" onclick="cotizBSumar()">Agregar</button>
+          </div>
+        </div>
+
+        <div id="cz-b-paso3" class="cz-paso-b" style="display:none">
+          ${cab(3, '¿Ya está vendiendo?')}
+          <div class="cz-dos" id="cz-b-vende">
+            ${YA_VENDE.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false" onclick="cotizBVende('${v}')">${esc(t)}</button>`).join('')}
+          </div>
+          <p class="cz-paso-ayuda" style="margin:9px 0 0">Hay mayoristas con mínimos bajos para los que recién empiezan.</p>
+        </div>
+
+        <div id="cz-b-paso4" class="cz-paso-b" style="display:none">
+          ${cab(4, '¿Cuánto piensa invertir en la primera compra?')}
+          <div id="cz-b-inv" class="cz-chips-prod">
+            ${INVERSIONES.map(([v, t]) => `<button type="button" class="cz-chip-prod" data-v="${v}" aria-pressed="false" onclick="cotizBInversion('${v}')">${esc(t)}</button>`).join('')}
+          </div>
+          <p class="cz-paso-ayuda" style="margin:10px 0 0">Sirve para mostrarle solo proveedores con un mínimo de compra que usted pueda cubrir. No se le muestra a nadie más.</p>
+        </div>
+
+        <div id="cz-b-paso5" class="cz-paso-b" style="display:none">
+          ${cab(5, '¿Dónde está su negocio?')}
+          <select id="cz-b-prov" onchange="cotizBProvincia()" style="${INPUT_CSS}">
+            <option value="">Elegir provincia</option>
+            ${provs.map(r => `<option value="${esc(r)}"${b.provincia === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}
+          </select>
+        </div>
+
+        <div id="cz-b-vivo" class="cz-vivo-caja" style="display:none"></div>
+
+        <div class="cz-barra cz-vidrio">
+          <div id="cz-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px"></div>
+          ${btnPrimario('Buscar quién me abastezca', 'cotizPublicarB(this)')}
+          <div class="cz-barra-nota">Los proveedores ven su nombre, no su teléfono. Usted elige a quién le escribe.</div>
+          <div class="cz-barra-nota">Buscar proveedor no lo compromete a nada.</div>
+        </div>
+      </div>`;
+  }
+
+  /* Repinta SOLO lo que cambio. Nunca llama a render(): eso reconstruiria el
+     campo de texto abajo del cursor y le borraria lo que viene escribiendo. */
+  function pintarFormB() {
+    const b = estadoB();
+
+    // Paso 2: aparece apenas escribio algo.
+    const hayTexto = b.texto.trim().length >= 3;
+    mostrar('cz-b-paso2', hayTexto);
+
+    const cont = $('cz-b-chips');
+    if (cont) {
+      // Los sugeridos que quedaron y ademas los propios que la persona sumo:
+      // si escribio "toallas" a mano, ese chip tiene que seguir en pantalla
+      // aunque cambie el texto del paso 1 y las sugerencias sean otras.
+      const propios = b.elegidos.filter(x => b.sugeridos.indexOf(x) < 0);
+      const todos = b.sugeridos.concat(propios);
+      cont.innerHTML = todos.map(nom => {
+        const on = b.elegidos.indexOf(nom) >= 0;
+        const propio = b.sugeridos.indexOf(nom) < 0;
+        return `<button type="button" class="cz-chip-prod${propio ? ' propio' : ''}" aria-pressed="${on}"
+          onclick="cotizBChip('${jsArg(nom)}')">${esc(nom)}</button>`;
+      }).join('');
+    }
+    const ayuda = $('cz-b-ayuda2');
+    if (ayuda) {
+      ayuda.textContent = b.sugeridos.length
+        ? 'Toque los que le sirvan. Si falta alguno, agréguelo.'
+        : 'No encontramos productos de ese rubro. Escriba abajo los que vende.';
+    }
+
+    // Los pasos 3, 4 y 5 se encadenan: cada uno espera al anterior.
+    mostrar('cz-b-paso3', hayTexto && b.elegidos.length > 0);
+    mostrar('cz-b-paso4', !!b.yaVende && b.elegidos.length > 0);
+    mostrar('cz-b-paso5', !!b.inversion && !!b.yaVende);
+
+    pintarPresionado('cz-b-vende', b.yaVende);
+    pintarPresionado('cz-b-inv', b.inversion);
+    pintarVivoB();
+  }
+
+  function mostrar(id, si) {
+    const el = $(id);
+    if (!el) return;
+    const antes = el.style.display !== 'none';
+    el.style.display = si ? 'block' : 'none';
+    // La animacion de entrada se pone SOLO cuando el paso aparece de nuevo,
+    // no en cada repintado: si no, el bloque late cada vez que se toca un chip.
+    if (si && !antes) { el.classList.remove('entra'); void el.offsetWidth; el.classList.add('entra'); }
+  }
+
+  function pintarPresionado(contId, valor) {
+    const cont = $(contId);
+    if (!cont) return;
+    Array.from(cont.children).forEach(btn => {
+      btn.setAttribute('aria-pressed', btn.dataset.v === valor ? 'true' : 'false');
+    });
+  }
+
+  let temporizadorB = null;
+
+  window.cotizBTexto = function () {
+    const b = estadoB();
+    b.texto = ($('cz-b-texto')?.value || '');
+    clearTimeout(temporizadorB);
+    temporizadorB = setTimeout(() => {
+      const nuevos = chipsSugeridos(b.texto);
+      const rubro = rubroDeTermino(b.texto) || '';
+      // Si el rubro deducido no cambio, no se tocan los chips: repintarlos
+      // borraria lo que ya venia marcado por nada.
+      if (rubro !== b.rubro) {
+        b.rubro = rubro;
+        b.sugeridos = nuevos;
+        // Se conservan solo los que la persona escribio a mano; las
+        // sugerencias viejas eran de otro rubro y ya no aplican.
+        b.elegidos = b.elegidos.filter(x => nuevos.indexOf(x) >= 0 || b.sugeridos.indexOf(x) < 0);
+        b.conteo = null;
+      }
+      pintarFormB();
+    }, 280);
+  };
+
+  window.cotizBChip = function (nom) {
+    const b = estadoB();
+    const i = b.elegidos.indexOf(nom);
+    if (i >= 0) b.elegidos.splice(i, 1); else b.elegidos.push(nom);
+    vibrar('light');
+    pintarFormB();
+  };
+
+  window.cotizBSumar = function () {
+    const b = estadoB();
+    const inp = $('cz-b-propio');
+    const v = (inp?.value || '').trim().replace(/\s+/g, ' ');
+    if (!v) return;
+    if (b.elegidos.length >= 12) { toast('Hasta 12 productos por pedido'); return; }
+    // Sin distinguir mayusculas: "Toallas" y "toallas" son el mismo producto
+    // y duplicarlos dejaria el pedido pidiendo dos veces lo mismo.
+    if (!b.elegidos.some(x => x.toLowerCase() === v.toLowerCase())) b.elegidos.push(v);
+    if (inp) inp.value = '';
+    vibrar('light');
+    pintarFormB();
+  };
+
+  window.cotizBTecla = function (ev) {
+    if (ev && ev.key === 'Enter') { ev.preventDefault(); window.cotizBSumar(); }
+  };
+
+  window.cotizBVende = function (v) {
+    const b = estadoB();
+    b.yaVende = v; vibrar('light'); pintarFormB();
+  };
+
+  window.cotizBInversion = function (v) {
+    const b = estadoB();
+    b.inversion = v; b.conteo = null; vibrar('light'); pintarFormB();
+  };
+
+  window.cotizBProvincia = function () {
+    const b = estadoB();
+    b.provincia = $('cz-b-prov')?.value || '';
+    b.conteo = null;
+    pintarFormB();
+  };
+
+  /* Bloque de resultado en vivo. Aparece recien con la provincia elegida,
+     que es cuando por fin hay con que contestar algo cierto.
+     El conteo se cachea en b.conteo y se invalida cuando cambia el rubro, la
+     inversion o la provincia: sin eso se dispararia una consulta por tecla. */
+  async function pintarVivoB() {
+    const b = estadoB();
+    const caja = $('cz-b-vivo');
+    if (!caja) return;
+
+    const listo = b.rubro && b.provincia && b.inversion && b.elegidos.length;
+    if (!listo) { caja.style.display = 'none'; return; }
+
+    if (b.conteo === null && !b.contando) {
+      b.contando = true;
+      caja.style.display = 'block';
+      caja.innerHTML = `<div class="cz-vivo-fila"><span class="cz-vivo-txt">Buscando proveedores de ${esc(b.rubro)}...</span></div>`;
+      const c = await contarProveedores(b.rubro, b.provincia);
+      b.contando = false;
+      // Mientras se contaba, la persona pudo cambiar algo o irse: se descarta.
+      if (st.vista !== 'publicarB') return;
+      b.conteo = c || { n: 0, enProv: 0, lista: [] };
+    }
+    if (b.conteo === null) return;
+
+    const { n, enProv, lista } = b.conteo;
+    const dentro = dentroDelPresupuesto(lista, b.inversion);
+
+    if (!n) {
+      caja.innerHTML = `<div class="cz-vivo-fila">${ICO.lupaChica}
+        <span class="cz-vivo-txt">Todavía no hay proveedores de <b>${esc(b.rubro)}</b> aprobados. Su pedido queda publicado 14 días y lo usamos para salir a buscarlos.</span>
+      </div>`;
+    } else {
+      caja.innerHTML = `<div class="cz-vivo-fila">${ICO.lupaChica}
+          <span class="cz-vivo-txt"><b>${n} ${n === 1 ? 'proveedor' : 'proveedores'}</b> de ${esc(b.rubro)} pueden ver su pedido${enProv ? `, <b>${enProv}</b> en ${esc(b.provincia)}` : ''}.</span>
+        </div>
+        ${dentro !== null ? `<div class="cz-vivo-fila">${ICO.chequeRedondo}
+          <span class="cz-vivo-txt"><b>${dentro}</b> ${dentro === 1 ? 'trabaja' : 'trabajan'} con un mínimo de compra que entra en lo que piensa invertir.</span>
+        </div>` : ''}`;
+    }
+    caja.style.display = 'block';
+  }
+
+  window.cotizPublicarB = async function (btn) {
+    const b = estadoB();
+    const err = $('cz-error');
+    const fallar = m => { if (err) { err.textContent = m; err.style.display = 'block'; } vibrar('error'); };
+
+    if (b.texto.trim().length < 3) return fallar('Escriba qué quiere vender.');
+    if (!b.elegidos.length) return fallar('Elija o agregue al menos un producto que quiera vender.');
+    if (!b.yaVende) return fallar('Díganos si ya está vendiendo o recién arranca.');
+    if (!b.inversion) return fallar('Elija cuánto piensa invertir en la primera compra.');
+    if (!b.provincia) return fallar('Elija dónde está su negocio.');
+    if (err) err.style.display = 'none';
+
+    // El rubro puede no haberse deducido (escribio algo que el diccionario no
+    // conoce). El pedido igual vale: cae en "Otro" y sigue estando en el feed
+    // publico, donde lo ven todos los proveedores.
+    const rubro = b.rubro || 'Otro';
+
+    const datos = {
+      tipo: TIPO_B,
+      // El titulo lo arma la pantalla y no la persona: en un pedido de
+      // proveedor lo que identifica al pedido es el rubro, no una frase.
+      // El CHECK de la base pide entre 3 y 160 caracteres; esto siempre entra.
+      titulo: 'Busco proveedor de ' + rubro,
+      rubro,
+      provincia: b.provincia,
+      productos: b.elegidos.slice(0, 12),
+      yaVende: b.yaVende,
+      inversion: b.inversion,
+      detalles: b.texto.trim() ? 'Quiere vender: ' + b.texto.trim() : null,
+      cantidad: null, unidad: null, presupuesto: null, foto: null
+    };
+
+    if (!currentUser) {
+      guardarBorrador({ ...datos, intento: true });
+      try { if (typeof trackEvent === 'function') trackEvent('rfq_login_pedido', { rubro: rubro }); } catch (e) { }
+      vibrar('light');
+      st.vista = 'login';
+      return render();
+    }
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Buscando...'; btn.style.opacity = '.7'; }
+    const r = await publicarPedido(datos);
+    if (r.ok) {
+      limpiarBorrador();
+      await irAResultadoB(datos, b.conteo);
+      return;
+    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Buscar quién me abastezca'; btn.style.opacity = '1'; }
+    fallar(r.mensaje);
+  };
+
+  /* ---------------- RESULTADO DEL PEDIDO B ----------------
+
+     El pedido es la parte LENTA: alguien tiene que entrar, mirarlo y
+     contestar. El directorio es la respuesta instantanea: proveedores del
+     rubro que ya estan cargados, con su pedido minimo real.
+
+     Por eso esta pantalla no es un acuse de recibo con un boton: es el acuse
+     de recibo Y una lista con la que puede empezar a trabajar ahora mismo.
+     Nadie se va con las manos vacias. */
+  async function irAResultadoB(datos, conteoPrevio) {
+    st.resultadoB = {
+      rubro: datos.rubro, provincia: datos.provincia,
+      productos: datos.productos, inversion: datos.inversion,
+      conteo: conteoPrevio || null
+    };
+    st.vista = 'resultadoB';
+    st.cargando = false;
+    st.formB = null;              // el formulario se vacia: el pedido ya salio
+    render();
+
+    if (!st.resultadoB.conteo) {
+      const c = await contarProveedores(datos.rubro, datos.provincia);
+      if (st.vista !== 'resultadoB' || !st.resultadoB) return;
+      st.resultadoB.conteo = c || { n: 0, enProv: 0, lista: [] };
+      render();
+    }
+  }
+
+  function pantallaResultadoB() {
+    const r = st.resultadoB;
+    if (!r) return pantallaFeed();
+    const c = r.conteo;
+    const lista = (c && c.lista ? c.lista : []).slice(0, 6);
+    const techo = techoInversion(r.inversion);
+
+    const tarjeta = p => {
+      const fuera = techo !== null && isFinite(techo) && minimoEnPesos(p.pedido_minimo) > techo;
+      const wa = p.whatsapp
+        ? `<button class="nv-cta-full" style="flex:1;min-height:44px;padding:5px 6px 5px 14px;font-size:.82rem"
+             onclick="cotizContactarDirecto('${jsArg(p.id)}')">
+             <span style="display:inline-flex;align-items:center;gap:7px">${ICO.wa} Contactar</span>
+             <span class="nv-redondel" style="width:30px;height:30px">${ICO.flecha}</span></button>`
+        : '';
+      return `<div class="cz-bandeja${fuera ? ' cz-fuera' : ''}" style="margin-bottom:10px"><div class="cz-nucleo">
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
+          ${p.logo_url
+          ? `<div style="width:40px;height:40px;border-radius:11px;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${esc(p.logo_url)}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.remove()"></div>`
+          : avatar(p.nombre, null, 40)}
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.86rem;font-weight:800;color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || 'Proveedor')}</div>
+            <div style="font-size:.73rem;color:${TENUE};margin-top:2px">${esc(p.provincia || '')}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px">
+          <span style="font-size:.72rem;color:${TENUE}">Mínimo de compra</span>
+          <span style="font-size:.88rem;font-weight:800;color:${fuera ? '#92400E' : '#1A1A1A'}">${esc(p.pedido_minimo || 'Consultar')}</span>
+        </div>
+        ${fuera ? `<div class="cz-aviso-ambar">${ICO.alerta}<span>Su mínimo está por encima de lo que indicó que pensaba invertir.</span></div>` : ''}
+        <div style="display:flex;gap:8px">
+          ${wa}
+          ${btnSec('Ver perfil', `cotizVerPerfil('${jsArg(p.id)}')`)}
+        </div>
+      </div></div>`;
+    };
+
+    const n = c ? c.n : null;
+    const bajada = n === null ? 'Ya está publicado. Le avisamos apenas alguien le responda.'
+      : n === 0 ? 'Todavía no hay proveedores de ' + esc(r.rubro) + ' aprobados. Su pedido queda abierto 14 días y lo usamos para salir a buscarlos.'
+        : 'Su pedido ya lo pueden ver ' + n + ' ' + (n === 1 ? 'proveedor' : 'proveedores') + ' de ' + esc(r.rubro) + '.';
+
+    return header('Su pedido está publicado', "cotizIr('feed')") + `
+      <div class="cz-ancho" style="padding:22px 16px 40px">
+        <div style="text-align:center;margin-bottom:22px">
+          <div class="cz-ok-redondel" aria-hidden="true">${ICO.chequeRedondo}</div>
+          <h2 class="cz-ok-tit">Buscamos quién le abastezca ${esc(r.rubro)}</h2>
+          <p class="cz-ok-baj">${bajada}</p>
+          <p class="cz-ok-repetir">No hace falta que lo vuelva a publicar.</p>
+        </div>
+
+        ${lista.length ? `
+          <div style="display:flex;align-items:center;gap:10px;margin:0 0 14px">
+            <span style="height:1px;flex:1;background:${BORDE}"></span>
+            <span style="font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:${TENUE}">Mientras tanto</span>
+            <span style="height:1px;flex:1;background:${BORDE}"></span>
+          </div>
+          <div style="font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Estos ya venden lo que busca</div>
+          <div style="font-size:.82rem;color:${GRIS};line-height:1.5;margin-bottom:14px">Puede escribirles ahora mismo, sin esperar a que le respondan el pedido.</div>
+          ${lista.map(tarjeta).join('')}
+        ` : ''}
+
+        <div style="margin-top:18px">${btnPrimario('Ver mis pedidos', "cotizIr('mis')")}</div>
+      </div>`;
+  }
+
+  // Contacto directo desde el directorio. Es la misma metrica de siempre
+  // (registrarContactoWA), asi que estas consultas cuentan igual que las que
+  // salen del perfil de un proveedor.
+  window.cotizContactarDirecto = function (provId) {
+    const c = st.resultadoB && st.resultadoB.conteo;
+    const p = (c && c.lista || []).find(x => String(x.id) === String(provId));
+    if (!p) return;
+    const r = st.resultadoB;
+    const que = (r.productos || []).slice(0, 4).join(', ');
+    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. ` +
+      `Estoy buscando un proveedor de ${r.rubro}${que ? ' (' + que + ')' : ''}. ` +
+      '¿Me pasa lista de precios y su mínimo de compra?';
+    try { registrarContactoWA(provId, p); } catch (e) { }
+    try { abrirWA(p.whatsapp, msg); } catch (e) { toast('WhatsApp no disponible'); }
   };
 
   /* ---------------- vista PUBLICAR ---------------- */
@@ -2297,6 +3043,23 @@
     // corrido.
     if (datos.foto) fila.foto_url = datos.foto;
 
+    /* Los campos del pedido de proveedor. Solo viajan si el pedido ES de
+       proveedor: un pedido de producto no manda tipo y cae en el default
+       'producto' de la base, asi que sigue publicandose igual aunque la
+       migracion de la fase 4 no este corrida.
+
+       Para el tipo B NO hay reintento sin columnas, a diferencia de la foto:
+       un pedido de proveedor al que se le sacan los productos y el tipo no es
+       un pedido degradado, es basura en el feed. Si falla, falla con un
+       mensaje que se entiende. */
+    const esB = datos.tipo === TIPO_B;
+    if (esB) {
+      fila.tipo = TIPO_B;
+      fila.productos = (datos.productos || []).slice(0, 12);
+      fila.ya_vende = datos.yaVende || null;
+      fila.inversion = datos.inversion || null;
+    }
+
     try {
       // OJO: insert() SIN .select(). Encadenar .select() hace que PostgREST
       // devuelva la fila entera, incluida usuario_email, que esta revocada a
@@ -2309,6 +3072,10 @@
       // la foto y se avisa. Es el unico caso en que vale la pena reintentar:
       // el pedido es lo importante, la foto es un extra.
       let sinFoto = false;
+      if (error && esB && esColumnaFaltante(error)) {
+        console.warn('[cotiz] faltan las columnas de la fase 4', error);
+        throw Object.assign(new Error('falta migracion fase 4'), { czMigracion: true });
+      }
       if (error && fila.foto_url && esColumnaFaltante(error)) {
         console.warn('[cotiz] falta solicitudes.foto_url; se publica sin foto', error);
         delete fila.foto_url;
@@ -2327,6 +3094,12 @@
       // que lo lea una persona, asi que se muestra tal cual: decirle "no se
       // pudo publicar" cuando en realidad llego al tope no explica nada.
       const esAviso = e?.hint === 'limite_diario' || String(e?.code || '') === 'P0001';
+      if (e && e.czMigracion) {
+        return {
+          ok: false,
+          mensaje: 'Esta función todavía no está habilitada en el servidor. Pruebe con "Un producto puntual, en cantidad".'
+        };
+      }
       return {
         ok: false,
         mensaje: esAviso && e?.message
@@ -2375,8 +3148,12 @@
   async function contarProveedores(rubro, provincia) {
     if (!rubro) return null;
     try {
+      // Se piden tambien las columnas con las que despues se pinta el
+      // directorio en la pantalla de resultado del pedido B: es la misma
+      // consulta, no una segunda.
       const { data, error } = await sb.from('proveedores')
-        .select('rubro,provincia').eq('estado', 'aprobado').limit(1000);
+        .select('id,nombre,logo_url,rubro,provincia,pedido_minimo,whatsapp,plan,plan_hasta')
+        .eq('estado', 'aprobado').limit(1000);
       if (error) throw error;
 
       const suyos = (data || []).filter(p => {
@@ -2387,14 +3164,34 @@
         return p.rubro.split(',').map(r => r.trim()).indexOf(rubro) >= 0;
       });
 
+      // `lista` la usan el bloque de resultado en vivo del formulario B y el
+      // directorio que se muestra apenas se publica. Los de la provincia del
+      // comprador van primero: es la unica ventaja real que puede ofrecer un
+      // proveedor que no es el mas barato ni el que mas cubre.
+      const lista = suyos.slice().sort((a, b) => {
+        const pa = provincia && a.provincia === provincia ? 0 : 1;
+        const pb = provincia && b.provincia === provincia ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return minimoEnPesos(a.pedido_minimo) - minimoEnPesos(b.pedido_minimo);
+      });
+
       return {
         n: suyos.length,
-        enProv: provincia ? suyos.filter(p => p.provincia === provincia).length : 0
+        enProv: provincia ? suyos.filter(p => p.provincia === provincia).length : 0,
+        lista
       };
     } catch (e) {
       console.warn('[cotiz] contar proveedores', e);
       return null;   // la pantalla se muestra igual, sin el numero
     }
+  }
+
+  // Cuantos de esos proveedores tienen un minimo que el comprador puede
+  // cubrir con lo que declaro que piensa invertir.
+  function dentroDelPresupuesto(lista, inversion) {
+    const techo = techoInversion(inversion);
+    if (techo === null) return null;           // "No sé todavía": no se filtra
+    return (lista || []).filter(p => minimoEnPesos(p.pedido_minimo) <= techo).length;
   }
 
   /* Se pinta PRIMERO y se cuenta despues. El acuse de recibo es lo urgente:
@@ -2517,7 +3314,12 @@
         // El que publica por este camino viene de irse a Google y volver: es
         // justo el que menos idea tiene de si su pedido sobrevivio al viaje.
         // El acuse de recibo le hace mas falta que a nadie.
-        await irAConfirmacion(d);
+        //
+        // Un pedido de proveedor tiene su propia pantalla de llegada, con el
+        // directorio: mandarlo al acuse generico le sacaria justamente lo que
+        // puede usar ya mismo.
+        if (d.tipo === TIPO_B) await irAResultadoB(d, null);
+        else await irAConfirmacion(d);
       } else {
         // No se pudo (ej: llego al tope). Se deja de reintentar, pero no se
         // tira lo que escribio: se le muestra el formulario cargado y el
@@ -2680,37 +3482,146 @@
     const p = st.pedidoActual;
     if (!p) return pantallaFeed();
 
+    const tipoB = esPedidoB(p);
     let lista = st.cotizaciones.slice();
-    if (st.orden === 'precio') lista.sort((a, b) => Number(a.precio) - Number(b.precio));
+
+    /* ORDEN DE LAS RESPUESTAS
+
+       En un pedido de proveedor se ordena por COBERTURA y nunca por precio.
+       No es solo que no haya precio que ordenar: ordenar por el numero mas
+       bajo entrena al comprador a mirar unicamente eso, y al proveedor —que
+       es quien paga la app— le destruye el margen. Lo que le sirve de verdad
+       al comprador es quien le cubre mas del surtido de una sola vez.
+
+       Los que quedan fuera del presupuesto que declaro van al fondo, pero NO
+       se esconden: puede que le convenga igual, y esconderlos seria decidir
+       por el. Cada uno lleva su nota explicando por que esta ahi abajo. */
+    if (tipoB) {
+      const pedidos = productosDe(p).length;
+      const puntaje = c => {
+        const cubre = cubreDe(c).filter(x => productosDe(p).indexOf(x) >= 0).length;
+        return pedidos ? cubre / pedidos : 0;
+      };
+      lista.sort((a, b) => {
+        const fa = fueraDePresupuesto(a, p) ? 1 : 0;
+        const fb = fueraDePresupuesto(b, p) ? 1 : 0;
+        if (fa !== fb) return fa - fb;                       // dentro del presupuesto primero
+        const d = puntaje(b) - puntaje(a);                   // mas cobertura primero
+        if (d) return d;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    } else if (st.orden === 'precio') {
+      lista.sort((a, b) => Number(a.precio) - Number(b.precio));
+    }
 
     const cuerpo = !lista.length
-      ? vacioBox('Todavía no le cotizaron',
-        vigente(p) ? 'Apenas un proveedor responda, lo va a ver acá. Los pedidos con cantidad y rubro cargados reciben más respuestas.' : 'Este pedido está cerrado.')
-      : `<div style="padding:2px 16px 30px">${lista.map(cardCotizacion).join('')}</div>`;
+      ? vacioBox(tipoB ? 'Todavía no le respondieron' : 'Todavía no le cotizaron',
+        vigente(p)
+          ? (tipoB
+            ? 'Apenas un proveedor le diga qué puede abastecerle, lo va a ver acá, ordenado por cuánto le cubre.'
+            : 'Apenas un proveedor responda, lo va a ver acá. Los pedidos con cantidad y rubro cargados reciben más respuestas.')
+          : 'Este pedido está cerrado.')
+      : `<div style="padding:2px 16px 30px">
+          ${tipoB ? `<div style="font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${TENUE};margin:2px 2px 12px">Ordenados por cobertura</div>` : ''}
+          ${lista.map(cardCotizacion).join('')}
+        </div>`;
 
-    return header('Cotizaciones recibidas', "cotizIr('feed')") + `
+    return header(tipoB ? 'Proveedores que respondieron' : 'Cotizaciones recibidas', "cotizIr('feed')") + `
       <div style="padding:13px 16px;background:#FAFBFA;border-bottom:1px solid ${BORDE}">
-        <div style="font-family:'Inter',sans-serif;font-size:.88rem;font-weight:800;color:#1A1A1A;line-height:1.4;margin-bottom:5px">${esc(p.titulo)}</div>
+        <div style="font-size:.88rem;font-weight:800;color:#1A1A1A;line-height:1.4;margin-bottom:5px">${esc(p.titulo)}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.74rem;color:${GRIS}">
           ${p.cantidad ? `<span>${cantidadTexto(p)}</span>` : ''}
           ${p.provincia ? `<span style="display:inline-flex;align-items:center;gap:3px">${ICO.pin}${esc(p.provincia)}</span>` : ''}
           <span>${esc(hace(p.created_at))}</span>
         </div>
+        ${tipoB && productosDe(p).length ? `<div style="margin-top:8px;font-size:.74rem;color:#41564C;line-height:1.5">${esc(productosDe(p).join(' · '))}</div>` : ''}
       </div>
-      ${lista.length > 1 ? `<div style="display:flex;gap:8px;padding:12px 16px 8px">
+      ${lista.length > 1 && !tipoB ? `<div style="display:flex;gap:8px;padding:12px 16px 8px">
         ${['recientes', 'precio'].map(o => `<button onclick="cotizOrden('${o}')" style="padding:6px 13px;border-radius:16px;border:1.5px solid ${st.orden === o ? VERDE : '#E2E6E4'};background:${st.orden === o ? SOFT : '#fff'};color:${st.orden === o ? VERDE_OSC : GRIS};font-size:.76rem;font-weight:${st.orden === o ? 700 : 500};cursor:pointer;font-family:inherit">${o === 'recientes' ? 'Más recientes' : 'Menor precio'}</button>`).join('')}
       </div>` : ''}
       ${cuerpo}
       ${vigente(p) ? `<div style="padding:0 16px 34px"><button onclick="cotizCerrar('${p.id}')" style="width:100%;background:#fff;color:${GRIS};border:1.5px solid #E2E6E4;border-radius:12px;padding:12px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit">Cerrar este pedido</button></div>` : ''}`;
   }
 
+  /* Bloque de cobertura: la cifra que reemplaza al precio en un pedido de
+     proveedor. `cubre` son los productos que el proveedor marco; `productos`
+     los que pidio el comprador. Lo que NO cubre se dice con todas las letras:
+     esconderlo obligaria al comprador a cruzar dos listas a mano. */
+  function bloqueCobertura(cot, sol) {
+    const pedidos = productosDe(sol);
+    const cubre = cubreDe(cot);
+    if (!pedidos.length) return '';
+    // Se cuenta contra lo que el comprador pidio, no contra lo que el
+    // proveedor marco: si marco algo que no estaba en el pedido, no suma.
+    const cubiertos = pedidos.filter(x => cubre.indexOf(x) >= 0);
+    const faltan = pedidos.filter(x => cubre.indexOf(x) < 0);
+    const pct = Math.round((cubiertos.length / pedidos.length) * 100);
+    return `<div class="cz-cob${cubiertos.length === pedidos.length ? ' completa' : ''}">
+      <div class="cz-cob-fila">
+        <span class="cz-cob-n">Cubre ${cubiertos.length} de ${pedidos.length}</span>
+        ${faltan.length ? `<span class="cz-cob-falta">No cubre: ${esc(faltan.join(', '))}</span>` : ''}
+      </div>
+      <div class="cz-cob-barra" role="img" aria-label="Cubre ${cubiertos.length} de ${pedidos.length} productos">
+        <div class="cz-cob-relleno" style="width:${pct}%"></div>
+      </div>
+    </div>`;
+  }
+
+  // Cuanto del presupuesto declarado se come el minimo de este proveedor.
+  // Devuelve null cuando no hay con que comparar (el comprador no declaro
+  // inversion, o el proveedor no dijo su minimo): en ese caso no se opina.
+  function fueraDePresupuesto(cot, sol) {
+    const techo = techoInversion(sol && sol.inversion);
+    if (techo === null || !isFinite(techo)) return null;
+    if (!cot || !cot.minimo) return null;
+    return minimoEnPesos(cot.minimo) > techo;
+  }
+
   function cardCotizacion(c) {
     const p = st.provsCache[c.proveedor_id] || {};
-    const total = (st.pedidoActual?.cantidad || '').replace(/[^0-9]/g, '');
-    const totalNum = total ? Number(total) * Number(c.precio) : null;
+    const sol = st.pedidoActual;
+    const tipoB = esRespuestaB(c) || esPedidoB(sol);
+    const total = (sol?.cantidad || '').replace(/[^0-9]/g, '');
+    // Sin precio no hay total que estimar. Antes esto daba 0 y se pintaba
+    // "Total estimado $0".
+    const totalNum = (!tipoB && total && c.precio) ? Number(total) * Number(c.precio) : null;
     const pro = esPro(p);
+    const fuera = fueraDePresupuesto(c, sol);
 
-    return `<div class="cz-bandeja" style="margin-bottom:12px"><div class="cz-nucleo">
+    /* El cuerpo cambia entero segun el tipo. En un pedido de proveedor no hay
+       "precio por unidad" ni "total estimado": lo que el comprador compara es
+       cuanto le cubre cada uno y con que minimo de compra. */
+    const cuerpo = tipoB
+      ? `${bloqueCobertura(c, sol)}
+        <div style="display:flex;gap:8px;margin-bottom:11px">
+          <div style="flex:1;min-width:0;background:#FAFBFA;border-radius:10px;padding:10px 12px">
+            <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Mínimo de compra</div>
+            <div style="font-size:.95rem;font-weight:800;color:#1A1A1A">${esc(c.minimo || 'Consultar')}</div>
+          </div>
+          <div style="flex:1;min-width:0;background:#FAFBFA;border-radius:10px;padding:10px 12px">
+            <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Envío</div>
+            <div style="font-size:.82rem;font-weight:700;color:#1A1A1A;line-height:1.3">${esc(c.envio || 'Consultar')}</div>
+          </div>
+        </div>
+        ${fuera ? `<div class="cz-aviso-ambar">${ICO.alerta}<span>Su mínimo está por encima de lo que usted indicó que pensaba invertir. Igual puede consultarle.</span></div>` : ''}`
+      : `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
+          <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
+            <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Por ${uSingular(sol)}</div>
+            <div style="font-size:1.05rem;font-weight:800;color:${VERDE}">${plata(c.precio) || '-'}</div>
+          </div>
+          <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
+            <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">${totalNum ? 'Total estimado' : 'Entrega'}</div>
+            <div style="font-size:1.05rem;font-weight:800;color:#1A1A1A">${totalNum ? plata(totalNum) : esc(c.entrega || '-')}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.76rem;color:${GRIS};margin-bottom:${c.nota ? '10px' : '13px'}">
+          ${totalNum && c.entrega ? `<span>Entrega: ${esc(c.entrega)}</span>` : ''}
+          ${c.minimo ? `<span>Mínimo: ${esc(c.minimo)}</span>` : ''}
+          ${c.pagos ? `<span>${esc(c.pagos)}</span>` : ''}
+        </div>`;
+
+    return `<div class="cz-bandeja${fuera ? ' cz-fuera' : ''}" style="margin-bottom:12px"><div class="cz-nucleo">
       <div style="display:flex;align-items:center;gap:11px;margin-bottom:13px">
         ${p.logo_url
         ? `<div style="width:42px;height:42px;border-radius:50%;overflow:hidden;flex-shrink:0"><img loading="lazy" src="${esc(p.logo_url)}" alt="" style="width:100%;height:100%;object-fit:cover"></div>`
@@ -2724,22 +3635,7 @@
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:11px">
-        <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
-          <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">Por ${uSingular(st.pedidoActual)}</div>
-          <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800;color:${VERDE}">${plata(c.precio)}</div>
-        </div>
-        <div style="background:#FAFBFA;border-radius:10px;padding:10px 12px">
-          <div style="font-size:.68rem;color:${TENUE};margin-bottom:2px">${totalNum ? 'Total estimado' : 'Entrega'}</div>
-          <div style="font-family:'Inter',sans-serif;font-size:1.05rem;font-weight:800;color:#1A1A1A">${totalNum ? plata(totalNum) : esc(c.entrega || '-')}</div>
-        </div>
-      </div>
-
-      <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:.76rem;color:${GRIS};margin-bottom:${c.nota ? '10px' : '13px'}">
-        ${totalNum && c.entrega ? `<span>Entrega: ${esc(c.entrega)}</span>` : ''}
-        ${c.minimo ? `<span>Mínimo: ${esc(c.minimo)}</span>` : ''}
-        ${c.pagos ? `<span>${esc(c.pagos)}</span>` : ''}
-      </div>
+      ${cuerpo}
 
       ${c.nota ? `<div style="font-size:.8rem;color:#41564C;background:#FAFBFA;border-radius:9px;padding:10px 12px;margin-bottom:13px;line-height:1.5">${esc(c.nota)}</div>` : ''}
 
@@ -2757,8 +3653,14 @@
     const p = st.provsCache[provId] || {};
     const c = st.cotizaciones.find(x => String(x.id) === String(cotId));
     const ped = st.pedidoActual;
-    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. Cotizó mi pedido "${ped?.titulo || ''}"` +
-      (c ? ` a ${plata(c.precio)} por ${uSingular(ped)}` : '') + '. Quería avanzar.';
+    // En un pedido de proveedor no hay precio que citar: se lo saluda por lo
+    // que respondio (cuanto del surtido cubre) y no por un numero que no dio.
+    const detalle = esRespuestaB(c) || esPedidoB(ped)
+      ? (cubreDe(c).length ? ` y me dijo que cubre ${cubreDe(c).length} de los productos que busco` : '')
+      : (c && plata(c.precio) ? ` a ${plata(c.precio)} por ${uSingular(ped)}` : '');
+    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. ` +
+      `${esPedidoB(ped) ? 'Respondió' : 'Cotizó'} mi pedido "${ped?.titulo || ''}"` +
+      detalle + '. Quería avanzar.';
     try { registrarContactoWA(provId, p); } catch (e) { }
     try { abrirWA(p.whatsapp, msg); } catch (e) { toast('WhatsApp no disponible'); }
   };
@@ -2852,6 +3754,10 @@
     st.cierre = {
       id: String(id),
       titulo: p ? p.titulo : '',
+      // La fila entera, no solo el titulo: resumenCotiz() necesita saber si
+      // es un pedido de producto o de proveedor para redactar la linea de
+      // abajo de cada candidato ("Cotizó $X" vs "Cubre 4 de 5").
+      pedido: p || null,
       candidatos,
       elegido: null,
       estrellas: 0,
@@ -2932,7 +3838,7 @@
         ${foto}
         <span style="flex:1;min-width:0">
           <span style="display:block;font-family:'Inter',sans-serif;font-size:.86rem;font-weight:800;color:#1A1A1A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.nombre || 'Proveedor')}</span>
-          <span style="display:block;font-size:.74rem;color:${TENUE};margin-top:1px">Cotizó ${plata(x.cot.precio)}</span>
+          <span style="display:block;font-size:.74rem;color:${TENUE};margin-top:1px">${esc(resumenCotiz(x.cot, st.cierre && st.cierre.pedido))}</span>
         </span>
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${VERDE}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;display:block"><polyline points="9 18 15 12 9 6"/></svg>
       </button>`;
@@ -3093,8 +3999,187 @@
     const s = st.feed.find(x => String(x.id) === String(id));
     if (!s) return;
     st.pedidoActual = s;
-    st.vista = 'cotizar';
+    // Un pedido de proveedor no se cotiza con un precio: se responde como un
+    // remito. Son dos formularios distintos porque son dos preguntas distintas.
+    if (esPedidoB(s)) {
+      st.remito = { cubre: [] };
+      st.vista = 'cotizarB';
+    } else {
+      st.vista = 'cotizar';
+    }
     render();
+  };
+
+  /* ---------------- FASE 5: EL PROVEEDOR RESPONDE UN PEDIDO B ----------------
+
+     Se responde como un remito: se marca lo que se puede abastecer y se dice
+     con que minimo y como se envia. No hay precio por unidad, y la base lo
+     impone (CHECK cotizaciones_precio_chk): en una respuesta de este tipo
+     precio TIENE que ser NULL.
+
+     El indicador de cobertura no esta para adornar. Un proveedor que marca 2
+     de 5 no se da cuenta solo de que va a quedar debajo del que marca 4; con
+     el numero delante, muchos se acuerdan de que tambien venden las otras. */
+
+  function pantallaCotizarB() {
+    const s = st.pedidoActual;
+    if (!s) return pantallaFeed();
+    if (!st.remito) st.remito = { cubre: [] };
+
+    const productos = productosDe(s);
+    const ctx = [
+      s.ya_vende ? etiquetaDe(YA_VENDE, s.ya_vende) : '',
+      s.inversion && s.inversion !== 'nosabe' ? 'Piensa invertir: ' + etiquetaDe(INVERSIONES, s.inversion) : '',
+      s.inversion === 'nosabe' ? 'Todavía no definió cuánto invertir' : ''
+    ].filter(Boolean);
+
+    return header('Responder el pedido', "cotizIr('feed')") + `
+      <div style="padding:13px 16px;background:#FAFBFA;border-bottom:1px solid ${BORDE}">
+        <div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">
+          ${avatar(s.comprador_nombre, s.comprador_foto, 30)}
+          <div style="font-size:.78rem;font-weight:700;color:#41564C">${esc(s.comprador_nombre)}${s.provincia ? ' · ' + esc(s.provincia) : ''}</div>
+        </div>
+        <div style="font-size:.87rem;font-weight:800;color:#1A1A1A;line-height:1.4">${esc(s.titulo)}</div>
+        ${ctx.length ? `<div class="cz-ctx">${ctx.map(t => `<span>${esc(t)}</span>`).join('')}</div>` : ''}
+      </div>
+
+      <div class="cz-form">
+        <label style="display:block;font-size:.82rem;font-weight:700;color:#1A1A1A;margin-bottom:4px">¿Cuáles puede abastecer?</label>
+        <p class="cz-paso-ayuda">Marque los productos que tenga disponibles. Puede responder aunque no los cubra todos.</p>
+
+        <div id="cz-remito-lista">
+          ${productos.length
+        ? productos.map(nom => `<button type="button" class="cz-check" aria-pressed="false"
+              data-p="${esc(nom)}" onclick="cotizRemitoTocar('${jsArg(nom)}')">
+              <span class="cz-check-caja" aria-hidden="true">${ICO.ok}</span>
+              <span style="flex:1;min-width:0">${esc(nom)}</span>
+            </button>`).join('')
+        : `<div style="font-size:.83rem;color:${GRIS};line-height:1.55;padding:4px 0 12px">Este pedido no trae una lista de productos. Cuéntele en la nota qué le puede ofrecer.</div>`}
+        </div>
+
+        ${productos.length ? `<div id="cz-remito-cob" class="cz-vivo-caja" style="margin:14px 0 18px"></div>` : ''}
+
+        ${campo('Su mínimo de compra', `<input id="cz-b-minimo" maxlength="60" placeholder="ej: $50.000" style="${INPUT_CSS}">`,
+          'El comprador dijo cuánto piensa invertir. Si su mínimo entra, su respuesta aparece más arriba.')}
+
+        ${campo('Condiciones de envío', `<div id="cz-b-envio" style="display:flex;gap:7px;flex-wrap:wrap">
+          ${ENVIOS.map(e => `<button type="button" class="cz-chip-prod" data-v="${esc(e)}" aria-pressed="false" onclick="cotizRemitoEnvio('${jsArg(e)}')">${esc(e)}</button>`).join('')}
+        </div>`)}
+
+        ${campo('Nota (opcional)', `<textarea id="cz-b-nota" rows="3" maxlength="400" placeholder="ej: Trabajo con reposición mensual, tengo lista de precios para revendedores" style="${INPUT_CSS};resize:vertical"></textarea>`)}
+
+        <div class="cz-barra cz-vidrio">
+          <div id="cz-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px"></div>
+          ${btnPrimario('Enviar respuesta', 'cotizEnviarB(this)')}
+          <div class="cz-barra-nota">El comprador ve su respuesta junto con la de otros proveedores, ordenadas por cuánto cubre cada uno.</div>
+        </div>
+      </div>`;
+  }
+
+  function montarRemito() {
+    pintarRemito();
+  }
+
+  function pintarRemito() {
+    const s = st.pedidoActual;
+    if (!s || !st.remito) return;
+    const cont = $('cz-remito-lista');
+    if (cont) Array.from(cont.children).forEach(b => {
+      if (!b.dataset || !b.dataset.p) return;
+      b.setAttribute('aria-pressed', st.remito.cubre.indexOf(b.dataset.p) >= 0 ? 'true' : 'false');
+    });
+    pintarPresionado('cz-b-envio', st.remito.envio || '');
+
+    const caja = $('cz-remito-cob');
+    if (!caja) return;
+    const total = productosDe(s).length;
+    const n = st.remito.cubre.length;
+    const pct = total ? Math.round((n / total) * 100) : 0;
+    // El empujon: cuando falta poco se lo dice, en vez de dejarlo en el 60%
+    // sin que se entere de que el de al lado va a marcar los cinco.
+    const empuje = !total || n === total ? ''
+      : n === 0 ? 'Marque al menos uno para poder responder.'
+        : total - n === 1 ? 'Le falta uno solo para cubrir el pedido entero.'
+          : `Si también vende ${total - n} más, cubre el pedido entero.`;
+    caja.innerHTML = `<div class="cz-cob${n === total && total ? ' completa' : ''}" style="margin:0">
+        <div class="cz-cob-fila">
+          <span class="cz-cob-n">Su cobertura: ${n} de ${total}</span>
+        </div>
+        <div class="cz-cob-barra"><div class="cz-cob-relleno" style="width:${pct}%"></div></div>
+      </div>
+      ${empuje ? `<div class="cz-vivo-txt" style="margin-top:9px">${esc(empuje)}</div>` : ''}`;
+  }
+
+  window.cotizRemitoTocar = function (nom) {
+    if (!st.remito) st.remito = { cubre: [] };
+    const i = st.remito.cubre.indexOf(nom);
+    if (i >= 0) st.remito.cubre.splice(i, 1); else st.remito.cubre.push(nom);
+    vibrar('light');
+    pintarRemito();
+  };
+
+  window.cotizRemitoEnvio = function (v) {
+    if (!st.remito) st.remito = { cubre: [] };
+    // Se puede desmarcar: el envio es opcional y quedar trabado en la primera
+    // opcion que se toco por error es peor que no tener ninguna.
+    st.remito.envio = st.remito.envio === v ? '' : v;
+    vibrar('light');
+    pintarRemito();
+  };
+
+  window.cotizEnviarB = async function (btn) {
+    const s = st.pedidoActual;
+    const err = $('cz-error');
+    const fallar = m => { if (err) { err.textContent = m; err.style.display = 'block'; } vibrar('error'); };
+    if (!s || !st.remito) return;
+
+    const productos = productosDe(s);
+    if (productos.length && !st.remito.cubre.length) {
+      return fallar('Marque al menos un producto que pueda abastecer.');
+    }
+    if (!currentUser?.proveedorId) return fallar('Su cuenta de proveedor todavía no está aprobada.');
+    if (err) err.style.display = 'none';
+
+    const fila = {
+      solicitud_id: s.id,
+      proveedor_id: currentUser.proveedorId,
+      // precio NO se manda. La base exige que sea NULL en una respuesta de
+      // tipo proveedor, y el tipo lo pone un trigger leyendo el pedido padre.
+      cubre: st.remito.cubre.slice(0, 12),
+      minimo: ($('cz-b-minimo')?.value || '').trim() || null,
+      envio: st.remito.envio || null,
+      nota: ($('cz-b-nota')?.value || '').trim() || null
+    };
+
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando...'; btn.style.opacity = '.7'; }
+    try {
+      const { error } = await sb.from('cotizaciones').insert(fila);
+      if (error) throw error;
+      vibrar('success');
+      toast('Respuesta enviada');
+      try { if (typeof trackEvent === 'function') trackEvent('rfq_respondido_b', { rubro: s.rubro || '', cubre: fila.cubre.length }); } catch (e) { }
+
+      // Mismo aviso por mail que en una cotizacion normal: se dispara y se
+      // sigue de largo. Si el mail falla, la respuesta ya esta guardada.
+      try {
+        fetch('/api/notificar-mensaje?action=cotizacion', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ solicitud_id: s.id })
+        }).catch(() => { });
+      } catch (e) { }
+
+      st.remito = null;
+      await cargarFeed();
+      st.vista = 'feed';
+      render();
+    } catch (e) {
+      console.warn('[cotiz] enviar respuesta B', e);
+      if (btn) { btn.disabled = false; btn.textContent = 'Enviar respuesta'; btn.style.opacity = '1'; }
+      const dup = String(e?.code || '') === '23505';
+      fallar(dup ? 'Ya respondió este pedido.'
+        : esColumnaFaltante(e) ? 'Esta función todavía no está habilitada en el servidor.'
+          : 'No se pudo enviar. Revise su conexión e intente de nuevo.');
+    }
   };
 
   function pantallaCotizar() {
