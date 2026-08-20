@@ -56,6 +56,13 @@
 -- Se otorga SELECT y UPDATE de la columna a authenticated, no a anon: el
 -- visitante sin sesion no tiene por que llevarse las preferencias de nadie.
 --
+-- OJO con lo que igual va a aparecer: anon queda con INSERT y REFERENCES
+-- sobre esta columna sin que nadie se los de. Los tiene sobre la TABLA
+-- (el registro de un proveedor pasa sin sesion) y un grant de tabla cubre
+-- toda columna nueva sola. Los SELECT de proveedores, en cambio, estan
+-- otorgados columna por columna, asi que la nueva no hereda lectura, que es
+-- lo unico que importaba. Ver la comprobacion l) al pie.
+--
 -- OJO, sinceridad sobre el alcance: prov_select_auth deja que CUALQUIER
 -- usuario logueado lea las filas de los proveedores aprobados, y la RLS no
 -- filtra por columna. O sea que otro proveedor logueado puede leer que
@@ -267,15 +274,31 @@ begin
     insert into prueba_rubros values ('k) GRANT UPDATE a authenticated', 'MAL: falta');
   end if;
 
-  -- l) anon NO la tiene que poder leer
+  /* l) anon NO la tiene que poder LEER.
+
+     Se pregunta por SELECT y no por "algun permiso". Verificado el
+     2026-08-20 contra produccion: anon tiene INSERT y REFERENCES sobre esta
+     columna, pero no porque se los haya dado nadie — los tiene sobre la
+     TABLA, y un grant de tabla cubre toda columna nueva automaticamente.
+     Los SELECT, en cambio, estan otorgados columna por columna (26 de 37),
+     asi que la columna nueva no hereda ninguno. Que es lo que se queria.
+
+     Ese INSERT heredado no es un agujero: el registro de un proveedor pasa
+     SIN sesion (prov_insert es TO anon, authenticated), el CHECK acota el
+     array, la fila nace en estado='pendiente' e invisible, y sin sesion no
+     hay forma de leerla de vuelta. Sacarlo obligaria a revocarle el INSERT
+     de tabla a anon y re-otorgar las 37 columnas: romper el registro de
+     proveedores para arreglar nada. Ademas un GRANT de tabla le gana a un
+     REVOKE por columna, asi que el revoke puntual ni siquiera andaria. */
   if exists (
     select 1 from information_schema.column_privileges
     where table_schema = 'public' and table_name = 'proveedores'
-      and column_name = 'rubros_seguidos' and grantee = 'anon'
+      and column_name = 'rubros_seguidos'
+      and grantee = 'anon' and privilege_type = 'SELECT'
   ) then
-    insert into prueba_rubros values ('l) anon sin permisos', 'MAL: anon tiene permiso');
+    insert into prueba_rubros values ('l) anon no la puede leer', 'MAL: anon tiene SELECT');
   else
-    insert into prueba_rubros values ('l) anon sin permisos', 'BIEN: anon no la ve');
+    insert into prueba_rubros values ('l) anon no la puede leer', 'BIEN: anon no la ve');
   end if;
 
   -- m) el indice para las notificaciones que vienen
