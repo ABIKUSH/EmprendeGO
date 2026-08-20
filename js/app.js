@@ -122,6 +122,161 @@ const SUBCATEGORIA_MAP = {
   'construccion': ['Construcción'], 'mascotas': ['Mascotas'],
   'bebes': ['Bebés y Niños'], 'ninos': ['Bebés y Niños'], 'packaging': ['Packaging'],
   'iluminacion': ['Iluminación'], 'automotor': ['Automotor'], 'servicios': ['Servicios'],
+
+  /* ---------------- VOCABULARIO DE PRODUCTO ----------------
+     Lo de arriba son CATEGORÍAS ("perfumería", "blanquería"): las palabras que
+     usa quien ya sabe cómo se organiza un mayorista. Lo de acá abajo son
+     PRODUCTOS: las palabras que escribe una persona común.
+
+     Por qué importa: cotizaciones.js deduce el rubro del pedido con
+     rubroDeTermino(), que lee este mapa. Sin "remera", "maquillaje" o
+     "espejo", 3 de cada 9 pedidos reales cayeron en "Otro" y no le llegaron a
+     ningún proveedor. Buena parte de este vocabulario ya vivía en la constante
+     PISTAS de js/emprendedor.js; acá queda en un solo lugar, donde también lo
+     aprovechan el buscador de proveedores y el de productos.
+
+     TRES REGLAS PARA AGREGAR UNA CLAVE (no son de estilo, evitan bugs reales):
+
+     1. Sin acentos y en minúscula. rubroDeTermino() normaliza con NFD antes de
+        comparar, así que una clave con tilde no matchea nunca. Por eso va
+        'panal' y no 'pañal'.
+
+     2. Singular, no plural. El match es por substring, así que 'remera'
+        también agarra "remeras"; al revés no.
+
+     3. Mínimo 4 caracteres, y que la palabra no sea pedazo de otra de un rubro
+        distinto. matchesQuery() hace `qn.includes(sub.split(' ')[0])`, o sea
+        que una clave corta se cuela dentro de cualquier palabra que la
+        contenga. Ejemplos que quedaron AFUERA a propósito:
+          - 'calza'  → está dentro de "calzado" y le robaría las búsquedas a Calzado.
+          - 'sobre'  → es una preposición; matchearía media Argentina.
+          - 'cafe'   → está dentro de "cafetera", que es Bazar y no Alimentos.
+          - 'led'    → tres letras, entra dentro de demasiadas palabras.
+        Cuando dudes, agregá el plural ('medias' en vez de 'media'). */
+
+  // Indumentaria
+  'remera': ['Indumentaria'], 'camiseta': ['Indumentaria', 'Deportes'], 'buzo': ['Indumentaria'],
+  'campera': ['Indumentaria'], 'pantalon': ['Indumentaria'], 'jean': ['Indumentaria'],
+  'jogging': ['Indumentaria', 'Deportes'], 'short': ['Indumentaria'], 'bermuda': ['Indumentaria'],
+  'vestido': ['Indumentaria'], 'camisa': ['Indumentaria'], 'chomba': ['Indumentaria'],
+  'musculosa': ['Indumentaria'], 'pollera': ['Indumentaria'], 'saco': ['Indumentaria'],
+  'chaleco': ['Indumentaria'], 'sweater': ['Indumentaria'], 'pullover': ['Indumentaria'],
+  'malla': ['Indumentaria'], 'bikini': ['Indumentaria'], 'medias': ['Indumentaria'],
+  'pijama': ['Indumentaria'], 'uniforme': ['Indumentaria'], 'delantal': ['Indumentaria'],
+  'gorra': ['Indumentaria'], 'ambo': ['Indumentaria'],
+
+  // Lencería — rubro propio, nunca mezclado con Indumentaria.
+  'lenceria': ['Lencería'], 'corpino': ['Lencería'], 'bombacha': ['Lencería'],
+  'boxer': ['Lencería'], 'calzoncillo': ['Lencería'], 'camison': ['Lencería'],
+
+  // Calzado
+  'zapatilla': ['Calzado'], 'zapato': ['Calzado'], 'sandalia': ['Calzado'],
+  'borcego': ['Calzado'], 'pantufla': ['Calzado'], 'ojota': ['Calzado'],
+  'mocasin': ['Calzado'], 'alpargata': ['Calzado'], 'chatita': ['Calzado'], 'crocs': ['Calzado'],
+
+  // Belleza y Salud
+  'maquillaje': ['Belleza y Salud'], 'labial': ['Belleza y Salud'], 'perfume': ['Belleza y Salud'],
+  'esmalte': ['Belleza y Salud'], 'shampoo': ['Belleza y Salud'], 'acondicionador': ['Belleza y Salud'],
+  'crema': ['Belleza y Salud'], 'rimel': ['Belleza y Salud'], 'delineador': ['Belleza y Salud'],
+  'pestana': ['Belleza y Salud'], 'skincare': ['Belleza y Salud'], 'cosmetica': ['Belleza y Salud'],
+  'desodorante': ['Belleza y Salud'], 'protector solar': ['Belleza y Salud'],
+  'secador': ['Belleza y Salud', 'Electrónica'], 'plancha de pelo': ['Belleza y Salud'],
+
+  // Hogar y Deco
+  'espejo': ['Hogar y Deco'], 'cortina': ['Hogar y Deco'], 'alfombra': ['Hogar y Deco'],
+  'cuadro': ['Hogar y Deco'], 'florero': ['Hogar y Deco'], 'maceta': ['Hogar y Deco'],
+  'organizador': ['Hogar y Deco'], 'perchero': ['Hogar y Deco'], 'repisa': ['Hogar y Deco'],
+  'estante': ['Hogar y Deco'], 'adorno': ['Hogar y Deco'], 'canasto': ['Hogar y Deco'],
+  'cesto': ['Hogar y Deco'], 'portarretrato': ['Hogar y Deco'], 'vela': ['Hogar y Deco'],
+
+  // Muebles
+  'silla': ['Muebles'], 'mesa': ['Muebles'], 'escritorio': ['Muebles'], 'sillon': ['Muebles'],
+  'placard': ['Muebles'], 'ropero': ['Muebles'], 'cajonera': ['Muebles'], 'banqueta': ['Muebles'],
+  'sommier': ['Muebles'], 'colchon': ['Muebles'], 'biblioteca': ['Muebles'],
+
+  // Bazar
+  'mate': ['Bazar'], 'termo': ['Bazar'], 'bombilla': ['Bazar'], 'vaso': ['Bazar'],
+  'taza': ['Bazar'], 'jarra': ['Bazar'], 'plato': ['Bazar'], 'olla': ['Bazar'],
+  'sarten': ['Bazar'], 'cacerola': ['Bazar'], 'bandeja': ['Bazar'], 'cubierto': ['Bazar'],
+  'tupper': ['Bazar'], 'botella': ['Bazar'],
+
+  // Blanquería
+  'almohada': ['Blanquería'], 'cubrecama': ['Blanquería'], 'colcha': ['Blanquería'],
+  'edredon': ['Blanquería'], 'repasador': ['Blanquería'],
+
+  // Textil y Telas
+  'lienzo': ['Textil y Telas'], 'gabardina': ['Textil y Telas'], 'algodon': ['Textil y Telas'],
+  'lycra': ['Textil y Telas'], 'friselina': ['Textil y Telas'], 'hilo': ['Textil y Telas'],
+  'boton': ['Textil y Telas'],
+
+  // Marroquinería y Bolsos — el mapa de arriba solo tenía los plurales.
+  'cartera': ['Marroquinería y Bolsos'], 'mochila': ['Marroquinería y Bolsos'],
+  'bolso': ['Marroquinería y Bolsos'], 'billetera': ['Marroquinería y Bolsos'],
+  'rinonera': ['Marroquinería y Bolsos'], 'valija': ['Marroquinería y Bolsos'],
+  'cinturon': ['Marroquinería y Bolsos'], 'morral': ['Marroquinería y Bolsos'],
+
+  // Tecnología y Electrónica
+  'auricular': ['Tecnología'], 'cargador': ['Tecnología'], 'parlante': ['Tecnología'],
+  'smartwatch': ['Tecnología'], 'teclado': ['Tecnología'], 'mouse': ['Tecnología'],
+  'monitor': ['Tecnología'], 'tablet': ['Tecnología'], 'notebook': ['Tecnología'],
+  'power bank': ['Tecnología'], 'joystick': ['Tecnología'],
+  'televisor': ['Electrónica'], 'heladera': ['Electrónica'], 'lavarropa': ['Electrónica'],
+  'microondas': ['Electrónica'], 'licuadora': ['Electrónica'], 'cafetera': ['Electrónica', 'Bazar'],
+  'batidora': ['Electrónica'], 'tostadora': ['Electrónica'], 'ventilador': ['Electrónica'],
+
+  // Juguetería
+  'peluche': ['Juguetería'], 'muneca': ['Juguetería'], 'rompecabeza': ['Juguetería'],
+  'didactico': ['Juguetería'], 'autito': ['Juguetería'],
+
+  // Bebés y Niños
+  'panal': ['Bebés y Niños'], 'cochecito': ['Bebés y Niños'], 'mamadera': ['Bebés y Niños'],
+  'chupete': ['Bebés y Niños'], 'babero': ['Bebés y Niños'],
+
+  // Deportes
+  'pelota': ['Deportes'], 'mancuerna': ['Deportes'], 'bicicleta': ['Deportes'],
+  'colchoneta': ['Deportes'], 'gimnasio': ['Deportes'], 'fitness': ['Deportes'],
+
+  // Librería y Papelería
+  'cuaderno': ['Librería y Papelería'], 'lapiz': ['Librería y Papelería'],
+  'birome': ['Librería y Papelería'], 'carpeta': ['Librería y Papelería'],
+  'resma': ['Librería y Papelería'], 'marcador': ['Librería y Papelería'],
+  'tijera': ['Librería y Papelería'], 'pegamento': ['Librería y Papelería'],
+
+  // Limpieza
+  'detergente': ['Limpieza'], 'lavandina': ['Limpieza'], 'trapo': ['Limpieza'],
+  'escoba': ['Limpieza'], 'esponja': ['Limpieza'], 'desinfectante': ['Limpieza'],
+  'suavizante': ['Limpieza'], 'rejilla': ['Limpieza'], 'jabon': ['Limpieza', 'Belleza y Salud'],
+
+  // Ferretería y Herramientas
+  'tornillo': ['Ferretería'], 'clavo': ['Ferretería'], 'tuerca': ['Ferretería'],
+  'bulon': ['Ferretería'], 'llave': ['Ferretería'],
+  'taladro': ['Herramientas'], 'destornillador': ['Herramientas'], 'martillo': ['Herramientas'],
+  'amoladora': ['Herramientas'], 'pinza': ['Herramientas'],
+
+  // Iluminación
+  'lampara': ['Iluminación'], 'velador': ['Iluminación'], 'foco': ['Iluminación'],
+  'luminaria': ['Iluminación'], 'aplique': ['Iluminación'], 'dicroica': ['Iluminación'],
+
+  // Alimentos
+  'golosina': ['Alimentos'], 'galletita': ['Alimentos'], 'chocolate': ['Alimentos'],
+  'yerba': ['Alimentos'], 'fideos': ['Alimentos'], 'conserva': ['Alimentos'],
+  'aceite': ['Alimentos'], 'harina': ['Alimentos'], 'especias': ['Alimentos'],
+
+  // Packaging. 'caja' y 'cinta' quedan afuera por la regla 3: están dentro de
+  // 'cajonera' (Muebles) y de 'cinturon' (Marroquinería).
+  'bolsa': ['Packaging'], 'etiqueta': ['Packaging'],
+  'precinto': ['Packaging'], 'burbuja': ['Packaging'],
+
+  // Mascotas
+  'comedero': ['Mascotas'], 'rascador': ['Mascotas'],
+
+  // Automotor
+  'repuesto': ['Automotor'], 'bujia': ['Automotor'], 'cubierta': ['Automotor'],
+  'llanta': ['Automotor'],
+
+  // Construcción
+  'cemento': ['Construcción'], 'ladrillo': ['Construcción'], 'pintura': ['Construcción'],
+  'membrana': ['Construcción'], 'ceramica': ['Construcción'], 'porcelanato': ['Construcción'],
 };
 
 // Rubros que se pueden elegir al cargar un producto (carga múltiple, import de

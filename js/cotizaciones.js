@@ -41,6 +41,27 @@
   // revocado de la API a proposito (PII) y devolveria 403.
   const COLS_SOL = 'id,created_at,usuario_id,comprador_nombre,comprador_foto,' +
     'titulo,cantidad,unidad,rubro,provincia,detalles,presupuesto,estado,cierra_at,respuestas';
+
+  /* foto_url llega con sql/2026-08-19_solicitudes_foto.sql.
+     OJO: pedir en el select una columna que no existe no devuelve esa columna
+     vacia, hace fallar la consulta ENTERA. O sea que pushear el frontend antes
+     de correr la migracion dejaria el feed en cero.
+     Se pide optimista y, si la base contesta que no existe, se baja la bandera
+     y se reintenta sin ella. Pasa una sola vez por sesion.
+     Cuando la migracion este corrida en produccion esto se puede simplificar a
+     pegar foto_url dentro de COLS_SOL y borrar traerSolicitudes(). */
+  let hayFotoUrl = true;
+  const colsSol = () => COLS_SOL + (hayFotoUrl ? ',foto_url' : '');
+
+  async function traerSolicitudes(armarConsulta) {
+    let r = await armarConsulta(colsSol());
+    if (r && r.error && hayFotoUrl && esColumnaFaltante(r.error)) {
+      console.warn('[cotiz] la base todavia no tiene solicitudes.foto_url', r.error);
+      hayFotoUrl = false;
+      r = await armarConsulta(colsSol());
+    }
+    return r;
+  }
   const COLS_COT = 'id,created_at,solicitud_id,proveedor_id,precio,entrega,minimo,pagos,nota';
 
   const ENTREGAS = ['24 hs', '48 hs', '3 a 5 dias', '1 semana', 'Mas de 1 semana'];
@@ -87,9 +108,14 @@
     orden: 'recientes',  // recientes | precio
     rubro: 'Todos',
     cargando: false,
+    confirmado: null,     // acuse de recibo despues de publicar; ver pantallaConfirmado()
     prefill: null,        // pedido pre-cargado desde una busqueda sin resultados
     errorPendiente: null, // error a mostrar al volver al formulario
-    demanda: null         // carril "buscado sin respuesta"; null = todavia no se pidio
+    demanda: null,        // carril "buscado sin respuesta"; null = todavia no se pidio
+    // Formulario A. Viven en st y no en el DOM porque el formulario se repinta
+    // entero en cada render() y estos dos tienen que sobrevivir a eso.
+    cantModo: 'minimo',   // '20' | '50' | '100' | 'otra' | 'minimo'
+    foto: null            // URL ya subida a Storage, o null
   };
 
   /* ---------------- utilidades ---------------- */
@@ -228,7 +254,15 @@
     wa: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.47 14.38c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.47-1.75-1.65-2.05-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.75-.72 2-1.41.25-.7.25-1.29.17-1.41-.07-.13-.27-.2-.57-.35z"/><path d="M12 2a10 10 0 0 0-8.6 15.08L2 22l5.05-1.32A10 10 0 1 0 12 2zm0 18.2a8.17 8.17 0 0 1-4.17-1.14l-.3-.18-3 .78.8-2.92-.2-.31A8.2 8.2 0 1 1 12 20.2z"/></svg>`,
     vacio: `<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#B7C4BD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
     flecha: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="9 7 17 7 17 15"/></svg>`,
-    lupa: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`
+    lupa: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`,
+    // Iconos de la bifurcacion y del formulario A. Trazo, nunca emoji: el
+    // emoji lo dibuja el sistema y en cada Android sale distinto.
+    caja: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
+    local: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 5 4h14l2 5.5"/><path d="M3 9.5a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"/><path d="M10 20v-5h4v5"/></svg>`,
+    camara: `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2"/><circle cx="12" cy="12.5" r="3.2"/><path d="M9 6V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/></svg>`,
+    chequeRedondo: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+    alerta: `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+    cruz: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`
   };
 
   // Boton principal: reusa .nv-cta-full / .nv-redondel, que css/styles.css define
@@ -247,7 +281,7 @@
   function btnSec(txt, onclick, tono) {
     const col = tono === 'rojo' ? '#B91C1C' : VERDE_OSC;
     const bor = tono === 'rojo' ? '#F3C9C9' : BORDE;
-    return `<button onclick="${onclick}" style="flex:1;min-height:44px;background:#fff;color:${col};border:1.5px solid ${bor};border-radius:999px;padding:10px 16px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit;transition:transform 200ms cubic-bezier(.23,1,.32,1)">${txt}</button>`;
+    return `<button class="cz-btn2" onclick="${onclick}" style="flex:1;min-height:44px;background:#fff;color:${col};border:1.5px solid ${bor};border-radius:999px;padding:10px 16px;font-size:.83rem;font-weight:700;cursor:pointer;font-family:inherit;transition:transform 200ms cubic-bezier(.23,1,.32,1)">${txt}</button>`;
   }
 
   // Layout tipo Novedades: una columna en celular, dos en escritorio.
@@ -265,6 +299,308 @@
       --cz-naranja:#FF6B00;--cz-naranja-soft:#FF8A33;--cz-naranja-luz:#FFC79A;
       --cz-serif:'Fraunces',Georgia,'Times New Roman',serif;
       --cz-mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
+
+      /* ---- LIQUID GLASS ----
+         El tinte NO es un gris neutro: sale del verde de marca. Sobre los
+         fondos claros de esta pantalla (#fff, #FAFBFA, #EFF6F2) un gris se ve
+         sucio, y el verde hace que el vidrio pertenezca a la marca en vez de
+         parecer un panel prestado del sistema operativo.
+
+         La opacidad no es libre: es lo que decide el contraste del texto que
+         queda encima. Medido, no estimado: con .74, el peor fondo posible de
+         la seccion (el pulso #0B3A27 pasando por debajo del encabezado) deja
+         el titulo #1A1A1A en 9,8:1; sobre fondo claro da 16,5:1.
+         La version "fuerte" (.85) es para las superficies que llevan texto
+         chico, donde el margen es mas fino.
+         Si alguna vez hay que subir el blur o bajar la opacidad, se vuelve a
+         medir ESTO. El gris nunca se aclara para acomodar al vidrio: se
+         ajusta el vidrio. */
+      --cz-glass-bg:rgba(241,248,244,.74);
+      --cz-glass-bg-fuerte:rgba(243,249,246,.85);
+      --cz-glass-solido:#F3F8F5;          /* el mismo color, opaco: fallbacks */
+      --cz-glass-borde:rgba(255,255,255,.60);
+      --cz-glass-blur:20px;
+      --cz-glass-sat:180%;
+      /* El brillo especular del canto. Es lo unico que separa el vidrio de un
+         div con opacidad: sin esta linea el material no tiene espesor. */
+      --cz-glass-luz:rgba(255,255,255,.74);
+      --cz-glass-sombra:0 10px 30px -20px rgba(5,32,22,.45);
+
+      /* Mismo material, tintado con la marca a fondo: es para el "+", que
+         tiene que seguir leyendose como el boton principal y no como un
+         vidrio mas. El icono blanco da 5,7:1 en el peor caso (contenido
+         claro por debajo) y 10,4:1 sobre contenido oscuro. */
+      --cz-glass-verde:rgba(0,78,47,.80);
+      --cz-glass-verde-solido:#00522F;
+
+      --cz-salida:cubic-bezier(.23,1,.32,1);
+      /* Escala de apilado con nombre, en vez de numeros sueltos.
+         Los modales viven en <body> y no en esta pantalla: siguen con el
+         9999 que ya usaban. */
+      --cz-z-barra:30;--cz-z-header:40;--cz-z-fab:50;
+    }
+
+    /* Superficie de vidrio. Todo lo que la use tiene que estar en la lista
+       corta: encabezado, "+", barra de accion de los formularios, bloque de
+       resultado en vivo, indicador de cobertura y hojas/modales.
+       NUNCA en las tarjetas del feed: son N elementos que scrollean y un
+       backdrop-filter por tarjeta destroza el rendimiento en gama baja. */
+    #screen-cotizaciones .cz-vidrio{
+      background:var(--cz-glass-bg);
+      -webkit-backdrop-filter:blur(var(--cz-glass-blur)) saturate(var(--cz-glass-sat));
+              backdrop-filter:blur(var(--cz-glass-blur)) saturate(var(--cz-glass-sat));
+      border:1px solid var(--cz-glass-borde);
+      box-shadow:inset 0 1px 0 var(--cz-glass-luz),var(--cz-glass-sombra);
+    }
+
+    /* ---- FALLBACKS ----
+       Los tres casos redefinen los TOKENS y apagan el filtro, en vez de
+       parchear cada regla: asi cualquier superficie de vidrio que se agregue
+       despues queda cubierta sola.
+
+       El @supports pregunta por las dos formas a proposito: Safari viejo
+       soporta -webkit-backdrop-filter pero no la version sin prefijo, y
+       preguntando solo por la corta se le daria el fallback a un navegador
+       que en realidad sabe pintar el vidrio. */
+    @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+      #screen-cotizaciones{
+        --cz-glass-bg:var(--cz-glass-solido);
+        --cz-glass-bg-fuerte:var(--cz-glass-solido);
+        --cz-glass-borde:${BORDE};
+        --cz-glass-verde:var(--cz-glass-verde-solido);
+      }
+    }
+    @media (prefers-reduced-transparency:reduce){
+      #screen-cotizaciones{
+        --cz-glass-bg:var(--cz-glass-solido);
+        --cz-glass-bg-fuerte:var(--cz-glass-solido);
+        --cz-glass-borde:${BORDE};
+        --cz-glass-verde:var(--cz-glass-verde-solido);
+      }
+      #screen-cotizaciones .cz-vidrio,#screen-cotizaciones .cz-fab{
+        -webkit-backdrop-filter:none;backdrop-filter:none;
+      }
+    }
+
+    /* ---- ENCABEZADO ----
+       Fijo arriba, con el contenido pasando por debajo. El brillo especular
+       va en el canto de ABAJO y no en el de arriba: el borde superior queda
+       fuera de la pantalla, asi que el unico limite visible del material es
+       el inferior y ahi es donde tiene que estar la luz. */
+    #screen-cotizaciones .cz-header{
+      position:sticky;top:0;z-index:var(--cz-z-header);
+      display:flex;align-items:center;gap:8px;
+      padding:12px 16px;
+      /* Alto fijo: el encabezado del esqueleto de carga no lleva flecha ni
+         boton de esquina, asi que sin esto medía 24px menos que el del feed y
+         todo saltaba hacia arriba justo cuando llegaban los datos. */
+      min-height:68px;
+      border-width:0;border-radius:0;
+      box-shadow:
+        inset 0 -1px 0 var(--cz-glass-luz),
+        0 1px 0 rgba(0,96,57,.13),
+        0 10px 24px -22px rgba(5,32,22,.5);
+    }
+    #screen-cotizaciones .cz-htit{
+      font-size:1rem;font-weight:800;color:#1A1A1A;letter-spacing:-.015em;
+      min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    }
+    #screen-cotizaciones .cz-hvolver{
+      width:44px;height:44px;margin-left:-11px;flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;border-radius:50%;cursor:pointer;color:#1A1A1A;
+      transition:background 180ms ease-out,transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-hvolver:active{transform:scale(.92);background:rgba(0,96,57,.08)}
+
+    /* ---- BARRA DE ACCION DE LOS FORMULARIOS ----
+       Se pega abajo mientras quede formulario para scrollear. Aca la luz SI
+       va arriba: es el canto por donde el contenido entra debajo del vidrio.
+       El safe-area es por el iPhone con gesto: sin eso el boton queda debajo
+       de la barra del sistema. */
+    #screen-cotizaciones .cz-barra{
+      position:sticky;bottom:0;z-index:var(--cz-z-barra);
+      margin:8px -16px 0;
+      padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));
+      background:var(--cz-glass-bg-fuerte);
+      border-width:0;border-radius:0;
+      /* Sin borde propio: el canto lo dibujan el brillo interior (la luz del
+         material) y una linea de pelo verde por FUERA. Con borde ademas del
+         inset quedaban dos lineas blancas de 1px pegadas y el canto se veia
+         grueso, que es justo lo que hace que el vidrio parezca plastico. */
+      box-shadow:
+        inset 0 1px 0 var(--cz-glass-luz),
+        0 -1px 0 rgba(0,96,57,.11),
+        0 -10px 30px -22px rgba(5,32,22,.45);
+    }
+    /* #41564C y no ${TENUE}: es el mismo gris que ya usa el modulo en sus
+       bloques de texto, y es MAS oscuro. Sobre el vidrio de la barra aguanta
+       5,6:1 incluso con contenido oscuro pasando por debajo, donde ${TENUE}
+       se caeria a 3,8:1 y dejaria de pasar AA. El gris no se aclara nunca;
+       cuando el fondo cambia, se elige uno mas hondo. */
+    #screen-cotizaciones .cz-barra-nota{
+      margin-top:10px;text-align:center;
+      font-size:.74rem;line-height:1.5;color:#41564C;
+    }
+    #screen-cotizaciones .cz-barra-nota + .cz-barra-nota{margin-top:3px}
+
+    /* Contenedor de los formularios. Sin padding abajo: el pie lo cierra la
+       propia barra pegada.
+       El margen negativo cancela los 80px que .screen reserva en
+       css/styles.css para la barra de navegacion inferior (que hoy esta en
+       display:none). Sin esto, al llegar al final del formulario queda una
+       franja vacia de 80px POR DEBAJO del boton y parece un error de
+       maquetado. Se cancela solo en los formularios; el resto de la seccion
+       conserva ese aire. Si algun dia cambia el padding de .screen, este
+       numero cambia con el. */
+    #screen-cotizaciones .cz-form{padding:18px 16px 0;margin-bottom:-80px}
+
+    /* Enlace tenue de la barra ("¿No sabe bien qué pedir?"). Es un boton, no
+       un <a>: no navega a ninguna URL. Va subrayado igual, porque sin subrayar
+       un texto verde al lado de un boton verde no se lee como algo tocable. */
+    #screen-cotizaciones .cz-link{
+      display:block;width:100%;min-height:44px;margin-top:8px;
+      background:none;border:none;cursor:pointer;font-family:inherit;
+      font-size:.78rem;font-weight:700;color:${VERDE_OSC};
+      text-decoration:underline;text-underline-offset:3px;
+      text-decoration-color:rgba(6,95,70,.35);
+      transition:text-decoration-color 180ms ease-out;
+    }
+    #screen-cotizaciones .cz-link:active{text-decoration-color:${VERDE_OSC}}
+
+    /* ---- ACUSE DE RECIBO ----
+       El titular es el unico texto grande de la seccion que puede llevar un
+       numero adentro, asi que text-wrap:balance importa: sin el, "22
+       proveedores de Blanquería" parte el numero de su sustantivo. */
+    #screen-cotizaciones .cz-ok-redondel{
+      width:62px;height:62px;margin:0 auto 18px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:${SOFT};color:${VERDE};
+    }
+    #screen-cotizaciones .cz-ok-redondel svg{width:30px;height:30px;stroke-width:2}
+    #screen-cotizaciones .cz-ok-tit{
+      font-size:1.28rem;font-weight:800;color:#1A1A1A;line-height:1.24;
+      letter-spacing:-.025em;margin:0 0 9px;text-wrap:balance;
+    }
+    #screen-cotizaciones .cz-ok-baj{
+      font-size:.88rem;line-height:1.55;color:${GRIS};margin:0;
+      max-width:34ch;margin-left:auto;margin-right:auto;
+    }
+    /* La frase que evita el pedido publicado tres veces. Va separada y con
+       peso propio: si se mezcla con el resto del parrafo, no se lee. */
+    #screen-cotizaciones .cz-ok-repetir{
+      margin:16px auto 0;max-width:34ch;
+      font-size:.83rem;line-height:1.5;font-weight:700;color:${VERDE_OSC};
+    }
+
+    /* ---- BIFURCACION ----
+       Las dos opciones pesan lo mismo a proposito: no hay una "principal".
+       Quien entra no sabe todavia cual de las dos es su caso, y destacar una
+       lo empuja al formulario equivocado. Mismo tamaño, mismo borde, mismo
+       icono; lo unico que las diferencia es el texto. */
+    #screen-cotizaciones .cz-bif{padding:6px 16px 30px}
+    #screen-cotizaciones .cz-bif-intro{
+      font-size:.86rem;line-height:1.55;color:${GRIS};margin:0 0 18px;
+    }
+    #screen-cotizaciones .cz-bif-op{
+      display:block;width:100%;text-align:left;cursor:pointer;font-family:inherit;
+      background:#fff;border:1.5px solid ${BORDE};border-radius:18px;
+      padding:18px;margin-bottom:12px;
+      transition:border-color 180ms ease-out,transform 180ms var(--cz-salida),
+                 box-shadow 180ms ease-out;
+    }
+    #screen-cotizaciones .cz-bif-op:active{transform:scale(.98);border-color:${VERDE}}
+    #screen-cotizaciones .cz-bif-cab{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    #screen-cotizaciones .cz-bif-ico{
+      width:44px;height:44px;flex-shrink:0;border-radius:13px;
+      display:flex;align-items:center;justify-content:center;
+      background:${SOFT};color:${VERDE};
+    }
+    #screen-cotizaciones .cz-bif-tit{
+      font-size:1rem;font-weight:800;color:#1A1A1A;line-height:1.28;
+      letter-spacing:-.015em;text-wrap:balance;
+    }
+    #screen-cotizaciones .cz-bif-baj{font-size:.85rem;line-height:1.5;color:${GRIS};margin:0 0 7px}
+    /* El ejemplo es lo que hace que la persona se reconozca en la opcion. En
+       cursiva para que se lea como un caso y no como una instruccion mas. */
+    #screen-cotizaciones .cz-bif-ej{font-size:.79rem;font-style:italic;color:${TENUE};margin:0}
+
+    /* ---- CANTIDAD POR ATAJOS ----
+       Los chips reemplazan al campo numerico en blanco. "No sé, dígame su
+       mínimo" viene elegido de fabrica: es la respuesta honesta de la mayoria
+       y es la que estaba ESCONDIDA detras de un campo opcional vacio. */
+    #screen-cotizaciones .cz-cant{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+    #screen-cotizaciones .cz-cant-chip{
+      min-height:44px;padding:9px 15px;border-radius:999px;cursor:pointer;
+      font-family:inherit;font-size:.8rem;font-weight:600;
+      border:1.5px solid #E2E6E4;background:#fff;color:${GRIS};
+      transition:background-color 180ms ease-out,border-color 180ms ease-out,
+                 color 180ms ease-out,transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-cant-chip:active{transform:scale(.96)}
+    #screen-cotizaciones .cz-cant-chip[aria-pressed="true"]{
+      background:${VERDE};border-color:${VERDE};color:#fff;font-weight:700;
+    }
+    #screen-cotizaciones .cz-cant-nota{
+      background:${SOFT};border-radius:10px;padding:9px 12px;margin-bottom:11px;
+      font-size:.76rem;line-height:1.45;color:#065F46;
+    }
+    /* Aviso de cantidad fuera de escala. Ambar y no rojo: no es un error, es
+       una pregunta. Se avisa, nunca se bloquea. */
+    #screen-cotizaciones .cz-aviso-ambar{
+      display:flex;gap:9px;align-items:flex-start;
+      background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;
+      padding:9px 12px;margin-bottom:11px;
+      font-size:.76rem;line-height:1.45;color:#92400E;
+    }
+    #screen-cotizaciones .cz-aviso-ambar svg{flex-shrink:0;margin-top:1px}
+
+    /* ---- RUBRO DETECTADO ----
+       Reemplaza al <select> obligatorio. El <select> sigue existiendo en el
+       DOM (escondido) para que leerFormulario() y validarPedido() no cambien
+       en nada; lo unico que cambia es quien lo completa. */
+    #screen-cotizaciones .cz-rubro-auto{
+      display:flex;align-items:center;gap:9px;
+      background:${SOFT};border:1px solid ${BORDE};border-radius:10px;
+      padding:10px 12px;font-size:.82rem;color:#065F46;
+    }
+    #screen-cotizaciones .cz-rubro-auto b{font-weight:800;color:${VERDE_OSC}}
+    #screen-cotizaciones .cz-rubro-auto svg{flex-shrink:0}
+    #screen-cotizaciones .cz-rubro-cambiar{
+      margin-left:auto;flex-shrink:0;min-height:32px;padding:4px 8px;
+      background:none;border:none;cursor:pointer;font-family:inherit;
+      font-size:.78rem;font-weight:700;color:${VERDE_OSC};
+      text-decoration:underline;text-underline-offset:3px;
+    }
+
+    /* ---- ADJUNTAR FOTO ----
+       Va despues del titulo porque es la salida para quien no sabe como se
+       llama lo que busca: primero intenta escribirlo, y si no le sale, saca
+       una foto. */
+    /* flex:1 y no width:100%: al lado vive el boton de quitar. Son dos botones
+       hermanos y no uno adentro del otro, que ademas de HTML invalido dejaba
+       al lector de pantalla anunciando un control dentro de otro. */
+    #screen-cotizaciones .cz-foto{
+      display:flex;align-items:center;gap:11px;flex:1;min-width:0;text-align:left;
+      background:none;border:none;padding:6px 0;cursor:pointer;font-family:inherit;
+    }
+    #screen-cotizaciones .cz-foto-caja{
+      width:44px;height:44px;flex-shrink:0;border-radius:11px;
+      display:flex;align-items:center;justify-content:center;overflow:hidden;
+      border:1.5px dashed ${BORDE};background:#fff;color:${TENUE};
+      transition:border-color 180ms ease-out,background-color 180ms ease-out;
+    }
+    #screen-cotizaciones .cz-foto-caja img{width:100%;height:100%;object-fit:cover}
+    #screen-cotizaciones .cz-foto.puesta .cz-foto-caja{
+      border-style:solid;border-color:${VERDE};background:${SOFT};color:${VERDE};
+    }
+    #screen-cotizaciones .cz-foto-tit{font-size:.83rem;font-weight:700;color:#1A1A1A}
+    #screen-cotizaciones .cz-foto.puesta .cz-foto-tit{color:${VERDE_OSC}}
+    #screen-cotizaciones .cz-foto-sub{font-size:.74rem;line-height:1.4;color:${TENUE};margin-top:2px}
+    #screen-cotizaciones .cz-foto-quitar{
+      flex-shrink:0;width:44px;height:44px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      background:none;border:none;cursor:pointer;color:${TENUE};
     }
 
     #screen-cotizaciones .cz-grilla{display:flex;flex-direction:column;gap:12px;padding:4px 16px 96px}
@@ -277,10 +613,21 @@
     #screen-cotizaciones .cz-chips::-webkit-scrollbar{display:none}
     /* min-height 44: target tactil comodo. Con 31px (el alto que daba solo el
        padding) se falla en celular y se toca el chip de al lado. */
+    /* transition en propiedades nombradas y no en "all": con "all" el navegador
+       tiene que vigilar TODO lo que cambie (incluido el font-weight, que ademas
+       dispara relayout) y basta que una regla nueva toque cualquier propiedad
+       para que empiece a animarse sola.
+       OJO: ESTILOS es un template literal, asi que aca adentro no puede
+       entrar ni un acento invertido ni ${'$'}{ } sin escapar. */
     #screen-cotizaciones .cz-chip{
       flex-shrink:0;min-height:44px;padding:8px 17px;border-radius:22px;
-      font-size:.79rem;cursor:pointer;font-family:inherit;transition:all .18s ease-out;
+      font-size:.79rem;cursor:pointer;font-family:inherit;
+      transition:background-color 180ms ease-out,border-color 180ms ease-out,
+                 color 180ms ease-out,transform 160ms var(--cz-salida);
     }
+    /* Todo lo que se toca tiene que acusar recibo del toque. Sin esto el chip
+       cambia recien cuando vuelve la respuesta y parece que no registro el dedo. */
+    #screen-cotizaciones .cz-chip:active{transform:scale(.96)}
 
     /* Foco visible por teclado en TODO lo interactivo de la pantalla.
        :focus-visible y no :focus para no dibujar el anillo al tocar con el dedo. */
@@ -291,15 +638,42 @@
       outline:2px solid ${VERDE};outline-offset:2px;border-radius:12px;
     }
     #screen-cotizaciones .cz-chip:focus-visible,
+    #screen-cotizaciones .cz-btn2:focus-visible,
     #screen-cotizaciones .nv-cta-full:focus-visible,
     #screen-cotizaciones .cz-fab:focus-visible{border-radius:999px}
 
-    /* El campo activo tiene que avisar que lo esta, no solo al tabular. */
+    /* El campo activo tiene que avisar que lo esta, no solo al tabular.
+       El halo va ademas del borde: con el borde solo, en una pantalla al sol
+       (que es donde se usa esto: parado en un local) el cambio de 1,5px de
+       color no se ve. */
     #screen-cotizaciones input:focus,
     #screen-cotizaciones select:focus,
-    #screen-cotizaciones textarea:focus{border-color:${VERDE}}
+    #screen-cotizaciones textarea:focus{
+      border-color:${VERDE};box-shadow:0 0 0 3px rgba(0,96,57,.13);
+    }
+    #screen-cotizaciones input,
+    #screen-cotizaciones select,
+    #screen-cotizaciones textarea{
+      transition:border-color 160ms ease-out,box-shadow 160ms ease-out;
+    }
 
     #screen-cotizaciones button:disabled{opacity:.55;cursor:progress}
+
+    /* Mientras publica/envia, el codigo reemplaza el contenido del boton por
+       texto plano ("Publicando...") y se lleva puesto el redondel de la
+       flecha. Como .nv-cta-full reparte con space-between, el texto quedaba
+       pegado a la izquierda y el boton parecia roto justo en el segundo en
+       que la persona esta esperando.
+       :has() no lo soportan navegadores viejos; ahi la regla se descarta
+       entera y queda el comportamiento de siempre. Es una mejora progresiva,
+       no algo de lo que dependa nada. */
+    #screen-cotizaciones .nv-cta-full:not(:has(.nv-redondel)){
+      justify-content:center;padding-right:20px;
+    }
+
+    /* Feedback de toque en los botones secundarios (btnSec / btnEsquina), que
+       se pintan con estilo en linea y por eso no pueden traer :active propio. */
+    #screen-cotizaciones .cz-btn2:active{transform:scale(.97)}
 
     /* Quien pidio menos movimiento no ve ninguno. No es opcional. */
     @media (prefers-reduced-motion:reduce){
@@ -419,13 +793,24 @@
 
     /* "+" flotante al costado. Se corre con el ancho de pantalla para quedar
        pegado a la columna de contenido y no encima del texto. */
+    /* Vidrio verde, no un circulo opaco: flota sobre una lista que scrollea y
+       tiene que dejar ver que hay contenido abajo. El blur es menor que el del
+       encabezado (14px) porque la superficie es chica: 20px sobre 52 pixeles
+       de diametro no se distingue y cuesta lo mismo.
+       Sin will-change ni transform 3D: sobre un elemento con backdrop-filter
+       obligan a recomponer el fondo en cada cuadro. El scale del :active es
+       un toque puntual, no una animacion sostenida. */
     #screen-cotizaciones .cz-fab{
-      position:fixed;right:18px;bottom:84px;z-index:40;
-      width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+      position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom,0px));
+      z-index:var(--cz-z-fab);
+      width:52px;height:52px;border-radius:50%;cursor:pointer;
       display:flex;align-items:center;justify-content:center;color:#fff;
-      background:linear-gradient(145deg,#0A7A4B,#006039);
-      box-shadow:inset 0 1px 1px rgba(255,255,255,.24),0 8px 22px -8px rgba(0,96,57,.8);
-      transition:transform 220ms cubic-bezier(.23,1,.32,1);
+      background:var(--cz-glass-verde);
+      border:1px solid rgba(255,255,255,.22);
+      -webkit-backdrop-filter:blur(14px) saturate(var(--cz-glass-sat));
+              backdrop-filter:blur(14px) saturate(var(--cz-glass-sat));
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 10px 26px -10px rgba(0,96,57,.75);
+      transition:transform 220ms var(--cz-salida);
     }
     #screen-cotizaciones .cz-fab:active{transform:scale(.93)}
     #screen-cotizaciones .cz-fab svg{width:24px;height:24px}
@@ -611,22 +996,27 @@
   // el contenido del feed como hacia la pastilla ancha centrada.
   // aria-label porque el boton no tiene texto visible.
   function fabPedir() {
-    return `<button onclick="cotizIr('publicar')" aria-label="Pedir una cotización" title="Pedir una cotización"
+    return `<button onclick="cotizPedir()" aria-label="Pedir una cotización" title="Pedir una cotización"
       class="cz-fab">${ICO.mas}</button>`;
   }
 
   // `accion` = botoncito chico a la derecha (ej: "Mis pedidos").
+  //
+  // Antes era un bloque blanco opaco pegado arriba. Ahora es la superficie de
+  // vidrio de la seccion: el contenido le pasa por debajo en vez de cortarse
+  // contra un rectangulo solido. El fallback (sin backdrop-filter o con
+  // transparencia reducida) lo deja opaco y se ve igual de terminado.
   function header(titulo, onBack, accion) {
-    return `<div style="display:flex;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid ${BORDE};position:sticky;top:0;background:#fff;z-index:5">
-      ${onBack ? `<button onclick="${onBack}" aria-label="Volver" style="background:none;border:none;width:44px;height:44px;margin-left:-11px;cursor:pointer;color:#1A1A1A;display:flex;align-items:center;justify-content:center;border-radius:50%">${ICO.volver}</button>` : ''}
-      <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A">${esc(titulo)}</div>
+    return `<div class="cz-header cz-vidrio">
+      ${onBack ? `<button class="cz-hvolver" onclick="${onBack}" aria-label="Volver">${ICO.volver}</button>` : ''}
+      <div class="cz-htit">${esc(titulo)}</div>
       ${accion ? `<div style="margin-left:auto">${accion}</div>` : ''}
     </div>`;
   }
 
   // Boton chico de la esquina, con puntito verde si hay algo para mirar.
   function btnEsquina(texto, onclick, aviso) {
-    return `<button onclick="${onclick}" style="display:flex;align-items:center;gap:6px;min-height:44px;background:${SOFT};color:${VERDE_OSC};border:1.5px solid ${BORDE};border-radius:999px;padding:8px 15px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:transform .18s ease-out">
+    return `<button class="cz-btn2" onclick="${onclick}" style="display:flex;align-items:center;gap:6px;min-height:44px;background:${SOFT};color:${VERDE_OSC};border:1.5px solid ${BORDE};border-radius:999px;padding:8px 15px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:transform .18s ease-out">
       ${esc(texto)}
       ${aviso ? `<span aria-hidden="true" style="width:7px;height:7px;border-radius:50%;background:${VERDE};display:inline-block"></span>` : ''}
     </button>`;
@@ -655,8 +1045,8 @@
   async function cargarMisPedidos() {
     const uid = await getUid();
     if (!uid) { st.misPedidos = []; return; }
-    const { data, error } = await sb.from('solicitudes').select(COLS_SOL)
-      .eq('usuario_id', uid).order('created_at', { ascending: false }).limit(50);
+    const { data, error } = await traerSolicitudes(cols => sb.from('solicitudes').select(cols)
+      .eq('usuario_id', uid).order('created_at', { ascending: false }).limit(50));
     if (error) { console.warn('[cotiz] misPedidos', error); st.misPedidos = []; return; }
     st.misPedidos = data || [];
   }
@@ -686,9 +1076,9 @@
   async function cargarFeed() {
     if (!currentUser) return cargarFeedPublico();
 
-    const { data, error } = await sb.from('solicitudes').select(COLS_SOL)
+    const { data, error } = await traerSolicitudes(cols => sb.from('solicitudes').select(cols)
       .eq('estado', 'abierta').gt('cierra_at', new Date().toISOString())
-      .order('created_at', { ascending: false }).limit(60);
+      .order('created_at', { ascending: false }).limit(60));
     if (error) { console.warn('[cotiz] feed', error); st.feed = []; return; }
     st.feed = data || [];
 
@@ -766,6 +1156,8 @@
     if (st.vista === 'portada') html = pantallaPortada();
     else if (st.cargando) html = pantallaCargando();
     else if (st.vista === 'login') html = pantallaLogin();
+    else if (st.vista === 'bifurcacion') html = pantallaBifurcacion();
+    else if (st.vista === 'confirmado') html = pantallaConfirmado();
     else if (st.vista === 'publicar') html = pantallaPublicar();
     else if (st.vista === 'respuestas') html = pantallaRespuestas();
     else if (st.vista === 'cotizar') html = pantallaCotizar();
@@ -774,7 +1166,23 @@
     else html = pantallaFeed();
     cont.innerHTML = ESTILOS + html;
     animarCifras(cont);
+    // El formulario A tiene tres bloques que se pintan por estado (rubro,
+    // cantidad, foto) y no por template: se los monta recien ahora, cuando el
+    // HTML ya esta en el DOM.
+    if (st.vista === 'publicar') montarFormularioA();
     window.scrollTo(0, 0);
+  }
+
+  function montarFormularioA() {
+    const sel = $('cz-rubro');
+    if (sel && st.rubroTocado) sel.dataset.tocado = '1';
+    pintarRubro();
+    pintarCantidad();
+    pintarFoto();
+    // El presupuesto se rotula segun la unidad elegida ("$ por docena"): si el
+    // borrador traia una unidad distinta de la primera de la lista, hay que
+    // poner el rotulo al dia antes de que la persona lo lea.
+    try { window.cotizUnidadCambio(); } catch (e) { }
   }
 
   // Esqueleto con la forma de lo que viene: el pulso arriba y tres tarjetas.
@@ -919,7 +1327,7 @@
       <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:22px;text-align:center">
         <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:8px">Pida precio a varios proveedores de una sola vez</div>
         <div style="font-size:.85rem;color:#41564C;line-height:1.6;margin-bottom:18px">Publique lo que necesita comprar y los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega. Usted elige a quién le contesta.</div>
-        ${btnPrimario('Escribir mi pedido', "cotizIr('publicar')")}
+        ${btnPrimario('Escribir mi pedido', 'cotizPedir()')}
       </div>
       <div style="font-size:.78rem;color:${GRIS};text-align:center;margin-top:14px;line-height:1.5">Para ver los pedidos de la comunidad hace falta iniciar sesión.</div>
     </div>`;
@@ -1061,7 +1469,7 @@
             ? 'Cuando un emprendedor publique lo que necesita comprar, va a aparecer acá.'
             : 'Sea el primero: publique lo que necesita comprar y reciba precios de varios proveedores.')
           : 'Pruebe con otra categoría o mire todos los pedidos.',
-        esProveedor() ? '' : btnPrimario('Pedir una cotización', "cotizIr('publicar')"))
+        esProveedor() ? '' : btnPrimario('Pedir una cotización', 'cotizPedir()'))
       // La animacion de entrada va en un envoltorio y no en .cz-bandeja: una
       // animacion con fill-mode forwards deja fijado transform:none y le gana
       // al :hover{translateY(-2px)} de la bandeja.
@@ -1079,7 +1487,7 @@
           <div style="background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:20px 18px;text-align:center">
             <div style="font-size:.95rem;font-weight:800;color:#1A1A1A;margin-bottom:6px;line-height:1.35">¿Necesita comprar algo que no ve acá?</div>
             <div style="font-size:.83rem;color:#41564C;line-height:1.55;margin-bottom:16px">Publique su pedido y los proveedores mayoristas le mandan su precio, su mínimo y su tiempo de entrega. Gratis.</div>
-            ${btnPrimario('Pedir una cotización', "cotizIr('publicar')")}
+            ${btnPrimario('Pedir una cotización', 'cotizPedir()')}
           </div>
         </div>`
       : '';
@@ -1145,6 +1553,7 @@
 
       <h3 class="cz-titulo">${esc(s.titulo)}</h3>
       ${datos ? `<div class="cz-datos">${datos}</div>` : ''}
+      ${fotoPedido(s)}
       ${s.detalles ? `<p class="cz-detalle">${esc(s.detalles)}</p>` : ''}
 
       <div class="cz-pie">
@@ -1153,6 +1562,20 @@
       </div>
       ${accion ? `<div class="cz-cta-zona">${accion}</div>` : ''}
     </div></div>`;
+  }
+
+  /* La foto que adjunto el comprador, tal como la ve el proveedor.
+     Sin vidrio encima ni degradados: sobre una foto que sube cualquiera el
+     contraste es impredecible y no hay forma de garantizar AA. Se muestra
+     limpia, con un borde y nada mas.
+     Si la fila no trae foto_url (migracion sin correr, o pedido viejo) esto
+     devuelve '' y la tarjeta queda exactamente como antes. */
+  function fotoPedido(s) {
+    if (!s || !s.foto_url) return '';
+    return `<div style="margin:0 0 11px;border-radius:12px;overflow:hidden;border:1px solid #EEF2F0;background:#FAFBFA">
+      <img loading="lazy" src="${esc(s.foto_url)}" alt="Foto del pedido"
+        style="display:block;width:100%;max-height:190px;object-fit:cover"
+        onerror="this.parentNode.remove()"></div>`;
   }
 
   window.cotizRubro = function (r) { st.rubro = r; vibrar('light'); render(); };
@@ -1167,7 +1590,7 @@
       return header('Mis pedidos', "cotizIr('feed')") + vacioBox(
         'Todavía no pidió ninguna cotización',
         'Publique lo que necesita comprar y reciba precios de varios proveedores mayoristas sin escribirle a uno por uno.',
-        btnPrimario('Pedir una cotización', "cotizIr('publicar')"));
+        btnPrimario('Pedir una cotización', 'cotizPedir()'));
     }
 
     return header('Mis pedidos', "cotizIr('feed')") + `
@@ -1258,6 +1681,60 @@
       </div>`;
   }
 
+  /* ---------------- BIFURCACION: que esta buscando ----------------
+
+     Hay dos pedidos distintos escondidos abajo del mismo formulario, y no se
+     responden con las mismas preguntas:
+
+       A) "necesito 500 remeras"          -> cuanto sale, cuando llega
+       B) "necesito quien me abastezca"   -> quien me cubre el surtido, con
+                                             que minimo, todos los meses
+
+     Meterlos en un solo formulario obliga a preguntar cantidad exacta a
+     alguien que todavia no sabe que va a vender, que es donde se caia.
+
+     EL INTERRUPTOR: el formulario B llega en la fase 4 y necesita columnas
+     nuevas en la base. Mientras FORM_B_LISTO este en false, el boton "+" y
+     todos los "Pedir una cotizacion" van DERECHO al formulario A, igual que
+     hasta hoy: nadie ve una opcion que no lleva a ningun lado. La pantalla ya
+     esta escrita y se puede revisar, pero no esta en el camino de nadie.
+     En la fase 4 esto pasa a true y la bifurcacion entra en el flujo. */
+
+  const FORM_B_LISTO = false;
+
+  function pantallaBifurcacion() {
+    const opcion = (accion, ico, titulo, bajada, ejemplo) =>
+      `<button type="button" class="cz-bif-op" onclick="${accion}">
+        <span class="cz-bif-cab">
+          <span class="cz-bif-ico" aria-hidden="true">${ico}</span>
+          <span class="cz-bif-tit">${esc(titulo)}</span>
+        </span>
+        <span class="cz-bif-baj" style="display:block">${esc(bajada)}</span>
+        <span class="cz-bif-ej" style="display:block">${esc(ejemplo)}</span>
+      </button>`;
+
+    return header('¿Qué está buscando?', "cotizIr('feed')") + `
+      <div class="cz-bif cz-ancho">
+        <p class="cz-bif-intro">Elija según lo que necesite. Cada opción le hace preguntas distintas para conseguirle mejores respuestas.</p>
+        ${opcion("cotizIr('publicar')", ICO.caja,
+      'Un producto puntual, en cantidad',
+      'Necesita algo concreto y quiere saber cuánto sale.',
+      'Por ejemplo: 50 juegos de sábanas de 2 plazas')}
+        ${opcion("cotizIr('publicarB')", ICO.local,
+      'Un proveedor que me abastezca',
+      'Tiene un negocio y necesita quien le reponga varios productos.',
+      'Por ejemplo: una blanquería que le reponga todos los meses')}
+      </div>`;
+  }
+
+  /* Puerta de entrada unica a "pedir". La usan el "+" y todos los botones de
+     "Pedir una cotizacion". No la usa cotizPedirPara(): el que viene de una
+     busqueda sin resultados YA sabe que quiere un producto puntual, y hacerlo
+     elegir de nuevo seria preguntarle algo que acaba de contestar. */
+  window.cotizPedir = function () {
+    return cotizIr(FORM_B_LISTO ? 'bifurcacion' : 'publicar');
+  };
+
   /* ---------------- vista PUBLICAR ---------------- */
 
   // Ata el <label> a su campo sacando el id del propio HTML: sin `for`, un lector
@@ -1276,8 +1753,10 @@
 
   const INPUT_CSS = `width:100%;padding:12px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:.88rem;font-family:inherit;outline:none;background:#fff;box-sizing:border-box`;
 
+  // Solo se lee cuando el select esta a la vista, o sea cuando no se detecto
+  // nada o la persona toco "cambiar". La pista del caso automatico se fue con
+  // el select: ahora eso lo dice el propio cartel "Rubro detectado: X".
   const PISTA_RUBRO = 'Es lo que hace que su pedido le llegue a los proveedores de ese rubro.';
-  const PISTA_RUBRO_AUTO = 'Lo completamos según lo que escribió. Cámbielo si no corresponde.';
 
   /* ---------------- TITULO DEMASIADO VAGO ----------------
      Una sola palabra generica ("textil", "ropa", "perfumes") no es un pedido:
@@ -1303,14 +1782,20 @@
     el.style.display = tituloVago(tit.value) ? 'block' : 'none';
   }
 
-  /* ---------------- RUBRO SUGERIDO DESDE EL TITULO ----------------
-     El rubro y la provincia pasaron a ser obligatorios: sin ellos la tarjeta
-     del feed sale con un solo dato y el pedido no le llega a nadie en
-     particular. Para que ese requisito no sea friccion pura, el rubro se
-     completa solo con rubroDeTermino(), el mismo mapa que ya usa el buscador.
+  /* ---------------- RUBRO DETECTADO DESDE EL TITULO ----------------
+     El rubro es obligatorio: sin el, el pedido no le llega a los proveedores
+     de ningun rubro en particular. Pero pedirselo con un <select> de 27
+     opciones era hacerle hacer a la persona un trabajo de taxonomia que no le
+     interesa y que ademas hace mal (elige "Otro" y el pedido muere ahi).
 
-     Nunca pisa una eleccion manual: apenas la persona toca el select se marca
-     como tocado y el automatico se calla para siempre. */
+     Ahora lo deduce rubroDeTermino() de lo que escribio, y la pantalla lo
+     MUESTRA para que lo pueda corregir: "Rubro detectado: X · cambiar".
+     El <select> sigue existiendo en el DOM, escondido, y es el que lee
+     leerFormulario(). O sea: el camino de los datos no cambio en nada, cambio
+     quien lo completa.
+
+     Nunca pisa una eleccion manual: apenas la persona toca "cambiar" se marca
+     el select como tocado y el automatico se calla para siempre. */
 
   let temporizadorRubro = null;
 
@@ -1330,11 +1815,235 @@
     // de "la clave contiene lo escrito" y tirar cualquier cosa a media palabra.
     if (t.length < 4) return;
     const r = rubroDeTermino(t);
-    if (!r || r === sel.value) return;
+    if (!r || r === sel.value) { pintarRubro(); return; }
     if (!Array.from(sel.options).some(o => o.value === r)) return;
     sel.value = r;
-    pistaRubro(PISTA_RUBRO_AUTO);
+    pintarRubro();
   }
+
+  /* Decide cual de las dos caras se ve: el cartel con el rubro detectado, o el
+     <select> para elegirlo a mano. Se llama despues de cada tecla del titulo y
+     al abrir el formulario.
+
+     Con el select tocado a mano, o sin nada detectado, gana el select: no hay
+     forma de quedarse sin manera de cargar el rubro. */
+  function pintarRubro() {
+    const sel = $('cz-rubro'), auto = $('cz-rubro-auto'), manual = $('cz-rubro-manual');
+    if (!sel || !auto || !manual) return;
+    const detectado = sel.dataset.tocado !== '1' && !!sel.value;
+    auto.style.display = detectado ? 'flex' : 'none';
+    manual.style.display = detectado ? 'none' : 'block';
+    if (detectado) {
+      const nom = $('cz-rubro-nombre');
+      if (nom) nom.textContent = sel.value;
+    }
+  }
+
+  window.cotizRubroCambiar = function () {
+    const sel = $('cz-rubro');
+    if (!sel) return;
+    sel.dataset.tocado = '1';
+    pintarRubro();
+    vibrar('light');
+    try { sel.focus({ preventScroll: true }); } catch (e) { }
+  };
+
+  /* ---------------- CANTIDAD POR ATAJOS ----------------
+     El campo numerico en blanco pedia una precision que el comprador muchas
+     veces no tiene todavia, y quedarlo vacio era la unica salida: el pedido
+     salia sin cantidad y sin decir por que. Ahora "No sé, dígame su mínimo" es
+     una respuesta explicita y es la que viene elegida.
+
+     Los tres atajos numericos no son magia: son los tres numeros que aparecen
+     en casi todos los pedidos reales que ya estan publicados. */
+
+  const CANT_ATAJOS = ['20', '50', '100'];
+
+  /* Cuantas unidades reales representa cada unidad de medida.
+     Solo la docena tiene un factor honesto. Un "pack" o una "caja" no tienen
+     tamaño fijo, asi que cuentan como uno: inventarles un multiplicador haria
+     saltar el aviso de cantidad absurda cuando no corresponde.
+
+     OJO: el prototipo disparaba el aviso SOLO si la unidad era "docenas", asi
+     que "500.000 unidades" pasaba sin que nadie dijera nada. Se mide el total
+     real, sea cual sea la unidad. */
+  const UNIDADES_POR = { docenas: 12 };
+  const CANT_ABSURDA = 30000;
+
+  function totalEnUnidades(cantidad, unidad) {
+    const n = Number(String(cantidad == null ? '' : cantidad).replace(/[^0-9]/g, ''));
+    if (!isFinite(n) || n <= 0) return 0;
+    return n * (UNIDADES_POR[unidad] || 1);
+  }
+
+  // Modo inicial a partir de lo que venga cargado (prefill o borrador). Un
+  // pedido guardado con cantidad "500" tiene que reabrir en "Otra cantidad"
+  // con el 500 puesto, no en el modo por defecto.
+  function modoDeCantidad(cant) {
+    const c = String(cant || '').trim();
+    if (!c) return 'minimo';
+    return CANT_ATAJOS.indexOf(c) >= 0 ? c : 'otra';
+  }
+
+  window.cotizCantModo = function (modo) {
+    st.cantModo = modo;
+    vibrar('light');
+    pintarCantidad();
+    // Al pasar a "Otra cantidad" el campo aparece recien ahora: hay que
+    // llevarle el foco, si no queda un input nuevo que nadie toco.
+    if (modo === 'otra') { const i = $('cz-cantidad'); if (i) try { i.focus({ preventScroll: true }); } catch (e) { } }
+  };
+
+  /* Repinta SOLO el bloque de cantidad. Nunca llama a render(): repintar la
+     pantalla entera en medio del formulario le borraria a la persona todo lo
+     que venia escribiendo en los otros campos. */
+  function pintarCantidad() {
+    const chips = $('cz-cant-chips');
+    if (chips) Array.from(chips.children).forEach(b => {
+      b.setAttribute('aria-pressed', b.dataset.modo === st.cantModo ? 'true' : 'false');
+    });
+
+    const esMinimo = st.cantModo === 'minimo';
+    const caja = $('cz-cant-unidad'), otra = $('cz-cant-otra'), nota = $('cz-cant-nota');
+    if (caja) caja.style.display = esMinimo ? 'none' : 'block';
+    if (otra) otra.style.display = st.cantModo === 'otra' ? 'block' : 'none';
+    if (nota) nota.style.display = esMinimo ? 'block' : 'none';
+
+    pintarAvisoCantidad();
+  }
+
+  // Aviso suave, nunca un bloqueo: mismo criterio que el aviso de titulo vago.
+  // Poner un muro mas en el unico formulario de la seccion es la forma mas
+  // rapida de quedarse sin pedidos.
+  function pintarAvisoCantidad() {
+    const el = $('cz-cant-absurdo');
+    if (!el) return;
+    const d = leerCantidad();
+    const total = totalEnUnidades(d.cantidad, d.unidad);
+    if (total <= CANT_ABSURDA) { el.style.display = 'none'; return; }
+    const txt = $('cz-cant-absurdo-txt');
+    if (txt) {
+      txt.textContent = 'Eso da ' + total.toLocaleString('es-AR') + ' unidades. ' +
+        'Si es correcto, siga adelante. Si se le fue un cero, corríjalo ahora: ' +
+        'un pedido de esa magnitud puede espantar a los proveedores en vez de atraerlos.';
+    }
+    el.style.display = 'flex';
+  }
+
+  // Cantidad + unidad tal como quedan segun el modo elegido. Lo usan
+  // leerFormulario() y el aviso de cantidad, para que los dos lean lo mismo.
+  function leerCantidad() {
+    const unidadSel = $('cz-unidad')?.value || '';
+    const cantidad = st.cantModo === 'minimo' ? null
+      : st.cantModo === 'otra' ? (($('cz-cantidad')?.value || '').trim() || null)
+        : st.cantModo;
+    return {
+      cantidad,
+      // Sin cantidad la unidad no dice nada, y lo que llegue del select se
+      // valida contra la lista: la base tiene un CHECK con los mismos valores
+      // y un valor raro haria fallar el insert entero.
+      unidad: cantidad && UNIDADES.indexOf(unidadSel) >= 0 ? unidadSel : null
+    };
+  }
+
+  /* ---------------- FOTO DEL PEDIDO ----------------
+     Es la salida para quien no sabe como se llama lo que necesita. Se sube en
+     el momento y lo que se guarda es la URL: el borrador vive en localStorage
+     y un archivo no entra ahi, una URL si.
+
+     Subir exige sesion (la policy de storage pide auth.uid() no nulo, ver
+     sql/2026-08-13_hardening_storage_paso2.sql). Sin sesion se avisa y no se
+     abre el selector: la foto es opcional, asi que esto no bloquea nada. */
+
+  window.cotizFotoElegir = function () {
+    if (!currentUser) {
+      toast('Para adjuntar una foto primero inicie sesión. Puede publicar el pedido sin foto.');
+      return;
+    }
+    const inp = $('cz-foto-input');
+    if (inp) inp.click();
+  };
+
+  window.cotizFotoCambio = async function (input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (!/^image\//.test(file.type)) { toast('Elija una imagen'); input.value = ''; return; }
+
+    const tit = $('cz-foto-tit');
+    if (tit) tit.textContent = 'Subiendo la foto...';
+    try {
+      st.foto = await subirFotoPedido(file);
+      vibrar('success');
+    } catch (e) {
+      console.warn('[cotiz] foto', e);
+      toast('No se pudo subir la foto. Puede publicar el pedido sin ella.');
+    }
+    input.value = '';   // permite volver a elegir el mismo archivo
+    pintarFoto();
+  };
+
+  window.cotizFotoQuitar = function (ev) {
+    // Los dos botones son hermanos, asi que hoy el toque no se propaga. Se
+    // corta igual: si algun dia el de quitar vuelve a quedar adentro del otro,
+    // quitar la foto abriria el selector de archivos en el mismo toque.
+    if (ev && ev.stopPropagation) ev.stopPropagation();
+    st.foto = null;
+    vibrar('light');
+    pintarFoto();
+  };
+
+  async function subirFotoPedido(file) {
+    // comprimirImagen() es de app.js. Si no estuviera, se sube el original:
+    // vale mas una foto pesada que ninguna.
+    if (typeof comprimirImagen === 'function') file = await comprimirImagen(file, 1000, 0.72);
+    const ext = (String(file.name || 'foto.jpg').split('.').pop() || 'jpg').toLowerCase();
+    const uid = (await getUid()) || 'anon';
+    // Nombre unico y upsert:false. El bucket 'productos' SOLO tiene policy de
+    // INSERT: pedir upsert exigiria UPDATE, que no existe, y devuelve 400.
+    const path = `pedidos/${uid}/${Math.random().toString(36).slice(2)}_${Date.now()}.${ext}`;
+    const { error } = await sb.storage.from('productos').upload(path, file);
+    if (error) throw error;
+    const { data } = sb.storage.from('productos').getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  function pintarFoto() {
+    const fila = $('cz-foto-fila');
+    if (!fila) return;
+    const caja = $('cz-foto-caja'), tit = $('cz-foto-tit'),
+      sub = $('cz-foto-sub'), quitar = $('cz-foto-quitar');
+    if (st.foto) {
+      fila.classList.add('puesta');
+      if (caja) caja.innerHTML = `<img src="${esc(st.foto)}" alt="">`;
+      if (tit) tit.textContent = 'Foto adjuntada';
+      if (sub) sub.textContent = 'Los proveedores la ven junto con su pedido.';
+      if (quitar) quitar.style.display = 'flex';
+    } else {
+      fila.classList.remove('puesta');
+      if (caja) caja.innerHTML = ICO.camara;
+      if (tit) tit.textContent = 'Adjuntar una foto (opcional)';
+      if (sub) sub.textContent = 'No hace falta que sepa el nombre técnico. Escríbalo como pueda o mande una foto.';
+      if (quitar) quitar.style.display = 'none';
+    }
+  }
+
+  /* Enlace "¿No sabe bien qué pedir?".
+     INTERINO: por ahora lleva a la seccion Mercado, que muestra que se esta
+     vendiendo de verdad segun las tendencias de ML. La ayuda completa (que
+     sugiera productos a partir de lo que escribio y los cargue de vuelta en
+     este formulario) queda pendiente.
+
+     Lo escrito se guarda ANTES de salir: irse a mirar ideas no puede costarle
+     el pedido que ya venia escribiendo. */
+  window.cotizRecomendame = function () {
+    try { guardarBorrador({ ...leerFormulario(), intento: false }); } catch (e) { }
+    vibrar('light');
+    try {
+      if (typeof trackEvent === 'function') trackEvent('rfq_recomendame', {});
+    } catch (e) { }
+    if (typeof window.abrirEmprendedor === 'function') return window.abrirEmprendedor();
+    toast('No se pudo abrir la sección Mercado');
+  };
 
   // El presupuesto se carga POR UNIDAD, asi que si la unidad cambia, ese
   // campo tiene que cambiar con ella: "$100.000 por unidad" y "$100.000 por
@@ -1346,19 +2055,21 @@
     if (inp) inp.placeholder = '$ por ' + u;
     const lbl = document.querySelector('label[for="cz-presup"]');
     if (lbl) lbl.textContent = `Presupuesto máximo por ${u} (opcional)`;
+    // Cambiar de "unidades" a "docenas" multiplica por 12 el total real, asi
+    // que el aviso de cantidad tiene que recalcularse aca tambien.
+    pintarAvisoCantidad();
   };
 
+  window.cotizCantInput = function () { pintarAvisoCantidad(); };
+
+  // El select solo se ve cuando ya se toco "cambiar" (o cuando no se detecto
+  // nada), asi que esto es la segunda mitad de esa decision: deja constancia
+  // de que el rubro lo eligio una persona y no el detector.
   window.cotizRubroManual = function () {
     const sel = $('cz-rubro');
     if (!sel) return;
     sel.dataset.tocado = '1';
-    pistaRubro(PISTA_RUBRO);
   };
-
-  function pistaRubro(txt) {
-    const el = $('cz-rubro-pista');
-    if (el) el.textContent = txt;
-  }
 
   // Una sola validacion para los dos caminos que publican: el boton y el
   // reintento con el borrador guardado despues del login. Devuelve el campo a
@@ -1382,11 +2093,23 @@
     st.prefill = null;   // se usa una sola vez
     const errPend = st.errorPendiente; st.errorPendiente = null;
 
-    // Si el rubro lo pusimos nosotros (viene de una busqueda sin resultados),
-    // se avisa, para que lo corrija si no corresponde. `rubroAuto` lo marca
-    // cotizPedirPara(); la comparacion contra el titulo queda para los
-    // borradores guardados antes de que existiera esa marca.
+    // El rubro con el que arranca el formulario. Si no viene ninguno cargado
+    // se deduce del titulo en el momento, para que quien vuelve a un borrador
+    // ya vea el cartel resuelto y no un select vacio.
+    const rubroInicial = (pre.rubro || rubroDeTermino(pre.titulo || '') || '');
+
+    // `tocado` = lo eligio una persona, no el detector. Solo en ese caso el
+    // formulario abre con el select a la vista en vez del cartel. `rubroAuto`
+    // lo marca cotizPedirPara(); la comparacion contra el titulo queda para
+    // los borradores guardados antes de que existiera esa marca.
     const rubroSugerido = !!(pre.rubro && (pre.rubroAuto || (pre.titulo && rubroDeTermino(pre.titulo) === pre.rubro)));
+    const rubroTocado = !!pre.rubro && !rubroSugerido;
+
+    // El modo de cantidad y la foto viven en st porque el formulario se
+    // repinta entero en cada render(). Se siembran desde lo que venia cargado.
+    st.cantModo = modoDeCantidad(pre.cantidad);
+    st.foto = pre.foto || null;
+    st.rubroTocado = rubroTocado;
 
     // Lo que la persona busco NO se copia al titulo: un termino de busqueda
     // no es un pedido. "textil" entro asi y quedo un pedido que ningun
@@ -1414,43 +2137,92 @@
         </div>`;
 
     return header('Pedir una cotización', currentUser ? "cotizIr('feed')" : 'closeCotiz()') + `
-      <div style="padding:18px 16px 40px">
+      <div class="cz-form">
         ${cabecera}
 
         ${campo('¿Qué necesita comprar?', `<input id="cz-titulo" maxlength="160" value="${esc(pre.titulo || '')}" oninput="cotizAutoRubro()" placeholder="ej: 500 pares de medias deportivas blancas" style="${INPUT_CSS}">`, pistaTitulo)}
         <div id="cz-titulo-aviso" style="${tituloVago(pre.titulo) ? '' : 'display:none;'}background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;border-radius:10px;padding:9px 12px;font-size:.76rem;line-height:1.45;margin:-10px 0 16px">${AVISO_TITULO_VAGO}</div>
-        ${campo('Cantidad aproximada (opcional)', `<div style="display:flex;gap:8px">
-          <input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" style="${INPUT_CSS};flex:1;min-width:0">
-          <select id="cz-unidad" aria-label="Unidad de medida" onchange="cotizUnidadCambio()" style="${INPUT_CSS};width:138px;flex-shrink:0">${UNIDADES.map(u => `<option value="${u}"${uPlural(pre) === u ? ' selected' : ''}>${u}</option>`).join('')}</select>
-        </div>`, 'Metros, rollos, pares, kilos... La unidad cambia por completo el precio que le van a pasar.')}
-        ${campo('Rubro', `<select id="cz-rubro" onchange="cotizRubroManual()" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${pre.rubro === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`,
-      rubroSugerido ? PISTA_RUBRO_AUTO : PISTA_RUBRO)}
+
+        <div style="margin-bottom:16px">
+          <label for="cz-rubro" style="display:block;font-size:.82rem;font-weight:700;color:#1A1A1A;margin-bottom:6px">Rubro</label>
+          <div id="cz-rubro-auto" class="cz-rubro-auto" style="display:none">
+            ${ICO.chequeRedondo}
+            <span>Rubro detectado: <b id="cz-rubro-nombre"></b></span>
+            <button type="button" class="cz-rubro-cambiar" onclick="cotizRubroCambiar()">cambiar</button>
+          </div>
+          <div id="cz-rubro-manual" style="display:none">
+            <select id="cz-rubro" onchange="cotizRubroManual()" style="${INPUT_CSS}"><option value="">Elegir rubro</option>${rubros.map(r => `<option value="${esc(r)}"${rubroInicial === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>
+            <div style="font-size:.72rem;color:${TENUE};margin-top:5px">${PISTA_RUBRO}</div>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:2px">
+          <button type="button" id="cz-foto-fila" class="cz-foto" onclick="cotizFotoElegir()">
+            <span id="cz-foto-caja" class="cz-foto-caja" aria-hidden="true">${ICO.camara}</span>
+            <span style="flex:1;min-width:0">
+              <span id="cz-foto-tit" class="cz-foto-tit" style="display:block">Adjuntar una foto (opcional)</span>
+              <span id="cz-foto-sub" class="cz-foto-sub" style="display:block">No hace falta que sepa el nombre técnico. Escríbalo como pueda o mande una foto.</span>
+            </span>
+          </button>
+          <button type="button" id="cz-foto-quitar" class="cz-foto-quitar" aria-label="Quitar la foto"
+            style="display:none" onclick="cotizFotoQuitar(event)">${ICO.cruz}</button>
+        </div>
+        <input type="file" id="cz-foto-input" class="cz-oculto" accept="image/*"
+          onchange="cotizFotoCambio(this)" tabindex="-1" aria-hidden="true">
+
+        <div style="margin:16px 0">
+          <label style="display:block;font-size:.82rem;font-weight:700;color:#1A1A1A;margin-bottom:8px">¿Qué cantidad necesita?</label>
+          <div id="cz-cant-chips" class="cz-cant">
+            ${[...CANT_ATAJOS.map(v => [v, v]), ['otra', 'Otra cantidad'], ['minimo', 'No sé, dígame su mínimo']]
+        .map(([modo, txt]) => `<button type="button" class="cz-cant-chip" data-modo="${modo}" aria-pressed="false" onclick="cotizCantModo('${modo}')">${esc(txt)}</button>`).join('')}
+          </div>
+          <div id="cz-cant-unidad" style="display:none;margin-bottom:10px">
+            <div style="display:flex;gap:8px">
+              <div id="cz-cant-otra" style="display:none;flex:1;min-width:0">
+                <input id="cz-cantidad" inputmode="numeric" value="${esc(pre.cantidad || '')}" placeholder="ej: 500" aria-label="Cantidad" oninput="cotizCantInput()" style="${INPUT_CSS}">
+              </div>
+              <select id="cz-unidad" aria-label="Unidad de medida" onchange="cotizUnidadCambio()" style="${INPUT_CSS};flex:1;min-width:0">${UNIDADES.map(u => `<option value="${u}"${uPlural(pre) === u ? ' selected' : ''}>${u}</option>`).join('')}</select>
+            </div>
+            <div style="font-size:.72rem;color:${TENUE};margin-top:5px">Metros, rollos, pares, kilos... La unidad cambia por completo el precio que le van a pasar.</div>
+          </div>
+          <div id="cz-cant-nota" class="cz-cant-nota" style="display:none">Los proveedores le van a indicar su cantidad mínima. No necesita elegir un número ahora.</div>
+          <div id="cz-cant-absurdo" class="cz-aviso-ambar" style="display:none">${ICO.alerta}<span id="cz-cant-absurdo-txt"></span></div>
+        </div>
+
         ${campo('¿Dónde lo necesita?', `<select id="cz-prov" style="${INPUT_CSS}"><option value="">Elegir provincia</option>${provs.map(r => `<option value="${esc(r)}"${pre.provincia === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}</select>`)}
         ${campo('Detalles (opcional)', `<textarea id="cz-detalles" rows="3" maxlength="600" placeholder="Colores, talles, material, packaging, plazo..." style="${INPUT_CSS};resize:vertical">${esc(pre.detalles || '')}</textarea>`)}
         ${campo(`Presupuesto máximo por ${uSingular(pre)} (opcional)`, `<input id="cz-presup" inputmode="decimal" value="${esc(pre.presupuesto || '')}" placeholder="$ por ${uSingular(pre)}" style="${INPUT_CSS}">`, 'Ayuda a que le coticen en serio. Si lo deja vacío, no se muestra.')}
 
-        <div id="cz-error" style="${errPend ? '' : 'display:none;'}background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px">${errPend ? esc(errPend) : ''}</div>
-        ${btnPrimario('Publicar pedido', 'cotizPublicar(this)')}
-        <div style="font-size:.74rem;color:${TENUE};text-align:center;margin-top:12px;line-height:1.5">El pedido queda abierto 14 días. Puede cerrarlo cuando quiera.</div>
+        <div style="font-size:.74rem;color:${TENUE};line-height:1.5;margin-bottom:4px">El pedido queda abierto 14 días. Puede cerrarlo cuando quiera.</div>
+
+        <div class="cz-barra cz-vidrio">
+          <div id="cz-error" style="${errPend ? '' : 'display:none;'}background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px">${errPend ? esc(errPend) : ''}</div>
+          ${btnPrimario('Publicar pedido', 'cotizPublicar(this)')}
+          <button type="button" class="cz-link" onclick="cotizRecomendame()">¿No sabe bien qué pedir? Recomendame</button>
+          <div class="cz-barra-nota">Los proveedores ven su nombre, no su teléfono. Usted elige a quién le escribe.</div>
+          <div class="cz-barra-nota">Pedir precio no lo compromete a nada.</div>
+        </div>
       </div>`;
   }
 
   // Lo que el usuario escribio, sin nada de identidad: es lo que se guarda
   // como borrador mientras inicia sesion.
   function leerFormulario() {
-    const cantidad = ($('cz-cantidad')?.value || '').trim() || null;
-    const unidad = $('cz-unidad')?.value || '';
+    const { cantidad, unidad } = leerCantidad();
     return {
       titulo: ($('cz-titulo')?.value || '').trim(),
       cantidad,
-      // Sin cantidad la unidad no dice nada, y lo que llegue del select se
-      // valida contra la lista: la base tiene un CHECK con los mismos valores
-      // y un valor raro haria fallar el insert entero.
-      unidad: cantidad && UNIDADES.indexOf(unidad) >= 0 ? unidad : null,
+      unidad,
+      // El select del rubro sigue siendo la fuente de verdad aunque este
+      // escondido detras del cartel "Rubro detectado": lo completa el detector
+      // o lo completa la persona, pero se lee siempre del mismo lugar.
       rubro: $('cz-rubro')?.value || null,
       provincia: $('cz-prov')?.value || null,
       detalles: ($('cz-detalles')?.value || '').trim() || null,
-      presupuesto: parsearMonto($('cz-presup')?.value)
+      presupuesto: parsearMonto($('cz-presup')?.value),
+      // Ya es una URL de Storage: la subida pasa cuando se elige el archivo,
+      // no al publicar. Asi el borrador de localStorage la puede guardar.
+      foto: st.foto || null
     };
   }
 
@@ -1485,10 +2257,22 @@
 
     if (btn) { btn.disabled = true; btn.textContent = 'Publicando...'; btn.style.opacity = '.7'; }
     const r = await publicarPedido(datos);
-    if (r.ok) { limpiarBorrador(); await irAMisPedidos(); return; }
+    // Antes caia derecho en "Mis pedidos", que es una lista: no confirmaba
+    // nada. Ahora pasa por el acuse de recibo; ver pantallaConfirmado().
+    if (r.ok) { limpiarBorrador(); await irAConfirmacion(datos); return; }
     if (btn) { btn.disabled = false; btn.textContent = 'Publicar pedido'; btn.style.opacity = '1'; }
     mostrarErr(r.mensaje);
   };
+
+  /* "Esta columna no existe". PostgREST lo dice de dos formas segun por donde
+     falle: PGRST204 cuando no la encuentra en su cache de esquema, y 42703
+     (undefined_column) cuando el error sube directo de Postgres. Se miran las
+     dos, y ademas el texto, porque el codigo cambio entre versiones. */
+  function esColumnaFaltante(error) {
+    const cod = String(error?.code || '');
+    if (cod === 'PGRST204' || cod === '42703') return true;
+    return /column .* does not exist|could not find the .* column/i.test(String(error?.message || ''));
+  }
 
   // Un solo lugar que inserta: lo usan el boton y el reintento post-login.
   async function publicarPedido(datos) {
@@ -1507,15 +2291,33 @@
       presupuesto: datos.presupuesto
     };
 
+    // La foto viaja en foto_url, que llega con
+    // sql/2026-08-19_solicitudes_foto.sql. Se agrega solo si hay foto: asi un
+    // pedido sin foto se publica igual aunque la migracion todavia no se haya
+    // corrido.
+    if (datos.foto) fila.foto_url = datos.foto;
+
     try {
       // OJO: insert() SIN .select(). Encadenar .select() hace que PostgREST
       // devuelva la fila entera, incluida usuario_email, que esta revocada a
       // proposito -> "permission denied for table solicitudes" (42501).
       // Verificado contra el API real: sin .select() da 201, con .select() da 403.
-      const { error } = await sb.from('solicitudes').insert(fila);
+      let { error } = await sb.from('solicitudes').insert(fila);
+
+      // Si la columna todavia no existe (migracion sin correr), PostgREST
+      // rechaza la fila ENTERA. Antes que perder el pedido, se reintenta sin
+      // la foto y se avisa. Es el unico caso en que vale la pena reintentar:
+      // el pedido es lo importante, la foto es un extra.
+      let sinFoto = false;
+      if (error && fila.foto_url && esColumnaFaltante(error)) {
+        console.warn('[cotiz] falta solicitudes.foto_url; se publica sin foto', error);
+        delete fila.foto_url;
+        sinFoto = true;
+        ({ error } = await sb.from('solicitudes').insert(fila));
+      }
       if (error) throw error;
       vibrar('success');
-      toast('Pedido publicado');
+      toast(sinFoto ? 'Pedido publicado (la foto no se pudo adjuntar)' : 'Pedido publicado');
       try { if (typeof trackEvent === 'function') trackEvent('rfq_publicado', { rubro: fila.rubro || '', provincia: fila.provincia || '' }); } catch (e) { }
       return { ok: true };
     } catch (e) {
@@ -1538,6 +2340,135 @@
     await cargarMisPedidos();
     st.vista = 'mis';
     render();
+  }
+
+  /* ---------------- ACUSE DE RECIBO ----------------
+
+     POR QUE EXISTE: un comprador publico el mismo pedido tres veces en dos
+     dias. No estaba impaciente: no tenia forma de saber si le habia llegado a
+     alguien. Publicaba, volvia al feed y no pasaba nada visible, asi que
+     asumia que se habia perdido y lo escribia de nuevo.
+
+     Por eso la frase que mas trabaja de esta pantalla no es el numero, es
+     "No hace falta que lo vuelva a publicar".
+
+     SOBRE EL NUMERO: es real, sale de contar proveedores aprobados del rubro.
+     Y dice "lo pueden ver", no "se envio": hoy al proveedor no le llega
+     ninguna notificacion, el pedido aparece en el listado publico y el entra a
+     mirarlo. El dia que exista el aviso al proveedor, esta frase cambia.
+     Prometer un envio que no ocurre es exactamente el tipo de mentira que
+     despues hace que nadie crea en los numeros de la seccion. */
+
+  /* Cuenta contra la base, no contra una estimacion.
+
+     Se traen las filas y se filtra en el cliente en vez de resolverlo con un
+     .eq(): proveedores.rubro es una LISTA separada por comas (hasta 7) y
+     ademas puede tener nombres viejos ("Moda" por "Indumentaria"). El unico
+     lugar donde esa equivalencia esta bien resuelta es matchesCat() de
+     app.js, que es la misma que usa el directorio. Usando esa, el numero de
+     esta pantalla no puede contradecir a lo que la persona ve si despues
+     entra a buscar proveedores de ese rubro.
+
+     Son dos columnas de ~130 filas: pesa nada. El .limit(1000) es el tope que
+     la API de Supabase aplica igual; si algun dia hay mas de mil proveedores
+     aprobados, esto empieza a quedarse corto y hay que paginar con .range(). */
+  async function contarProveedores(rubro, provincia) {
+    if (!rubro) return null;
+    try {
+      const { data, error } = await sb.from('proveedores')
+        .select('rubro,provincia').eq('estado', 'aprobado').limit(1000);
+      if (error) throw error;
+
+      const suyos = (data || []).filter(p => {
+        // matchesCat() devuelve true con rubro vacio (para el filtro "Todas");
+        // aca eso contaria proveedores sin rubro cargado, asi que se corta antes.
+        if (!p || !p.rubro) return false;
+        if (typeof matchesCat === 'function') return matchesCat(p.rubro, rubro);
+        return p.rubro.split(',').map(r => r.trim()).indexOf(rubro) >= 0;
+      });
+
+      return {
+        n: suyos.length,
+        enProv: provincia ? suyos.filter(p => p.provincia === provincia).length : 0
+      };
+    } catch (e) {
+      console.warn('[cotiz] contar proveedores', e);
+      return null;   // la pantalla se muestra igual, sin el numero
+    }
+  }
+
+  /* Se pinta PRIMERO y se cuenta despues. El acuse de recibo es lo urgente:
+     hacerlo esperar a una consulta seria repetir el problema que vino a
+     resolver. Si la cuenta falla o tarda, la pantalla ya cumplio su trabajo. */
+  async function irAConfirmacion(datos) {
+    st.confirmado = {
+      rubro: datos.rubro || '', provincia: datos.provincia || '',
+      titulo: datos.titulo || '', n: null, enProv: 0, contando: true
+    };
+    st.vista = 'confirmado';
+    st.cargando = false;
+    render();
+
+    const c = await contarProveedores(datos.rubro, datos.provincia);
+    // Si mientras contabamos la persona se fue a otra pantalla, no se la
+    // arrastra de vuelta con un render().
+    if (st.vista !== 'confirmado' || !st.confirmado) return;
+    st.confirmado = { ...st.confirmado, ...(c || {}), contando: false };
+    render();
+  }
+
+  function pantallaConfirmado() {
+    const c = st.confirmado;
+    if (!c) return pantallaFeed();
+
+    const rubro = esc(c.rubro || '');
+    let titular, bajada;
+
+    if (c.contando) {
+      titular = 'Su pedido está publicado';
+      bajada = 'Estamos viendo a cuántos proveedores del rubro les llega.';
+    } else if (c.n === null) {
+      // No se pudo contar. Se dice lo que SI se sabe con certeza.
+      titular = 'Su pedido está publicado';
+      bajada = 'Ya aparece en el listado de pedidos abiertos, donde lo ven los proveedores mayoristas.';
+    } else if (c.n === 0) {
+      // Cero no se disfraza. Pero tampoco se lo deja como un fracaso: el
+      // pedido igual queda publicado y sirve para salir a buscar ese rubro.
+      titular = 'Su pedido está publicado';
+      bajada = 'Todavía no hay proveedores de ' + rubro + ' aprobados en EmprendeGO. ' +
+        'Su pedido queda abierto 14 días y lo usamos para salir a buscarlos.';
+    } else {
+      titular = 'Su pedido ya lo pueden ver ' + c.n + ' ' +
+        (c.n === 1 ? 'proveedor' : 'proveedores') + ' de ' + rubro;
+      bajada = c.enProv > 0
+        ? c.enProv + (c.enProv === 1 ? ' está' : ' están') + ' en ' + esc(c.provincia) + '.'
+        : 'Varios trabajan con envío a todo el país.';
+    }
+
+    const paso = (n, txt) => `<div style="display:flex;gap:11px;align-items:flex-start;margin-bottom:11px">
+      <div aria-hidden="true" style="width:22px;height:22px;flex-shrink:0;margin-top:1px;border-radius:50%;background:${VERDE};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:800">${n}</div>
+      <div style="font-size:.82rem;line-height:1.5;color:#065F46">${txt}</div>
+    </div>`;
+
+    return header('Pedido publicado', "cotizIr('feed')") + `
+      <div class="cz-ancho" style="padding:26px 20px 40px;text-align:center">
+        <div class="cz-ok-redondel" aria-hidden="true">${ICO.chequeRedondo}</div>
+
+        <h2 class="cz-ok-tit">${titular}</h2>
+        <p class="cz-ok-baj">${bajada}</p>
+
+        <p class="cz-ok-repetir">No hace falta que lo vuelva a publicar. Le avisamos apenas alguien le cotice.</p>
+
+        <div style="text-align:left;background:${SOFT};border:1px solid ${BORDE};border-radius:16px;padding:16px;margin:20px 0">
+          <div style="font-size:.8rem;font-weight:800;color:${VERDE_OSC};margin-bottom:11px">¿Qué pasa ahora?</div>
+          ${paso(1, 'Los proveedores del rubro ven su pedido en el listado y le mandan su precio, su mínimo y su tiempo de entrega.')}
+          ${paso(2, 'Usted compara las cotizaciones que reciba y elige la que más le convenga.')}
+          ${paso(3, 'Le escribe por WhatsApp solo al que usted elija. Su teléfono no se comparte antes.')}
+        </div>
+
+        ${btnPrimario('Ver mis pedidos', "cotizIr('mis')")}
+        <button type="button" class="cz-link" onclick="cotizPedir()">Publicar otro pedido</button>
+      </div>`;
   }
 
   /* ---------------- REINTENTO DESPUES DEL LOGIN ----------------
@@ -1583,7 +2514,10 @@
         limpiarBorrador();
         try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
         await getUid();
-        await irAMisPedidos();
+        // El que publica por este camino viene de irse a Google y volver: es
+        // justo el que menos idea tiene de si su pedido sobrevivio al viaje.
+        // El acuse de recibo le hace mas falta que a nadie.
+        await irAConfirmacion(d);
       } else {
         // No se pudo (ej: llego al tope). Se deja de reintentar, pero no se
         // tira lo que escribio: se le muestra el formulario cargado y el
@@ -1684,7 +2618,15 @@
 
     const overlay = document.createElement('div');
     overlay.id = 'modal-aviso-cotiz';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s ease';
+    // El vidrio de un modal va en el VELO, no en la tarjeta: una tarjeta
+    // translucida sobre un velo oscuro deja el texto negro flotando sobre un
+    // fondo impredecible y ahi se cae el contraste. La tarjeta queda opaca.
+    // El velo es negro verdoso y no negro puro: tintado desde la marca.
+    // Los estilos van en linea porque este overlay vive en <body>, fuera de
+    // #screen-cotizaciones, donde las clases .cz-* no llegan.
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(6,26,18,.55);' +
+      '-webkit-backdrop-filter:blur(6px) saturate(140%);backdrop-filter:blur(6px) saturate(140%);' +
+      'z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;transition:opacity .3s ease';
     overlay.innerHTML = `<div class="cz-aviso-card" role="dialog" aria-modal="true" aria-labelledby="cz-aviso-tit"
         style="background:#fff;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative;transform:scale(.94);opacity:0;transition:transform .32s cubic-bezier(.2,.8,.25,1),opacity .3s ease">
       <button onclick="cerrarAvisoCotiz()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
@@ -1951,7 +2893,11 @@
     if (!overlay) {
       overlay = document.createElement('div');
       overlay.id = 'modal-cierre-cotiz';
-      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
+      // Mismo criterio que el aviso "le cotizaron": el vidrio va en el velo,
+      // la tarjeta queda opaca. Ver pintarAvisoCotiz().
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(6,26,18,.55);' +
+        '-webkit-backdrop-filter:blur(6px) saturate(140%);backdrop-filter:blur(6px) saturate(140%);' +
+        'z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto';
       // Tocar afuera cancela el cierre entero: no cierra el pedido ni
       // guarda nada. Cerrar un pedido por accidente no se puede deshacer.
       overlay.onclick = e => { if (e.target === overlay) { st.cierre = null; cerrarModalCierre(); } };
@@ -2163,9 +3109,10 @@
         <div style="font-family:'Inter',sans-serif;font-size:.87rem;font-weight:800;color:#1A1A1A;line-height:1.4;margin-bottom:5px">${esc(s.titulo)}</div>
         <div style="font-size:.75rem;color:${GRIS}">${s.cantidad ? cantidadTexto(s) + ' · ' : ''}${esc(s.provincia || '')}</div>
         ${s.detalles ? `<div style="font-size:.78rem;color:#41564C;margin-top:8px;line-height:1.5">${esc(s.detalles)}</div>` : ''}
+        ${s.foto_url ? `<div style="margin-top:9px;margin-bottom:-11px">${fotoPedido(s)}</div>` : ''}
       </div>
 
-      <div style="padding:18px 16px 40px">
+      <div class="cz-form">
         ${campo('Precio por ' + uSingular(s), `<input id="cz-precio" inputmode="decimal" placeholder="$ por ${uSingular(s)}" oninput="cotizCalcTotal()" style="${INPUT_CSS};font-size:1.05rem;font-weight:700">`)}
         <div id="cz-total" style="margin-top:-8px;margin-bottom:16px;font-size:.82rem;font-weight:700;color:${VERDE};display:none"></div>
 
@@ -2181,9 +3128,11 @@
 
         ${campo('Nota (opcional)', `<textarea id="cz-nota" rows="3" maxlength="400" placeholder="ej: Tengo stock disponible, envío incluido a CABA" style="${INPUT_CSS};resize:vertical"></textarea>`)}
 
-        <div id="cz-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px"></div>
-        ${btnPrimario('Enviar cotización', 'cotizEnviar(this)')}
-        <div style="font-size:.74rem;color:${TENUE};text-align:center;margin-top:12px;line-height:1.5">El comprador ve su cotización junto con las de otros proveedores. Si le sirve, lo contacta.</div>
+        <div class="cz-barra cz-vidrio">
+          <div id="cz-error" style="display:none;background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px"></div>
+          ${btnPrimario('Enviar cotización', 'cotizEnviar(this)')}
+          <div class="cz-barra-nota">El comprador ve su cotización junto con las de otros proveedores. Si le sirve, lo contacta.</div>
+        </div>
       </div>`;
   }
 
@@ -2310,20 +3259,45 @@
      importante de la seccion: ~70% de las busquedas dan cero resultados.
      app.js solo pega el bloque; toda la logica vive aca.            */
 
-  // Adivina el rubro desde lo que escribio, reusando el mapa que ya tiene la app.
+  /* Adivina el rubro desde lo que escribio, reusando el mapa que ya tiene la app.
+
+     Antes ganaba la clave MAS LARGA de todas las que aparecian en el texto, y
+     eso daba vuelta el resultado en cuanto el pedido mencionaba el material:
+     "remeras de algodon blancas" caia en Textil y Telas, porque 'algodon' (7)
+     le ganaba a 'remera' (6). El pedido no es de tela, es de remeras.
+
+     Ahora gana la que aparece PRIMERO. En castellano el sustantivo principal
+     va adelante y los calificativos (material, color, talle) atras, asi que la
+     posicion dice mucho mas que el largo. El largo queda solo para desempatar
+     dos claves que arrancan en el mismo lugar, que es lo que resuelve bien
+     'velador' contra 'vela' y 'colchoneta' contra 'colchon'.
+
+     La tercera pasada (claves que CONTIENEN lo escrito) es para cuando la
+     persona escribio menos que la clave: "blanq" -> 'blanqueria'. Va ultima
+     porque es la mas floja de las tres. */
   function rubroDeTermino(term) {
     try {
       if (typeof SUBCATEGORIA_MAP !== 'object' || !SUBCATEGORIA_MAP) return '';
       const t = String(term || '').toLowerCase()
         .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
       if (!t) return '';
-      // Primero exacto, despues por palabra contenida (la mas larga gana).
       if (SUBCATEGORIA_MAP[t]) return SUBCATEGORIA_MAP[t][0] || '';
-      let mejor = '', largo = 0;
+
+      let mejor = '', dondeMejor = Infinity, largoMejor = 0;
       for (const k of Object.keys(SUBCATEGORIA_MAP)) {
-        if (k.length > largo && (t.includes(k) || k.includes(t))) { mejor = SUBCATEGORIA_MAP[k][0]; largo = k.length; }
+        const donde = t.indexOf(k);
+        if (donde < 0) continue;
+        if (donde < dondeMejor || (donde === dondeMejor && k.length > largoMejor)) {
+          mejor = SUBCATEGORIA_MAP[k][0]; dondeMejor = donde; largoMejor = k.length;
+        }
       }
-      return mejor || '';
+      if (mejor) return mejor;
+
+      let porPrefijo = '', largo = 0;
+      for (const k of Object.keys(SUBCATEGORIA_MAP)) {
+        if (k.length > largo && k.includes(t)) { porPrefijo = SUBCATEGORIA_MAP[k][0]; largo = k.length; }
+      }
+      return porPrefijo || '';
     } catch (e) { return ''; }
   }
 
