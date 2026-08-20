@@ -239,6 +239,10 @@
     prefill: null,        // pedido pre-cargado desde una busqueda sin resultados
     errorPendiente: null, // error a mostrar al volver al formulario
     demanda: null,        // carril "buscado sin respuesta"; null = todavia no se pidio
+    // Rubros que el proveedor sigue. Ver el bloque RUBROS SEGUIDOS mas abajo.
+    seguidos: null,       // array de rubros | null = no eligio nada (ve todo)
+    haySeguidos: true,    // false = la migracion no esta corrida; el filtro no existe
+    verTodos: false,      // se pidio ver todo el feed, por esta vez
     // Formulario A. Viven en st y no en el DOM porque el formulario se repinta
     // entero en cada render() y estos dos tienen que sobrevivir a eso.
     cantModo: 'minimo',   // '20' | '50' | '100' | 'otra' | 'minimo'
@@ -609,13 +613,18 @@
        formulario de cinco bloques asusta antes de que la persona escriba la
        primera palabra; de a uno, cada paso llega cuando el anterior ya le dio
        sentido. El que todavia no corresponde no esta atenuado: no esta. */
+    /* El alto de este bloque lo anima desplegar() en JavaScript, no una regla
+       de aca: a un alto automatico no se le puede animar, y ademas el alto de
+       un paso depende de cuantos chips le toco. Los 22px del margen estan
+       repetidos en esa funcion, que los anima junto con el alto; si se cambia
+       uno de los dos, va el otro.
+
+       Aca vivio una clase .entra que apuntaba a @keyframes czSube. No hacia
+       nada: czSube declara solamente su fotograma final, y sin uno inicial el
+       navegador arranca del estado actual, que ya era opacidad 1 y sin
+       transform. Por eso el paso aparecia de golpe. (.cz-sube si anda porque
+       declara el estado inicial en su propia regla, ver mas abajo.) */
     #screen-cotizaciones .cz-paso-b{margin-bottom:22px}
-    #screen-cotizaciones .cz-paso-b.entra{
-      animation:czSube .38s cubic-bezier(.22,1,.36,1) both;
-    }
-    @media (prefers-reduced-motion:reduce){
-      #screen-cotizaciones .cz-paso-b.entra{animation:none}
-    }
     #screen-cotizaciones .cz-paso-cab{display:flex;align-items:center;gap:9px;margin-bottom:7px}
     #screen-cotizaciones .cz-paso-n{
       width:24px;height:24px;flex-shrink:0;border-radius:50%;
@@ -642,6 +651,47 @@
       background:${VERDE};border-color:${VERDE};color:#fff;font-weight:700;
     }
     #screen-cotizaciones .cz-chip-prod.propio{border-style:dashed}
+
+    /* ---- BARRA DE RUBROS SEGUIDOS ----
+       Un filtro que esconde pedidos sin decirlo es la peor version de esto: el
+       proveedor concluye que la seccion esta muerta y se va. Por eso no es un
+       icono ni un menu escondido, es una linea fija que dice que se esta
+       filtrando, cuanto, y como ver todo de un toque.
+
+       Sin vidrio a proposito: viaja con el scroll del feed, y el liquid glass
+       de la seccion vive solo en las seis superficies acordadas. Un
+       backdrop-filter mas, y encima uno que scrollea, es justo lo que hace
+       arrastrar el feed en los Android de gama baja. */
+    #screen-cotizaciones .cz-seg-barra{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      background:${SOFT};border:1px solid ${BORDE};border-radius:12px;padding:8px 10px 8px 13px;
+    }
+    #screen-cotizaciones .cz-seg-txt{
+      flex:1;min-width:150px;font-size:.76rem;font-weight:600;color:${VERDE_OSC};line-height:1.4;
+    }
+    #screen-cotizaciones .cz-seg-acc{display:flex;gap:6px;flex-shrink:0}
+    /* 44px como el resto de los botones de la seccion. Achicarlos dejaria la
+       unica salida del filtro mas dificil de tocar que lo que la activo. */
+    #screen-cotizaciones .cz-seg-btn{
+      min-height:44px;padding:8px 14px;border-radius:999px;cursor:pointer;
+      font-family:inherit;font-size:.75rem;font-weight:700;
+      background:#fff;color:${VERDE_OSC};border:1.5px solid ${BORDE};
+      transition:transform 160ms var(--cz-salida);
+    }
+    #screen-cotizaciones .cz-seg-btn:active{transform:scale(.96)}
+    #screen-cotizaciones .cz-seg-btn.fuerte{background:${VERDE};border-color:${VERDE};color:#fff}
+
+    /* "su rubro": la sugerencia del rubro con el que se registro. */
+    #screen-cotizaciones .cz-seg-suyo{
+      margin-left:7px;border-radius:6px;padding:2px 6px;
+      font-size:.62rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase;
+      background:#fff;border:1px solid ${BORDE};color:${VERDE_OSC};
+    }
+    /* Marcado, el chip pasa a verde lleno: la etiqueta tiene que darse vuelta
+       o se pierde contra el fondo. */
+    #screen-cotizaciones .cz-chip-prod[aria-pressed="true"] .cz-seg-suyo{
+      background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.5);color:#fff;
+    }
     #screen-cotizaciones .cz-sumar{display:flex;gap:8px;margin-top:10px}
     #screen-cotizaciones .cz-sumar input{flex:1;min-width:0}
     #screen-cotizaciones .cz-sumar button{
@@ -1219,6 +1269,31 @@
        nada mas. Ahora el piso minimo de toda tarjeta es: quien pide, que
        pide, cuanto le queda abierta y en que estado esta. Todo con datos que
        ya venian en la fila. */
+    /* ---- QUE CLASE DE PEDIDO ES ----
+       El proveedor baja por el feed decidiendo a que le entra, y las dos cosas
+       que le pueden aparecer no se contestan igual: un pedido puntual se
+       responde con un precio, y uno de abastecimiento con un remito de todo lo
+       que puede cubrir. Antes la unica marca era un "Busca proveedor" con el
+       mismo peso visual que el rubro y la provincia, perdido en la fila de
+       datos: para el ojo era un dato mas, no la clase de pedido.
+
+       La cinta va en los DOS tipos, no solo en el B. Marcando uno solo, el
+       otro no se lee como el otro tipo: se lee como "pedido normal", y la
+       distincion desaparece justo en el caso mas comun. */
+    #screen-cotizaciones .cz-tipo{
+      display:inline-flex;align-items:center;gap:5px;margin:0 0 9px;
+      border-radius:8px;padding:4px 10px;
+      font-size:.68rem;font-weight:800;letter-spacing:.03em;text-transform:uppercase;
+    }
+    #screen-cotizaciones .cz-tipo svg{width:13px;height:13px;flex-shrink:0}
+    /* Puntual = el caso comun, en gris: si gritara, gritarian todas las
+       tarjetas y no se distinguiria ninguna. Mismo par de colores que .cz-dato,
+       ya medido sobre este fondo. */
+    #screen-cotizaciones .cz-tipo.a{background:#F4F7F5;border:1px solid #E7EDE9;color:#41564C}
+    /* Abastecimiento = el que el proveedor no se quiere perder, en verde
+       lleno. Blanco sobre ${VERDE} da 7,68:1. */
+    #screen-cotizaciones .cz-tipo.b{background:${VERDE};border:1px solid ${VERDE};color:#fff}
+
     #screen-cotizaciones .cz-titulo{
       font-size:1rem;font-weight:800;color:#1A1A1A;line-height:1.32;
       letter-spacing:-.015em;margin:0 0 10px;text-wrap:balance;
@@ -1439,6 +1514,84 @@
     st.cotizaciones = await traerCotizaciones(solId);
   }
 
+  /* ---------------- RUBROS SEGUIDOS (proveedor) ----------------
+
+     Un proveedor de indumentaria baja por pedidos de electronica, ferreteria
+     y alimentos hasta encontrar el suyo, y cuanto mas crece el feed, peor: el
+     exito de la seccion la vuelve inservible para el que la usa. Seguir un
+     rubro es lo mismo que seguir a alguien en Instagram — de eso en adelante
+     el feed es el suyo.
+
+     Va en una consulta PROPIA y no pegada al SELECT de checkSession() en
+     app.js, a proposito. Pedir una columna que todavia no existe hace fallar
+     la consulta ENTERA (no devuelve el campo vacio), y ese SELECT es el que
+     arma la sesion del proveedor: pushear esto antes de correr el SQL
+     dejaria a todos los proveedores sin poder entrar. Aca, si la columna no
+     esta, lo unico que pasa es que el filtro no existe y el feed se ve
+     completo, que es exactamente como funcionaba ayer.
+
+     st.seguidos = null significa "no eligio nada" y muestra TODO. No se
+     confunde con "eligio y despues borro todo": guardar la lista vacia
+     tambien deja NULL en la base (lo pide el CHECK), y las dos cosas
+     significan lo mismo. */
+  async function cargarSeguidos() {
+    const provId = currentUser?.proveedorId;
+    if (!provId) { st.seguidos = null; return; }
+    try {
+      const { data, error } = await sb.from('proveedores')
+        .select('rubros_seguidos').eq('id', provId).maybeSingle();
+      if (error) throw error;
+      st.haySeguidos = true;
+      st.seguidos = normalizarSeguidos(data && data.rubros_seguidos);
+    } catch (e) {
+      // 42703 (no existe la columna) o 403 (falta el GRANT por columna, que
+      // ADD COLUMN no hereda). En los dos casos la respuesta es la misma:
+      // apagar el filtro, no romper la pantalla.
+      console.warn('[cotiz] rubros seguidos: falta correr sql/2026-08-20_rubros_seguidos.sql', e);
+      st.haySeguidos = false;
+      st.seguidos = null;
+    }
+  }
+
+  // Se descarta lo que no sea texto con contenido: la columna es text[] y el
+  // CHECK ya lo impide del lado de la base, pero esta lista termina pintada y
+  // comparada contra los rubros del feed. Mismo criterio que listaTexto().
+  function normalizarSeguidos(v) {
+    if (!Array.isArray(v)) return null;
+    const l = v.filter(x => typeof x === 'string' && x.trim()).map(x => x.trim());
+    return l.length ? l : null;
+  }
+
+  // El filtro esta actuando ahora mismo. Las tres condiciones tienen que
+  // valer: que la base lo soporte, que sea un proveedor, y que haya elegido.
+  const filtroSeguidosActivo = () =>
+    st.haySeguidos && esProveedor() && !!st.seguidos && !st.verTodos;
+
+  /* Guarda la lista elegida. El array vacio se guarda como NULL para que la
+     base tenga UN solo estado que signifique "sin filtro" — es lo que pide el
+     CHECK proveedores_rubros_seguidos_chk. */
+  async function guardarSeguidos(lista) {
+    const provId = currentUser?.proveedorId;
+    if (!provId) return false;
+    const valor = (lista && lista.length) ? lista : null;
+    try {
+      const { error } = await sb.from('proveedores')
+        .update({ rubros_seguidos: valor }).eq('id', provId);
+      if (error) throw error;
+      st.seguidos = valor;
+      // Si acaba de elegir rubros, el escape de "ver todo" ya no corresponde:
+      // dejarlo prendido mostraria el feed completo justo despues de filtrarlo.
+      st.verTodos = false;
+      // La sesion en memoria tambien, para que no quede desactualizada si otra
+      // parte de la app lee provData sin volver a consultar.
+      try { if (currentUser.provData) currentUser.provData.rubros_seguidos = valor; } catch (e) { }
+      return true;
+    } catch (e) {
+      console.warn('[cotiz] guardar rubros seguidos', e);
+      return false;
+    }
+  }
+
   function esPro(p) {
     if (!p || p.plan !== 'pro') return false;
     if (!p.plan_hasta) return true;
@@ -1465,6 +1618,7 @@
     else if (st.vista === 'cotizarB') html = pantallaCotizarB();
     else if (st.vista === 'mis') html = pantallaMisPedidos();
     else if (st.vista === 'misCotiz') html = pantallaMisCotizaciones();
+    else if (st.vista === 'seguidos') html = pantallaSeguidos();
     else html = pantallaFeed();
     cont.innerHTML = ESTILOS + html;
     animarCifras(cont);
@@ -1642,10 +1796,24 @@
   const esProveedor = () => currentUser?.type === 'proveedor';
   const esMio = s => st.uid && String(s.usuario_id) === String(st.uid);
 
+  /* El feed tal como lo tiene que ver ESTE proveedor, ya recortado a los
+     rubros que sigue. Es la base de la pantalla del feed: los chips de rubro,
+     el pulso y las tarjetas salen todos de aca, para que el numero grande de
+     arriba diga lo mismo que se cuenta abajo.
+
+     OJO: "Mis cotizaciones" y cotizRetirarCotiz() siguen leyendo st.feed
+     crudo. Si usaran esto, una cotizacion enviada a un pedido de un rubro que
+     el proveedor despues dejo de seguir desapareceria de su propia lista. Lo
+     que se filtra es lo que se le OFRECE, nunca lo que ya hizo. */
+  function feedVisible() {
+    if (!filtroSeguidosActivo()) return st.feed;
+    return st.feed.filter(s => s.rubro && st.seguidos.indexOf(s.rubro) >= 0);
+  }
+
   // Solo los rubros que REALMENTE tienen pedidos: no ofrecer filtros vacios.
   function rubrosDelFeed() {
     const cuenta = {};
-    st.feed.forEach(s => { if (s.rubro) cuenta[s.rubro] = (cuenta[s.rubro] || 0) + 1; });
+    feedVisible().forEach(s => { if (s.rubro) cuenta[s.rubro] = (cuenta[s.rubro] || 0) + 1; });
     return Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a]);
   }
 
@@ -1662,10 +1830,14 @@
   // en memoria: ni una consulta mas. Las metricas secundarias solo aparecen si
   // dan mayor que cero — tres ceros alineados se ven peor que no mostrar nada.
   function pulso() {
-    const nPedidos = st.feed.length;
-    const nCotiz = st.feed.reduce((a, s) => a + (s.respuestas || 0), 0);
+    // Cuenta sobre el feed YA filtrado por los rubros que sigue: un "40
+    // pedidos abiertos" arriba de tres tarjetas es un numero que el proveedor
+    // no puede verificar, y deja de creerle al resto.
+    const visible = feedVisible();
+    const nPedidos = visible.length;
+    const nCotiz = visible.reduce((a, s) => a + (s.respuestas || 0), 0);
     const nRubros = rubrosDelFeed().length;
-    const nHoy = st.feed.filter(s => esDeHoy(s.created_at)).length;
+    const nHoy = visible.filter(s => esDeHoy(s.created_at)).length;
 
     const stats = [];
     if (nCotiz) stats.push([nCotiz, nCotiz === 1 ? 'cotización enviada' : 'cotizaciones enviadas']);
@@ -1748,8 +1920,162 @@
     </div>`;
   }
 
+  /* La barra que dice si el feed esta recortado y como salirse.
+
+     Un filtro que esconde cosas sin decirlo es la peor version de esto: el
+     proveedor cree que no hay pedidos y se va. Por eso siempre esta a la
+     vista que se esta filtrando, cuantos rubros, y como ver todo de un toque.
+
+     Los tres estados:
+       sin elegir  -> invitacion, y solo si el feed tiene rubros de sobra.
+       filtrando   -> cuantos sigue + salida a ver todo.
+       ver todo    -> aviso de que el filtro esta en pausa + como volver. */
+  function barraSeguidos() {
+    if (!st.haySeguidos || !esProveedor()) return '';
+
+    const armar = (txt, botones) => `<div class="cz-ancho" style="padding:10px 16px 0">
+      <div class="cz-seg-barra">
+        <span class="cz-seg-txt">${txt}</span>
+        <span class="cz-seg-acc">${botones}</span>
+      </div></div>`;
+
+    const cambiar = `<button type="button" class="cz-seg-btn" onclick="cotizIr('seguidos')">Cambiar</button>`;
+
+    if (!st.seguidos) {
+      // Sin rubros elegidos la barra es una oferta, no un estado. Con dos o
+      // tres rubros en todo el feed no hay nada que recortar y solo estorba.
+      if (rubrosDelFeed().length < 4) return '';
+      return armar('Reciba solo los rubros que le interesan.',
+        `<button type="button" class="cz-seg-btn fuerte" onclick="cotizIr('seguidos')">Elegir rubros</button>`);
+    }
+
+    const n = st.seguidos.length;
+    if (st.verTodos) {
+      return armar('Viendo todo el feed.',
+        `<button type="button" class="cz-seg-btn fuerte" onclick="cotizSoloMisRubros()">Volver a mis rubros</button>` + cambiar);
+    }
+    return armar(`Siguiendo ${n} ${n === 1 ? 'rubro' : 'rubros'}.`,
+      `<button type="button" class="cz-seg-btn" onclick="cotizVerTodos()">Ver todos</button>` + cambiar);
+  }
+
+  window.cotizVerTodos = function () { st.verTodos = true; st.rubro = 'Todos'; vibrar('light'); render(); };
+  window.cotizSoloMisRubros = function () { st.verTodos = false; st.rubro = 'Todos'; vibrar('light'); render(); };
+
+  /* ---------------- ELEGIR QUE RUBROS SEGUIR ----------------
+
+     El tope de 10 esta espejado en el CHECK de la base
+     (proveedores_rubros_seguidos_chk). Si se cambia aca, va tambien alla, o
+     el guardado se cae con un 23514 y la pantalla no sabria por que.
+
+     Se listan los 27 rubros de RUBROS_LISTA y no solo los que hoy tienen
+     pedidos: el proveedor esta eligiendo a que le quiere prestar atencion de
+     ahora en mas, y un rubro sin pedidos hoy es justamente el que le
+     conviene marcar para que le avise cuando aparezca el primero. */
+  const SEG_TOPE = 10;
+
+  function pantallaSeguidos() {
+    const rubros = (typeof RUBROS_LISTA !== 'undefined' ? RUBROS_LISTA : []);
+    const sel = st.segEdit || [];
+    /* Los rubros con los que se registro son la apuesta mas obvia, asi que se
+       señalan. Se OFRECEN, no se marcan solos: dar por hecho lo que quiere
+       ver es la forma de esconderle sin aviso lo que tambien le interesa.
+
+       OJO: proveedores.rubro NO es un rubro, es una lista separada por comas
+       ("Indumentaria, Textil y Telas"). El resto de app.js ya la parte asi
+       (ver el picker de rubros del perfil). Compararla entera contra
+       RUBROS_LISTA no daria nunca, y la sugerencia no aparecia en ningun
+       proveedor con mas de un rubro. */
+    const propios = String((currentUser && currentUser.provData && currentUser.provData.rubro) || '')
+      .split(',').map(r => r.trim()).filter(Boolean);
+
+    return header('Rubros que sigue', "cotizIr('feed')") + `
+      <div class="cz-ancho" style="padding:4px 16px 150px">
+        <p class="cz-paso-ayuda" style="margin-bottom:14px">
+          Elija los rubros que le interesan y el feed le muestra solo esos.
+          Puede cambiarlo cuando quiera, y siempre le queda la salida de ver todo.
+        </p>
+
+        <div id="cz-seg-chips" class="cz-chips-prod">
+          ${rubros.map(r => `<button type="button" class="cz-chip-prod" data-r="${esc(r)}"
+            aria-pressed="${sel.indexOf(r) >= 0}"
+            onclick="cotizSegChip('${jsArg(r)}')">${esc(r)}${propios.indexOf(r) >= 0
+        ? '<span class="cz-seg-suyo">su rubro</span>' : ''}</button>`).join('')}
+        </div>
+
+        <div class="cz-barra cz-vidrio">
+          <div id="cz-seg-cuenta" class="cz-barra-nota" style="margin-bottom:10px">${esc(textoSegCuenta(sel))}</div>
+          ${btnPrimario('Guardar', 'cotizSegGuardar(this)')}
+          <button type="button" class="cz-link" onclick="cotizSegTodos()">Seguir todos los rubros</button>
+        </div>
+      </div>`;
+  }
+
+  function textoSegCuenta(sel) {
+    if (!sel.length) return 'Sin ninguno elegido va a seguir viendo todos los pedidos.';
+    return 'Siguiendo ' + sel.length + (sel.length === 1 ? ' rubro' : ' rubros') +
+      ' de ' + SEG_TOPE + ' posibles.';
+  }
+
+  /* Repinta SOLO los chips y el contador. Nunca llama a render(): render()
+     manda la pantalla al tope, y con 27 chips eso significa perder el lugar
+     donde venia tocando en cada toque. */
+  function pintarSeguidos() {
+    const sel = st.segEdit || [];
+    const cont = $('cz-seg-chips');
+    if (cont) Array.from(cont.children).forEach(b => {
+      b.setAttribute('aria-pressed', sel.indexOf(b.dataset.r) >= 0 ? 'true' : 'false');
+    });
+    const cuenta = $('cz-seg-cuenta');
+    if (cuenta) cuenta.textContent = textoSegCuenta(sel);
+  }
+
+  window.cotizSegChip = function (r) {
+    if (!st.segEdit) st.segEdit = [];
+    const i = st.segEdit.indexOf(r);
+    if (i >= 0) st.segEdit.splice(i, 1);
+    else {
+      if (st.segEdit.length >= SEG_TOPE) {
+        toast('Puede seguir hasta ' + SEG_TOPE + ' rubros. Para ver más, siga todos.');
+        return;
+      }
+      st.segEdit.push(r);
+    }
+    vibrar('light');
+    pintarSeguidos();
+  };
+
+  // "Seguir todos" es lo mismo que no seguir ninguno: el feed sin recortar.
+  // Se guarda derecho, sin pedir confirmacion, porque no esconde nada.
+  window.cotizSegTodos = function () {
+    st.segEdit = [];
+    pintarSeguidos();
+    window.cotizSegGuardar();
+  };
+
+  window.cotizSegGuardar = async function (btn) {
+    // Mismo patron que el resto de los botones de envio de la seccion:
+    // textContent, no innerHTML. Se come el redondel de la flecha mientras
+    // guarda y lo repone el render() de abajo.
+    if (btn) { btn.disabled = true; btn.textContent = 'Guardando...'; btn.style.opacity = '.7'; }
+    const ok = await guardarSeguidos(st.segEdit || []);
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+    if (!ok) {
+      if (btn) btn.textContent = 'Guardar';
+      toast('No se pudo guardar. Intente de nuevo.');
+      return;
+    }
+    vibrar('success');
+    toast(st.seguidos
+      ? 'Listo: su feed muestra solo esos rubros'
+      : 'Listo: va a ver todos los pedidos');
+    st.vista = 'feed';
+    st.rubro = 'Todos';
+    render();
+  };
+
   function pantallaFeed() {
-    const lista = st.rubro === 'Todos' ? st.feed : st.feed.filter(s => s.rubro === st.rubro);
+    const base = feedVisible();
+    const lista = st.rubro === 'Todos' ? base : base.filter(s => s.rubro === st.rubro);
 
     const conRespuesta = st.misPedidos.filter(p => vigente(p) && (p.respuestas || 0) > 0).length;
     // Sin sesion no hay "mis pedidos" que mostrar: el boton llevaria a una
@@ -1765,15 +2091,27 @@
     // hueco entre la ultima tarjeta y el cartel.
     const hayCierre = !currentUser && lista.length > 0;
 
+    /* El vacio por FILTRO no se puede contar como el vacio de verdad. Si el
+       recorte por rubros dejo la pantalla en cero, decirle "todavia no hay
+       pedidos abiertos" a alguien que tiene 40 esperandolo un toque mas alla
+       es mentirle, y encima lo hace irse. */
+    const vacioPorFiltro = filtroSeguidosActivo() && st.rubro === 'Todos'
+      && !base.length && st.feed.length > 0;
+
     const cuerpo = !lista.length
-      ? vacioBox(
-        st.rubro === 'Todos' ? 'Todavía no hay pedidos abiertos' : 'No hay pedidos en ' + st.rubro,
-        st.rubro === 'Todos'
-          ? (esProveedor()
-            ? 'Cuando un emprendedor publique lo que necesita comprar, va a aparecer acá.'
-            : 'Sea el primero: publique lo que necesita comprar y reciba precios de varios proveedores.')
-          : 'Pruebe con otra categoría o mire todos los pedidos.',
-        esProveedor() ? '' : btnPrimario('Pedir una cotización', 'cotizPedir()'))
+      ? (vacioPorFiltro
+        ? vacioBox(
+          'No hay pedidos abiertos en sus rubros',
+          'Hay ' + st.feed.length + (st.feed.length === 1 ? ' pedido abierto en otros rubros' : ' pedidos abiertos en otros rubros') + '. Puede verlos todos o cambiar los rubros que sigue.',
+          btnPrimario('Ver todos los pedidos', 'cotizVerTodos()'))
+        : vacioBox(
+          st.rubro === 'Todos' ? 'Todavía no hay pedidos abiertos' : 'No hay pedidos en ' + st.rubro,
+          st.rubro === 'Todos'
+            ? (esProveedor()
+              ? 'Cuando un emprendedor publique lo que necesita comprar, va a aparecer acá.'
+              : 'Sea el primero: publique lo que necesita comprar y reciba precios de varios proveedores.')
+            : 'Pruebe con otra categoría o mire todos los pedidos.',
+          esProveedor() ? '' : btnPrimario('Pedir una cotización', 'cotizPedir()')))
       // La animacion de entrada va en un envoltorio y no en .cz-bandeja: una
       // animacion con fill-mode forwards deja fijado transform:none y le gana
       // al :hover{translateY(-2px)} de la bandeja.
@@ -1801,8 +2139,12 @@
     // Con boton de volver: el feed es la pantalla donde se queda parado el que
     // entra a la seccion, y sin flecha no habia forma de salir al inicio salvo
     // por la barra de abajo.
+    // El pulso se pinta segun lo que hay DESPUES del filtro: con el recorte
+    // dejando la pantalla vacia, seria un "0" gigante arriba del cartel que ya
+    // explica lo mismo y mejor.
     return header('Cotizaciones', 'closeCotiz()', accion) + `
-      ${st.feed.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
+      ${base.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
+      ${barraSeguidos()}
       ${carrilDemanda()}
       ${chipsRubro()}
       ${cuerpo}
@@ -1828,7 +2170,12 @@
         : `Ver mis ${n} ${n === 1 ? 'cotización' : 'cotizaciones'}`, `cotizVerRespuestas('${s.id}')`) : '')
       : esProveedor()
         ? (ya
-          ? `<div class="cz-pastilla">${ICO.ok} ${esc(resumenCotiz(ya, s))}</div>`
+          // La pastilla sola dejaba la cotizacion enviada como algo definitivo.
+          // Abajo va la salida: equivocarse de precio no puede ser para siempre.
+          ? `<div class="cz-pastilla">${ICO.ok} ${esc(resumenCotiz(ya, s))}</div>
+             <div style="display:flex;margin-top:8px">${btnSec(
+            esPedidoB(s) ? 'Retirar mi respuesta' : 'Retirar mi cotización',
+            `cotizRetirarCotiz('${s.id}')`, 'rojo')}</div>`
           : btnCta(esPedidoB(s) ? 'Responder este pedido' : 'Enviar cotización', `cotizAbrirForm('${s.id}')`))
         : '';
 
@@ -1846,9 +2193,16 @@
        que es como el proveedor decide si le sirve. */
     const tipoB = esPedidoB(s);
     const productos = productosDe(s);
+
+    /* La cinta reemplaza al viejo chip "Busca proveedor", que estaba en esta
+       misma fila de datos con el mismo peso que la provincia. El lugar que
+       deja libre lo ocupa la cantidad de productos: en un pedido A el dato
+       fuerte es CUANTO se pide, y en uno B es DE CUANTO ES EL SURTIDO, que es
+       lo que dice si esto es un cliente de un producto o de una lista entera. */
+    const nProd = productos.length;
     const datos = (tipoB
       ? [
-        `<span class="cz-dato fuerte">Busca proveedor</span>`,
+        nProd ? `<span class="cz-dato fuerte">${nProd} ${nProd === 1 ? 'producto' : 'productos'}</span>` : '',
         s.rubro ? `<span class="cz-dato">${esc(s.rubro)}</span>` : '',
         s.provincia ? `<span class="cz-dato">${ICO.pin}${esc(s.provincia)}</span>` : ''
       ].concat(productos.slice(0, 5).map(x => `<span class="cz-dato">${esc(x)}</span>`))
@@ -1872,6 +2226,7 @@
         </div>
       </div>
 
+      ${cintaTipo(s)}
       <h3 class="cz-titulo">${esc(s.titulo)}</h3>
       ${datos ? `<div class="cz-datos">${datos}</div>` : ''}
       ${fotoPedido(s)}
@@ -1883,6 +2238,23 @@
       </div>
       ${accion ? `<div class="cz-cta-zona">${accion}</div>` : ''}
     </div></div>`;
+  }
+
+  /* La cinta que dice de que clase es el pedido, arriba del titulo.
+
+     Se apoya en nivelSql y no en formBDisponible(): si el founder apaga
+     FORM_B_LISTO, dejan de PUBLICARSE pedidos de proveedor, pero los que ya
+     estan en la base siguen en el feed y siguen necesitando su cinta.
+
+     Con nivelSql < 2 la columna `tipo` no existe todavia, asi que no hay dos
+     clases que distinguir: todos los pedidos son de producto. Ahi la cinta no
+     se pinta — poner "PRODUCTO PUNTUAL" en todas las tarjetas cuando no existe
+     la otra clase es ruido repetido que no separa nada. */
+  function cintaTipo(s) {
+    if (nivelSql < 2) return '';
+    return esPedidoB(s)
+      ? `<span class="cz-tipo b">${ICO.local}Busca proveedor fijo</span>`
+      : `<span class="cz-tipo a">${ICO.caja}Producto puntual</span>`;
   }
 
   /* La foto que adjunto el comprador, tal como la ve el proveedor.
@@ -2001,9 +2373,64 @@
               ${sol.cantidad ? `<span>· ${cantidadTexto(sol)}</span>` : ''}
               ${sol.respuestas > 1 ? `<span>· compite con ${sol.respuestas - 1} ${sol.respuestas - 1 === 1 ? 'proveedor más' : 'proveedores más'}</span>` : ''}
             </div>
+            <div style="display:flex;gap:8px;margin-top:12px;padding-top:11px;border-top:1px solid #F1F3F2">
+              ${btnSec(esPedidoB(sol) ? 'Retirar mi respuesta' : 'Retirar mi cotización',
+        `cotizRetirarCotiz('${sol.id}')`, 'rojo')}
+            </div>
           </div>`).join('')}
       </div>`;
   }
+
+  /* El proveedor se arrepintio: puso mal el precio, se quedo sin stock, o
+     simplemente ya no quiere el pedido. Borra su propia fila.
+
+     NO HIZO FALTA SQL. Verificado contra produccion antes de escribir esto:
+     la policy cot_delete (proveedor dueño de la fila, u admin) y el
+     GRANT DELETE sobre cotizaciones a authenticated ya estaban puestos, y el
+     trigger cotiz_respuestas_trg corre AFTER INSERT OR DELETE, asi que el
+     contador solicitudes.respuestas baja solo. Tampoco hay ninguna tabla con
+     FK contra cotizaciones, asi que el borrado no arrastra nada.
+
+     Se borra por el par (solicitud_id, proveedor_id) y no por id porque
+     st.misCotiz no guarda el id — la consulta que lo llena pide solo las
+     columnas que la pantalla muestra. El par alcanza: la RLS acota igual el
+     DELETE a las filas de este proveedor, asi que ni un par mal armado podria
+     tocar la cotizacion de otro.
+
+     Al comprador no se le avisa nada, porque hoy en esta seccion no existe
+     ninguna notificacion en ningun sentido. La cotizacion deja de estar la
+     proxima vez que entra. El dia que haya avisos, esto tiene que mandar uno. */
+  window.cotizRetirarCotiz = async function (solId) {
+    const provId = currentUser?.proveedorId;
+    if (!provId) return;
+
+    const sol = st.feed.find(s => String(s.id) === String(solId));
+    const esB = esPedidoB(sol);
+    const cosa = esB ? 'su respuesta' : 'su cotización';
+
+    // Se aclara que puede volver a mandarla: sin eso, "no se puede deshacer"
+    // suena a que pierde el pedido para siempre y nadie toca el boton.
+    // Es verdad mientras el pedido siga abierto — es lo que exige la policy
+    // cot_insert, que pide estado='abierta' y cierra_at > now().
+    if (!confirm('Va a retirar ' + cosa + '. El comprador deja de verla.\n\n' +
+      'No se puede deshacer, pero puede volver a responder mientras el pedido siga abierto.')) return;
+
+    try {
+      const { error } = await sb.from('cotizaciones').delete()
+        .eq('solicitud_id', solId).eq('proveedor_id', provId);
+      if (error) throw error;
+      vibrar('success');
+      toast(esB ? 'Respuesta retirada' : 'Cotización retirada');
+      // Se recarga el feed entero: el contador de respuestas lo cambio el
+      // trigger en la base, no nosotros. Descontarlo a mano en memoria dejaria
+      // la pantalla mostrando un numero distinto al real.
+      await cargarFeed();
+      render();
+    } catch (e) {
+      console.warn('[cotiz] retirar', e);
+      toast('No se pudo retirar. Intente de nuevo.');
+    }
+  };
 
   /* ---------------- BIFURCACION: que esta buscando ----------------
 
@@ -2167,7 +2594,7 @@
 
     // Paso 2: aparece apenas escribio algo.
     const hayTexto = b.texto.trim().length >= 3;
-    mostrar('cz-b-paso2', hayTexto);
+    mostrar('cz-b-paso2', hayTexto, false);
 
     const cont = $('cz-b-chips');
     if (cont) {
@@ -2190,24 +2617,77 @@
         : 'No encontramos productos de ese rubro. Escriba abajo los que vende.';
     }
 
-    // Los pasos 3, 4 y 5 se encadenan: cada uno espera al anterior.
-    mostrar('cz-b-paso3', hayTexto && b.elegidos.length > 0);
-    mostrar('cz-b-paso4', !!b.yaVende && b.elegidos.length > 0);
-    mostrar('cz-b-paso5', !!b.inversion && !!b.yaVende);
+    // Los pasos 3, 4 y 5 se encadenan: cada uno espera al anterior. Los tres
+    // nacen de un toque, asi que los tres se acercan.
+    mostrar('cz-b-paso3', hayTexto && b.elegidos.length > 0, true);
+    mostrar('cz-b-paso4', !!b.yaVende && b.elegidos.length > 0, true);
+    mostrar('cz-b-paso5', !!b.inversion && !!b.yaVende, true);
 
     pintarPresionado('cz-b-vende', b.yaVende);
     pintarPresionado('cz-b-inv', b.inversion);
     pintarVivoB();
   }
 
-  function mostrar(id, si) {
+  /* `traer` = el paso aparece porque la persona ACABA de tocar algo, asi que
+     conviene acercarselo. En el paso 2 va en false: ese aparece mientras
+     escribe, y moverle la pantalla abajo del teclado mientras tipea es
+     exactamente lo contrario de ayudar. */
+  function mostrar(id, si, traer) {
     const el = $(id);
     if (!el) return;
     const antes = el.style.display !== 'none';
     el.style.display = si ? 'block' : 'none';
-    // La animacion de entrada se pone SOLO cuando el paso aparece de nuevo,
-    // no en cada repintado: si no, el bloque late cada vez que se toca un chip.
-    if (si && !antes) { el.classList.remove('entra'); void el.offsetWidth; el.classList.add('entra'); }
+    // Solo cuando el paso aparece de nuevo, no en cada repintado: si no, el
+    // bloque se despliega entero cada vez que se toca un chip.
+    if (si && !antes) desplegar(el, traer);
+  }
+
+  /* Despliega el paso que acaba de aparecer.
+
+     Se anima el ALTO, no solo la opacidad. Lo brusco nunca fue que el bloque
+     apareciera: era que la barra de accion y todo lo de abajo saltaran de una
+     los 120px que ocupa el paso nuevo. El alto hay que medirlo aca porque a
+     `auto` no se le puede animar, y porque depende de cuantos chips entraron.
+
+     El margen se anima JUNTO con el alto. Dejandolo fijo, lo de abajo se corre
+     los 22px enteros en el primer fotograma y el salto vuelve, mas chico.
+
+     Sin `el.animate` (WebView vieja) el paso aparece como aparecia antes: la
+     animacion es decoracion, el formulario funciona igual. */
+  function desplegar(el, traer) {
+    const acercar = () => {
+      if (!traer) return;
+      // 'nearest' no hace nada si el paso ya se ve entero. Solo corrige el
+      // caso real: el paso 4 o 5 naciendo abajo del borde de la pantalla.
+      try { el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { }
+    };
+
+    let quieto = false;
+    try { quieto = window.matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { }
+    if (quieto || typeof el.animate !== 'function') { acercar(); return; }
+
+    const alto = el.scrollHeight;
+    if (!alto) { acercar(); return; }
+
+    // Mientras el alto va en menos del real, el contenido sobra por abajo y se
+    // veria encima del bloque que sigue.
+    const overflowPrevio = el.style.overflow;
+    el.style.overflow = 'hidden';
+
+    const anim = el.animate([
+      { height: '0px', marginBottom: '0px', opacity: 0, transform: 'translateY(8px)' },
+      { height: alto + 'px', marginBottom: '22px', opacity: 1, transform: 'none' }
+    ], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
+
+    // Se devuelve el overflow SIEMPRE, tambien si la animacion se cancela
+    // (la persona contesto el paso siguiente antes de que terminara). Sin
+    // esto, un paso podria quedarse recortado para siempre.
+    const limpiar = () => { el.style.overflow = overflowPrevio; };
+    anim.addEventListener('finish', limpiar);
+    anim.addEventListener('cancel', limpiar);
+    // Se acerca durante el despliegue, no despues: encadenarlos se siente
+    // como dos movimientos separados en vez de uno solo.
+    acercar();
   }
 
   function pintarPresionado(contId, valor) {
@@ -2603,8 +3083,19 @@
   /* ---------------- CANTIDAD POR ATAJOS ----------------
      El campo numerico en blanco pedia una precision que el comprador muchas
      veces no tiene todavia, y quedarlo vacio era la unica salida: el pedido
-     salia sin cantidad y sin decir por que. Ahora "No sé, dígame su mínimo" es
+     salia sin cantidad y sin decir por que. Ahora "La que ustedes manejen" es
      una respuesta explicita y es la que viene elegida.
+
+     El texto de ese chip decia "No sé, dígame su mínimo". Se cambio porque
+     ninguna de las dos mitades ayudaba: "no sé" obliga al comprador a
+     declararse perdido para usar la opcion mas razonable del formulario, y
+     "dígame su mínimo" describe lo que hace el proveedor, no lo que el
+     comprador esta contestando. La pregunta es "¿que cantidad necesita?" y
+     ahora la respuesta es una cantidad, no una disculpa.
+
+     Sigue siendo la opcion por defecto: sacarla devolveria el campo numerico
+     vacio como unica salida para el que todavia no sabe cuanto comprar, que
+     es exactamente donde se caia antes.
 
      Los tres atajos numericos no son magia: son los tres numeros que aparecen
      en casi todos los pedidos reales que ya estan publicados. */
@@ -2925,7 +3416,7 @@
         <div style="margin:16px 0">
           <label style="display:block;font-size:.82rem;font-weight:700;color:#1A1A1A;margin-bottom:8px">¿Qué cantidad necesita?</label>
           <div id="cz-cant-chips" class="cz-cant">
-            ${[...CANT_ATAJOS.map(v => [v, v]), ['otra', 'Otra cantidad'], ['minimo', 'No sé, dígame su mínimo']]
+            ${[...CANT_ATAJOS.map(v => [v, v]), ['otra', 'Otra cantidad'], ['minimo', 'La que ustedes manejen']]
         .map(([modo, txt]) => `<button type="button" class="cz-cant-chip" data-modo="${modo}" aria-pressed="false" onclick="cotizCantModo('${modo}')">${esc(txt)}</button>`).join('')}
           </div>
           <div id="cz-cant-unidad" style="display:none;margin-bottom:10px">
@@ -2937,7 +3428,7 @@
             </div>
             <div style="font-size:.72rem;color:${TENUE};margin-top:5px">Metros, rollos, pares, kilos... La unidad cambia por completo el precio que le van a pasar.</div>
           </div>
-          <div id="cz-cant-nota" class="cz-cant-nota" style="display:none">Los proveedores le van a indicar su cantidad mínima. No necesita elegir un número ahora.</div>
+          <div id="cz-cant-nota" class="cz-cant-nota" style="display:none">Cada proveedor le va a responder con su cantidad mínima y el precio a esa cantidad. Usted compara y elige.</div>
           <div id="cz-cant-absurdo" class="cz-aviso-ambar" style="display:none">${ICO.alerta}<span id="cz-cant-absurdo-txt"></span></div>
         </div>
 
@@ -4347,6 +4838,9 @@
       await cargarDatos();
       st.cargando = false;
     }
+    // La seleccion arranca de lo guardado y se edita aparte: si la persona
+    // toca chips y se vuelve sin guardar, st.seguidos no se entero de nada.
+    if (v === 'seguidos') st.segEdit = (st.seguidos || []).slice();
     st.vista = v;
     render();
   };
@@ -4357,7 +4851,7 @@
     try {
       await getUid();
       await (esProveedor()
-        ? Promise.all([cargarFeed(), cargarDemanda()])
+        ? Promise.all([cargarFeed(), cargarDemanda(), cargarSeguidos()])
         : Promise.all([cargarFeed(), cargarMisPedidos(), cargarDemanda()]));
     } catch (e) { console.warn('[cotiz] cargarDatos', e); }
   }
