@@ -2398,9 +2398,9 @@ select:focus { outline: none; }
   --hc-luz:rgba(255,255,255,.38);
 
   position:relative;overflow:hidden;isolation:isolate;
-  display:flex;align-items:center;gap:13px;width:100%;
-  margin:0 0 11px;padding:14px 15px;
-  border-radius:16px;cursor:pointer;text-align:left;
+  display:flex;align-items:center;gap:11px;width:100%;
+  margin:0 0 11px;padding:11px 13px;
+  border-radius:14px;cursor:pointer;text-align:left;
   font-family:inherit;color:#fff;
 
   background:var(--hc-bg);
@@ -2455,7 +2455,7 @@ select:focus { outline: none; }
    vidrio y no un cuadrado de color solido es lo que lo hace parecer parte
    de la misma pieza. */
 .hero-cta-ico{
-  width:40px;height:40px;border-radius:12px;flex-shrink:0;
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;color:#fff;
   background:rgba(255,255,255,.16);
   border:1px solid rgba(255,255,255,.22);
@@ -2471,14 +2471,14 @@ select:focus { outline: none; }
 
 /* Blanco sobre el vidrio, en el punto mas claro del degradado: 5,83:1. */
 .hero-cta-tit{
-  display:block;font-size:.92rem;font-weight:800;
+  display:block;font-size:.87rem;font-weight:800;
   color:#fff;letter-spacing:-.012em;margin-bottom:2px;
 }
 /* .88 y no .80: con .80 el contraste daba 4,39:1 y no pasaba AA. Con .88
    da 4,93:1. El gris nunca se aclara para acomodar al vidrio; se ajusta
    el texto o se ajusta el vidrio. */
 .hero-cta-sub{
-  display:block;font-size:.76rem;line-height:1.4;
+  display:block;font-size:.74rem;line-height:1.38;
   color:rgba(255,255,255,.88);
 }
 .hero-cta-chev{display:flex;flex-shrink:0;color:rgba(255,255,255,.75)}
