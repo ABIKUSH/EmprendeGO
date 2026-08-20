@@ -5089,6 +5089,9 @@ function switchBuscarTab(tab, el) {
   }
   else filterProvs();
 }
+// Sin usar desde que el hero cambió la barra de búsqueda por la card de
+// Cotizaciones. Se deja porque es la forma corta de mandar a alguien a Buscar
+// con un término ya cargado, y en algún momento se va a volver a necesitar.
 function heroSearch(text) {
   goTo('buscar');
   if (text && text.trim()) {

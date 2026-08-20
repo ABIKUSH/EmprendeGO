@@ -283,12 +283,8 @@ body, body *{
 @keyframes statShimmer{0%,100%{opacity:.35}50%{opacity:.8}}
 .stat-loading{animation:statShimmer 1.2s ease-in-out infinite}
 
-/* ===== BUSCADOR DEL HERO ===== */
-.hero-searchbar{transition:box-shadow .22s ease}
-.hero-searchbar:focus-within{box-shadow:0 0 0 3px rgba(74,222,128,.55),0 12px 30px -10px rgba(0,0,0,.45)}
-.hero-searchbar button{transition:filter .18s ease,transform .12s ease}
-.hero-searchbar button:hover{filter:brightness(1.08)}
-.hero-searchbar button:active{transform:translateY(1px)}
+/* El buscador del hero se reemplazo por la card que lleva a Cotizaciones.
+   Buscar sigue en la barra de abajo, con sus estilos propios. */
 
 /* ===== HAMBURGER BUTTON ===== */
 .hamburger-btn{display:flex;align-items:center;justify-content:center;background:none;border:none;padding:6px;cursor:pointer;color:var(--navy);border-radius:8px;flex-shrink:0;-webkit-tap-highlight-color:transparent}
