@@ -339,16 +339,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
            que prometía encontrar proveedor y volvía con cero resultados en
            la mitad de las búsquedas. Buscar no se fue del sitio: sigue fijo
            como segundo ítem de la barra de abajo. -->
-      <div onclick="abrirCotizaciones()" role="button" tabindex="0"
-        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();abrirCotizaciones()}"
-        style="display:flex;align-items:center;gap:13px;background:white;border-radius:14px;padding:14px 15px;margin-bottom:11px;cursor:pointer;box-shadow:0 12px 30px -14px rgba(3,40,26,.7)">
-        <div style="width:40px;height:40px;border-radius:11px;background:#E8F2EE;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-        <div style="flex:1;min-width:0">
-          <div style="font-family:'Inter',sans-serif;font-size:.9rem;font-weight:800;color:#16201b;margin-bottom:2px">Pedí que te coticen</div>
-          <div style="font-family:'DM Sans',sans-serif;font-size:.76rem;color:#5F6E66;line-height:1.4">Decí qué necesitás y varios mayoristas te pasan precio, mínimo y envío.</div>
-        </div>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2" style="flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
-      </div>
+      <button type="button" class="hero-cta" onclick="abrirCotizaciones()">
+        <span class="hero-cta-ico" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span>
+        <span class="hero-cta-txt">
+          <span class="hero-cta-tit">Pedí que te coticen</span>
+          <span class="hero-cta-sub">Decí qué necesitás y varios mayoristas te pasan precio, mínimo y envío.</span>
+        </span>
+        <span class="hero-cta-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </button>
       <!-- Publicar negocio button -->
       <button onclick="goTo('landing-prov')" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:rgba(255,255,255,.06);color:white;border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Publicar mi negocio · gratis</button>
     </div>

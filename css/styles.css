@@ -2367,3 +2367,118 @@ select:focus { outline: none; }
   #screen-emprendedor .se-rise,#screen-emprendedor .se-tcard,#screen-emprendedor .se-supp{animation:none}
   #screen-emprendedor .se-tcard::after{transition:none}
 }
+
+/* =====================================================================
+   HERO — CARD DE COTIZACIONES EN LIQUID GLASS
+   =====================================================================
+   Reemplaza la barra de busqueda del hero, que prometia encontrar
+   proveedor y volvia con cero resultados en la mitad de los casos.
+
+   OJO, NO son los tokens de Cotizaciones. Los de alla
+   (--cz-glass-bg: rgba(241,248,244,.74)) estan medidos contra fondos
+   CLAROS (#fff, #FAFBFA). Sobre el verde del hero se verian como una placa
+   blanca opaca. En fondo oscuro el material se invierte: muchisima menos
+   opacidad, y el canto de luz mucho mas marcado.
+
+   Y hay un problema propio de este hero: el fondo es un degradado PLANO.
+   Un vidrio sobre un color plano no tiene nada que refractar y termina
+   leyendose como un div transparente, que es exactamente lo que pasaba.
+   Lo que lo convierte en material son tres cosas, y las tres estan abajo:
+     1. el canto especular de arriba (inset 0 1px 0)
+     2. la sombra interna de abajo, que le da espesor
+     3. un brillo propio en ::before, como si algo la iluminara desde
+        arriba a la izquierda
+   Sacar cualquiera de las tres y vuelve a ser un rectangulo translucido.
+   ===================================================================== */
+.hero-cta{
+  --hc-bg:rgba(255,255,255,.13);
+  --hc-solido:#14664A;        /* el fallback: mas CLARO que el hero, para
+                                 que la card siga leyendose levantada */
+  --hc-borde:rgba(255,255,255,.26);
+  --hc-luz:rgba(255,255,255,.38);
+
+  position:relative;overflow:hidden;isolation:isolate;
+  display:flex;align-items:center;gap:13px;width:100%;
+  margin:0 0 11px;padding:14px 15px;
+  border-radius:16px;cursor:pointer;text-align:left;
+  font-family:inherit;color:#fff;
+
+  background:var(--hc-bg);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+          backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid var(--hc-borde);
+  box-shadow:
+    inset 0 1px 0 var(--hc-luz),          /* el canto que atrapa la luz */
+    inset 0 -1px 0 rgba(0,0,0,.14),       /* el espesor, abajo */
+    0 14px 34px -18px rgba(2,20,13,.85);  /* flota sobre el verde */
+  transition:transform 200ms cubic-bezier(.23,1,.32,1),
+             box-shadow 200ms ease-out,
+             background-color 200ms ease-out;
+}
+/* El brillo propio. Sin esto, sobre un degradado plano, el vidrio no
+   tiene de donde sacar reflejo y se ve muerto. */
+.hero-cta::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.20),transparent 60%);
+}
+.hero-cta:active{transform:scale(.985)}
+.hero-cta:focus-visible{outline:2px solid #fff;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .hero-cta:hover{
+    background:rgba(255,255,255,.17);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.44),
+      inset 0 -1px 0 rgba(0,0,0,.14),
+      0 18px 40px -18px rgba(2,20,13,.9);
+  }
+}
+
+/* Los dos fallbacks redefinen TOKENS y no reglas: cualquier cosa que se
+   agregue despues queda cubierta sola. El @supports pregunta por las dos
+   formas porque Safari viejo entiende -webkit-backdrop-filter pero no la
+   version sin prefijo, y preguntando solo por la corta se le daria el
+   fallback a un navegador que en realidad sabe pintar el vidrio. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .hero-cta{--hc-bg:var(--hc-solido);--hc-borde:rgba(255,255,255,.3)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .hero-cta{--hc-bg:var(--hc-solido);--hc-borde:rgba(255,255,255,.3)}
+  .hero-cta{-webkit-backdrop-filter:none;backdrop-filter:none}
+  .hero-cta::before{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .hero-cta{transition:none}
+  .hero-cta:active{transform:none}
+}
+
+/* El chip del icono: el mismo material, un escalon mas claro. Que sea de
+   vidrio y no un cuadrado de color solido es lo que lo hace parecer parte
+   de la misma pieza. */
+.hero-cta-ico{
+  width:40px;height:40px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+}
+.hero-cta-txt{flex:1;min-width:0;display:block}
+/* SIN font-family a proposito. La regla `body, body *` del principio de este
+   archivo unifica toda la app en la fuente del sistema con !important, y un
+   !important de hoja de estilos le gana hasta a un estilo inline. O sea que
+   todos los `font-family:'Inter'` que hay dados vuelta por el proyecto no se
+   aplican nunca. Poner uno mas aca seria sumar letra muerta; poner
+   !important haria que esta card fuera lo unico del sitio en otra fuente. */
+
+/* Blanco sobre el vidrio, en el punto mas claro del degradado: 5,83:1. */
+.hero-cta-tit{
+  display:block;font-size:.92rem;font-weight:800;
+  color:#fff;letter-spacing:-.012em;margin-bottom:2px;
+}
+/* .88 y no .80: con .80 el contraste daba 4,39:1 y no pasaba AA. Con .88
+   da 4,93:1. El gris nunca se aclara para acomodar al vidrio; se ajusta
+   el texto o se ajusta el vidrio. */
+.hero-cta-sub{
+  display:block;font-size:.76rem;line-height:1.4;
+  color:rgba(255,255,255,.88);
+}
+.hero-cta-chev{display:flex;flex-shrink:0;color:rgba(255,255,255,.75)}
