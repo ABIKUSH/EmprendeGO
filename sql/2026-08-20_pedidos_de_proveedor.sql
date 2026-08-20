@@ -412,7 +412,10 @@ select
 -- indice unico por (solicitud_id, proveedor_id), asi que si (a) y (b)
 -- compartieran pedido, la segunda rebotaria por DUPLICADA y no por el CHECK
 -- del precio: diria MAL cuando en realidad el CHECK anda bien.
-drop table if exists prueba_check;
+-- pg_temp. calificado a proposito: un "drop table if exists prueba_check" a
+-- secas resuelve por search_path y, si algun dia existiera una tabla real con
+-- ese nombre, la borraria. Asi el drop no puede salir del esquema temporal.
+drop table if exists pg_temp.prueba_check;
 create temp table prueba_check (paso text, resultado text);
 
 do $$
