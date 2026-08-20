@@ -352,6 +352,31 @@ function quitarAcentos(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
+/* Pedido mínimo del proveedor, en pesos, para poder ordenarlo y compararlo.
+   `pedido_minimo` es texto libre de un selector fijo: "Sin mínimo",
+   "Desde $5.000" ... "Desde $100.000+".
+
+   OJO CON EL "SIN MÍNIMO". Antes esto se resolvía inline con
+   `parseInt(s.replace(/[^0-9]/g,'')) || 999999`, y como "Sin mínimo" no tiene
+   ningún dígito caía en 999999: o sea que al ordenar por "Menor pedido
+   mínimo" los proveedores SIN mínimo aparecían ÚLTIMOS, justo al revés de lo
+   que la persona pidió. Sin mínimo es cero, y cero va primero.
+
+   Un valor vacío o nulo cuenta igual que "Sin mínimo": es lo que la ficha del
+   proveedor le muestra al comprador (`p.pedido_minimo || 'Sin minimo'`), así
+   que tiene que ordenarse como lo que se ve.
+
+   Vive acá y no en cada pantalla porque lo usan dos lugares que NO se pueden
+   contradecir: el orden del buscador y el cruce contra el presupuesto en
+   Cotizaciones (js/cotizaciones.js, minimoEnPesos). */
+function minimoPedidoNum(txt) {
+  const s = String(txt == null ? '' : txt).toLowerCase();
+  if (!s.trim()) return 0;
+  if (s.includes('sin')) return 0;
+  const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
+  return isFinite(n) ? n : 0;
+}
+
 function mapExcelCat(raw) {
   if (!raw) return null;
   const n = quitarAcentos(raw.toLowerCase());
@@ -1859,8 +1884,7 @@ function filterProvs() {
   if (orden === 'rating') {
     result = result.slice().sort((a, b) => getProvRating(String(b.id)).avg - getProvRating(String(a.id)).avg);
   } else if (orden === 'minimo') {
-    const num = s => parseInt((s || '').replace(/[^0-9]/g, '')) || 999999;
-    result = result.slice().sort((a, b) => num(a.pedido_minimo) - num(b.pedido_minimo));
+    result = result.slice().sort((a, b) => minimoPedidoNum(a.pedido_minimo) - minimoPedidoNum(b.pedido_minimo));
   } else if (orden === 'nuevo') {
     result = result.slice().sort((a, b) => String(b.id).localeCompare(String(a.id)));
   }

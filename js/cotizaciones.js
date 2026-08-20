@@ -170,17 +170,18 @@
     return p ? `Cotizó ${p} por ${uSingular(sol)}` : 'Cotizó';
   }
 
-  /* Pedido minimo del proveedor, en pesos. Es texto libre de un selector fijo
-     ("Sin mínimo", "Desde $5.000" ... "Desde $100.000+").
+  /* Pedido minimo del proveedor, en pesos. Delega en minimoPedidoNum() de
+     app.js, que es la MISMA cuenta que usa el buscador para ordenar por
+     "menor pedido mínimo".
 
-     No se reusa el num() del buscador de app.js: ese devuelve 999999 cuando
-     no encuentra digitos, asi que manda "Sin mínimo" al fondo de la lista de
-     "menor pedido mínimo", justo al reves de lo que corresponde. Aca "sin
-     minimo" es 0, que es lo que significa. */
+     Que sea una sola funcion no es prolijidad: si las dos se separan, el
+     buscador y Cotizaciones empiezan a contestar cosas distintas sobre el
+     mismo proveedor. La copia local es solo el bote salvavidas por si este
+     archivo se carga sin app.js. */
   function minimoEnPesos(txt) {
-    const s = String(txt || '').toLowerCase();
-    if (!s.trim()) return 0;
-    if (s.includes('sin')) return 0;
+    if (typeof minimoPedidoNum === 'function') return minimoPedidoNum(txt);
+    const s = String(txt == null ? '' : txt).toLowerCase();
+    if (!s.trim() || s.includes('sin')) return 0;
     const n = parseInt(s.replace(/[^0-9]/g, ''), 10);
     return isFinite(n) ? n : 0;
   }
@@ -3383,25 +3384,51 @@
       const uid = await getUid();
       if (!uid) return;
 
-      const { data, error } = await sb.from('solicitudes')
-        .select('id,titulo,respuestas,estado,cierra_at')
+      const { data, error } = await conFallback(() => sb.from('solicitudes')
+        .select('id,titulo,respuestas,estado,cierra_at' + (nivelSql >= 2 ? ',tipo' : ''))
         .eq('usuario_id', uid).gt('respuestas', 0)
-        .order('created_at', { ascending: false }).limit(20);
+        .order('created_at', { ascending: false }).limit(20));
       if (error || !data || !data.length) return;
 
-      let nuevas = 0, pedidos = 0, ultimo = null;
+      let nuevas = 0, pedidos = 0, ultimo = null, conNovedad = [];
       data.forEach(p => {
         const d = (p.respuestas || 0) - vistasDe(p.id);
-        if (d > 0) { nuevas += d; pedidos++; ultimo = p; }
+        if (d > 0) { nuevas += d; pedidos++; ultimo = p; conNovedad.push(p); }
       });
       if (nuevas <= 0) return;
 
+      // "Le cotizaron" solo si de verdad le cotizaron. Si todo lo que tiene
+      // novedades son pedidos de proveedor, no hubo ninguna cotizacion: hubo
+      // respuestas, y asi hay que decirlo.
+      const soloB = conNovedad.length > 0 && conNovedad.every(esPedidoB);
+
       try { localStorage.setItem(AVISO_DIA, hoy); } catch (e) { }
-      setTimeout(() => pintarAvisoCotiz(nuevas, pedidos, ultimo), 5000);
+      setTimeout(() => pintarAvisoCotiz(nuevas, pedidos, ultimo, soloB), 5000);
     } catch (e) { console.warn('[cotiz] aviso', e); }
   }
 
-  function pintarAvisoCotiz(nuevas, pedidos, ultimo) {
+  /* La redaccion del aviso, aparte del DOM: es lo unico de este modal que
+     cambia segun el caso, y separada se puede revisar sin abrir un navegador.
+
+     Un pedido de proveedor no recibe cotizaciones, recibe respuestas: nadie
+     le puso precio a nada. Y lo que hay para comparar tampoco es lo mismo,
+     asi que la frase de abajo tambien cambia. */
+  function textoAvisoCotiz(nuevas, pedidos, ultimo, soloB) {
+    const queComparar = soloB
+      ? 'Compare cuánto le cubre cada uno, su mínimo y su envío, y contacte al que le sirva.'
+      : 'Compare precio, mínimo y entrega, y contacte al que le sirva.';
+    return {
+      rotulo: soloB ? 'Le respondieron' : 'Le cotizaron',
+      titulo: soloB
+        ? (nuevas === 1 ? 'respuesta nueva' : 'respuestas nuevas')
+        : (nuevas === 1 ? 'cotización nueva' : 'cotizaciones nuevas'),
+      detalle: pedidos === 1 && ultimo
+        ? `En su pedido “${esc(ultimo.titulo)}”. ${queComparar}`
+        : `En ${pedidos} de sus pedidos. ${queComparar}`
+    };
+  }
+
+  function pintarAvisoCotiz(nuevas, pedidos, ultimo, soloB) {
     if (document.getElementById('modal-aviso-cotiz')) return;
     // Si el proveedor ya tiene abierto su propio cartel, no encimar otro.
     if (document.getElementById('modal-aviso-intencion')) return;
@@ -3409,10 +3436,7 @@
     let quieto = false;
     try { quieto = window.matchMedia('(prefers-reduced-motion:reduce)').matches; } catch (e) { }
 
-    const titulo = nuevas === 1 ? 'cotización nueva' : 'cotizaciones nuevas';
-    const detalle = pedidos === 1 && ultimo
-      ? `En su pedido “${esc(ultimo.titulo)}”. Compare precio, mínimo y entrega, y contacte al que le sirva.`
-      : `En ${pedidos} de sus pedidos. Compare precio, mínimo y entrega, y contacte al que le sirva.`;
+    const { rotulo, titulo, detalle } = textoAvisoCotiz(nuevas, pedidos, ultimo, soloB);
     // Con un solo pedido se entra derecho a sus cotizaciones; con varios, a la lista.
     const accion = pedidos === 1 && ultimo
       ? `cerrarAvisoCotiz();abrirCotizaciones().then(function(){cotizVerRespuestas('${esc(String(ultimo.id))}')})`
@@ -3432,13 +3456,13 @@
     overlay.innerHTML = `<div class="cz-aviso-card" role="dialog" aria-modal="true" aria-labelledby="cz-aviso-tit"
         style="background:#fff;border-radius:22px;padding:24px 22px 22px;width:100%;max-width:400px;position:relative;transform:scale(.94);opacity:0;transition:transform .32s cubic-bezier(.2,.8,.25,1),opacity .3s ease">
       <button onclick="cerrarAvisoCotiz()" aria-label="Cerrar" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;color:#aaa;cursor:pointer;line-height:1">&times;</button>
-      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">Le cotizaron</div>
+      <div style="font-size:.64rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#F97316;margin-bottom:12px">${esc(rotulo)}</div>
       <div id="cz-aviso-tit" style="display:flex;align-items:baseline;gap:9px;margin-bottom:6px">
         <span style="font-size:2.6rem;font-weight:900;color:${VERDE};line-height:1;font-variant-numeric:tabular-nums">${nuevas}</span>
         <span style="font-size:.92rem;font-weight:800;color:#1A1A1A;line-height:1.2">${titulo}</span>
       </div>
       <div style="font-size:.82rem;color:#777;line-height:1.5;margin-bottom:18px">${detalle}</div>
-      <button onclick="${accion}" style="width:100%;background:${VERDE};color:#fff;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">Ver las cotizaciones</button>
+      <button onclick="${accion}" style="width:100%;background:${VERDE};color:#fff;border:none;border-radius:12px;padding:14px;font-family:inherit;font-size:.9rem;font-weight:800;cursor:pointer;margin-bottom:8px">${soloB ? 'Ver las respuestas' : 'Ver las cotizaciones'}</button>
       <button onclick="cerrarAvisoCotiz()" style="width:100%;background:none;border:none;color:#999;font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;padding:4px">Ver más tarde</button>
     </div>`;
     overlay.onclick = e => { if (e.target === overlay) cerrarAvisoCotiz(); };
