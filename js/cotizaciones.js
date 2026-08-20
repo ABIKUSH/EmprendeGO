@@ -145,7 +145,12 @@
     let arr = v;
     if (typeof arr === 'string') { try { arr = JSON.parse(arr); } catch (e) { return []; } }
     if (!Array.isArray(arr)) return [];
-    return arr.map(x => String(x == null ? '' : x).trim()).filter(Boolean).slice(0, 12);
+    // Se descarta lo que NO sea texto en vez de convertirlo: String({}) da
+    // "[object Object]", y eso terminaba pintado en la tarjeta. La base ya lo
+    // impide con cotiz_lista_de_textos(), pero la pantalla no se apoya en eso:
+    // la clave anonima es publica y las filas viejas son anteriores al CHECK.
+    return arr.filter(x => typeof x === 'string')
+      .map(x => x.trim()).filter(Boolean).slice(0, 12);
   }
 
   const productosDe = s => listaTexto(s && s.productos);

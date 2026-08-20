@@ -91,6 +91,42 @@ end $$;
 
 
 -- ---------------------------------------------------------------------
+-- 0.bis) AYUDANTE PARA VALIDAR LAS LISTAS
+--
+-- Un CHECK no puede llevar una subconsulta adentro: Postgres lo rechaza con
+-- 0A000 "cannot use subquery in check constraint". Y para saber si TODOS los
+-- elementos de un array json son texto hace falta recorrerlos, o sea una
+-- subconsulta.
+--
+-- La salida es meterla en una funcion: el CHECK llama a la funcion, y la
+-- subconsulta queda adentro de ella, que si esta permitido.
+--
+-- IMMUTABLE porque para el mismo valor devuelve siempre lo mismo; es lo que
+-- habilita usarla en un CHECK.
+--
+-- No se le revoca el EXECUTE (a diferencia de cotiz_set_tipo): esta funcion
+-- se evalua como parte del INSERT del propio usuario. Es un predicado puro
+-- sobre un valor que quien inserta ya tiene en la mano, asi que no expone
+-- absolutamente nada.
+-- ---------------------------------------------------------------------
+create or replace function public.cotiz_lista_de_textos(v jsonb)
+returns boolean
+language sql
+immutable
+set search_path = public, pg_temp
+as $$
+  select v is null
+      or (
+        jsonb_typeof(v) = 'array'
+        and not exists (
+          select 1 from jsonb_array_elements(v) e
+           where jsonb_typeof(e.value) <> 'string'
+        )
+      );
+$$;
+
+
+-- ---------------------------------------------------------------------
 -- 1) SOLICITUDES: que clase de pedido es
 --
 -- default 'producto' y NOT NULL: los pedidos que ya estan publicados pasan
@@ -121,12 +157,9 @@ alter table public.solicitudes add constraint solicitudes_productos_chk
       jsonb_typeof(productos) = 'array'
       and jsonb_array_length(productos) <= 12
       and length(productos::text) <= 1000
-      -- todos los elementos tienen que ser texto: si entra un objeto o un
-      -- numero, la pantalla lo pintaria como "[object Object]".
-      and not exists (
-        select 1 from jsonb_array_elements(productos) e
-         where jsonb_typeof(e.value) <> 'string'
-      )
+      -- Todos los elementos tienen que ser texto. La comprobacion vive en la
+      -- funcion del paso 0.bis porque un CHECK no admite subconsultas.
+      and public.cotiz_lista_de_textos(productos)
     )
   );
 
@@ -164,10 +197,7 @@ alter table public.cotizaciones add constraint cotizaciones_cubre_chk
       jsonb_typeof(cubre) = 'array'
       and jsonb_array_length(cubre) <= 12
       and length(cubre::text) <= 1000
-      and not exists (
-        select 1 from jsonb_array_elements(cubre) e
-         where jsonb_typeof(e.value) <> 'string'
-      )
+      and public.cotiz_lista_de_textos(cubre)
     )
   );
 
@@ -447,6 +477,8 @@ end $$;
 --
 --   drop trigger if exists trg_cotiz_set_tipo on public.cotizaciones;
 --   drop function if exists public.cotiz_set_tipo();
+--   -- la de las listas va DESPUES de dropear los CHECK que la usan:
+--   drop function if exists public.cotiz_lista_de_textos(jsonb);
 --
 --   alter table public.cotizaciones drop constraint if exists cotizaciones_precio_chk;
 --   -- OJO: esto falla si ya hay respuestas tipo proveedor guardadas (tienen
