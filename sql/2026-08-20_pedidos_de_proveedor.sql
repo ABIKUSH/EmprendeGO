@@ -421,27 +421,36 @@ create temp table prueba_check (paso text, resultado text);
 do $$
 declare
   v_prov   uuid;
+  v_uid    uuid;
   v_sol_b1 uuid;
   v_sol_b2 uuid;
   v_sol_a  uuid;
 begin
   select id into v_prov from public.proveedores limit 1;
-  if v_prov is null then
-    insert into prueba_check values ('armado', 'SALTEADA: no hay ningun proveedor cargado con que probar');
+
+  -- solicitudes.usuario_id es NOT NULL y su default es auth.uid(), que en el
+  -- editor SQL no existe (no hay sesion): de ahi salia el "null value in
+  -- column usuario_id". Se toma el de un pedido real en vez de inventar un
+  -- uuid, que rebotaria contra la foreign key.
+  -- comprador_nombre tampoco tiene default, asi que va a mano.
+  select usuario_id into v_uid
+    from public.solicitudes where usuario_id is not null limit 1;
+
+  if v_prov is null or v_uid is null then
+    insert into prueba_check values ('armado',
+      'SALTEADA: hace falta al menos un proveedor y un pedido previo con que probar');
     return;
   end if;
 
-  -- El armado va aparte del resto: si solicitudes tiene alguna columna
-  -- obligatoria que este bloque no completa, o si salta el trigger del tope
-  -- diario de pedidos, eso NO es un problema de esta migracion y no tiene
-  -- que parecerlo.
+  -- El armado va aparte del resto: si salta el trigger del tope diario de
+  -- pedidos, eso NO es un problema de esta migracion y no tiene que parecerlo.
   begin
-    insert into public.solicitudes (titulo, tipo)
-      values ('_prueba check precio B1_', 'proveedor') returning id into v_sol_b1;
-    insert into public.solicitudes (titulo, tipo)
-      values ('_prueba check precio B2_', 'proveedor') returning id into v_sol_b2;
-    insert into public.solicitudes (titulo, tipo)
-      values ('_prueba check precio A_',  'producto')  returning id into v_sol_a;
+    insert into public.solicitudes (usuario_id, comprador_nombre, titulo, tipo)
+      values (v_uid, '_prueba_', '_prueba check precio B1_', 'proveedor') returning id into v_sol_b1;
+    insert into public.solicitudes (usuario_id, comprador_nombre, titulo, tipo)
+      values (v_uid, '_prueba_', '_prueba check precio B2_', 'proveedor') returning id into v_sol_b2;
+    insert into public.solicitudes (usuario_id, comprador_nombre, titulo, tipo)
+      values (v_uid, '_prueba_', '_prueba check precio A_',  'producto')  returning id into v_sol_a;
   exception when others then
     insert into prueba_check values ('armado',
       'SALTEADA: no se pudo crear el pedido de prueba -> ' || sqlerrm);
