@@ -404,72 +404,87 @@ select
 -- Tiene que imprimir las tres lineas "BIEN". Si alguna dice "MAL", NO siga
 -- adelante con el push.
 -- =====================================================================
+-- Los resultados van a una tabla temporal y no a raise notice: el editor de
+-- Supabase muestra los result sets, pero puede tragarse los notices y ahi la
+-- prueba mas importante quedaria invisible.
+--
+-- OJO CON UNA COSA: cada prueba usa SU PROPIO pedido. cotizaciones tiene un
+-- indice unico por (solicitud_id, proveedor_id), asi que si (a) y (b)
+-- compartieran pedido, la segunda rebotaria por DUPLICADA y no por el CHECK
+-- del precio: diria MAL cuando en realidad el CHECK anda bien.
+drop table if exists prueba_check;
+create temp table prueba_check (paso text, resultado text);
+
 do $$
 declare
-  v_prov  uuid;
-  v_sol_b uuid;
-  v_sol_a uuid;
+  v_prov   uuid;
+  v_sol_b1 uuid;
+  v_sol_b2 uuid;
+  v_sol_a  uuid;
 begin
   select id into v_prov from public.proveedores limit 1;
   if v_prov is null then
-    raise notice 'SALTEADA: no hay ningun proveedor cargado con que probar.';
+    insert into prueba_check values ('armado', 'SALTEADA: no hay ningun proveedor cargado con que probar');
     return;
   end if;
 
   -- El armado va aparte del resto: si solicitudes tiene alguna columna
   -- obligatoria que este bloque no completa, o si salta el trigger del tope
-  -- diario de pedidos, eso NO es un problema de esta migracion y no tiene que
-  -- parecerlo. Se avisa y se sale.
+  -- diario de pedidos, eso NO es un problema de esta migracion y no tiene
+  -- que parecerlo.
   begin
     insert into public.solicitudes (titulo, tipo)
-    values ('_prueba del check de precio (tipo B)_', 'proveedor')
-    returning id into v_sol_b;
-
+      values ('_prueba check precio B1_', 'proveedor') returning id into v_sol_b1;
     insert into public.solicitudes (titulo, tipo)
-    values ('_prueba del check de precio (tipo A)_', 'producto')
-    returning id into v_sol_a;
+      values ('_prueba check precio B2_', 'proveedor') returning id into v_sol_b2;
+    insert into public.solicitudes (titulo, tipo)
+      values ('_prueba check precio A_',  'producto')  returning id into v_sol_a;
   exception when others then
-    raise notice 'SALTEADA: no se pudo crear el pedido de prueba (%).', sqlerrm;
-    raise notice '  No es un problema de esta migracion. Las comprobaciones 1 y 2 son las que mandan.';
+    insert into prueba_check values ('armado',
+      'SALTEADA: no se pudo crear el pedido de prueba -> ' || sqlerrm);
+    insert into prueba_check values ('armado',
+      'No es un problema de esta migracion. Mandan las comprobaciones 1 y 2.');
     return;
   end;
 
-  -- a) respuesta a un pedido B SIN precio: tiene que ENTRAR
+  -- a) respuesta a un pedido de proveedor SIN precio: tiene que ENTRAR
   begin
     insert into public.cotizaciones (solicitud_id, proveedor_id, cubre)
-    values (v_sol_b, v_prov, '["Sabanas","Toallas"]'::jsonb);
-    raise notice 'BIEN (a): una respuesta tipo proveedor entra sin precio.';
+    values (v_sol_b1, v_prov, '["Sabanas","Toallas"]'::jsonb);
+    insert into prueba_check values ('a) respuesta de proveedor SIN precio', 'BIEN: entra');
   exception when others then
-    raise notice 'MAL  (a): deberia haber entrado y fallo -> %', sqlerrm;
+    insert into prueba_check values ('a) respuesta de proveedor SIN precio', 'MAL: ' || sqlerrm);
   end;
 
-  -- b) respuesta a un pedido B CON precio: tiene que REBOTAR
+  -- b) respuesta a un pedido de proveedor CON precio: tiene que REBOTAR
   begin
     insert into public.cotizaciones (solicitud_id, proveedor_id, precio)
-    values (v_sol_b, v_prov, 1000);
-    raise notice 'MAL  (b): entro una respuesta tipo proveedor con precio.';
-  exception when check_violation then
-    raise notice 'BIEN (b): rebota una respuesta tipo proveedor que trae precio.';
+    values (v_sol_b2, v_prov, 1000);
+    insert into prueba_check values ('b) respuesta de proveedor CON precio', 'MAL: entro y no deberia');
+  exception
+    when check_violation then
+      insert into prueba_check values ('b) respuesta de proveedor CON precio', 'BIEN: rebota');
+    when others then
+      insert into prueba_check values ('b) respuesta de proveedor CON precio',
+        'MAL: rebota por otro motivo -> ' || sqlerrm);
   end;
 
-  -- c) cotizacion a un pedido A SIN precio: tiene que REBOTAR
+  -- c) cotizacion a un pedido de producto SIN precio: tiene que REBOTAR
   begin
     insert into public.cotizaciones (solicitud_id, proveedor_id)
     values (v_sol_a, v_prov);
-    raise notice 'MAL  (c): entro una cotizacion de producto sin precio.';
+    insert into prueba_check values ('c) cotizacion de producto SIN precio', 'MAL: entro y no deberia');
   exception when others then
-    raise notice 'BIEN (c): una cotizacion de producto sigue exigiendo su precio.';
+    insert into prueba_check values ('c) cotizacion de producto SIN precio', 'BIEN: sigue exigiendo precio');
   end;
 
-  -- Se deshace todo: la prueba no deja ni un pedido ni una cotizacion.
-  raise exception using message = '__fin_de_la_prueba__';
-exception when others then
-  if sqlerrm = '__fin_de_la_prueba__' then
-    raise notice 'Prueba terminada. No quedo nada guardado.';
-  else
-    raise;
-  end if;
+  -- Se borra todo. Las cotizaciones de prueba se van solas con el pedido
+  -- (ON DELETE CASCADE).
+  delete from public.solicitudes where id in (v_sol_b1, v_sol_b2, v_sol_a);
+  insert into prueba_check values ('limpieza', 'Listo: no quedo nada guardado');
 end $$;
+
+select * from prueba_check;
 
 
 -- =====================================================================
