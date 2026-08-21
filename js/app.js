@@ -66,7 +66,7 @@ function haptic(type) {
 const PROVINCIAS = ['Buenos Aires', 'CABA', 'Catamarca', 'Chaco', 'Chubut', 'Córdoba', 'Corrientes', 'Entre Ríos', 'Formosa', 'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Río Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz', 'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán'];
 
 // ===== RUBROS / CATEGORÍAS =====
-const RUBROS_LISTA = ['Tecnología','Indumentaria','Calzado','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Lencería','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+const RUBROS_LISTA = ['Tecnología','Indumentaria','Calzado','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Perfumería','Bijouterie y Accesorios','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Lencería','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 const RUBROS_ICONS = {
   'Tecnología':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>`,
   'Indumentaria':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.86H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.86l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg>`,
@@ -87,6 +87,8 @@ const RUBROS_ICONS = {
   'Lencería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
   'Librería y Papelería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>`,
   'Marroquinería y Bolsos':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>`,
+  'Perfumería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4v3h-4z"/><path d="M9 5h6a4 4 0 0 1 4 4v9a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V9a4 4 0 0 1 4-4z"/><line x1="9" y1="12" x2="15" y2="12"/></svg>`,
+  'Bijouterie y Accesorios':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l3 6-9 12L3 9z"/><line x1="3" y1="9" x2="21" y2="9"/><path d="M12 21 9 9l3-6 3 6z"/></svg>`,
   'Limpieza':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a8 8 0 0 1-8-8c0-4.314 7.5-12.5 8-12.5s8 8.186 8 12.5a8 8 0 0 1-8 8z"/></svg>`,
   'Blanquería':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M22 8V4H2"/><rect x="2" y="14" width="20" height="6" rx="2"/><path d="M6 14v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/></svg>`,
   'Mascotas':`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/></svg>`,
@@ -283,7 +285,7 @@ const SUBCATEGORIA_MAP = {
 // Excel). Tiene que cubrir los mismos rubros que RUBROS_LISTA: 'Lencería' y
 // 'Calzado' faltaban acá, así que un proveedor de esos rubros no tenía forma de
 // elegirlos y sus productos terminaban cayendo en Indumentaria.
-const CAT_PRINCIPAL = ['Tecnología','Indumentaria','Calzado','Lencería','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
+const CAT_PRINCIPAL = ['Tecnología','Indumentaria','Calzado','Lencería','Hogar y Deco','Bazar','Alimentos','Belleza y Salud','Perfumería','Bijouterie y Accesorios','Deportes','Automotor','Construcción','Servicios','Juguetería','Ferretería','Iluminación','Muebles','Textil y Telas','Librería y Papelería','Marroquinería y Bolsos','Limpieza','Blanquería','Mascotas','Bebés y Niños','Electrónica','Herramientas','Packaging','Otro'];
 
 const CAT_SUBCATS = {
   'Tecnología': ['Smartphones', 'Computadoras', 'Tablets', 'Accesorios', 'Periféricos'],
@@ -291,7 +293,9 @@ const CAT_SUBCATS = {
   'Hogar y Deco': ['Decoración', 'Cocina', 'Baño', 'Jardín', 'Organización'],
   'Bazar': ['Descartables', 'Artículos de regalo', 'Vajilla', 'Mayoreo general'],
   'Alimentos': ['Secos', 'Bebidas', 'Snacks', 'Golosinas', 'Congelados'],
-  'Belleza y Salud': ['Perfumería', 'Cuidado personal', 'Suplementos', 'Cosméticos'],
+  'Belleza y Salud': ['Cuidado personal', 'Suplementos', 'Cosméticos', 'Dermocosmética'],
+  'Perfumería': ['Perfumes importados', 'Perfumes árabes', 'Extractos', 'Body splash', 'Difusores'],
+  'Bijouterie y Accesorios': ['Acero quirúrgico', 'Plata', 'Enchapado', 'Relojes', 'Anteojos'],
   'Deportes': ['Indumentaria deportiva', 'Equipamiento', 'Nutrición deportiva'],
   'Automotor': ['Accesorios', 'Repuestos', 'Limpieza automotor'],
   'Construcción': ['Materiales', 'Pinturas', 'Seguridad', 'Sanitarios'],
@@ -630,8 +634,16 @@ const RUBRO_LEGACY = {
   'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Marroquinería y Bolsos', 'Zapatos': 'Calzado', 'Zapatillas': 'Calzado',
   'Telas e insumos textiles': 'Textil y Telas', 'Juguetes y juegos': 'Juguetería', 'Librería y papelería': 'Librería y Papelería',
   'Alimentos y bebidas': 'Alimentos', 'Tecnologia': 'Tecnología',
+  // Rubros que quedaron guardados en la base con otro nombre y NO estaban acá:
+  // sin esta entrada matchesCat() nunca los hacía coincidir con ningún chip y
+  // el proveedor era invisible en el filtro por categoría (se veía el rubro en
+  // su ficha, pero no aparecía al filtrar). Caso 'Perfumería' / 'Bijouterie'.
+  'Papelería y Librería': 'Librería y Papelería', 'Regalería': 'Bazar',
+  'Perfumeria': 'Perfumería', 'Bijouterie': 'Bijouterie y Accesorios',
+  'Accesorios': 'Bijouterie y Accesorios', 'Joyas': 'Bijouterie y Accesorios',
   // Current rubros map to themselves
   'Tecnología': 'Tecnología', 'Indumentaria': 'Indumentaria', 'Calzado': 'Calzado', 'Hogar y Deco': 'Hogar y Deco',
+  'Lencería': 'Lencería', 'Perfumería': 'Perfumería', 'Bijouterie y Accesorios': 'Bijouterie y Accesorios',
   'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Belleza y Salud': 'Belleza y Salud',
   'Deportes': 'Deportes', 'Automotor': 'Automotor', 'Construcción': 'Construcción',
   'Servicios': 'Servicios', 'Juguetería': 'Juguetería', 'Ferretería': 'Ferretería',
