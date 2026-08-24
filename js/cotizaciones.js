@@ -1475,17 +1475,31 @@
      Se pide una sola vez por sesion. Cambia lento y el feed se recarga en
      cada ida y vuelta; volver a pedirlo cada vez seria puro desperdicio.
      Ante un error se deja [] y no se reintenta: el carril simplemente no
-     aparece y la pantalla queda como estaba. */
-  async function cargarDemanda() {
-    if (st.demanda !== null) return;
-    try {
-      const { data, error } = await sb.rpc('cotiz_demanda_sin_respuesta', { p_limit: 10 });
-      if (error) throw error;
-      st.demanda = (data || []).filter(d => d && d.termino);
-    } catch (e) {
-      console.warn('[cotiz] demanda', e);
-      st.demanda = [];
-    }
+     aparece y la pantalla queda como estaba.
+
+     OJO con la guarda de "una sola vez": st.demanda sigue valiendo null
+     durante TODA la consulta, asi que dos llamadas seguidas la pasaban las
+     dos y mandaban la consulta dos veces. Por eso se comparte la promesa en
+     vuelo: el segundo que llega se cuelga de la primera en lugar de abrir
+     otra. */
+  let demandaEnVuelo = null;
+
+  function cargarDemanda() {
+    if (st.demanda !== null) return Promise.resolve();
+    if (demandaEnVuelo) return demandaEnVuelo;
+    demandaEnVuelo = (async () => {
+      try {
+        const { data, error } = await sb.rpc('cotiz_demanda_sin_respuesta', { p_limit: 10 });
+        if (error) throw error;
+        st.demanda = (data || []).filter(d => d && d.termino);
+      } catch (e) {
+        console.warn('[cotiz] demanda', e);
+        st.demanda = [];
+      } finally {
+        demandaEnVuelo = null;
+      }
+    })();
+    return demandaEnVuelo;
   }
 
   /* Trae las cotizaciones de UN pedido y deja sus proveedores en provsCache.
@@ -1604,9 +1618,19 @@
     const cont = $('screen-cotizaciones');
     if (!cont) return;
     let html = '';
-    // La portada se pinta sin esperar datos: es solo explicativa.
-    if (st.vista === 'portada') html = pantallaPortada();
-    else if (st.cargando) html = pantallaCargando();
+    /* El esqueleto de carga va PRIMERO, antes que la portada.
+       Antes iba despues y eso lo volvia inalcanzable justo donde mas falta
+       hacia: cotizIr() prende st.cargando ANTES de cambiar st.vista, asi que
+       al salir de la portada con "Probar" esta condicion todavia leia
+       'portada' y repintaba la portada identica en lugar del esqueleto. La
+       pantalla parecia no responder hasta que llegaban los datos, y la gente
+       volvia a tocar el boton.
+
+       La portada sigue pintandose sin esperar datos: los tres caminos que
+       entran a ella (abrirCotizaciones, cotizPedirPara, cotizVerPortada)
+       dejan st.cargando en false a proposito. */
+    if (st.cargando) html = pantallaCargando();
+    else if (st.vista === 'portada') html = pantallaPortada();
     else if (st.vista === 'login') html = pantallaLogin();
     else if (st.vista === 'bifurcacion') html = pantallaBifurcacion();
     else if (st.vista === 'confirmado') html = pantallaConfirmado();
@@ -1758,7 +1782,10 @@
     await cotizIr('feed');
   };
 
-  window.cotizVerPortada = function () { st.vista = 'portada'; render(); };
+  // st.cargando explicito: la portada es la unica pantalla que se pinta sin
+  // esperar datos, y desde que el esqueleto tiene prioridad en render() una
+  // bandera colgada de una carga anterior la taparia.
+  window.cotizVerPortada = function () { st.vista = 'portada'; st.cargando = false; render(); };
 
   // Dos versiones: la de siempre (entro sin sesion y sin haber escrito nada)
   // y la del ultimo paso, cuando ya escribio el pedido y solo falta la cuenta.
@@ -1918,6 +1945,21 @@
         <div class="cz-dem-chips">${lista.map(chip).join('')}</div>
       </div></div>
     </div>`;
+  }
+
+  /* Repinta SOLO el hueco del carril, nunca render().
+
+     El carril llega tarde a proposito (su consulta es la mas cara y ya no
+     bloquea al feed), y un render() entero en ese momento haria dos cosas
+     malas: volver a arrancar de cero la cuenta ascendente del pulso, y mandar
+     la pantalla al tope justo cuando la persona empezo a bajar. Mismo criterio
+     que pintarSeguidos().
+
+     No hace falta preguntar en que vista estamos: el hueco solo existe dentro
+     de pantallaFeed(). Si el feed no esta pintado, no hay nodo y no pasa nada. */
+  function pintarCarril() {
+    const hueco = $('cz-carril');
+    if (hueco) hueco.innerHTML = carrilDemanda();
   }
 
   /* La barra que dice si el feed esta recortado y como salirse.
@@ -2145,7 +2187,7 @@
     return header('Cotizaciones', 'closeCotiz()', accion) + `
       ${base.length ? `<div class="cz-ancho" style="padding:13px 16px 2px">${pulso()}</div>` : ''}
       ${barraSeguidos()}
-      ${carrilDemanda()}
+      <div id="cz-carril">${carrilDemanda()}</div>
       ${chipsRubro()}
       ${cuerpo}
       ${cierre}
@@ -4829,14 +4871,32 @@
 
   /* ---------------- navegacion interna ---------------- */
 
+  /* Guarda de reentrada. Sin esto, cada toque repetido mientras se cargaban
+     los datos disparaba una carga ENTERA mas, y cada una terminaba con su
+     propio render() al volver. Como animarCifras() baja la cifra del pulso a
+     cero para animarla, tres toques se veian como el contador reiniciandose
+     tres veces seguidas. Ademas mandaba la misma consulta N veces en paralelo
+     contra la instancia, que es justo lo que la hacia mas lenta. */
+  let cargandoDatos = false;
+
   window.cotizIr = async function (v) {
     vibrar('light');
+    // El toque de mas no se encola ni se ignora en silencio: la pantalla ya
+    // esta mostrando el esqueleto de esa misma carga.
+    if (cargandoDatos) return;
     // Refrescar antes de pintar: si vengo de publicar/cotizar/borrar, los
     // contadores y el feed cambiaron.
     if (v === 'feed' || v === 'mis') {
+      cargandoDatos = true;
       st.cargando = true; render();
-      await cargarDatos();
-      st.cargando = false;
+      try {
+        await cargarDatos();
+      } finally {
+        // En finally y no despues del await: si algo tirara, la pantalla se
+        // quedaria trabada en el esqueleto y sin forma de reintentar.
+        cargandoDatos = false;
+        st.cargando = false;
+      }
     }
     // La seleccion arranca de lo guardado y se edita aparte: si la persona
     // toca chips y se vuelve sin guardar, st.seguidos no se entero de nada.
@@ -4845,15 +4905,29 @@
     render();
   };
 
-  // Carga todo lo que necesita la portada: el feed publico (las dos puntas lo
-  // ven) y, ademas, mis pedidos para el puntito del boton "Mis pedidos".
+  /* Carga todo lo que necesita la portada: el feed publico (las dos puntas lo
+     ven) y, ademas, mis pedidos para el puntito del boton "Mis pedidos".
+
+     cargarDemanda() ESTABA acá adentro, colgada del mismo Promise.all, y era
+     el motivo por el que la seccion tardaba: Promise.all espera a todas, asi
+     que el feed (que vuelve en milisegundos) se quedaba esperando al carril,
+     que es decorativo y es la consulta mas cara de toda la base.
+
+     Ahora se pide aparte y SIN await. El feed se pinta apenas esta, y el
+     carril aparece solo cuando llega. Si tarda o falla, lo unico que pasa es
+     que el carril no se ve, que es exactamente lo que ya pasaba ante un
+     error. */
   async function cargarDatos() {
     try {
       await getUid();
       await (esProveedor()
-        ? Promise.all([cargarFeed(), cargarDemanda(), cargarSeguidos()])
-        : Promise.all([cargarFeed(), cargarMisPedidos(), cargarDemanda()]));
+        ? Promise.all([cargarFeed(), cargarSeguidos()])
+        : Promise.all([cargarFeed(), cargarMisPedidos()]));
     } catch (e) { console.warn('[cotiz] cargarDatos', e); }
+    // Se dispara y sigue de largo. El .catch() es por las dudas: cargarDemanda
+    // ya traga sus propios errores, pero una promesa suelta sin catch seria un
+    // unhandled rejection si eso cambiara.
+    cargarDemanda().then(pintarCarril).catch(() => { });
   }
 
   // Sale del modulo sin romper el historial de pantallas de la app.

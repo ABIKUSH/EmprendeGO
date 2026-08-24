@@ -295,7 +295,15 @@ function montar(cfg) {
     html: () => doc.getElementById('screen-cotizaciones').innerHTML,
     el: id => doc.getElementById(id),
     // El feed es el unico camino que carga datos; casi toda prueba arranca aca.
-    abrirFeed: async () => { await win.cotizIr('feed'); }
+    abrirFeed: async () => {
+      await win.cotizIr('feed');
+      // El carril de demanda ya no se espera junto con el feed: se pide aparte
+      // y se pinta cuando llega (su consulta es la mas cara de la seccion y
+      // tenerla colgada del Promise.all era lo que hacia tardar la pantalla).
+      // Este respiro deja que esa promesa suelta termine antes de que la prueba
+      // mire el DOM, en vez de depender de cuantos await hubo puertas adentro.
+      await new Promise(r => setImmediate(r));
+    }
   };
 }
 
@@ -997,7 +1005,14 @@ const proveedor = { type: 'proveedor', name: PROV.nombre, email: 'p@b.com', prov
     await m.abrirFeed();
     const chip = m.doc.querySelectorAll('.cz-dem-chip')[0];
     asegurar(chip, 'no se pinto el carril de demanda');
-    contiene(m.html(), '\\&#39;', 'la comilla no paso por el escapado doble');
+    // Se mira el HTML del hueco del carril y no el de la pantalla entera: el
+    // carril se pinta solo sobre su propio nodo (#cz-carril), asi que el DOM de
+    // mentira, que devuelve el ultimo string asignado a CADA nodo, ya no lo
+    // tiene adentro del padre. Lo que se afirma es lo mismo de siempre: el
+    // termino salio escapado por las dos capas, JavaScript y despues HTML.
+    const carril = m.doc.getElementById('cz-carril');
+    asegurar(carril, 'falta el hueco #cz-carril');
+    contiene(carril.innerHTML, '\\&#39;', 'la comilla no paso por el escapado doble');
   });
 
   await testAsync('el feed sin sesion no filtra ni ofrece rubros seguidos', async () => {
@@ -1005,6 +1020,143 @@ const proveedor = { type: 'proveedor', name: PROV.nombre, email: 'p@b.com', prov
     await m.abrirFeed();
     igual(contarTarjetas(m), 5);
     asegurar(!hay(m, '.cz-seg-barra'), 'le ofrecio seguir rubros a un visitante sin sesion');
+  });
+
+  /* =====================================================================
+     ENTRAR A LA SECCION NO SE TIENE QUE TRABAR
+
+     Lo que se rompio: tocar "Probar" en la portada no mostraba nada durante
+     varios segundos, la gente volvia a tocar, y el numero grande del pulso
+     se reiniciaba dos o tres veces antes de quedarse quieto.
+
+     Eran tres cosas sumadas, y hay una prueba por cada una:
+       1. el esqueleto de carga era inalcanzable saliendo de la portada;
+       2. sin guarda de reentrada, cada toque disparaba una carga entera;
+       3. la consulta del carril (la mas cara de la base) estaba colgada del
+          mismo Promise.all que el feed, que vuelve en milisegundos.
+     ===================================================================== */
+  seccion('Entrar a la seccion no se tiene que trabar');
+
+  /* Deja UNA consulta colgada para poder mirar la pantalla en el medio de la
+     carga. Devuelve la palanca que la suelta. */
+  function trabar(m, nombreRpc) {
+    let soltar;
+    const trabado = new Promise(r => { soltar = r; });
+    const rpcOriginal = m.ctx.sb.rpc;
+    m.ctx.sb.rpc = (nombre, args) => {
+      const cad = rpcOriginal(nombre, args);
+      if (nombre !== nombreRpc) return cad;
+      const thenOriginal = cad.then;
+      // El await de un thenable llama a .then(resolve, reject) y espera a que
+      // alguien llame a resolve; lo que .then devuelva no le importa. Por eso
+      // alcanza con demorar la llamada al original.
+      cad.then = (res, rej) => trabado.then(() => thenOriginal(res, rej));
+      return cad;
+    };
+    return soltar;
+  }
+
+  const respirar = () => new Promise(r => setImmediate(r));
+  const vecesRpc = (m, nombre) => m.sb.llamadas.filter(l => l.indexOf(nombre) >= 0).length;
+
+  /* Las dos pruebas del carril entran a la seccion con esa consulta colgada a
+     proposito. Si alguien la volviera a meter adentro del Promise.all del
+     feed, el await no volveria NUNCA y el proceso se apagaria en silencio al
+     quedarse sin nada pendiente. Con el limite falla con un mensaje que se
+     entiende, que es de lo que se trata una prueba de regresion. */
+  const conLimite = (p, msg) => Promise.race([
+    p, new Promise((_, rechazar) => setTimeout(() => rechazar(new Error(msg)), 2000))
+  ]);
+
+  await testAsync('al tocar "Probar" aparece el esqueleto, no la portada de nuevo', async () => {
+    const m = montar({ usuario: null, feed: [pedido()] });
+    await m.w.abrirCotizaciones();
+    asegurar(hay(m, '.cz-portada'), 'no se pinto la portada');
+
+    const soltar = trabar(m, 'cotiz_feed_publico');
+    const enCurso = m.w.cotizIr('feed');
+    await respirar();
+
+    // Esto es exactamente lo que fallaba: render() miraba st.vista antes que
+    // st.cargando, y cotizIr() prende st.cargando SIN haber cambiado todavia
+    // la vista. Resultado: se repintaba la portada identica y la pantalla
+    // parecia no responder.
+    asegurar(hay(m, '[aria-busy]'), 'no se pinto el esqueleto de carga');
+    asegurar(!hay(m, '.cz-portada'), 'se repinto la portada en vez del esqueleto');
+
+    soltar();
+    await enCurso;
+    asegurar(hay(m, '.cz-pulso'), 'el feed no llego a pintarse');
+  });
+
+  await testAsync('tocar "Probar" tres veces seguidas carga los datos una sola vez', async () => {
+    const m = montar({ usuario: null, feed: [pedido()] });
+    await m.w.abrirCotizaciones();
+    const antes = m.sb.llamadas.length;
+
+    // Los tres toques salen antes de que termine el primero, que es lo que
+    // hacia una persona cuando la pantalla no le contestaba.
+    await Promise.all([m.w.cotizIr('feed'), m.w.cotizIr('feed'), m.w.cotizIr('feed')]);
+    await respirar();
+
+    const feeds = m.sb.llamadas.slice(antes).filter(l => l.indexOf('cotiz_feed_publico') >= 0).length;
+    igual(feeds, 1, 'cada toque de mas volvio a cargar todo');
+    asegurar(hay(m, '.cz-pulso'), 'el feed no quedo pintado');
+  });
+
+  await testAsync('el feed no espera al carril de demanda para pintarse', async () => {
+    const m = montar({ usuario: null, feed: [pedido()] });
+    const soltar = trabar(m, 'cotiz_demanda_sin_respuesta');
+
+    // Con el carril colgado, el feed tiene que estar igual: si esto se cae,
+    // alguien lo volvio a meter adentro del Promise.all.
+    await conLimite(m.w.cotizIr('feed'), 'el feed se quedo esperando al carril');
+    asegurar(hay(m, '.cz-pulso'), 'el feed se quedo esperando al carril');
+    asegurar(hay(m, '#cz-carril'), 'falta el hueco donde se pinta el carril');
+
+    soltar();
+    await respirar();
+  });
+
+  await testAsync('volver a entrar no duplica la consulta cara del carril', async () => {
+    const m = montar({ usuario: null, feed: [pedido()] });
+    const soltar = trabar(m, 'cotiz_demanda_sin_respuesta');
+
+    // La segunda entrada pasa con la consulta anterior TODAVIA en vuelo. La
+    // guarda vieja miraba st.demanda, que sigue en null hasta que vuelve, asi
+    // que las dos pasaban y mandaban la consulta dos veces.
+    await conLimite(m.w.cotizIr('feed'), 'el feed se quedo esperando al carril');
+    await conLimite(m.w.cotizIr('feed'), 'el feed se quedo esperando al carril');
+    soltar();
+    await respirar();
+
+    igual(vecesRpc(m, 'cotiz_demanda_sin_respuesta'), 1, 'el carril se pidio de mas');
+  });
+
+  await testAsync('el carril aparece solo cuando llega, sin repintar el feed', async () => {
+    const m = montar({ usuario: null, feed: [pedido()] });
+    m.ctx.sb.rpc = (nombre, args) => {
+      const orig = crearSupabase(() => ({ data: [], error: null }));
+      const cad = orig.rpc(nombre, args);
+      cad.then = res => Promise.resolve(nombre === 'cotiz_demanda_sin_respuesta'
+        ? { data: [{ termino: 'gorras lisas', busquedas: 9 }], error: null }
+        : { data: [pedido()], error: null }).then(res);
+      return cad;
+    };
+
+    await m.w.cotizIr('feed');
+    asegurar(!hay(m, '.cz-dem-chip'), 'el carril llego antes que el feed');
+    await respirar();
+    asegurar(hay(m, '.cz-dem-chip'), 'el carril nunca aparecio');
+    // El pulso sigue en pie: el carril se pinta sobre su propio nodo y no
+    // vuelve a llamar a render(), que reiniciaria la cuenta ascendente.
+    asegurar(hay(m, '.cz-pulso'), 'pintar el carril se llevo puesto el feed');
+
+    // Volver a entrar usa el OTRO camino: la demanda ya esta en memoria, asi
+    // que el carril sale pintado de una en el propio HTML del feed en vez de
+    // llegar despues. Los dos caminos tienen que dar lo mismo.
+    await m.w.cotizIr('feed');
+    asegurar(hay(m, '.cz-dem-chip'), 'al volver a entrar el carril desaparecio');
   });
 
   // ------------------------------------------------------------------
