@@ -119,7 +119,7 @@ const SUBCATEGORIA_MAP = {
   'electronica': ['Electrónica', 'Tecnología'], 'celulares': ['Tecnología'], 'accesorios de celular': ['Tecnología'],
   'computadoras': ['Tecnología'], 'gadgets': ['Tecnología'],
   'alimentos y bebidas': ['Alimentos'], 'comida': ['Alimentos'], 'bebidas': ['Alimentos'],
-  'juguetes': ['Juguetería'], 'libreria': ['Librería y Papelería'], 'papeleria': ['Librería y Papelería'],
+  'juguete': ['Juguetería'], 'libreria': ['Librería y Papelería'], 'papeleria': ['Librería y Papelería'],
   'ferreteria': ['Ferretería'], 'herramientas': ['Herramientas', 'Ferretería'],
   'construccion': ['Construcción'], 'mascotas': ['Mascotas'],
   'bebes': ['Bebés y Niños'], 'ninos': ['Bebés y Niños'], 'packaging': ['Packaging'],
@@ -185,7 +185,12 @@ const SUBCATEGORIA_MAP = {
   'secador': ['Belleza y Salud', 'Electrónica'], 'plancha de pelo': ['Belleza y Salud'],
 
   // Hogar y Deco
+  // 'percha' y 'tendedero' están acá por la regla de "gana el que aparece
+  // primero": sin ellas, "perchas para ropa" y "tendedero de ropa" se los
+  // llevaba Indumentaria por la palabra del final. 'tender' quedó afuera a
+  // propósito por la regla 3: está adentro de atender, entender y extender.
   'espejo': ['Hogar y Deco'], 'cortina': ['Hogar y Deco'], 'alfombra': ['Hogar y Deco'],
+  'percha': ['Hogar y Deco'], 'tendedero': ['Hogar y Deco'],
   'cuadro': ['Hogar y Deco'], 'florero': ['Hogar y Deco'], 'maceta': ['Hogar y Deco'],
   'organizador': ['Hogar y Deco'], 'perchero': ['Hogar y Deco'], 'repisa': ['Hogar y Deco'],
   'estante': ['Hogar y Deco'], 'adorno': ['Hogar y Deco'], 'canasto': ['Hogar y Deco'],
@@ -279,6 +284,32 @@ const SUBCATEGORIA_MAP = {
   // Construcción
   'cemento': ['Construcción'], 'ladrillo': ['Construcción'], 'pintura': ['Construcción'],
   'membrana': ['Construcción'], 'ceramica': ['Construcción'], 'porcelanato': ['Construcción'],
+
+  /* ---------------- VOCABULARIO DE CATEGORÍA ----------------
+     Arriba hay dos capas: nombres de categoría de mayorista y nombres de
+     producto. Faltaba la tercera, que es la más obvia: el nombre del rubro
+     dicho por una persona común. Estaban 'indumentaria' y 'ferreteria', pero
+     no estaban 'bazar', 'ropa', 'juguete' ni 'tecnologia'.
+
+     Se nota en el formulario B de cotizaciones ("¿qué quiere vender?"), porque
+     esa pregunta se contesta justamente con el nombre de la categoría. Un
+     pedido real entró como "Juguetería, bazar, regalería para el día de la
+     madre" y cayó en 'Otro', que es donde un pedido no le llega a nadie.
+
+     Valen las mismas tres reglas de arriba. 'ropa' entra con sus 4 caracteres
+     porque es la palabra más usada de todas; el único falso positivo posible
+     es "europa", que nadie vende por mayor. */
+
+  'ropa': ['Indumentaria'], 'bazar': ['Bazar'], 'tecnologia': ['Tecnología'],
+  'deporte': ['Deportes'], 'deportiva': ['Deportes'], 'deportivo': ['Deportes'],
+  // 'joyeria' va aparte: NO contiene a 'joya' (joy-e-ria), así que la clave
+  // corta sola dejaba afuera la palabra más buscada de las dos.
+  'bijou': ['Bijouterie y Accesorios'], 'joya': ['Bijouterie y Accesorios'],
+  'joyeria': ['Bijouterie y Accesorios'],
+  'alimento': ['Alimentos'], 'kiosco': ['Alimentos'], 'kiosko': ['Alimentos'],
+  'regalo': ['Bazar'], 'regaleria': ['Bazar'],
+  // Primera búsqueda sin resultados del mes (61 veces) y no estaba en el mapa.
+  'electrodomestico': ['Electrónica'],
 };
 
 // Rubros que se pueden elegir al cargar un producto (carga múltiple, import de
@@ -950,6 +981,13 @@ function toggleFav(id) {
   const idx = favs.findIndex(f => String(f.id) === String(id));
   if (idx >= 0) { favs.splice(idx, 1); showToast('Eliminado de favoritos'); haptic('light'); }
   else { favs.push(p); showToast('¡Guardado en favoritos!'); haptic('success'); }
+  // Guardar en favoritos es intencion de compra sin contacto todavia: separa al que
+  // esta comparando del que solo pasa. "accion" distingue guardar de sacar.
+  trackEvent('favorito', {
+    accion: idx >= 0 ? 'quitar' : 'agregar',
+    provider_name: p.nombre,
+    provider_rubro: p.rubro || ''
+  });
   guardarFavs();
   renderFavs();
 }
@@ -1476,6 +1514,9 @@ function filtrarPorProvincia(prov) {
   document.getElementById('mapaResultados').style.display = 'block';
   document.getElementById('mapaAllProvs').style.display = 'none';
   document.getElementById('mapaResultLabel').textContent = `${lista.length} en ${prov}`;
+  // "results" ya es dimension (la usa search): sirve igual aca para detectar provincias
+  // que la gente toca y le devuelven poco o nada, que es cobertura para salir a buscar.
+  trackEvent('filtro_provincia', { provincia: prov, results: lista.length });
   const el = document.getElementById('mapaProvList');
   el.innerHTML = lista.map((p, i) => renderProvCardMini(p, i)).join('');
   el.onclick = function (e) {
@@ -1910,6 +1951,9 @@ function setChip(el, cat) {
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   el.classList.add('active');
   currentCat = cat;
+  // Navegar por rubro es el otro camino al proveedor ademas de buscar, y era el unico
+  // que no dejaba dato. "origen" separa el chip de adentro del acceso desde la home.
+  trackEvent('filtro_rubro', { rubro: cat, origen: 'chip_buscar' });
   if (buscarTab === 'productos') renderProdBuscar(currentCat, document.getElementById('searchInput')?.value || '');
   else if (buscarTab === 'servicios') renderServicios();
   else filterProvs();
@@ -1917,6 +1961,7 @@ function setChip(el, cat) {
 
 function filterCat(cat) {
   goTo('buscar');
+  trackEvent('filtro_rubro', { rubro: cat, origen: 'home' });
   // "Servicios" ya no vive en el listado de proveedores: tiene su propia pestaña.
   if (cat === 'Servicios') { switchBuscarTab('servicios', document.getElementById('tab-servicios')); return; }
   currentCat = cat;
@@ -2343,6 +2388,9 @@ async function abrirChatDirecto(id) {
   if (!p) { showToast('Proveedor no disponible'); return; }
 
   provActual = p;
+  // El chat interno es la alternativa a WhatsApp y no se medía ninguna: solo
+  // sabiamos de los que se iban por WhatsApp, no de los que se quedaban adentro.
+  trackEvent('abrir_chat', { provider_name: p.nombre, provider_rubro: p.rubro || '' });
   document.getElementById('chat-nombre').textContent = p.nombre;
   document.getElementById('chat-rubro').textContent = p.rubro || 'Proveedor';
 
@@ -2903,6 +2951,9 @@ function handleLogin(user) {
   currentUser = user;
   if (user.type === 'user') cargarHistorialLocal(user.email);
   updateTopbar();
+  // Hasta ahora solo se medía el sign_up del PROVEEDOR: el login del comprador,
+  // que es el grueso, no dejaba rastro. "tipo" separa comprador de proveedor.
+  trackEvent('login', { method: 'google', tipo: user.type === 'proveedor' ? 'proveedor' : 'comprador' });
   try { updatePerfilUI(); } catch (e) { console.error('[updatePerfilUI]', e); }
 }
 
@@ -4310,7 +4361,10 @@ function goTo(s) {
   }
   window.scrollTo(0, 0);
   setTimeout(checkReveal, 100);
-  trackEvent('screen_view', { screen_name: s });
+  // Va duplicado a proposito: screen_name es un nombre reservado de GA4 (viene del
+  // mundo de las apps) y no siempre deja registrarse como dimension personalizada.
+  // "pantalla" es nuestro, no lo pisa nadie, y es el que se lee en los informes.
+  trackEvent('screen_view', { screen_name: s, pantalla: s });
 }
 function switchTab(tab, el) {
   document.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
@@ -5235,6 +5289,20 @@ function abrirDetalleProd(id) {
   const p = getProdLista().find(x => String(x.id) === String(id));
   if (!p) { showToast('Producto no disponible'); return; }
   productoActual = p;
+  // El catalogo es el corazon de la app y hasta hoy no se medía: se sabia que la
+  // persona veia un proveedor, pero no que veia un producto. Reusa provider_name /
+  // provider_rubro (ya son dimensiones) para cruzar producto y proveedor en un mismo informe.
+  // Ojo: provRubro viene armado como "Rubro · Provincia" para mostrarlo en pantalla.
+  // Hay que cortarlo, si no la dimension provider_rubro mezcla dos formatos y deja
+  // de cruzar con view_provider, que manda el rubro pelado.
+  trackEvent('view_product', {
+    product_name: p.nombre,
+    provider_name: p.provNombre || '',
+    provider_rubro: String(p.provRubro || '').split(' · ')[0],
+    provincia: p.provincia || '',
+    rubro: p.cat || '',
+    is_pro: !!p.esPro
+  });
   const _boxIcon = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#F3F4F6"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#D1D5DB" stroke-width="1.2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div>`;
   const _heartFilled = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
   const _heartEmpty = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#334155" stroke-width="1.9"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`;
@@ -5384,6 +5452,9 @@ function renderProdBreadcrumb(p) {
 async function shareProducto() {
   if (!productoActual) return;
   const p = productoActual;
+  // Compartir es el unico canal de crecimiento organico que sale de adentro de la app
+  // y no se medía. "tipo" separa las tres bocas (producto / proveedor / mi perfil).
+  trackEvent('compartir', { tipo: 'producto', product_name: p.nombre, provider_name: p.provNombre || '' });
   const url = _prodUrl(p);
   try {
     if (navigator.share) { await navigator.share({ title: `${p.nombre} — ${p.provNombre}`, text: `${p.nombre} en EmprendeGO`, url }); return; }
@@ -6842,6 +6913,7 @@ function cerrarOnboarding() {
 // ===== COMPARTIR PROVEEDOR =====
 function compartirProveedor() {
   if (!provActual) return;
+  trackEvent('compartir', { tipo: 'proveedor', provider_name: provActual.nombre, provider_rubro: provActual.rubro || '' });
   const texto = `¡Mirá este proveedor en EmprendeGO!\n\n*${provActual.nombre}*\n${provActual.rubro || ''}${provActual.provincia ? ' · ' + provActual.provincia : ''}\n\n${provActual.desc || ''}\n\n👉 emprendego.vercel.app`;
   if (navigator.share) {
     navigator.share({ title: provActual.nombre, text: texto, url: 'https://emprendego.vercel.app' }).catch(() => { });
@@ -6854,6 +6926,7 @@ function compartirProveedor() {
 function compartirMiPerfil() {
   const pd = currentUser && currentUser.provData;
   if (!pd || !pd.id) { showToast('Perfil no disponible'); return; }
+  trackEvent('compartir', { tipo: 'mi_perfil', provider_name: pd.nombre || '', provider_rubro: pd.rubro || '' });
   const url = location.origin + '/?prov=' + encodeURIComponent(pd.id);
   const texto = `¡Encontrá ${pd.nombre} en EmprendeGO!\n\n${pd.rubro || ''}${pd.provincia ? ' · ' + pd.provincia : ''}\n\n👉 ${url}`;
   if (navigator.share) {
@@ -7025,7 +7098,14 @@ async function iniciarPagoPro(btnEl) {
     showToast('Primero tenés que estar logueado como proveedor');
     return;
   }
-  if (esPromoActiva()) { await activarPlanProGratis(null); return; }
+  if (esPromoActiva()) {
+    trackEvent('pago_pro_iniciado', { origen: 'promo' });
+    await activarPlanProGratis(null); return;
+  }
+  // Se dispara ANTES del fetch a proposito: mide cuantos proveedores APRIETAN el
+  // boton, que es el numero del embudo. Si midieramos despues del redirect, los
+  // que se caen por error de red o de Mercado Pago quedarian invisibles.
+  trackEvent('pago_pro_iniciado', { origen: 'checkout' });
   const btn = btnEl || null;
   const txtOrig = btn?.textContent;
   if (btn) { btn.disabled = true; btn.textContent = 'Procesando...'; }
