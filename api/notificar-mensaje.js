@@ -824,6 +824,45 @@ export function limpiarParam(v, max = 120) {
    asi que esto no arregla datos: descarta los que no se puedan mandar. Un
    numero mal formado no se adivina —mandar a un numero equivocado es peor
    que no mandar— asi que si no cumple, se saltea y queda en el log. */
+/* QUE VA EN LAS DOS LINEAS DEL MEDIO DEL MENSAJE.
+
+   Hay dos clases de pedido y el mismo mensaje tiene que servir para las dos
+   SIN cambiar la plantilla (cambiarla obliga a que Meta la vuelva a revisar).
+
+   - Pedido de producto (tipo A): la linea es el titulo y la cantidad es la
+     cantidad. Es el caso directo.
+
+   - Pedido de proveedor (tipo B): NO tiene cantidad —verificado contra la
+     base: los 5 que hay tienen cantidad vacia y lista de productos cargada—
+     y ademas su titulo es generico, lo arma el formulario como "Busco
+     proveedor de Indumentaria". Mandar eso deja un mensaje que dice el rubro
+     dos veces y nada mas, y el proveedor no tiene por que tocar el link.
+     Lo unico propio de ese pedido es la LISTA de productos, asi que va la
+     lista donde iria el titulo, y el conteo donde iria la cantidad:
+
+       ¡Hola, Koquit! Hay un pedido nuevo de Indumentaria en EmprendeGO.
+       Ropa mujer, Deportiva, Accesorios de moda
+       Cantidad: 3 productos
+
+   Se decide por la lista de productos y no por sol.tipo a proposito: un
+   pedido de producto nunca trae productos cargados, asi que la lista es la
+   señal mas directa y no depende de que la columna tipo exista. */
+export function textoPedido(sol) {
+  const prods = Array.isArray(sol && sol.productos)
+    ? sol.productos.filter(p => typeof p === 'string' && p.trim()).map(p => p.trim())
+    : [];
+
+  if (prods.length) {
+    return {
+      linea: prods.join(', '),
+      cantidad: prods.length === 1 ? '1 producto' : `${prods.length} productos`
+    };
+  }
+
+  const c = [sol && sol.cantidad, sol && sol.unidad].filter(Boolean).join(' ').trim();
+  return { linea: String((sol && sol.titulo) || ''), cantidad: c || 'a convenir' };
+}
+
 export function normalizarWa(tel) {
   const d = String(tel || '').replace(/\D/g, '');
   if (!d.startsWith('54')) return null;      // solo Argentina
@@ -857,7 +896,7 @@ async function handlerWaPedido(req, res) {
     // --- 1) El pedido ---
     const solRes = await fetch(
       `${SUPABASE_BASE}/rest/v1/solicitudes?id=eq.${encodeURIComponent(solicitud_id)}` +
-      `&select=id,titulo,cantidad,unidad,rubro,provincia,estado,cierra_at,created_at&limit=1`,
+      `&select=id,titulo,cantidad,unidad,rubro,provincia,estado,cierra_at,created_at,tipo,productos&limit=1`,
       { headers });
     const sol = (await solRes.json())?.[0];
     if (!sol) return res.status(404).json({ error: 'not found' });
@@ -1035,12 +1074,13 @@ async function enviarUno(p, ctx) {
 
   // 2) El mensaje.
   try {
-    const cantidad = [sol.cantidad, sol.unidad].filter(Boolean).join(' ');
+    // Las dos lineas del medio cambian segun la clase de pedido. Ver textoPedido().
+    const info = textoPedido(sol);
     const params = [
       limpiarParam(p.nombre, 40),
       limpiarParam(rubro, 40),
-      limpiarParam(sol.titulo, 120),
-      limpiarParam(cantidad || 'a convenir', 40),
+      limpiarParam(info.linea, 120),
+      limpiarParam(info.cantidad, 40),
       // El link va partido: la plantilla tiene el dominio fijo y solo el id
       // viaja como parametro. Asi Meta no ve una URL entera variable, que es
       // lo que hace que revisen la plantilla con lupa.

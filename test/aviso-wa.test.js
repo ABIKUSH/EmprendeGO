@@ -56,7 +56,7 @@ function prov(id, extra) {
 async function main() {
   const api = await import('../api/notificar-mensaje.js');
   const rub = await import('../api/_rubros.js');
-  const { elegirDestinatarios, normalizarWa, limpiarParam } = api;
+  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido } = api;
   const { rubroCoincide, rubroEsCiego } = rub;
 
   /* =================================================================== */
@@ -113,6 +113,52 @@ async function main() {
 
   test('se corta al largo pedido', () => {
     igual(limpiarParam('abcdefghij', 4), 'abcd');
+  });
+
+  /* =================================================================== */
+  seccion('Las dos clases de pedido tienen que servirse con la MISMA plantilla');
+
+  test('pedido de producto: va el titulo y la cantidad con su unidad', () => {
+    const r = textoPedido({ titulo: 'Vasos de vidrio', cantidad: '200', unidad: 'unidades' });
+    igual(r.linea, 'Vasos de vidrio');
+    igual(r.cantidad, '200 unidades');
+  });
+
+  test('pedido de producto sin cantidad cargada: "a convenir"', () => {
+    const r = textoPedido({ titulo: 'Vasos de vidrio' });
+    igual(r.linea, 'Vasos de vidrio');
+    igual(r.cantidad, 'a convenir');
+  });
+
+  test('pedido de proveedor: manda la LISTA de productos, no el titulo generico', () => {
+    // El titulo de un pedido B lo arma el formulario y no dice nada que el
+    // rubro no haya dicho ya en la linea de arriba del mensaje.
+    const r = textoPedido({
+      titulo: 'Busco proveedor de Indumentaria', tipo: 'proveedor',
+      productos: ['Ropa mujer', 'Deportiva', 'Accesorios de moda']
+    });
+    igual(r.linea, 'Ropa mujer, Deportiva, Accesorios de moda');
+    igual(r.cantidad, '3 productos');
+    asegurar(!/Busco proveedor/.test(r.linea), 'el titulo generico no tiene que aparecer');
+  });
+
+  test('pedido de proveedor con un solo producto: singular', () => {
+    const r = textoPedido({ titulo: 'Busco proveedor de Otro', productos: ['Gorras jordan'] });
+    igual(r.linea, 'Gorras jordan');
+    igual(r.cantidad, '1 producto');
+  });
+
+  test('productos con basura adentro no rompen ni ensucian la linea', () => {
+    const r = textoPedido({ titulo: 'x', productos: ['Gorras', '', null, 42, {}, '  Buzos  '] });
+    igual(r.linea, 'Gorras, Buzos');
+    igual(r.cantidad, '2 productos');
+  });
+
+  test('un pedido sin nada no devuelve vacio en la cantidad', () => {
+    // Un parametro vacio hace fallar el envio entero contra Meta.
+    const r = textoPedido({});
+    igual(r.cantidad, 'a convenir');
+    igual(limpiarParam(r.linea), '-');
   });
 
   /* =================================================================== */
