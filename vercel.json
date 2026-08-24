@@ -7,7 +7,7 @@
   ],
   "crons": [
     { "path": "/api/recordatorio-planes", "schedule": "0 12 * * *" },
-    { "path": "/api/keepalive", "schedule": "0 10 */4 * *" }
+    { "path": "/api/keepalive", "schedule": "0 10 * * *" }
   ],
   "headers": [
     {

@@ -1,5 +1,12 @@
+import { calentarTendencias } from './ml.js';
+
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 const SITE = 'https://emprendego.com.ar';
+
+// El calentado de tendencias hace ~40 llamadas a Mercado Libre en fila (una por
+// rubro). El default de 10s no alcanza; 60s es el maximo del plan Hobby.
+// No afecta al sitemap, que responde igual de rapido que antes.
+export const config = { maxDuration: 60 };
 
 export default async function handler(req, res) {
   // Sitemap público (sin auth). Se sirve en /sitemap.xml vía rewrite en vercel.json.
@@ -34,7 +41,20 @@ export default async function handler(req, res) {
     }
 
     console.log('[keepalive] Supabase activa OK');
-    return res.status(200).json({ ok: true });
+
+    // Foto diaria del ranking de tendencias de cada rubro (sección Mercado).
+    // Va acá y no en un cron propio porque el plan Hobby permite 2 crons y ya
+    // están los 2 usados. Envuelto aparte: si el calentado falla, el keepalive
+    // (que es lo que mantiene despierta la instancia de Supabase) igual dio OK.
+    let tendencias = null;
+    try {
+      tendencias = await calentarTendencias();
+    } catch (err) {
+      console.error('[keepalive] calentarTendencias:', err.message);
+      tendencias = { ok: false, motivo: 'error' };
+    }
+
+    return res.status(200).json({ ok: true, tendencias });
   } catch (err) {
     console.error('[keepalive] error:', err.message);
     return res.status(500).json({ ok: false, error: err.message });

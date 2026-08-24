@@ -601,6 +601,130 @@ async function refreshMLTrendsToken(refreshToken, proveedorId, supaUrl, supaKey)
 }
 
 // ============================================================
+// Calentado diario del historial de tendencias.
+//
+// Lo dispara el cron de /api/keepalive (no tiene cron propio: el plan Hobby
+// permite 2 crons y los 2 ya estan usados).
+//
+// Sin esto, la foto del ranking de un rubro solo se guarda cuando ALGUIEN entra
+// a ese rubro y ademas se le vencio el cache de 30 min. Los rubros que nadie
+// visita quedan sin historial, y sin dos fotos seguidas no se puede calcular
+// "subio 3 puestos". Verificado el 2026-08-18: Bazar tenia una sola foto (17/8)
+// y Mascotas dos, contra 14 dias seguidos del ranking del sitio.
+//
+// Solo ESCRIBE el historial. No toca el cache en memoria ni la respuesta que ve
+// el visitante: si esto falla, /api/ml?action=trends sigue funcionando igual.
+// ============================================================
+
+// Se corta sola antes del maxDuration de 60s declarado en keepalive.js. Preferimos
+// devolver "guarde 12 de 17" a que la funcion muera por timeout.
+const WARM_BUDGET_MS = 45000;
+
+export async function calentarTendencias() {
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey || !process.env.ML_APP_ID) {
+    return { ok: false, motivo: 'config' };
+  }
+
+  const t0 = Date.now();
+
+  // Un unico token para todo el recorrido, resuelto SECUENCIALMENTE a proposito:
+  // el refresh_token de ML es de un solo uso, asi que dos refresh en paralelo con
+  // el mismo token dejarian al proveedor sin credenciales validas.
+  // Igual que en handleMLTrends, si el refresh falla no marcamos al proveedor como
+  // desconectado: este job no es una accion suya y no puede romperle la integracion.
+  let accessToken = null;
+  try {
+    const provRes = await fetch(
+      `${supabaseUrl}/rest/v1/proveedores` +
+      `?ml_connected=eq.true&ml_refresh_token=not.is.null` +
+      `&select=id,ml_access_token,ml_refresh_token,ml_token_expires_at` +
+      `&order=ml_token_expires_at.desc.nullslast&limit=5`,
+      { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+    );
+    const provs = provRes.ok ? await provRes.json() : [];
+    for (const prov of provs) {
+      const expiresAt = prov.ml_token_expires_at ? new Date(prov.ml_token_expires_at) : null;
+      if (prov.ml_access_token && expiresAt && expiresAt.getTime() > Date.now() + 5 * 60 * 1000) {
+        accessToken = prov.ml_access_token;
+        break;
+      }
+      const refrescado = await refreshMLTrendsToken(prov.ml_refresh_token, prov.id, supabaseUrl, supabaseKey);
+      if (refrescado) { accessToken = refrescado.access_token; break; }
+    }
+  } catch (e) {
+    console.error('[trends-warm] token:', e.message);
+  }
+  if (!accessToken) return { ok: false, motivo: 'sin_token' };
+
+  // '' = ranking del sitio completo. El resto, los 16 rubros.
+  // Los rubros arrancan en un punto distinto cada dia: si un dia no alcanza el
+  // tiempo, al dia siguiente los que quedaron afuera entran primero. Asi ninguno
+  // queda sin historial para siempre.
+  const rubros = Object.keys(RUBRO_ML);
+  const corte = diaDelAnioAR() % rubros.length;
+  const claves = ['', ...rubros.slice(corte), ...rubros.slice(0, corte)];
+
+  const guardados = [];
+  const fallados = [];
+  let cortadoPorTiempo = false;
+
+  for (const clave of claves) {
+    if (Date.now() - t0 > WARM_BUDGET_MS) { cortadoPorTiempo = true; break; }
+    const etiqueta = clave || 'sitio';
+    try {
+      let catId = '';
+      if (clave) {
+        catId = await idCategoriaML(clave, accessToken) || '';
+        // Sin id de categoria, ML devuelve el ranking del sitio completo. Guardar
+        // eso bajo el nombre del rubro seria historial falso: mejor saltearlo.
+        if (!catId) { fallados.push(etiqueta); continue; }
+      }
+      const url = catId
+        ? `https://api.mercadolibre.com/trends/MLA/${catId}`
+        : 'https://api.mercadolibre.com/trends/MLA';
+
+      const r = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!r.ok) { fallados.push(etiqueta); continue; }
+
+      const data = await r.json();
+      const trends = (Array.isArray(data) ? data : [])
+        .map(x => (x && x.keyword ? String(x.keyword) : ''))
+        .filter(Boolean)
+        .filter(esProducto)
+        .slice(0, 30);
+      if (!trends.length) { fallados.push(etiqueta); continue; }
+
+      // El unique (fecha, rubro, termino) + ignore-duplicates hace que esto sea
+      // inofensivo si un visitante ya guardo la foto de hoy.
+      await guardarSnapshot(clave, trends, supabaseUrl, supabaseKey);
+      guardados.push(etiqueta);
+    } catch (e) {
+      console.error('[trends-warm]', etiqueta, e.message);
+      fallados.push(etiqueta);
+    }
+  }
+
+  console.log(`[trends-warm] ${guardados.length}/${claves.length} guardados`
+    + (fallados.length ? ` · fallaron: ${fallados.join(', ')}` : '')
+    + (cortadoPorTiempo ? ' · cortado por tiempo' : ''));
+
+  return {
+    ok: true, fecha: hoyAR(),
+    guardados: guardados.length, total: claves.length,
+    fallados, cortadoPorTiempo
+  };
+}
+
+// Dia del anio en hora argentina. Solo se usa para rotar el orden de los rubros.
+function diaDelAnioAR() {
+  const d = new Date(Date.now() - 3 * 3600 * 1000);
+  const inicio = Date.UTC(d.getUTCFullYear(), 0, 1);
+  return Math.floor((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - inicio) / 86400000);
+}
+
+// ============================================================
 // Sincronizacion de productos desde Mercado Libre
 // ============================================================
 async function handleMLSync(req, res) {
