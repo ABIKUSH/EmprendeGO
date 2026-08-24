@@ -243,6 +243,9 @@
     seguidos: null,       // array de rubros | null = no eligio nada (ve todo)
     haySeguidos: true,    // false = la migracion no esta corrida; el filtro no existe
     verTodos: false,      // se pidio ver todo el feed, por esta vez
+    // Baja de los avisos por WhatsApp (proveedores.notif_wa).
+    notifWa: true,        // false = pidio no recibir mas
+    hayNotifWa: false,    // false = la columna todavia no existe; se esconde
     // Formulario A. Viven en st y no en el DOM porque el formulario se repinta
     // entero en cada render() y estos dos tienen que sobrevivir a eso.
     cantModo: 'minimo',   // '20' | '50' | '100' | 'otra' | 'minimo'
@@ -1567,6 +1570,70 @@
     }
   }
 
+  /* LA BAJA DE LOS AVISOS POR WHATSAPP (proveedores.notif_wa).
+
+     Va en una consulta PROPIA y no pegada a la de rubros_seguidos, aunque
+     sean la misma tabla y la misma fila. Motivo: pedir dos columnas juntas
+     hace que si UNA falta, se caiga la consulta entera. Si notif_wa todavia
+     no existe (migracion sin correr), pegarlas dejaria tambien sin filtro de
+     rubros a un proveedor que lo tenia andando. Una consulta de mas contra
+     una fila por id no le pesa a nadie; romper el filtro de rubros si.
+
+     POR QUE EXISTE: Meta exige una via de baja de los mensajes de plantilla.
+     Sin webhook de entrada, un "responda BAJA" no lo escucharia nadie, asi
+     que la baja vive en la app y es un toque. */
+  async function cargarNotifWa() {
+    const provId = currentUser?.proveedorId;
+    if (!provId) { st.hayNotifWa = false; return; }
+    try {
+      const { data, error } = await sb.from('proveedores')
+        .select('notif_wa').eq('id', provId).maybeSingle();
+      if (error) throw error;
+      st.hayNotifWa = true;
+      // Sin fila o sin valor se asume que SI los recibe: es el default de la
+      // base. Un proveedor que se dio de baja tiene el false guardado.
+      st.notifWa = !(data && data.notif_wa === false);
+    } catch (e) {
+      // Igual que arriba: 42703 o 403. Se esconde el interruptor y listo.
+      console.warn('[cotiz] notif_wa: falta correr sql/2026-08-24_aviso_wa_pedidos.sql', e);
+      st.hayNotifWa = false;
+    }
+  }
+
+  window.cotizBajaWa = async function (btn) {
+    const provId = currentUser?.proveedorId;
+    if (!provId) return;
+    const valor = !st.notifWa;
+    if (btn) { btn.disabled = true; btn.style.opacity = '.6'; }
+    try {
+      const { error } = await sb.from('proveedores')
+        .update({ notif_wa: valor }).eq('id', provId);
+      if (error) throw error;
+      st.notifWa = valor;
+      vibrar('success');
+      toast(valor
+        ? 'Listo: le avisamos cuando haya pedidos de sus rubros'
+        : 'Listo: no le vamos a mandar más avisos por WhatsApp');
+      render();
+    } catch (e) {
+      console.warn('[cotiz] baja wa', e);
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+      toast('No se pudo guardar. Intente de nuevo.');
+    }
+  };
+
+  /* El interruptor, en texto y sin decoracion. Aparece solo si es proveedor
+     y la columna existe. Es deliberadamente discreto: tiene que estar y ser
+     facil de encontrar, no invitar a apagarlo. */
+  function bloqueBajaWa() {
+    if (!st.hayNotifWa || !esProveedor()) return '';
+    return `<div class="cz-ancho" style="padding:18px 16px 0;text-align:center">
+      <button type="button" class="cz-link" onclick="cotizBajaWa(this)">${st.notifWa
+        ? 'No recibir avisos de pedidos por WhatsApp'
+        : 'Volver a recibir avisos de pedidos por WhatsApp'}</button>
+    </div>`;
+  }
+
   // Se descarta lo que no sea texto con contenido: la columna es text[] y el
   // CHECK ya lo impide del lado de la base, pero esta lista termina pintada y
   // comparada contra los rubros del feed. Mismo criterio que listaTexto().
@@ -1728,6 +1795,36 @@
 
   function limpiarBorrador() {
     try { localStorage.removeItem(BORRADOR); } catch (e) { }
+  }
+
+  /* EL PEDIDO AL QUE APUNTA EL LINK DEL WHATSAPP.
+
+     Mismo problema que el borrador y misma solucion: el proveedor toca el
+     link, cae en la app sin sesion, inicia con Google, Google lo manda de
+     vuelta a la raiz del sitio y el ?pedido= del link se perdio en el
+     camino. Guardarlo en localStorage es lo unico que sobrevive a esa
+     vuelta.
+
+     Vence rapido a proposito: si el proveedor entro por un link hace dos
+     horas, ya no esta "viniendo de ese WhatsApp", y arrastrarlo a un pedido
+     que no pidio ver seria peor que dejarlo en el feed. */
+  const DESTINO = 'eg_cotiz_destino';
+  const DESTINO_VENCE = 30 * 60 * 1000;
+
+  function guardarDestino(id) {
+    try { localStorage.setItem(DESTINO, JSON.stringify({ id, ts: Date.now() })); } catch (e) { }
+  }
+
+  function tomarDestino() {
+    try {
+      const raw = localStorage.getItem(DESTINO);
+      localStorage.removeItem(DESTINO);   // se consume una sola vez
+      if (!raw) return null;
+      const d = JSON.parse(raw);
+      if (!d || !d.id) return null;
+      if (Date.now() - (d.ts || 0) > DESTINO_VENCE) return null;
+      return d.id;
+    } catch (e) { return null; }
   }
 
   // Antes se guardaba en localStorage una marca de "portada ya vista" para
@@ -2044,6 +2141,8 @@
         ? '<span class="cz-seg-suyo">su rubro</span>' : ''}</button>`).join('')}
         </div>
 
+        ${bloqueBajaWa()}
+
         <div class="cz-barra cz-vidrio">
           <div id="cz-seg-cuenta" class="cz-barra-nota" style="margin-bottom:10px">${esc(textoSegCuenta(sel))}</div>
           ${btnPrimario('Guardar', 'cotizSegGuardar(this)')}
@@ -2191,6 +2290,7 @@
       ${chipsRubro()}
       ${cuerpo}
       ${cierre}
+      ${bloqueBajaWa()}
       ${esProveedor() ? '' : fabPedir()}`;
   }
 
@@ -3660,6 +3760,7 @@
       vibrar('success');
       toast(sinFoto ? 'Pedido publicado (la foto no se pudo adjuntar)' : 'Pedido publicado');
       try { if (typeof trackEvent === 'function') trackEvent('rfq_publicado', { rubro: fila.rubro || '', provincia: fila.provincia || '' }); } catch (e) { }
+      avisarProveedores();
       return { ok: true };
     } catch (e) {
       console.warn('[cotiz] publicar', e);
@@ -3683,6 +3784,44 @@
     }
   }
 
+  /* AVISO POR WHATSAPP AL PROVEEDOR.
+
+     Se dispara y se sigue de largo, igual que el mail al comprador cuando le
+     cotizan: el pedido YA esta publicado cuando esto corre. Si el aviso
+     falla, se pierde el aviso, no el pedido. Por eso no hay await del lado
+     de publicar(), ni un mensaje de error si esto no sale.
+
+     POR QUE SE VUELVE A LEER EL ID EN VEZ DE PEDIRLO EN EL INSERT: el insert
+     de arriba va SIN .select() a proposito, porque encadenarlo hace que
+     PostgREST devuelva la fila entera con usuario_email, que esta revocada, y
+     el pedido termina en 403. Se podria pedir .select('id') —la lista
+     explicita de columnas si funciona— pero eso es tocar la unica linea de
+     la seccion que no puede fallar. Una lectura aparte no puede romper nada:
+     si falla, no hay aviso y listo.
+
+     El backend decide TODO lo demas: a quien, cuantos y que dice. Desde aca
+     solo viaja el id del pedido. */
+  async function avisarProveedores() {
+    try {
+      const uid = await getUid();
+      if (!uid) return;
+
+      // El recien publicado es el mas nuevo de esta persona. sol_select ya
+      // deja leer los propios, asi que no hace falta ningun permiso nuevo.
+      const { data, error } = await sb.from('solicitudes')
+        .select('id').eq('usuario_id', uid)
+        .order('created_at', { ascending: false }).limit(1);
+      if (error || !data || !data[0] || !data[0].id) return;
+
+      fetch('/api/notificar-mensaje?action=wa_pedido', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ solicitud_id: data[0].id })
+      }).catch(() => { });
+    } catch (e) {
+      console.warn('[cotiz] aviso wa', e);
+    }
+  }
+
   async function irAMisPedidos() {
     await cargarMisPedidos();
     st.vista = 'mis';
@@ -3700,11 +3839,19 @@
      "No hace falta que lo vuelva a publicar".
 
      SOBRE EL NUMERO: es real, sale de contar proveedores aprobados del rubro.
-     Y dice "lo pueden ver", no "se envio": hoy al proveedor no le llega
-     ninguna notificacion, el pedido aparece en el listado publico y el entra a
-     mirarlo. El dia que exista el aviso al proveedor, esta frase cambia.
-     Prometer un envio que no ocurre es exactamente el tipo de mentira que
-     despues hace que nadie crea en los numeros de la seccion. */
+     Y dice "lo pueden ver", no "se envio". Prometer un envio que no ocurre es
+     exactamente el tipo de mentira que despues hace que nadie crea en los
+     numeros de la seccion.
+
+     SIGUE DICIENDO "lo pueden ver" A PROPOSITO, aunque el aviso por WhatsApp
+     ya este escrito (avisarProveedores() -> api/notificar-mensaje?action=
+     wa_pedido). Motivo: ese envio ARRANCA APAGADO —sin WHATSAPP_TOKEN no sale
+     nada— y ademas nunca sale para los pedidos que caen en rubro "Otro", que
+     son casi la mitad. Cambiar la frase antes de que las dos cosas esten
+     resueltas seria prometer justo lo que no pasa.
+
+     CUANDO CAMBIARLA: cuando el envio este encendido, mirar si el pedido tuvo
+     destinatarios. La respuesta del endpoint ya trae {enviados}. */
 
   /* Cuenta contra la base, no contra una estimacion.
 
@@ -3908,6 +4055,27 @@
     finally { publicandoBorrador = false; }
   }
 
+  /* Retoma el pedido guardado antes de mandar a la persona a Google.
+
+     No hace nada si no hay ninguno, que es el caso del 100% de las sesiones
+     que no vienen de un link: este modulo se carga en todas las visitas y no
+     puede arrastrar a nadie a una pantalla que no pidio.
+
+     Tampoco pisa al borrador: si habia un pedido a medio publicar, esa
+     persona es un COMPRADOR volviendo de publicar, no un proveedor viniendo
+     de un WhatsApp, y ese destino guardado seria de otro momento. */
+  async function retomarDestino() {
+    try {
+      const raw = localStorage.getItem(DESTINO);
+      if (!raw) return;
+      const pendiente = leerBorrador();
+      if (pendiente && pendiente.intento) return;
+      if (!(await esperarUsuario(8000))) return;
+      const id = tomarDestino();
+      if (id) irAlPedido(id);
+    } catch (e) { console.warn('[cotiz] destino', e); }
+  }
+
   try {
     sb.auth.onAuthStateChange((evento, sesion) => {
       if (!sesion) return;
@@ -3916,6 +4084,12 @@
         // Se cuelga del mismo evento para no tocar app.js: el modulo se entera
         // solo de que hay sesion y decide si tiene algo para avisar.
         esperarUsuario(8000).then(ok => { if (ok) avisarCotizacionesNuevas(); });
+        /* El proveedor que vino del link de un WhatsApp e inicio sesion
+           volvio a la raiz del sitio con el ?pedido= perdido. Se retoma acá,
+           que es el unico momento en que ya hay sesion. Va DESPUES del
+           borrador a proposito: si alguien tenia un pedido a medio publicar,
+           eso es mas urgente que mirar un pedido ajeno. */
+        retomarDestino();
       }
     });
   } catch (e) { console.warn('[cotiz] onAuthStateChange', e); }
@@ -4956,7 +5130,7 @@
     try {
       await getUid();
       await (esProveedor()
-        ? Promise.all([cargarFeed(), cargarSeguidos()])
+        ? Promise.all([cargarFeed(), cargarSeguidos(), cargarNotifWa()])
         : Promise.all([cargarFeed(), cargarMisPedidos()]));
     } catch (e) { console.warn('[cotiz] cargarDatos', e); }
     // Se dispara y sigue de largo. El .catch() es por las dudas: cargarDemanda
@@ -5066,11 +5240,84 @@
     render();
   };
 
+  /* LLEVAR AL PROVEEDOR AL PEDIDO QUE LE AVISAMOS POR WHATSAPP.
+
+     Es el otro extremo de api/notificar-mensaje?action=wa_pedido. Toda la
+     hipotesis del MVP se juega aca: si el link no cae en el formulario de
+     ese pedido sino en la home o en el feed, el proveedor no cotiza y no
+     hay nada que medir.
+
+     No hay ningun permiso nuevo: el pedido se lee con la sesion del
+     proveedor y la policy sol_select de siempre, la misma que usa el feed.
+     El link no abre ninguna puerta, solo evita el camino largo. */
+  async function irAlPedido(id) {
+    try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+    st.vista = 'feed';
+    st.cargando = true;
+    render();
+
+    // Se carga el feed igual que siempre: asi el boton "volver" del
+    // formulario cae en una lista con contenido y no en una pantalla vacia.
+    await cargarFeed();
+    st.cargando = false;
+
+    let s = (st.feed || []).find(x => String(x.id) === String(id));
+
+    /* El feed trae los 60 mas nuevos. Si el pedido no esta ahi, se pide
+       suelto: puede ser uno de hace rato y no tiene por que perderse el
+       viaje por eso. */
+    if (!s) {
+      try {
+        const { data } = await conFallback(() => sb.from('solicitudes')
+          .select(colsSol()).eq('id', id).limit(1));
+        s = data && data[0];
+      } catch (e) { console.warn('[cotiz] pedido del link', e); }
+    }
+
+    try {
+      if (typeof trackEvent === 'function') {
+        trackEvent('rfq_link_wa', {
+          encontrado: s ? 'si' : 'no',
+          rubro: (s && s.rubro) || '',
+          es_proveedor: currentUser && currentUser.proveedorId ? 'si' : 'no'
+        });
+      }
+    } catch (e) { }
+
+    if (!s) { render(); return toast('Ese pedido ya no está disponible'); }
+
+    // Un comprador que toca el link (o un proveedor todavia sin aprobar) ve
+    // el pedido en el feed, pero no hay formulario que abrirle.
+    if (!currentUser || !currentUser.proveedorId) { render(); return; }
+
+    if (st.misCotiz && st.misCotiz[s.id]) {
+      render();
+      return toast('Ya respondió este pedido');
+    }
+
+    st.pedidoActual = s;
+    if (esPedidoB(s)) { st.remito = { cubre: [] }; st.vista = 'cotizarB'; }
+    else { st.vista = 'cotizar'; }
+    render();
+  }
+
   /* ---------------- entrada publica ---------------- */
 
-  window.abrirCotizaciones = async function () {
+  window.abrirCotizaciones = async function (destinoId) {
     try { if (typeof closeDrawer === 'function') closeDrawer(); } catch (e) { }
     try { if (typeof goTo === 'function') goTo('cotizaciones'); } catch (e) { }
+
+    /* Viene del link de un WhatsApp: se lo lleva derecho a ESE pedido.
+       La portada explicativa es para el que entra a ver que es esto; el que
+       toca el link ya sabe a que viene y hacerlo pasar por una pantalla de
+       bienvenida es la forma mas rapida de perderlo. */
+    if (destinoId) {
+      guardarDestino(destinoId);      // por si tiene que pasar por el login
+      if (!currentUser) {
+        st.vista = 'login'; st.cargando = false; return render();
+      }
+      return irAlPedido(tomarDestino() || destinoId);
+    }
 
     // Si dejo un pedido escrito a medio publicar, eso manda sobre todo lo
     // demas: mostrarle la portada explicativa seria hacerle perder el hilo.

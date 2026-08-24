@@ -59,3 +59,79 @@ export function afinarRubro(nombre, rubroBase) {
   if (NUCLEO.test(n) && SENAL.test(n)) return 'Lencería';
   return base;
 }
+
+
+// =====================================================================
+// EQUIVALENCIA DE RUBROS PARA EL SERVIDOR
+// =====================================================================
+//
+// Copia de RUBRO_LEGACY / matchesCat() de js/app.js. Existe porque el aviso
+// por WhatsApp arma la lista de destinatarios en el backend y tiene que
+// coincidir EXACTAMENTE con lo que el comprador ve en pantalla: la de
+// cotizaciones.js le dice "X proveedores de este rubro lo pueden ver"
+// usando matchesCat(), asi que si el fan-out usara otra regla el numero
+// prometido y los que reciben el mensaje serian dos conjuntos distintos.
+//
+// IMPORTANTE: si se agrega un rubro en js/app.js, va tambien aca. Un rubro
+// que falte en este mapa no rompe nada, pero deja a esos proveedores sin
+// recibir el aviso (matchean por nombre exacto y nada mas).
+//
+// Archivo con prefijo "_": Vercel no lo cuenta como funcion serverless.
+
+const RUBRO_LEGACY = {
+  'Moda': 'Indumentaria', 'Hogar': 'Hogar y Deco', 'Salud': 'Belleza y Salud',
+  'Textiles': 'Textil y Telas', 'Otros': 'Otro',
+  'Bolsos y Marroquinería': 'Marroquinería y Bolsos', 'Ropa de mujer': 'Indumentaria', 'Ropa de hombre': 'Indumentaria',
+  'Ropa de bebé y niños': 'Bebés y Niños', 'Talles especiales': 'Indumentaria', 'Ropa deportiva': 'Deportes',
+  'Accesorios de moda': 'Indumentaria', 'Muebles y decoración': 'Muebles',
+  'Artículos de cocina': 'Hogar y Deco', 'Limpieza y hogar': 'Limpieza', 'Perfumería y cosméticos': 'Belleza y Salud',
+  'Cuidado personal': 'Belleza y Salud', 'Suplementos y nutrición': 'Belleza y Salud', 'Tecnología y electrónica': 'Tecnología',
+  'Accesorios de celular': 'Tecnología', 'Carteras y mochilas': 'Marroquinería y Bolsos', 'Zapatos': 'Calzado', 'Zapatillas': 'Calzado',
+  'Telas e insumos textiles': 'Textil y Telas', 'Juguetes y juegos': 'Juguetería', 'Librería y papelería': 'Librería y Papelería',
+  'Alimentos y bebidas': 'Alimentos', 'Tecnologia': 'Tecnología',
+  'Papelería y Librería': 'Librería y Papelería', 'Regalería': 'Bazar',
+  'Perfumeria': 'Perfumería', 'Bijouterie': 'Bijouterie y Accesorios',
+  'Accesorios': 'Bijouterie y Accesorios', 'Joyas': 'Bijouterie y Accesorios',
+  'Tecnología': 'Tecnología', 'Indumentaria': 'Indumentaria', 'Calzado': 'Calzado', 'Hogar y Deco': 'Hogar y Deco',
+  'Lencería': 'Lencería', 'Perfumería': 'Perfumería', 'Bijouterie y Accesorios': 'Bijouterie y Accesorios',
+  'Bazar': 'Bazar', 'Alimentos': 'Alimentos', 'Belleza y Salud': 'Belleza y Salud',
+  'Deportes': 'Deportes', 'Automotor': 'Automotor', 'Construcción': 'Construcción',
+  'Servicios': 'Servicios', 'Juguetería': 'Juguetería', 'Ferretería': 'Ferretería',
+  'Iluminación': 'Iluminación', 'Muebles': 'Muebles', 'Textil y Telas': 'Textil y Telas',
+  'Librería y Papelería': 'Librería y Papelería', 'Marroquinería y Bolsos': 'Marroquinería y Bolsos',
+  'Limpieza': 'Limpieza', 'Blanquería': 'Blanquería', 'Mascotas': 'Mascotas',
+  'Bebés y Niños': 'Bebés y Niños', 'Electrónica': 'Electrónica', 'Herramientas': 'Herramientas',
+  'Packaging': 'Packaging', 'Otro': 'Otro',
+};
+
+/**
+ * ¿El rubro `cat` esta dentro de la lista `rubroStr` de un proveedor?
+ *
+ * OJO con una diferencia deliberada respecto de app.js: alla, un proveedor
+ * SIN rubro cargado devuelve true (sirve para el filtro "Todas" del
+ * directorio). Aca devuelve false. Mandarle un WhatsApp a alguien porque no
+ * sabemos que vende es exactamente como se quema un numero.
+ *
+ * @param {string} rubroStr  proveedores.rubro, lista separada por comas.
+ * @param {string} cat       El rubro del pedido.
+ */
+export function rubroCoincide(rubroStr, cat) {
+  if (!rubroStr || !cat) return false;
+  const rubros = String(rubroStr).split(',').map(r => r.trim()).filter(Boolean);
+  const catNorm = RUBRO_LEGACY[cat] || cat;
+  return rubros.some(r => {
+    if (r === cat) return true;
+    const rNorm = RUBRO_LEGACY[r] || r;
+    return rNorm === cat || rNorm === catNorm;
+  });
+}
+
+// Rubros que no identifican nada y por lo tanto no se avisan solos.
+// Un pedido que cae aca lo revisa una persona y lo reenvia a mano con el
+// rubro correcto (ver ?action=wa_pedido con rubro forzado por un admin).
+const RUBROS_CIEGOS = new Set(['Otro', 'Otros', '']);
+
+export function rubroEsCiego(cat) {
+  const c = String(cat || '').trim();
+  return RUBROS_CIEGOS.has(c) || RUBROS_CIEGOS.has(RUBRO_LEGACY[c] || c);
+}

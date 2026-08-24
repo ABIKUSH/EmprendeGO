@@ -100,6 +100,42 @@ A 403 from PostgREST when the frontend reads a column → missing column-level G
 
 ⚠️ **Las URLs viejas `/api/tiendanube-callback` y `/api/tn-privacy` están registradas en el panel de Tienda Nube y NO se pueden cambiar.** Siguen funcionando por dos rewrites en `vercel.json` que apuntan al router con el `action` correspondiente. Si tocás esos rewrites, se rompe la conexión de tiendas de todos los proveedores Pro.
 
+### Aviso de Cotizaciones por WhatsApp (MVP, 2026-08-24)
+
+Cuando un comprador publica un pedido, se le avisa por WhatsApp a los proveedores de ese rubro con un link directo al pedido. **Es lo que faltaba para que el circuito de Cotizaciones cierre**: al 21-08 había 9 pedidos publicados y **2 cotizaciones en toda la historia**, porque el proveedor no se enteraba nunca.
+
+Hipótesis única que se está midiendo: *¿el proveedor cotiza más rápido si se entera por WhatsApp que si tiene que entrar por su cuenta?*
+
+**Piezas:**
+
+| Pieza | Dónde |
+|---|---|
+| Envío | `api/notificar-mensaje.js` → `?action=wa_pedido` (rama nueva; no entra otro archivo en `api/`) |
+| Equivalencia de rubros | `api/_rubros.js` → `rubroCoincide()` / `rubroEsCiego()` (copia de `matchesCat`/`RUBRO_LEGACY` de app.js) |
+| Disparo | `js/cotizaciones.js` → `avisarProveedores()`, se llama al final de `publicarPedido()` sin await |
+| Llegada del link | `js/cotizaciones.js` → `irAlPedido()`; `window.abrirCotizaciones(pedidoId)` acepta un id |
+| Baja del proveedor | `proveedores.notif_wa` + `cotizBajaWa()`; se pinta en el feed y en la pantalla de rubros |
+| Migración | `sql/2026-08-24_aviso_wa_pedidos.sql` |
+| Pruebas | `node test/aviso-wa.test.js` (32 comprobaciones, sin red ni base) |
+
+⚠️ **ARRANCA APAGADO Y ESO ES A PROPÓSITO.** Sin `WHATSAPP_TOKEN` y `WHATSAPP_PHONE_ID` en Vercel, el endpoint devuelve `{skipped:'wa_apagado'}` y no manda nada. El interruptor son las variables de entorno, no un deploy. Variables: `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_TEMPLATE` (default `pedido_nuevo_rubro`), `WHATSAPP_LANG` (default `es_AR`) y **`WHATSAPP_TEST_TO`**, que mientras tenga un número manda TODO a ese número en vez de al proveedor real. Es la red de seguridad de las pruebas.
+
+**Decisiones tomadas contra los datos reales, no por intuición:**
+- **El rubro filtra; la zona NO.** 93 de 150 proveedores están en CABA y 35 en Buenos Aires: si la provincia filtrara, un comprador de Córdoba se quedaría sin destinatarios. La provincia **ordena** (los de la misma van primero) y después corta el tope de 25.
+- **Un pedido en rubro `Otro` no dispara nada.** Son ~4 de cada 10 (7 de los 16 publicados). Los revisa el founder a mano y se reenvían con `?action=wa_pedido` + `{rubro}` **con sesión de admin**; sin token válido el rubro forzado se ignora. Ese es el único caso en que se acepta un pedido de más de 15 minutos.
+- **Máximo 1 WhatsApp por proveedor cada 24 h** (`proveedores.last_wa_at`). Es el parámetro más importante del archivo: con 5 pedidos diarios, un proveedor de Indumentaria recibiría 3 mensajes por día y bloquearía el número. Ya pasó una vez con el número personal.
+- Simulacro contra los 16 pedidos reales: **151 mensajes en total, USD 1,81** a USD 0,012 el mensaje (tarifa *utility* de Argentina).
+
+⚠️ **No se tocó ninguna policy.** En particular `sol_select`, que deja que cualquier usuario con sesión vea todos los pedidos abiertos y sobre la que está construido el feed con "Ver todos". El alcance por rubro vive en el **servidor**, que arma la lista con el service-role: el proveedor nunca elige a quién se le manda y el link no le da ningún permiso que no tuviera. `avisos_wa` va con RLS activada y **cero policies y cero grants** (adentro hay teléfonos): solo la ve el service-role.
+
+⚠️ **El anti-duplicado es el índice único `(solicitud_id, proveedor_id)` de `avisos_wa`, y la fila se RESERVA antes de mandar.** Mismo patrón que `email_logs`. Si se invierte el orden, dos llamadas simultáneas mandan dos WhatsApp iguales.
+
+⚠️ **Los parámetros de una plantilla no pueden tener saltos de línea, tabs ni 4 espacios seguidos**: Meta rechaza el envío entero con un `131008`. Todo lo que escribe el comprador pasa por `limpiarParam()`. Y **el cuerpo de una plantilla no puede terminar en variable**, por eso el texto cierra con una línea fija después del link.
+
+**Fases futuras, marcadas en el código donde engancharían, sin implementar:** estructuración del pedido con IA (armado de params), ranking por desempeño (el `.sort()` de `elegirDestinatarios`), muro medido (`WA_RETARDO_FREE_MIN`, hoy en cero para no tener que reescribir el reparto) y respuestas por botones (necesita un webhook de entrada).
+
+**Pendiente:** el acuse de recibo sigue diciendo "lo pueden ver" y no "se les avisó", a propósito, porque el envío está apagado y además nunca sale para los pedidos en `Otro`. Cambiarlo recién cuando las dos cosas estén resueltas.
+
 ### PWA
 
 `manifest.json` + `sw.js` (service worker). The SW currently just clears caches on activate.
@@ -113,6 +149,7 @@ A 403 from PostgREST when the frontend reads a column → missing column-level G
 - TN / ML full catalog import: `renderTiendaNubeSection()` / `renderMercadoLibreSection()` paint the dashboard tile in 3 states (not-Pro → gray locked, Pro+disconnected → brand color "Connect", Pro+connected → "Sync"). After sync the category-mapping modal opens if new categories arrived.
 - Pro gate: `esProvPro()` reads `currentUser.provData.plan === 'pro'` and checks `plan_hasta` expiry. The backend re-validates Plan Pro before any sync — never trust the UI gate alone.
 - Approval flow: admin sets `estado='aprobado'` on `proveedores` row
+- Deep-links por query string (todos se leen ANTES del `history.replaceState` que limpia la barra): `?pago=`, `?tn=`, `?ml=`, `?p=` (producto), `?prov=` (proveedor), `?ir=planes`, `?ir=cotizaciones` y **`?ir=cotizaciones&pedido=<uuid>`**, que es el que manda el aviso por WhatsApp. Si agregás uno nuevo, fijate que no choque con estos.
 
 ## Analytics y Campañas
 

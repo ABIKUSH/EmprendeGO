@@ -914,11 +914,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Deep-link a Cotizaciones (ej: el botón del mail de anuncio).
     // cotizaciones.js se carga DESPUÉS que app.js, así que se reintenta un
     // momento por si el módulo todavía no registró su entrada global.
+    //
+    // ?pedido= lo agrega el aviso por WhatsApp al proveedor y apunta a UN
+    // pedido puntual. Se lee ANTES del replaceState, que es el que limpia la
+    // barra de direcciones y se lo llevaría puesto.
+    const pedidoParam = new URLSearchParams(window.location.search).get('pedido');
     history.replaceState({}, '', window.location.pathname);
     let intentosCotiz = 0;
     const abrirCotiz = () => {
       if (typeof window.abrirCotizaciones === 'function') {
-        try { window.abrirCotizaciones(); } catch (e) { }
+        try { window.abrirCotizaciones(pedidoParam || undefined); } catch (e) { }
         return;
       }
       if (++intentosCotiz < 10) setTimeout(abrirCotiz, 300);

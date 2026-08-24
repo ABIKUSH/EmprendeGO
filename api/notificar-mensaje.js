@@ -1,4 +1,8 @@
 import { applyRateLimit, esUUID, escHtml } from './_ratelimit.js';
+// La equivalencia de rubros vive en _rubros.js para que el fan-out por
+// WhatsApp use exactamente la misma regla que matchesCat() de app.js, que es
+// con la que se le promete al comprador cuantos proveedores lo van a ver.
+import { rubroCoincide, rubroEsCiego } from './_rubros.js';
 
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
@@ -14,6 +18,11 @@ export default async function handler(req, res) {
   // Rama de "le cotizaron su pedido" (?action=cotizacion). Va aca por el mismo
   // motivo que la de arriba: no entra un archivo mas en api/.
   if (req.query?.action === 'cotizacion') return handlerCotizacion(req, res);
+
+  // Rama de "hay un pedido nuevo de su rubro" (?action=wa_pedido), por
+  // WhatsApp y hacia el PROVEEDOR. Es la unica de las tres que sale por
+  // WhatsApp y no por mail; comparte archivo por el cupo de funciones.
+  if (req.query?.action === 'wa_pedido') return handlerWaPedido(req, res);
 
   // Endpoint público que dispara emails: limitar para evitar spam masivo.
   if (!applyRateLimit(req, res, { bucket: 'notificar', limit: 10, windowMs: 60000 })) return;
@@ -666,4 +675,436 @@ function plantillaAnuncioCotizaciones(nombreCrudo, unsubUrl) {
 </body></html>`;
 
   return { asunto, html, texto };
+}
+
+
+/* =====================================================================
+   AVISO POR WHATSAPP AL PROVEEDOR  (?action=wa_pedido)
+   =====================================================================
+
+   POST /api/notificar-mensaje?action=wa_pedido
+     body: { solicitud_id: "<uuid>" }
+
+   Lo dispara el navegador del COMPRADOR apenas publica un pedido, sin
+   esperar la respuesta (igual que ?action=cotizacion). Manda un WhatsApp de
+   plantilla a los proveedores aprobados de ese rubro con el link directo al
+   pedido.
+
+   POR QUE EXISTE: entre el 6 y el 21 de agosto entraron 9 pedidos y hubo 2
+   cotizaciones en toda la historia de la seccion. El pedido se publica y el
+   proveedor no se entera nunca, porque tendria que entrar a mirar por su
+   cuenta. Esto es lo unico que falta para que el circuito cierre.
+
+   ---------------------------------------------------------------------
+   ARRANCA APAGADO, A PROPOSITO
+   ---------------------------------------------------------------------
+   Sin WHATSAPP_TOKEN y WHATSAPP_PHONE_ID en las variables de entorno, esto
+   no manda NADA y devuelve {skipped:'wa_apagado'}. Asi el codigo se puede
+   desplegar antes de que Meta apruebe la plantilla, sin ningun riesgo. El
+   interruptor de encendido son las variables, no un deploy.
+
+   WHATSAPP_TEST_TO es la segunda red: mientras tenga un numero, TODOS los
+   mensajes van a ese numero en vez de al proveedor real. Es lo que hace que
+   la prueba manual no pueda terminar en 150 WhatsApp mandados por error.
+
+   ---------------------------------------------------------------------
+   POR QUE ES SEGURO QUE LO LLAME EL NAVEGADOR
+   ---------------------------------------------------------------------
+   El que llama solo manda un uuid. No elige destinatarios, ni texto, ni
+   cuantos. Y hay cinco frenos, del mas barato al mas caro:
+     1. rate limit por IP;
+     2. el pedido tiene que existir, estar abierto y haberse creado hace
+        menos de WA_VENTANA_MIN minutos (un uuid viejo no reenvia nada);
+     3. tope diario global de mensajes;
+     4. enfriamiento de 24 h por proveedor;
+     5. el indice unico de avisos_wa, que es la garantia final: la fila se
+        RESERVA antes de mandar, asi que dos llamadas simultaneas no pueden
+        mandar dos mensajes al mismo proveedor por el mismo pedido.
+
+   ---------------------------------------------------------------------
+   FASES FUTURAS (documentadas, NO implementadas)
+   ---------------------------------------------------------------------
+   - Estructurar el pedido con IA: iria en el armado de params de enviarUno(),
+     convirtiendo el texto libre del comprador en datos comparables antes de
+     armar el mensaje.
+   - Ranking por desempeño del proveedor: iria en el .sort() de
+     elegirDestinatarios(), reemplazando el orden por provincia + antiguedad.
+     Hoy no hay con que medir desempeño (2 cotizaciones en toda la historia).
+   - Muro medido (Pro se entera antes que Free): la constante
+     WA_RETARDO_FREE_MIN ya esta puesta en cero justo para eso. Cuando valga
+     mas que cero, los Free salen en una segunda tanda demorada. Esta ahora
+     para no tener que reescribir el reparto despues.
+   - Botones y respuestas dentro de WhatsApp: necesitan un webhook de entrada,
+     que no existe y no entra en el alcance de este MVP.
+   ===================================================================== */
+
+// A cuantos proveedores como maximo se avisa por pedido. El rubro mas
+// poblado (Indumentaria) tiene 35 aprobados; con este tope, el orden por
+// provincia decide de verdad quien entra y quien no.
+const WA_LIMITE_DESTINATARIOS = 25;
+
+// Un solo WhatsApp por proveedor cada 24 h. ES EL PARAMETRO MAS IMPORTANTE
+// DEL ARCHIVO: con 5 pedidos por dia, un proveedor de Indumentaria recibiria
+// 3 mensajes diarios, nos bloquearia, y a Meta le alcanza con unos cuantos
+// bloqueos para bajarnos la calificacion de calidad y limitar el numero.
+// Ya nos paso una vez con el numero personal por presentar proveedores.
+const WA_ENFRIAMIENTO_H = 24;
+
+// Techo global por dia. Es un cortacircuitos, no una regla de negocio: si
+// algo se va de control, el gasto y el daño al numero quedan acotados.
+const WA_TOPE_DIARIO = 300;
+
+// Fase futura: muro medido. En cero no hace nada (ver el bloque de arriba).
+const WA_RETARDO_FREE_MIN = 0;
+
+// Cuantos minutos despues de publicado se acepta avisar. El navegador llama
+// a los 2 segundos; el margen es para una conexion lenta o un reintento.
+const WA_VENTANA_MIN = 15;
+
+const WA_API_VERSION = 'v21.0';
+
+/* Nombre de la plantilla aprobada en Meta y su idioma. Si el dia de mañana
+   se aprueba otra version del texto, se cambia la variable de entorno y no
+   hace falta tocar codigo.
+
+   EL TEXTO APROBADO POR EL FOUNDER (2026-08-24). Vive aca porque el cuerpo
+   de la plantilla lo guarda Meta, no este repo, y sin esta copia no hay
+   forma de saber que fue lo que se aprobo ni de rearmarla si se pierde:
+
+     ¡Hola, {{1}}! Hay un pedido nuevo de {{2}} en EmprendeGO.
+
+     {{3}}
+     Cantidad: {{4}}
+
+     Puede enviar su cotización desde este link:
+     https://emprendego.com.ar/?ir=cotizaciones&pedido={{5}}
+
+     Si no quiere recibir más avisos, puede desactivarlos en la misma pantalla.
+
+   El link va con https:// escrito. WhatsApp casi siempre convierte en
+   enlace un dominio pelado, pero "casi siempre" no alcanza cuando todo el
+   MVP se juega en que el proveedor pueda TOCAR ese link. Con el protocolo
+   adelante es clickeable si o si.
+
+   Tres cosas mas del texto que NO son estilo y por eso no se tocan:
+
+   1. UN SOLO signo de exclamacion, y en el saludo. La categoria del mensaje
+      la decide Meta leyendo el texto: si suena promocional lo reclasifica de
+      "utility" a "marketing", y en Argentina eso es pasar de USD 0,012 a
+      USD 0,0618 por mensaje (cinco veces mas caro) por cada envio.
+   2. NO termina en variable. Meta rechaza las plantillas cuyo cuerpo cierra
+      con un {{n}}; por eso la ultima linea es fija.
+   3. El dominio va escrito fijo y solo el id viaja como {{5}}. Una URL
+      entera variable hace que revisen la plantilla con lupa. */
+const WA_TEMPLATE = (process.env.WHATSAPP_TEMPLATE || 'pedido_nuevo_rubro').trim();
+const WA_LANG = (process.env.WHATSAPP_LANG || 'es_AR').trim();
+
+
+/* Los parametros de una plantilla de WhatsApp NO pueden tener saltos de
+   linea, tabs, ni 4 espacios seguidos: Meta rechaza el envio entero con un
+   131008. El titulo y la cantidad los escribe el comprador a mano, asi que
+   pasan si o si por aca. */
+// Se exportan limpiarParam, normalizarWa y elegirDestinatarios (y solo esas)
+// para que test/aviso-wa.test.js las pruebe de verdad, sin red ni base. Son
+// las tres que deciden A QUIEN se le manda y QUE dice: si alguna se rompe,
+// el error sale por WhatsApp y no hay vuelta atras. Vercel ignora los
+// exports con nombre; la funcion serverless es el export default.
+export function limpiarParam(v, max = 120) {
+  return String(v ?? '')
+    .replace(/[\r\n\t]+/g, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+    .slice(0, max) || '-';
+}
+
+/* Normaliza el telefono al formato que quiere Meta: solo digitos, con codigo
+   de pais y SIN el signo mas.
+
+   Los 150 proveedores aprobados ya lo tienen bien guardado (5491139295591),
+   asi que esto no arregla datos: descarta los que no se puedan mandar. Un
+   numero mal formado no se adivina —mandar a un numero equivocado es peor
+   que no mandar— asi que si no cumple, se saltea y queda en el log. */
+export function normalizarWa(tel) {
+  const d = String(tel || '').replace(/\D/g, '');
+  if (!d.startsWith('54')) return null;      // solo Argentina
+  if (d.length < 12 || d.length > 13) return null;
+  return d;
+}
+
+async function handlerWaPedido(req, res) {
+  if (!applyRateLimit(req, res, { bucket: 'wa-pedido', limit: 20, windowMs: 60000 })) return;
+
+  const { solicitud_id, rubro: rubroForzado } = req.body || {};
+  if (!esUUID(solicitud_id)) return res.status(400).json({ error: 'missing fields' });
+
+  // Igual que en ?action=cotizacion: lo que no corresponde mandar sale con
+  // 200 y un motivo. No es un error del que llama y un 4xx solo le llenaria
+  // la consola al comprador, que no tiene nada que ver con esto.
+  const saltear = (motivo, extra) => res.status(200).json({ ok: true, skipped: motivo, ...extra });
+
+  const token = (process.env.WHATSAPP_TOKEN || '').trim();
+  const phoneId = (process.env.WHATSAPP_PHONE_ID || '').trim();
+  if (!token || !phoneId) return saltear('wa_apagado');
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !SUPABASE_BASE) {
+    console.error('[wa-pedido] falta SUPABASE_SERVICE_ROLE_KEY o SUPABASE_URL');
+    return res.status(500).json({ error: 'server config error' });
+  }
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  try {
+    // --- 1) El pedido ---
+    const solRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/solicitudes?id=eq.${encodeURIComponent(solicitud_id)}` +
+      `&select=id,titulo,cantidad,unidad,rubro,provincia,estado,cierra_at,created_at&limit=1`,
+      { headers });
+    const sol = (await solRes.json())?.[0];
+    if (!sol) return res.status(404).json({ error: 'not found' });
+
+    if (sol.estado !== 'abierta') return saltear('pedido_cerrado');
+    if (sol.cierra_at && new Date(sol.cierra_at) <= new Date()) return saltear('pedido_vencido');
+
+    /* Un admin puede forzar el rubro para reenviar a mano un pedido que cayo
+       en "Otro" (son ~4 de cada 10). Solo en ese caso se acepta un pedido
+       viejo: el founder los revisa cuando puede, no en los 15 minutos
+       siguientes. Sin sesion de admin valida, el rubro forzado se IGNORA
+       —no se rechaza el pedido entero— y sigue el camino normal. */
+    let rubro = String(sol.rubro || '').trim();
+    let porAdmin = false;
+    if (rubroForzado) {
+      const adminEmail = await verificarAdmin(req, serviceKey);
+      if (adminEmail) {
+        rubro = String(rubroForzado).trim();
+        porAdmin = true;
+        console.log(`[wa-pedido] ${adminEmail} fuerza el rubro ${rubro} en ${solicitud_id}`);
+      }
+    }
+
+    if (!porAdmin) {
+      const edadMin = (Date.now() - new Date(sol.created_at).getTime()) / 60000;
+      if (edadMin > WA_VENTANA_MIN) return saltear('pedido_viejo');
+    }
+
+    // Un pedido sin rubro util no le sirve a nadie: se saltea y lo reenvia
+    // una persona con el rubro correcto. Ver rubroEsCiego() en _rubros.js.
+    if (rubroEsCiego(rubro)) return saltear('rubro_ciego', { rubro });
+
+    // --- 2) Tope diario global ---
+    const cuentaRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?created_at=gte.${encodeURIComponent(inicioDelDiaAR())}&select=id`,
+      { headers: { ...headers, Prefer: 'count=exact', Range: '0-0' } });
+    if (!cuentaRes.ok) {
+      // La tabla no existe -> la migracion todavia no se corrio. Sin bitacora
+      // no se manda: es preferible no avisar a avisar sin poder registrarlo,
+      // porque el registro ES el anti-duplicado.
+      console.warn('[wa-pedido] falta correr sql/2026-08-24_aviso_wa_pedidos.sql');
+      return saltear('sin_bitacora');
+    }
+    const enviadosHoy = parseInt(String(cuentaRes.headers.get('content-range') || '').split('/')[1], 10) || 0;
+    if (enviadosHoy >= WA_TOPE_DIARIO) return saltear('tope_diario', { enviados_hoy: enviadosHoy });
+
+    // --- 3) Los destinatarios ---
+    const provRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/proveedores?estado=eq.aprobado` +
+      `&select=id,nombre,rubro,provincia,whatsapp,last_wa_at,notif_wa,rubros_seguidos&limit=1000`,
+      { headers });
+    if (!provRes.ok) {
+      // Pasa si last_wa_at / notif_wa todavia no existen: PostgREST rechaza
+      // el select entero. Misma conclusion que arriba.
+      console.warn('[wa-pedido] no se pudo leer proveedores:', provRes.status, await provRes.text());
+      return saltear('sin_bitacora');
+    }
+
+    const destinatarios = elegirDestinatarios(await provRes.json(), rubro, sol.provincia);
+    if (!destinatarios.length) return saltear('sin_destinatarios', { rubro });
+
+    const cupo = Math.max(0, WA_TOPE_DIARIO - enviadosHoy);
+    const lote = destinatarios.slice(0, cupo);
+
+    // --- 4) El envio ---
+    const forzarA = normalizarWa(process.env.WHATSAPP_TEST_TO || '');
+
+    let enviados = 0;
+    const fallos = [];
+
+    // De a 5 en paralelo: 25 mensajes secuenciales pueden pasarse del limite
+    // de tiempo de la funcion, y 25 en paralelo es una rafaga que Meta puede
+    // leer como abuso.
+    for (let i = 0; i < lote.length; i += 5) {
+      const tanda = lote.slice(i, i + 5);
+      const rtas = await Promise.all(tanda.map(p => enviarUno(p, {
+        headers, token, phoneId, forzarA, sol, rubro, solicitud_id
+      })));
+      rtas.forEach(r => {
+        if (r.ok) enviados++;
+        else if (r.motivo !== 'duplicado') fallos.push(r.motivo);
+      });
+    }
+
+    console.log(`[wa-pedido] pedido ${solicitud_id} (${rubro}): ${enviados} de ${lote.length} enviados`);
+    return res.status(200).json({
+      ok: true, enviados, candidatos: destinatarios.length,
+      fallos: fallos.slice(0, 5), rubro, prueba: !!forzarA
+    });
+
+  } catch (err) {
+    console.error('[wa-pedido] error inesperado:', err.message);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+}
+
+
+/* A QUIEN SE LE MANDA.
+   El rubro es filtro DURO; la zona NO. Motivo, contra los datos reales: 93
+   de los 150 proveedores aprobados estan en CABA y 35 en Buenos Aires. Si la
+   provincia filtrara, un comprador de Cordoba se quedaria sin nadie a quien
+   avisarle, cuando en la practica el mayorista de Once le vende igual y le
+   manda por encomienda. Asi que la provincia ORDENA, no excluye. */
+export function elegirDestinatarios(proveedores, rubro, provinciaPedido) {
+  const ahora = Date.now();
+  const candidatos = (proveedores || []).filter(p => {
+    if (!p || p.notif_wa === false) return false;              // se dio de baja
+    if (!normalizarWa(p.whatsapp)) return false;               // sin numero usable
+
+    /* rubros_seguidos manda si el proveedor lo configuro; si no, se usa
+       proveedores.rubro. Hoy lo configuro 1 de 150, asi que en los hechos
+       casi todos entran por rubro, pero el que se tomo el trabajo de elegir
+       sus rubros no tiene que recibir avisos de los otros. */
+    const seguidos = Array.isArray(p.rubros_seguidos) ? p.rubros_seguidos.filter(Boolean) : null;
+    const coincide = seguidos && seguidos.length
+      ? seguidos.some(r => rubroCoincide(r, rubro))
+      : rubroCoincide(p.rubro, rubro);
+    if (!coincide) return false;
+
+    if (p.last_wa_at) {
+      const horas = (ahora - new Date(p.last_wa_at).getTime()) / 3600000;
+      if (horas < WA_ENFRIAMIENTO_H) return false;
+    }
+    return true;
+  });
+
+  return candidatos.sort((a, b) => {
+    // 1) misma provincia que el comprador
+    const pa = provinciaPedido && a.provincia === provinciaPedido ? 0 : 1;
+    const pb = provinciaPedido && b.provincia === provinciaPedido ? 0 : 1;
+    if (pa !== pb) return pa - pb;
+    // 2) el que hace mas que no recibe uno (nunca recibio = primero de todos).
+    //    Reparte el alcance en vez de golpear siempre a los mismos.
+    //    FASE FUTURA: aca iria el ranking por desempeño.
+    const ta = a.last_wa_at ? new Date(a.last_wa_at).getTime() : 0;
+    const tb = b.last_wa_at ? new Date(b.last_wa_at).getTime() : 0;
+    if (ta !== tb) return ta - tb;
+    // 3) desempate estable, para que dos corridas den el mismo orden
+    return String(a.id).localeCompare(String(b.id));
+  }).slice(0, WA_LIMITE_DESTINATARIOS);
+}
+
+
+/* UN envio. Nunca lanza: un proveedor que falla no puede cortar la tanda.
+   Devuelve { ok } | { ok:false, motivo }.
+
+   El orden importa: RESERVAR -> mandar -> confirmar. Si se hiciera al reves,
+   dos llamadas simultaneas pasarian las dos el chequeo y el proveedor
+   recibiria dos WhatsApp iguales. */
+async function enviarUno(p, ctx) {
+  const { headers, token, phoneId, forzarA, sol, rubro, solicitud_id } = ctx;
+  const telReal = normalizarWa(p.whatsapp);
+  const destino = forzarA || telReal;
+
+  // 1) Reserva. El 409 contra avisos_wa_unico es el anti-duplicado real.
+  let reservaId = null;
+  try {
+    const r = await fetch(`${SUPABASE_BASE}/rest/v1/avisos_wa`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({
+        solicitud_id, proveedor_id: p.id, telefono: destino, estado: 'reservado'
+      })
+    });
+    if (r.status === 409) return { ok: false, motivo: 'duplicado' };
+    if (!r.ok) {
+      console.error('[wa-pedido] no se pudo reservar:', r.status, await r.text());
+      return { ok: false, motivo: 'sin_registro' };
+    }
+    reservaId = (await r.json())?.[0]?.id || null;
+  } catch (e) {
+    console.error('[wa-pedido] no se pudo reservar:', e.message);
+    return { ok: false, motivo: 'sin_registro' };
+  }
+
+  // 2) El mensaje.
+  try {
+    const cantidad = [sol.cantidad, sol.unidad].filter(Boolean).join(' ');
+    const params = [
+      limpiarParam(p.nombre, 40),
+      limpiarParam(rubro, 40),
+      limpiarParam(sol.titulo, 120),
+      limpiarParam(cantidad || 'a convenir', 40),
+      // El link va partido: la plantilla tiene el dominio fijo y solo el id
+      // viaja como parametro. Asi Meta no ve una URL entera variable, que es
+      // lo que hace que revisen la plantilla con lupa.
+      limpiarParam(solicitud_id, 40)
+    ];
+
+    const waRes = await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: destino,
+        type: 'template',
+        template: {
+          name: WA_TEMPLATE,
+          language: { code: WA_LANG },
+          components: [{ type: 'body', parameters: params.map(text => ({ type: 'text', text })) }]
+        }
+      })
+    });
+
+    const cuerpo = await waRes.json().catch(() => ({}));
+    if (!waRes.ok) {
+      const motivo = cuerpo?.error?.message || `http_${waRes.status}`;
+      console.error(`[wa-pedido] Meta rechazo el envio a ${p.id}:`, JSON.stringify(cuerpo?.error || cuerpo));
+      await cerrarAviso(headers, reservaId, { estado: 'fallo', error: String(motivo).slice(0, 500) });
+      return { ok: false, motivo };
+    }
+
+    await cerrarAviso(headers, reservaId, {
+      estado: 'enviado', wa_message_id: cuerpo?.messages?.[0]?.id || null
+    });
+
+    /* El enfriamiento se marca sobre el proveedor REAL aunque el mensaje haya
+       ido al numero de prueba: si no, probando con WHATSAPP_TEST_TO se
+       gastaria el enfriamiento de nadie y el dia que se encienda de verdad
+       los primeros pedidos saldrian todos juntos. */
+    await fetch(`${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${encodeURIComponent(p.id)}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ last_wa_at: new Date().toISOString() })
+    }).catch(() => { });
+
+    return { ok: true };
+
+  } catch (e) {
+    console.error('[wa-pedido] fallo el envio:', e.message);
+    await cerrarAviso(headers, reservaId, { estado: 'fallo', error: String(e.message).slice(0, 500) });
+    return { ok: false, motivo: e.message };
+  }
+}
+
+// Cierra la reserva. Nunca lanza: si esto falla, lo peor que pasa es que la
+// fila quede en 'reservado', que es justamente como se detecta un envio que
+// se corto por la mitad.
+async function cerrarAviso(headers, id, campos) {
+  if (!id) return;
+  try {
+    await fetch(`${SUPABASE_BASE}/rest/v1/avisos_wa?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(campos)
+    });
+  } catch (e) {
+    console.error('[wa-pedido] no se pudo cerrar el aviso:', e.message);
+  }
 }
