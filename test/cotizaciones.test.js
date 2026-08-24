@@ -908,6 +908,109 @@ const proveedor = { type: 'proveedor', name: PROV.nombre, email: 'p@b.com', prov
   });
 
   // ------------------------------------------------------------------
+  seccion('El rubro del formulario B no se cae en "Otro"');
+  // ------------------------------------------------------------------
+  /* Los tres casos de abajo son pedidos REALES de los primeros nueve de la
+     seccion. Los tres se publicaron con rubro 'Otro', y un pedido en 'Otro' no
+     le llega a ningun proveedor de ningun rubro. */
+
+  // Completa los pasos que faltan despues del producto para poder publicar.
+  async function completarB(m, provincia) {
+    m.w.cotizBVende('vendiendo');
+    m.w.cotizBInversion('100-300');
+    m.el('cz-b-prov').value = provincia || 'Buenos Aires';
+    m.w.cotizBProvincia();
+    await esperar(20);
+  }
+
+  const rubroPublicado = m => {
+    const ins = m.escrituras.filter(e => e.t === 'solicitudes' && e.op === 'insert');
+    asegurar(ins.length === 1, 'se esperaba exactamente un insert en solicitudes, hubo ' + ins.length);
+    return ins[0].fila.rubro;
+  };
+
+  await testAsync('"Jugueteria, bazar, regaleria" ya no cae en Otro', async () => {
+    const m = await formB();
+    m.el('cz-b-texto').value = 'Jugueteria, bazar, regaleria para el dia de la madre';
+    m.w.cotizBTexto();
+    await esperar(340);
+    m.el('cz-b-propio').value = 'Cotillon';
+    m.w.cotizBSumar();
+    await completarB(m, 'Catamarca');
+    await m.w.cotizPublicarB(null);
+    igual(rubroPublicado(m), 'Juguetería', 'el rubro salio mal');
+  });
+
+  await testAsync('si el texto no se deduce, el rubro sale del producto cargado', async () => {
+    const m = await formB();
+    // Frase que el diccionario no conoce a proposito: la senal esta abajo.
+    m.el('cz-b-texto').value = 'lo que se venda bien';
+    m.w.cotizBTexto();
+    await esperar(340);
+    m.el('cz-b-propio').value = 'Gorras jordan';
+    m.w.cotizBSumar();
+    await completarB(m);
+    await m.w.cotizPublicarB(null);
+    igual(rubroPublicado(m), 'Indumentaria', 'no uso el producto para deducir el rubro');
+  });
+
+  await testAsync('el titulo automatico acompana al rubro deducido', async () => {
+    const m = await formB();
+    m.el('cz-b-texto').value = 'lo que se venda bien';
+    m.w.cotizBTexto();
+    await esperar(340);
+    m.el('cz-b-propio').value = 'Termos';
+    m.w.cotizBSumar();
+    await completarB(m);
+    await m.w.cotizPublicarB(null);
+    const fila = m.escrituras.find(e => e.t === 'solicitudes' && e.op === 'insert').fila;
+    igual(fila.rubro, 'Bazar', 'el rubro salio mal');
+    igual(fila.titulo, 'Busco proveedor de Bazar', 'el titulo quedo desalineado del rubro');
+  });
+
+  await testAsync('sin ninguna senal sigue cayendo en Otro, sin romperse', async () => {
+    const m = await formB();
+    m.el('cz-b-texto').value = 'lo que se venda bien';
+    m.w.cotizBTexto();
+    await esperar(340);
+    m.el('cz-b-propio').value = 'Chirimbolos';
+    m.w.cotizBSumar();
+    await completarB(m);
+    await m.w.cotizPublicarB(null);
+    igual(rubroPublicado(m), 'Otro', 'el respaldo dejo de funcionar');
+  });
+
+  await testAsync('el texto manda sobre el producto cuando los dos se deducen', async () => {
+    const m = await formB();
+    m.el('cz-b-texto').value = 'blanqueria';
+    m.w.cotizBTexto();
+    await esperar(340);
+    // 'termo' es Bazar, pero la persona dijo que su negocio es blanqueria.
+    m.el('cz-b-propio').value = 'Termos';
+    m.w.cotizBSumar();
+    await completarB(m);
+    await m.w.cotizPublicarB(null);
+    igual(rubroPublicado(m), 'Blanquería', 'un producto suelto le gano a como describio su negocio');
+  });
+
+  await testAsync('el conteo en vivo no se queda pegado al rubro viejo', async () => {
+    const m = await formB();
+    m.el('cz-b-texto').value = 'lo que se venda bien';
+    m.w.cotizBTexto();
+    await esperar(340);
+    m.el('cz-b-propio').value = 'Gorras';
+    m.w.cotizBSumar();
+    await completarB(m);
+    await esperar(20);
+    contiene(m.el('cz-b-vivo').textContent, 'Indumentaria', 'la caja en vivo no nombro el rubro deducido');
+    m.el('cz-b-propio').value = 'Termos';
+    m.w.cotizBSumar();
+    await esperar(20);
+    // Sigue siendo Indumentaria: 'Gorras' se cargo primero y manda.
+    contiene(m.el('cz-b-vivo').textContent, 'Indumentaria', 'el rubro cambio al sumar un producto de otro palo');
+  });
+
+  // ------------------------------------------------------------------
   seccion('Cantidad del formulario A (el chip renombrado)');
   // ------------------------------------------------------------------
 

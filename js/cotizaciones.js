@@ -2553,12 +2553,41 @@
     return [];
   }
 
+  /* ---------------- RUBRO EFECTIVO DEL FORMULARIO B ----------------
+
+     El rubro sale de DOS lugares, no de uno.
+
+     b.rubro es lo que se dedujo de "qué quiere vender" y es el que manda los
+     chips sugeridos; eso no cambia. Pero cuando el diccionario no reconoce esa
+     frase, la persona igual carga sus productos a mano, y ESA es la señal más
+     específica que hay: un pedido real escribió "Ropa de marca jordan" (que no
+     se deducía) y cargó el producto "Gorras jordan", donde 'gorra' sí está en
+     el mapa. El dato estaba y se tiraba.
+
+     Sin esta segunda pasada el pedido se publicaba en 'Otro', y un pedido en
+     'Otro' no le llega a ningún proveedor. Pasó en 3 de los 9 primeros pedidos
+     reales de la sección.
+
+     El orden importa: primero el texto, que es cómo la persona describe su
+     negocio entero, y recién después los productos, que son una parte. */
+  function rubroEfectivoB(b) {
+    if (b.rubro) return b.rubro;
+    for (const p of (b.elegidos || [])) {
+      const r = rubroDeTermino(p);
+      if (r) return r;
+    }
+    return '';
+  }
+
   function estadoB() {
     if (!st.formB) {
       st.formB = {
         texto: '', sugeridos: [], elegidos: [],
         yaVende: '', inversion: '', provincia: '',
-        rubro: '', conteo: null, contando: false
+        // conteoRubro: con qué rubro se pidió el conteo cacheado. Hace falta
+        // porque ahora el rubro puede cambiar al sumar un producto, no solo al
+        // escribir, y ahí el número viejo queda mintiendo.
+        rubro: '', conteo: null, conteoRubro: '', contando: false
       };
     }
     return st.formB;
@@ -2815,18 +2844,23 @@
     const caja = $('cz-b-vivo');
     if (!caja) return;
 
-    const listo = b.rubro && b.provincia && b.inversion && b.elegidos.length;
+    const rubro = rubroEfectivoB(b);
+    const listo = rubro && b.provincia && b.inversion && b.elegidos.length;
     if (!listo) { caja.style.display = 'none'; return; }
 
-    if (b.conteo === null && !b.contando) {
+    if ((b.conteo === null || b.conteoRubro !== rubro) && !b.contando) {
       b.contando = true;
       caja.style.display = 'block';
-      caja.innerHTML = `<div class="cz-vivo-fila"><span class="cz-vivo-txt">Buscando proveedores de ${esc(b.rubro)}...</span></div>`;
-      const c = await contarProveedores(b.rubro, b.provincia);
+      caja.innerHTML = `<div class="cz-vivo-fila"><span class="cz-vivo-txt">Buscando proveedores de ${esc(rubro)}...</span></div>`;
+      const c = await contarProveedores(rubro, b.provincia);
       b.contando = false;
       // Mientras se contaba, la persona pudo cambiar algo o irse: se descarta.
       if (st.vista !== 'publicarB') return;
+      // Y si lo que cambió fue el rubro (sumó un producto de otro palo), este
+      // número es de otra pregunta: se tira y se vuelve a contar.
+      if (rubroEfectivoB(b) !== rubro) { pintarVivoB(); return; }
       b.conteo = c || { n: 0, enProv: 0, lista: [] };
+      b.conteoRubro = rubro;
     }
     if (b.conteo === null) return;
 
@@ -2835,11 +2869,11 @@
 
     if (!n) {
       caja.innerHTML = `<div class="cz-vivo-fila">${ICO.lupaChica}
-        <span class="cz-vivo-txt">Todavía no hay proveedores de <b>${esc(b.rubro)}</b> aprobados. Su pedido queda publicado 14 días y lo usamos para salir a buscarlos.</span>
+        <span class="cz-vivo-txt">Todavía no hay proveedores de <b>${esc(rubro)}</b> aprobados. Su pedido queda publicado 14 días y lo usamos para salir a buscarlos.</span>
       </div>`;
     } else {
       caja.innerHTML = `<div class="cz-vivo-fila">${ICO.lupaChica}
-          <span class="cz-vivo-txt"><b>${n} ${n === 1 ? 'proveedor' : 'proveedores'}</b> de ${esc(b.rubro)} pueden ver su pedido${enProv ? `, <b>${enProv}</b> en ${esc(b.provincia)}` : ''}.</span>
+          <span class="cz-vivo-txt"><b>${n} ${n === 1 ? 'proveedor' : 'proveedores'}</b> de ${esc(rubro)} pueden ver su pedido${enProv ? `, <b>${enProv}</b> en ${esc(b.provincia)}` : ''}.</span>
         </div>
         ${dentro !== null ? `<div class="cz-vivo-fila">${ICO.chequeRedondo}
           <span class="cz-vivo-txt"><b>${dentro}</b> ${dentro === 1 ? 'trabaja' : 'trabajan'} con un mínimo de compra que entra en lo que piensa invertir.</span>
@@ -2860,10 +2894,11 @@
     if (!b.provincia) return fallar('Elija dónde está su negocio.');
     if (err) err.style.display = 'none';
 
-    // El rubro puede no haberse deducido (escribio algo que el diccionario no
-    // conoce). El pedido igual vale: cae en "Otro" y sigue estando en el feed
-    // publico, donde lo ven todos los proveedores.
-    const rubro = b.rubro || 'Otro';
+    // Ultimo intento antes de 'Otro': el texto libre y, si no, los productos
+    // que cargo a mano (ver rubroEfectivoB). Recien si las dos pasadas fallan
+    // el pedido cae en "Otro": sigue en el feed publico, donde lo ven todos los
+    // proveedores, pero no le llega a los de ningun rubro en particular.
+    const rubro = rubroEfectivoB(b) || 'Otro';
 
     const datos = {
       tipo: TIPO_B,
