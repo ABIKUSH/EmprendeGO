@@ -838,6 +838,29 @@ function checkReveal() {
 window.addEventListener('scroll', checkReveal, { passive: true });
 // También al cargar
 document.addEventListener('DOMContentLoaded', () => {
+  /* LOS PARAMETROS DE LA URL SE LEEN ACA ARRIBA, ANTES DEL pushState.
+
+     No es una preferencia de estilo: el pushState de la linea siguiente
+     reemplaza la URL por window.location.pathname, que es la ruta SIN query
+     string. A partir de ahi window.location.search viene VACIO, y todo lo que
+     este bloque lee mas abajo (?tn=, ?ml=, ?pago=, ?ir=) daba null.
+
+     Lo trajo f8015f2 (2026-05-12), el arreglo del boton atras de Android, y
+     estuvo roto en silencio desde entonces: los sintomas son carteles que no
+     aparecen (Tienda Nube conectada, Mercado Libre conectado, "Verificando
+     pago..."), no errores. La conexion y el pago funcionan igual porque eso
+     pasa en el servidor.
+
+     Se descubrio el 2026-08-25 probando el aviso por WhatsApp al proveedor,
+     que entra por ?ir=cotizaciones&pedido=: el link abria el inicio.
+
+     Los deep-links de producto (?p=, ?prov=) nunca se rompieron porque se
+     leen FUERA de este handler, antes de que corra.
+
+     Se lee una sola vez y se guarda. No se toca el pushState: ese arreglo es
+     de otra cosa y funciona. */
+  const params = new URLSearchParams(window.location.search);
+
   // Push a dummy state so popstate fires on Android back button
   history.pushState(null, '', window.location.pathname);
   window.addEventListener('popstate', () => {
@@ -854,7 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  const tnParam = new URLSearchParams(window.location.search).get('tn');
+  const tnParam = params.get('tn');
   if (tnParam === 'ok') {
     setTimeout(() => showToast('Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
@@ -863,17 +886,17 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   }
 
-  const mlParam = new URLSearchParams(window.location.search).get('ml');
+  const mlParam = params.get('ml');
   if (mlParam === 'ok') {
     setTimeout(() => showToast('Mercado Libre conectado. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   } else if (mlParam === 'error') {
-    const reason = new URLSearchParams(window.location.search).get('reason');
+    const reason = params.get('reason');
     setTimeout(() => showToast(reason ? `Error al conectar Mercado Libre (${reason}). Intentá de nuevo.` : 'Error al conectar Mercado Libre. Intentá de nuevo.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   }
 
-  const pagoParam = new URLSearchParams(window.location.search).get('pago');
+  const pagoParam = params.get('pago');
   if (pagoParam === 'ok') {
     history.replaceState({}, '', window.location.pathname);
     // El webhook de MP puede tardar unos segundos en llegar y actualizar Supabase.
@@ -906,7 +929,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Deep-link a la pantalla de planes (ej: link de renovación enviado por WhatsApp).
-  const irParam = new URLSearchParams(window.location.search).get('ir');
+  const irParam = params.get('ir');
   if (irParam === 'planes') {
     history.replaceState({}, '', window.location.pathname);
     setTimeout(() => { try { goTo('planes'); } catch (e) { } }, 600);
@@ -916,9 +939,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // momento por si el módulo todavía no registró su entrada global.
     //
     // ?pedido= lo agrega el aviso por WhatsApp al proveedor y apunta a UN
-    // pedido puntual. Se lee ANTES del replaceState, que es el que limpia la
-    // barra de direcciones y se lo llevaría puesto.
-    const pedidoParam = new URLSearchParams(window.location.search).get('pedido');
+    // pedido puntual. Sale de `params`, capturado arriba de todo: para cuando
+    // corre esta línea, window.location.search ya está vacío.
+    const pedidoParam = params.get('pedido');
     history.replaceState({}, '', window.location.pathname);
     let intentosCotiz = 0;
     const abrirCotiz = () => {
