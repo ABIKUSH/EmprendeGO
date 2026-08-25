@@ -870,6 +870,31 @@ export function normalizarWa(tel) {
   return d;
 }
 
+/* El numero al que se desvian TODOS los envios mientras se prueba
+   (WHATSAPP_TEST_TO). Se limpia pero NO pasa por normalizarWa().
+
+   POR QUE NO, aunque parezca que deberia: un celular argentino se puede
+   escribir de dos formas validas y son el MISMO numero.
+     54  9 11 6445 7134  -> 13 digitos, la forma estandar de WhatsApp
+     54 11 15 6445 7134  -> 14 digitos, la forma vieja con el 15
+   normalizarWa() exige 12-13 porque asi estan guardados los 150 proveedores
+   aprobados, y esta bien que sea estricta con datos que vienen de la base.
+
+   Pero la lista de destinatarios permitidos del numero de PRUEBA de Meta
+   guardo el numero en la forma vieja de 14 digitos, y compara texto contra
+   texto: mandarle la forma estandar rebota con "(#131030) Recipient phone
+   number not in allowed list" aunque el numero este cargado y verificado.
+   Nos costo tres intentos descubrirlo.
+
+   Este valor lo pone el operador a mano en una variable de entorno, no viene
+   de la base ni de un usuario, asi que alcanza con un piso de largo para
+   atajar un dedazo. Nada de esto afecta a produccion: cuando se saque
+   WHATSAPP_TEST_TO, los proveedores reciben en su formato de siempre. */
+export function numeroDePrueba(valor) {
+  const d = String(valor || '').replace(/\D/g, '');
+  return d.length >= 10 ? d : null;
+}
+
 async function handlerWaPedido(req, res) {
   if (!applyRateLimit(req, res, { bucket: 'wa-pedido', limit: 20, windowMs: 60000 })) return;
 
@@ -962,7 +987,7 @@ async function handlerWaPedido(req, res) {
     const lote = destinatarios.slice(0, cupo);
 
     // --- 4) El envio ---
-    const forzarA = normalizarWa(process.env.WHATSAPP_TEST_TO || '');
+    const forzarA = numeroDePrueba(process.env.WHATSAPP_TEST_TO);
 
     let enviados = 0;
     const fallos = [];

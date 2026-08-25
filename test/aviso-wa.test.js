@@ -6,10 +6,10 @@
    test/cotizaciones.test.js.
 
    QUE SE PRUEBA Y POR QUE
-   Solo las tres funciones puras de api/notificar-mensaje.js que deciden A
-   QUIEN se le manda y QUE dice, mas el matcher de rubros de api/_rubros.js.
-   No se prueba el envio en si: eso habla con Meta y con Supabase, y una
-   prueba que finge las dos cosas termina probando los fingidos.
+   Solo las funciones puras de api/notificar-mensaje.js que deciden A QUIEN se
+   le manda y QUE dice, mas el matcher de rubros de api/_rubros.js. No se
+   prueba el envio en si: eso habla con Meta y con Supabase, y una prueba que
+   finge las dos cosas termina probando los fingidos.
 
    La razon de existir de este archivo es que un error en elegirDestinatarios
    no se ve en pantalla: se ve como un WhatsApp que le llega a un proveedor
@@ -56,7 +56,7 @@ function prov(id, extra) {
 async function main() {
   const api = await import('../api/notificar-mensaje.js');
   const rub = await import('../api/_rubros.js');
-  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido } = api;
+  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba } = api;
   const { rubroCoincide, rubroEsCiego } = rub;
 
   /* =================================================================== */
@@ -88,6 +88,34 @@ async function main() {
   test('un 54 suelto o demasiado largo no pasa', () => {
     igual(normalizarWa('54'), null);
     igual(normalizarWa('549113929559100'), null);
+  });
+
+  /* =================================================================== */
+  seccion('El numero de desvio de las pruebas es mas permisivo que el de la base');
+
+  test('acepta la forma vieja de 14 digitos, que normalizarWa rechaza', () => {
+    // 54 11 15 6445 7134. Es como la guardo la lista de permitidos del numero
+    // de prueba de Meta, y con la forma estandar rebota con un 131030.
+    igual(numeroDePrueba('54111564457134'), '54111564457134');
+    igual(normalizarWa('54111564457134'), null, 'normalizarWa sigue siendo estricta');
+  });
+
+  test('acepta tambien la forma estandar de 13 digitos', () => {
+    igual(numeroDePrueba('5491164457134'), '5491164457134');
+  });
+
+  test('limpia separadores', () => {
+    igual(numeroDePrueba('+54 11 15 6445-7134'), '54111564457134');
+  });
+
+  test('vacio o sin cargar devuelve null, o sea que no hay desvio', () => {
+    igual(numeroDePrueba(''), null);
+    igual(numeroDePrueba(undefined), null);
+  });
+
+  test('un dedazo corto no desvia los mensajes a cualquier lado', () => {
+    igual(numeroDePrueba('549'), null);
+    igual(numeroDePrueba('1'), null);
   });
 
   /* =================================================================== */
