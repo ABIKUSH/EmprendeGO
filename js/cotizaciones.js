@@ -5313,6 +5313,33 @@
        bienvenida es la forma mas rapida de perderlo. */
     if (destinoId) {
       guardarDestino(destinoId);      // por si tiene que pasar por el login
+
+      /* HAY QUE ESPERAR LA SESION ANTES DE DECIDIR NADA.
+
+         app.js dispara este deep-link a los 600 ms de cargar la pagina, pero
+         checkSession() —que es la que arma currentUser— es asincronica y a
+         esa altura casi nunca termino. Sin esta espera, un proveedor CON
+         sesion valida caia en la pantalla de "inicie sesion", y para cuando
+         la sesion se armaba el link ya se habia perdido.
+
+         Pasó en la primera prueba real, 2026-08-25: el proveedor toco el
+         link, tenia sesion, y termino en el inicio.
+
+         Se distingue "todavia no cargo" de "no hay cuenta" preguntandole a
+         Supabase, que responde rapido y desde el almacenamiento local: si no
+         hay sesion no se espera nada y se va derecho al login. Solo se
+         aguarda cuando hay algo que aguardar. */
+      st.vista = 'feed'; st.cargando = true; render();   // esqueleto mientras tanto
+
+      if (!currentUser) {
+        let haySesion = false;
+        try {
+          const { data } = await sb.auth.getSession();
+          haySesion = !!(data && data.session);
+        } catch (e) { }
+        if (haySesion) await esperarUsuario(8000);
+      }
+
       if (!currentUser) {
         st.vista = 'login'; st.cargando = false; return render();
       }
