@@ -165,21 +165,28 @@ async function main() {
       titulo: 'Busco proveedor de Indumentaria', tipo: 'proveedor',
       productos: ['Ropa mujer', 'Deportiva', 'Accesorios de moda']
     });
-    igual(r.linea, 'Ropa mujer, Deportiva, Accesorios de moda');
-    igual(r.cantidad, '3 productos');
-    asegurar(!/Busco proveedor/.test(r.linea), 'el titulo generico no tiene que aparecer');
+    igual(r.linea, 'Busca proveedor para: Ropa mujer, Deportiva, Accesorios de moda');
+    asegurar(!/Busco proveedor de/.test(r.linea), 'el titulo generico no tiene que aparecer');
   });
 
-  test('pedido de proveedor con un solo producto: singular', () => {
-    const r = textoPedido({ titulo: 'Busco proveedor de Otro', productos: ['Gorras jordan'] });
-    igual(r.linea, 'Gorras jordan');
-    igual(r.cantidad, '1 producto');
+  test('NUNCA un numero en la cantidad de un pedido de proveedor', () => {
+    /* El bug que mas plata podia costar. Con "Cantidad: 2 productos" el
+       proveedor entiende que le quieren comprar DOS PRENDAS, descarta el
+       pedido por chico y no cotiza — justo en los pedidos mas grandes, que
+       son los de alguien que quiere surtirse de dos lineas enteras. */
+    const dos = textoPedido({ titulo: 'x', productos: ['Ropa hombre', 'Deportiva'] });
+    igual(dos.cantidad, 'a convenir');
+    asegurar(!/\d/.test(dos.cantidad), 'no puede haber ningun digito en la cantidad');
+
+    const uno = textoPedido({ titulo: 'x', productos: ['Gorras jordan'] });
+    igual(uno.linea, 'Busca proveedor para: Gorras jordan');
+    igual(uno.cantidad, 'a convenir');
   });
 
   test('productos con basura adentro no rompen ni ensucian la linea', () => {
     const r = textoPedido({ titulo: 'x', productos: ['Gorras', '', null, 42, {}, '  Buzos  '] });
-    igual(r.linea, 'Gorras, Buzos');
-    igual(r.cantidad, '2 productos');
+    igual(r.linea, 'Busca proveedor para: Gorras, Buzos');
+    igual(r.cantidad, 'a convenir');
   });
 
   test('un pedido sin nada no devuelve vacio en la cantidad', () => {
@@ -250,21 +257,40 @@ async function main() {
     mismos(r, ['a']);
   });
 
-  test('el enfriamiento de 24 h se respeta', () => {
-    const r = elegirDestinatarios([
-      prov('a', { last_wa_at: hs(2) }),    // recibio hace 2 h -> no
-      prov('b', { last_wa_at: hs(30) }),   // hace 30 h -> si
-      prov('c', { last_wa_at: null })      // nunca -> si
-    ], 'Bazar', null);
-    asegurar(r.every(p => p.id !== 'a'), 'el que recibio hace 2 h no tiene que estar');
-    igual(r.length, 2);
+  /* EL TOPE DIARIO POR PROVEEDOR.
+
+     Estuvo en 1 cada 24 h y estaba mal: tiraba el segundo pedido del dia de
+     cada rubro, o sea perdia ventas, para protegerse de un volumen que no
+     existe (1,2 pedidos con aviso por dia repartidos en 17 rubros). Ahora son
+     4 en ventana movil y funciona como cortacircuitos, no como filtro. */
+
+  test('un proveedor que ya recibio 4 avisos hoy queda afuera', () => {
+    const r = elegirDestinatarios(
+      [prov('a'), prov('b')], 'Bazar', null,
+      new Map([['a', 4]])
+    );
+    mismos(r, ['b'], 'el que llego al tope no tiene que estar');
   });
 
-  test('justo antes de las 24 h todavia NO, justo despues SI', () => {
-    const casi = elegirDestinatarios([prov('a', { last_wa_at: hs(23.5) })], 'Bazar', null);
-    igual(casi.length, 0, 'a las 23:30 todavia esta enfriando');
-    const pasado = elegirDestinatarios([prov('a', { last_wa_at: hs(24.5) })], 'Bazar', null);
-    igual(pasado.length, 1, 'a las 24:30 ya puede recibir');
+  test('con 3 avisos todavia entra: el cuarto se manda', () => {
+    const r = elegirDestinatarios(
+      [prov('a')], 'Bazar', null, new Map([['a', 3]])
+    );
+    igual(r.length, 1);
+  });
+
+  test('DOS pedidos del mismo rubro el mismo dia le llegan a la misma gente', () => {
+    // Es lo que el tope viejo de 1 cada 24 h rompia, y por lo que se cambio.
+    const lista = [prov('a'), prov('b')];
+    const primero = elegirDestinatarios(lista, 'Bazar', null, new Map());
+    const segundo = elegirDestinatarios(lista, 'Bazar', null, new Map([['a', 1], ['b', 1]]));
+    mismos(primero, ['a', 'b']);
+    mismos(segundo, ['a', 'b'], 'el segundo pedido del dia no puede quedarse sin nadie');
+  });
+
+  test('sin contador (llamada vieja) no se filtra a nadie por tope', () => {
+    igual(elegirDestinatarios([prov('a')], 'Bazar', null).length, 1);
+    igual(elegirDestinatarios([prov('a')], 'Bazar', null, null).length, 1);
   });
 
   /* =================================================================== */
@@ -316,10 +342,15 @@ async function main() {
     mismos(r, ['nunca', 'viejo', 'reciente']);
   });
 
-  test('nunca se pasa de 25 destinatarios', () => {
+  test('nunca se pasa del tope de destinatarios por pedido', () => {
+    /* El numero va escrito a proposito y no leido de la constante: si alguien
+       lo sube, esta prueba se pone roja y lo obliga a mirar por que. Es la
+       unica cosa que limita cuanta gente recibe un mensaje de una sola vez, y
+       el numero de EmprendeGO ya fue restringido una vez por mandar en masa.
+       Hoy esta en 8 (arranque prudente); el techo pensado es 25. */
     const muchos = [];
     for (let i = 0; i < 40; i++) muchos.push(prov('p' + String(i).padStart(2, '0')));
-    igual(elegirDestinatarios(muchos, 'Bazar', null).length, 25);
+    igual(elegirDestinatarios(muchos, 'Bazar', null).length, 8);
   });
 
   test('dos corridas con los mismos datos dan el mismo orden', () => {

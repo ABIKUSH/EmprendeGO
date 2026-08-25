@@ -738,17 +738,37 @@ function plantillaAnuncioCotizaciones(nombreCrudo, unsubUrl) {
      que no existe y no entra en el alcance de este MVP.
    ===================================================================== */
 
-// A cuantos proveedores como maximo se avisa por pedido. El rubro mas
-// poblado (Indumentaria) tiene 35 aprobados; con este tope, el orden por
-// provincia decide de verdad quien entra y quien no.
-const WA_LIMITE_DESTINATARIOS = 25;
+/* A cuantos proveedores como maximo se avisa por pedido.
 
-// Un solo WhatsApp por proveedor cada 24 h. ES EL PARAMETRO MAS IMPORTANTE
-// DEL ARCHIVO: con 5 pedidos por dia, un proveedor de Indumentaria recibiria
-// 3 mensajes diarios, nos bloquearia, y a Meta le alcanza con unos cuantos
-// bloqueos para bajarnos la calificacion de calidad y limitar el numero.
-// Ya nos paso una vez con el numero personal por presentar proveedores.
-const WA_ENFRIAMIENTO_H = 24;
+   En 8 a proposito, y NO porque sea el numero correcto: es el arranque
+   prudente. El numero de EmprendeGO ya fue restringido una vez por presentar
+   proveedores en masa, asi que se empieza chico, se mira la calificacion de
+   calidad en el panel de Meta unos dias, y recien ahi se sube.
+
+   El techo natural es 25: el rubro mas poblado (Indumentaria) tiene 35
+   aprobados y con 25 el orden por provincia todavia decide quien entra. */
+const WA_LIMITE_DESTINATARIOS = 8;
+
+/* Tope de avisos por proveedor en 24 h, en ventana movil.
+
+   Estuvo en 1 y ESTABA MAL. El razonamiento original era: con 5 pedidos
+   diarios, un proveedor de Indumentaria recibiria 3 mensajes por dia y nos
+   bloquearia. El error fue calcular sobre un volumen inventado.
+
+   Volumen real, medido el 2026-08-25 sobre los 19 pedidos reales: 1,58
+   pedidos por dia, de los cuales el 42% cae en rubro ciego, o sea ~1,2
+   pedidos con aviso por dia repartidos entre 17 rubros. Un proveedor recibe
+   menos de un mensaje diario. El tope de 1 no protegia de nada y a cambio
+   tiraba el segundo pedido del dia de cada rubro, que es perder ventas.
+
+   En 4 funciona como cortacircuitos y no como filtro: con el volumen de hoy
+   casi nunca se toca. Si el volumen se multiplica, frena la ráfaga.
+
+   OJO: se cuenta contra avisos_wa, no contra proveedores.last_wa_at. Esa
+   columna guarda solo el ULTIMO envio y no sirve para un tope de varios; se
+   sigue escribiendo porque ordena el reparto (ver elegirDestinatarios). */
+const WA_MAX_POR_DIA = 4;
+const WA_VENTANA_TOPE_H = 24;
 
 // Techo global por dia. Es un cortacircuitos, no una regla de negocio: si
 // algo se va de control, el gasto y el daño al numero quedan acotados.
@@ -852,10 +872,24 @@ export function textoPedido(sol) {
     ? sol.productos.filter(p => typeof p === 'string' && p.trim()).map(p => p.trim())
     : [];
 
+  /* NUNCA un numero en la cantidad de un pedido de proveedor.
+
+     Version anterior: la lista en la linea y "2 productos" en la cantidad.
+     Leido en el celular queda "Cantidad: 2 productos", y el proveedor entiende
+     que le quieren comprar DOS PRENDAS. Descarta el pedido por chico y no
+     cotiza, cuando en realidad del otro lado hay alguien que quiere surtirse
+     de dos lineas enteras. Es el peor error posible: filtra justo los pedidos
+     mas grandes. Lo detecto el founder leyendo un aviso real (2026-08-25,
+     pedido de Bruno Di Yorio: "Ropa hombre, Deportiva").
+
+     La cantidad no se puede omitir —la plantilla tiene "Cantidad: " fijo y un
+     parametro vacio hace fallar el envio entero— asi que va "a convenir", que
+     es la verdad: en un pedido de este tipo la cantidad se acuerda despues.
+     El "Busca proveedor para:" adelante deja claro de que se trata. */
   if (prods.length) {
     return {
-      linea: prods.join(', '),
-      cantidad: prods.length === 1 ? '1 producto' : `${prods.length} productos`
+      linea: 'Busca proveedor para: ' + prods.join(', '),
+      cantidad: 'a convenir'
     };
   }
 
@@ -980,7 +1014,25 @@ async function handlerWaPedido(req, res) {
       return saltear('sin_bitacora');
     }
 
-    const destinatarios = elegirDestinatarios(await provRes.json(), rubro, sol.provincia);
+    /* Cuantos avisos recibio CADA proveedor en las ultimas 24 h.
+
+       Se cuenta contra avisos_wa y no contra proveedores.last_wa_at porque
+       esa columna guarda un solo instante: sirve para "hace cuanto que no
+       recibe" (que es como se ordena el reparto) pero no para un tope de
+       varios por dia. Son unas pocas decenas de filas: pesa nada. */
+    const desde24 = new Date(Date.now() - WA_VENTANA_TOPE_H * 3600 * 1000).toISOString();
+    const recientesRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?estado=eq.enviado` +
+      `&created_at=gte.${encodeURIComponent(desde24)}&select=proveedor_id&limit=5000`,
+      { headers });
+    const enviados24 = new Map();
+    if (recientesRes.ok) {
+      for (const f of (await recientesRes.json()) || []) {
+        enviados24.set(f.proveedor_id, (enviados24.get(f.proveedor_id) || 0) + 1);
+      }
+    }
+
+    const destinatarios = elegirDestinatarios(await provRes.json(), rubro, sol.provincia, enviados24);
     if (!destinatarios.length) return saltear('sin_destinatarios', { rubro });
 
     const cupo = Math.max(0, WA_TOPE_DIARIO - enviadosHoy);
@@ -1025,8 +1077,8 @@ async function handlerWaPedido(req, res) {
    provincia filtrara, un comprador de Cordoba se quedaria sin nadie a quien
    avisarle, cuando en la practica el mayorista de Once le vende igual y le
    manda por encomienda. Asi que la provincia ORDENA, no excluye. */
-export function elegirDestinatarios(proveedores, rubro, provinciaPedido) {
-  const ahora = Date.now();
+export function elegirDestinatarios(proveedores, rubro, provinciaPedido, enviados24) {
+  const cuenta = enviados24 instanceof Map ? enviados24 : new Map();
   const candidatos = (proveedores || []).filter(p => {
     if (!p || p.notif_wa === false) return false;              // se dio de baja
     if (!normalizarWa(p.whatsapp)) return false;               // sin numero usable
@@ -1041,10 +1093,9 @@ export function elegirDestinatarios(proveedores, rubro, provinciaPedido) {
       : rubroCoincide(p.rubro, rubro);
     if (!coincide) return false;
 
-    if (p.last_wa_at) {
-      const horas = (ahora - new Date(p.last_wa_at).getTime()) / 3600000;
-      if (horas < WA_ENFRIAMIENTO_H) return false;
-    }
+    // Tope de avisos en las ultimas 24 h. Ver WA_MAX_POR_DIA arriba: es un
+    // cortacircuitos contra una rafaga, no un filtro de todos los dias.
+    if ((cuenta.get(p.id) || 0) >= WA_MAX_POR_DIA) return false;
     return true;
   });
 
