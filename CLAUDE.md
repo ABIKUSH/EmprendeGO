@@ -149,7 +149,9 @@ Hipótesis única que se está midiendo: *¿el proveedor cotiza más rápido si 
 - TN / ML full catalog import: `renderTiendaNubeSection()` / `renderMercadoLibreSection()` paint the dashboard tile in 3 states (not-Pro → gray locked, Pro+disconnected → brand color "Connect", Pro+connected → "Sync"). After sync the category-mapping modal opens if new categories arrived.
 - Pro gate: `esProvPro()` reads `currentUser.provData.plan === 'pro'` and checks `plan_hasta` expiry. The backend re-validates Plan Pro before any sync — never trust the UI gate alone.
 - Approval flow: admin sets `estado='aprobado'` on `proveedores` row
-- Deep-links por query string (todos se leen ANTES del `history.replaceState` que limpia la barra): `?pago=`, `?tn=`, `?ml=`, `?p=` (producto), `?prov=` (proveedor), `?ir=planes`, `?ir=cotizaciones` y **`?ir=cotizaciones&pedido=<uuid>`**, que es el que manda el aviso por WhatsApp. Si agregás uno nuevo, fijate que no choque con estos.
+- Deep-links por query string: `?pago=`, `?tn=`, `?ml=`, `?p=` (producto), `?prov=` (proveedor), `?ir=planes`, `?ir=cotizaciones` y **`?ir=cotizaciones&pedido=<uuid>`**, que es el que manda el aviso por WhatsApp. Si agregás uno nuevo, fijate que no choque con estos.
+
+⚠️ **Los parámetros se leen UNA sola vez, en la constante `params` del tope del handler de `DOMContentLoaded`. Nunca leas `window.location.search` más abajo de esa línea: viene vacío.** La primera sentencia del handler es `history.pushState(null, '', window.location.pathname)` (arreglo del botón atrás de Android, `f8015f2`), y `pathname` es la ruta **sin** query string, así que ese pushState borra los parámetros de la URL. Estuvo roto en silencio del 2026-05-12 al 2026-08-25 y dejó mudos los avisos de TN/ML/MP y el deep-link del mail de anuncio; los síntomas son carteles que no aparecen, no errores, por eso nadie lo notó. `?p=` y `?prov=` se salvaron porque se leen fuera del handler.
 
 ## Analytics y Campañas
 
