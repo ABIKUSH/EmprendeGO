@@ -1305,24 +1305,33 @@ async function handlerWaWebhook(req, res) {
 
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
-  /* A Meta SIEMPRE se le contesta 200 y rapido. Si tarda o devuelve error,
-     reintenta el mismo evento una y otra vez y termina desactivando el
-     webhook. Todo lo que hacemos abajo es de mejor esfuerzo: si algo falla,
-     falla en silencio del lado nuestro y Meta se queda tranquila. */
-  res.status(200).json({ ok: true });
+  /* SE PROCESA PRIMERO Y SE CONTESTA DESPUES. Al reves NO funciona.
 
+     La version anterior mandaba el 200 primero "para no hacer esperar a Meta"
+     y hacia el trabajo despues. En Vercel eso no corre: apenas se manda la
+     respuesta, la funcion se congela y lo que quedo pendiente se pierde. El
+     sintoma fue exactamente ese —el webhook configurado y suscrito, los
+     mensajes saliendo, y entregado_at / leido_at siempre en NULL— y no se ve
+     en ninguna prueba local, porque local no congela nada.
+
+     El riesgo del otro lado es real pero chico: si tardamos, Meta reintenta y
+     puede terminar desactivando el webhook. Lo que hacemos son dos PATCH
+     contra PostgREST, del orden de milisegundos. Y va todo envuelto: pase lo
+     que pase se contesta 200, que es lo que Meta necesita para no reintentar. */
   try {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!serviceKey || !SUPABASE_BASE) return;
-    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
-
-    for (const valor of valoresDelEvento(req.body)) {
-      for (const st of (valor.statuses || [])) await anotarAcuse(headers, st);
-      for (const msg of (valor.messages || [])) await responderA(headers, msg);
+    if (serviceKey && SUPABASE_BASE) {
+      const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+      for (const valor of valoresDelEvento(req.body)) {
+        for (const st of (valor.statuses || [])) await anotarAcuse(headers, st);
+        for (const msg of (valor.messages || [])) await responderA(headers, msg);
+      }
     }
   } catch (e) {
     console.error('[wa-webhook] error procesando el evento:', e.message);
   }
+
+  return res.status(200).json({ ok: true });
 }
 
 /* Meta anida los eventos tres niveles: entry[].changes[].value. Se aplana
