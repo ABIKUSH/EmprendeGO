@@ -1492,6 +1492,19 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
             </div>
             <span style="color:#999;font-size:.9rem">›</span>
           </div>
+          <!-- Va como <a> y no con goTo(): la privacidad es una página aparte
+               (privacidad.html, servida en /privacidad por un rewrite de
+               vercel.json), no una pantalla de la SPA. Hasta el 2026-08-26 no
+               estaba enlazada desde ningún lado y solo se llegaba escribiendo
+               la URL a mano. Meta la tiene registrada como la política de la
+               app de WhatsApp, así que además tiene que ser encontrable. -->
+          <a href="/privacidad" style="display:flex;align-items:center;justify-content:space-between;background:white;border:1px solid #E5E5E5;border-radius:12px;padding:13px 16px;cursor:pointer;margin-top:8px;text-decoration:none">
+            <div style="display:flex;align-items:center;gap:10px">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#0b6b45" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span style="font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;color:#333">Política de Privacidad</span>
+            </div>
+            <span style="color:#999;font-size:.9rem">›</span>
+          </a>
         </div>
         <button class="logout-btn" onclick="logout()">Cerrar sesión</button>
       </div>
@@ -1677,6 +1690,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
       <div style="text-align:center;margin-top:10px">
         <span onclick="goTo('terminos')" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">Términos y Condiciones</span>
+        <span style="font-size:.75rem;color:#CCC;margin:0 6px">·</span>
+        <!-- Va como <a> y no con goTo(): la privacidad es una página aparte
+             (privacidad.html, servida en /privacidad por un rewrite de
+             vercel.json), no una pantalla de la SPA. Hasta hoy no estaba
+             enlazada desde ningún lado de la app y solo se llegaba escribiendo
+             la URL a mano. -->
+        <a href="/privacidad" style="font-size:.75rem;color:#999;text-decoration:underline">Política de Privacidad</a>
       </div>
       <button class="logout-btn" onclick="logout()" style="margin-top:10px">Cerrar sesión</button>
     </div>
@@ -2320,7 +2340,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div class="screen" id="screen-cotizaciones"></div>
 
 <script src="js/buscador.js?v=20260810-rescate"></script>
-<script src="js/app.js?v=20260825-deeplink2"></script>
+<script src="js/app.js?v=20260826-privacidad"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
 <script src="js/cotizaciones.js?v=20260825-deeplink2"></script>
 <script>

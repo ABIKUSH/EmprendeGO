@@ -1410,10 +1410,24 @@ async function responderA(headers, msg) {
   const de = String((msg && msg.from) || '').replace(/\D/g, '');
   if (!de) return;
 
+  /* NO se busca por telefono exacto. El mismo celular argentino viaja escrito
+     de dos formas —54 9 11 6445 7134 y 54 11 15 6445 7134— y no controlamos
+     cual: nosotros guardamos la que se uso para mandar y Meta informa la
+     canonica suya. Comparar texto contra texto no encuentra nada, que es
+     exactamente lo que paso la primera vez que se probo (2026-08-26).
+
+     Se compara por los ULTIMOS 8 DIGITOS, que en Argentina son el numero
+     local y no cambian entre las dos formas. Que dos proveedores compartan
+     los ultimos 8 es practicamente imposible, y si pasara el peor caso es
+     una respuesta automatica al proveedor equivocado — que igual es un
+     proveedor al que ya le habiamos escrito. */
+  const cola = de.slice(-8);
+  if (cola.length < 8) return;
+
   try {
     const desde = new Date(Date.now() - WA_RESPUESTA_VENTANA_DIAS * 86400000).toISOString();
     const r = await fetch(
-      `${SUPABASE_BASE}/rest/v1/avisos_wa?telefono=eq.${encodeURIComponent(de)}` +
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?telefono=like.*${encodeURIComponent(cola)}` +
       `&created_at=gte.${encodeURIComponent(desde)}` +
       `&select=id,solicitud_id,respondio_at&order=created_at.desc&limit=1`,
       { headers });
