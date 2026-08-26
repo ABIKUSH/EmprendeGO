@@ -1435,9 +1435,25 @@ async function responderA(headers, msg) {
 
   try {
     const desde = new Date(Date.now() - WA_RESPUESTA_VENTANA_DIAS * 86400000).toISOString();
+
+    /* CUAL de los avisos esta contestando.
+
+       Si uso "el mas reciente de este telefono" a secas, me equivoco de
+       pedido: con el tope de 4 por dia, un proveedor puede tener dos avisos
+       abiertos, contestar el de la mañana y recibir el link del de la tarde.
+
+       WhatsApp resuelve la mitad del problema solo: cuando alguien usa
+       "responder" sobre un mensaje, el evento trae context.id con el id del
+       mensaje al que contesta. Ahi sabemos exactamente cual es. Si escribio
+       suelto, no hay forma de saberlo y se cae al mas reciente, que es la
+       mejor apuesta disponible. */
+    const ctx = msg && msg.context && msg.context.id;
+    const filtro = ctx
+      ? `wa_message_id=eq.${encodeURIComponent(ctx)}`
+      : `telefono=like.*${encodeURIComponent(cola)}&created_at=gte.${encodeURIComponent(desde)}`;
+
     const r = await fetch(
-      `${SUPABASE_BASE}/rest/v1/avisos_wa?telefono=like.*${encodeURIComponent(cola)}` +
-      `&created_at=gte.${encodeURIComponent(desde)}` +
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?${filtro}` +
       `&select=id,solicitud_id,respondio_at,telefono&order=created_at.desc&limit=1`,
       { headers });
     if (!r.ok) return;
@@ -1447,10 +1463,19 @@ async function responderA(headers, msg) {
       return;
     }
 
-    // Ya le contestamos hoy por este aviso: no se insiste.
+    /* Ya le contestamos por ESTE aviso: no se insiste. Es lo que evita
+       entrar en un ida y vuelta con alguien que sigue escribiendo.
+
+       Se registra el salteo en vez de volver en silencio: hoy (2026-08-26)
+       se perdio un rato buscando por que "no pasaba nada" cuando en realidad
+       este freno estaba actuando bien. Un freno que no deja rastro se
+       confunde con una falla. */
     if (aviso.respondio_at) {
       const horas = (Date.now() - new Date(aviso.respondio_at).getTime()) / 3600000;
-      if (horas < 24) return;
+      if (horas < 24) {
+        console.log(`[wa-webhook] ya se contesto el aviso ${aviso.id} hace ${horas.toFixed(1)} h; no se insiste`);
+        return;
+      }
     }
 
     // Se marca ANTES de mandar, igual que la reserva del envio: si el
