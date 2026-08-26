@@ -1438,7 +1438,7 @@ async function responderA(headers, msg) {
     const r = await fetch(
       `${SUPABASE_BASE}/rest/v1/avisos_wa?telefono=like.*${encodeURIComponent(cola)}` +
       `&created_at=gte.${encodeURIComponent(desde)}` +
-      `&select=id,solicitud_id,respondio_at&order=created_at.desc&limit=1`,
+      `&select=id,solicitud_id,respondio_at,telefono&order=created_at.desc&limit=1`,
       { headers });
     if (!r.ok) return;
     const aviso = (await r.json())?.[0];
@@ -1468,12 +1468,27 @@ async function responderA(headers, msg) {
     const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
     const link = `${appUrl}/?ir=cotizaciones&pedido=${encodeURIComponent(aviso.solicitud_id)}`;
 
-    await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
+    /* SE LE CONTESTA AL MISMO NUMERO AL QUE SE LE MANDO EL AVISO, no al que
+       informa Meta en el evento.
+
+       Es el lio del 15 argentino por TERCERA vez, y esta es la unica forma de
+       cerrarlo: avisos_wa.telefono guarda la direccion a la que el mensaje
+       LLEGO de verdad. Contestarle ahi no puede fallar por formato.
+
+       Lo que pasaba: Meta informa el numero en su forma canonica
+       (54 9 11 6445 7134) y le contestabamos a esa, pero la lista de
+       destinatarios permitidos del numero de prueba tiene la otra
+       (54 11 15 6445 7134). Meta compara texto contra texto y rechazaba el
+       envio con un 131030. La fila quedaba marcada como respondida y el
+       proveedor no recibia nada: lo peor de los dos mundos. */
+    const destino = aviso.telefono || normalizarWa(de) || de;
+
+    const envio = await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messaging_product: 'whatsapp',
-        to: normalizarWa(de) || de,
+        to: destino,
         type: 'text',
         text: {
           preview_url: false,
@@ -1483,6 +1498,17 @@ async function responderA(headers, msg) {
         }
       })
     });
+
+    /* La respuesta de Meta SE MIRA. Antes se mandaba y se seguia de largo, y
+       por eso un rechazo quedaba invisible: la fila decia "respondio" y el
+       proveedor no habia recibido nada. Un fallo silencioso en el unico
+       mensaje que ve alguien de afuera es lo peor que puede pasar aca. */
+    if (!envio.ok) {
+      const cuerpo = await envio.json().catch(() => ({}));
+      console.error('[wa-webhook] Meta rechazo la respuesta automatica:',
+        JSON.stringify(cuerpo?.error || cuerpo));
+      return;
+    }
     console.log(`[wa-webhook] respuesta automatica enviada por el aviso ${aviso.id}`);
   } catch (e) {
     console.error('[wa-webhook] respuesta automatica:', e.message);
