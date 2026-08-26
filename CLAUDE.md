@@ -135,7 +135,15 @@ Hipótesis única que se está midiendo: *¿el proveedor cotiza más rápido si 
 
 ⚠️ **Los parámetros de una plantilla no pueden tener saltos de línea, tabs ni 4 espacios seguidos**: Meta rechaza el envío entero con un `131008`. Todo lo que escribe el comprador pasa por `limpiarParam()`. Y **el cuerpo de una plantilla no puede terminar en variable**, por eso el texto cierra con una línea fija después del link.
 
-**Fases futuras, marcadas en el código donde engancharían, sin implementar:** estructuración del pedido con IA (armado de params), ranking por desempeño (el `.sort()` de `elegirDestinatarios`), muro medido (`WA_RETARDO_FREE_MIN`, hoy en cero para no tener que reescribir el reparto) y respuestas por botones (necesita un webhook de entrada).
+**Webhook de entrada** (`?action=wa_webhook`, vía el rewrite `/api/wa-webhook`; migración `sql/2026-08-26_avisos_wa_webhook.sql`). Hace dos cosas:
+- **Anota el embudo** en `avisos_wa.entregado_at` / `leido_at` / `respondio_at`. Sin esto solo sabemos que un aviso *salió*: si el proveedor no cotiza, no se puede distinguir "lo leyó y no le sirvió" (problema del mensaje) de "nunca le llegó" (problema del canal). La hipótesis del MVP no se responde sin esa distinción.
+- **Contesta al que responde.** Un número de la Cloud API no tiene app donde leer nada, así que el proveedor que contesta le escribe al vacío. Se le devuelve el link del pedido por el que se le escribió, una vez por teléfono por día.
+
+⚠️ **Va antes del chequeo `req.method !== 'POST'`**: Meta valida la URL con un GET (`hub.challenge`) y solo después manda eventos por POST. Variables: `WHATSAPP_VERIFY_TOKEN` (sin ella la verificación se rechaza y el webhook no se puede ni configurar). **A Meta se le contesta 200 antes de procesar nada**: si el endpoint tarda o falla, reintenta el mismo evento y termina desactivando el webhook.
+
+⚠️ **La firma `X-Hub-Signature-256` NO se valida, y es una decisión, no un olvido.** Meta firma el cuerpo *crudo*, que en Vercel ya viene parseado; recuperarlo exige apagar el parseo, que es una opción de archivo y rompería las otras tres ramas. El daño se acotó en su lugar: los acuses solo actualizan filas que ya existen (se busca por el `wa_message_id` que devolvió Meta), y la respuesta automática sale solo a teléfonos que están en `avisos_wa` de los últimos 7 días, una vez por día. El peor caso de un evento falsificado es un mensaje de más a un proveedor al que ya le habíamos escrito.
+
+**Fases futuras, marcadas en el código donde engancharían, sin implementar:** estructuración del pedido con IA (armado de params), ranking por desempeño (el `.sort()` de `elegirDestinatarios`) y muro medido (`WA_RETARDO_FREE_MIN`, hoy en cero para no tener que reescribir el reparto).
 
 **Pendiente:** el acuse de recibo sigue diciendo "lo pueden ver" y no "se les avisó", a propósito, porque el envío está apagado y además nunca sale para los pedidos en `Otro`. Cambiarlo recién cuando las dos cosas estén resueltas.
 

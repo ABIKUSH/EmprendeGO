@@ -56,7 +56,7 @@ function prov(id, extra) {
 async function main() {
   const api = await import('../api/notificar-mensaje.js');
   const rub = await import('../api/_rubros.js');
-  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba } = api;
+  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba, valoresDelEvento } = api;
   const { rubroCoincide, rubroEsCiego } = rub;
 
   /* =================================================================== */
@@ -361,6 +361,44 @@ async function main() {
     const otra = elegirDestinatarios(lista, 'Bazar', null).map(p => p.id).join(',');
     igual(una, otra);
     igual(una, 'a,b,c', 'a igualdad de todo, se ordena por id');
+  });
+
+  /* =================================================================== */
+  seccion('El webhook: un evento raro no puede tirar abajo la tanda entera');
+
+  test('aplana los tres niveles que anida Meta', () => {
+    const v = valoresDelEvento({
+      entry: [{ changes: [{ value: { statuses: [{ id: 'a', status: 'read' }] } }] }]
+    });
+    igual(v.length, 1);
+    igual(v[0].statuses[0].status, 'read');
+  });
+
+  test('varios entry y varios changes salen todos', () => {
+    const v = valoresDelEvento({
+      entry: [
+        { changes: [{ value: { messages: [1] } }, { value: { statuses: [2] } }] },
+        { changes: [{ value: { messages: [3] } }] }
+      ]
+    });
+    igual(v.length, 3);
+  });
+
+  test('un cuerpo vacio, nulo o con la forma equivocada devuelve lista vacia', () => {
+    igual(valoresDelEvento(null).length, 0);
+    igual(valoresDelEvento({}).length, 0);
+    igual(valoresDelEvento({ entry: 'no soy un array' }).length, 0);
+    igual(valoresDelEvento({ entry: [{}] }).length, 0);
+    igual(valoresDelEvento({ entry: [{ changes: null }] }).length, 0);
+  });
+
+  test('un change roto en el medio no se lleva puestos a los demas', () => {
+    // Meta manda varios eventos en la misma tanda. Si uno viene mal formado y
+    // eso corta el bucle, se pierden acuses de mensajes que si estaban bien.
+    const v = valoresDelEvento({
+      entry: [{ changes: [{ value: { messages: [1] } }, null, { value: null }, { value: { statuses: [2] } }] }]
+    });
+    igual(v.length, 2, 'los dos sanos tienen que sobrevivir');
   });
 
   /* =================================================================== */

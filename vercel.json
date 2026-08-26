@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/api/tiendanube-callback", "destination": "/api/tiendanube?action=callback" },
     { "source": "/api/tn-privacy", "destination": "/api/tiendanube?action=privacy" },
+    { "source": "/api/wa-webhook", "destination": "/api/notificar-mensaje?action=wa_webhook" },
     { "source": "/sitemap.xml", "destination": "/api/keepalive?mode=sitemap" },
     { "source": "/privacidad", "destination": "/privacidad.html" }
   ],

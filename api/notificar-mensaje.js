@@ -7,6 +7,12 @@ import { rubroCoincide, rubroEsCiego } from './_rubros.js';
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export default async function handler(req, res) {
+  /* El webhook de WhatsApp va ANTES del chequeo de metodo: Meta valida la URL
+     con un GET (hub.challenge) y despues manda los eventos por POST. Si se
+     dejara abajo, la verificacion inicial se comeria un 405 y nunca quedaria
+     configurado. Entra por el rewrite /api/wa-webhook de vercel.json. */
+  if (req.query?.action === 'wa_webhook') return handlerWaWebhook(req, res);
+
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   // Rama de anuncios manuales del panel de admin (?action=anuncio).
@@ -1222,5 +1228,240 @@ async function cerrarAviso(headers, id, campos) {
     });
   } catch (e) {
     console.error('[wa-pedido] no se pudo cerrar el aviso:', e.message);
+  }
+}
+
+
+/* =====================================================================
+   WEBHOOK DE WHATSAPP  (?action=wa_webhook, via /api/wa-webhook)
+   =====================================================================
+
+   GET  /api/wa-webhook   -> verificacion inicial de Meta (hub.challenge)
+   POST /api/wa-webhook   -> eventos: acuses de entrega y respuestas
+
+   HACE DOS COSAS, y la primera vale mas que la segunda:
+
+   1. ANOTA EL EMBUDO. Meta avisa cuando el mensaje se entrego y cuando se
+      leyo. Sin eso sabemos que un aviso SALIO y nada mas, y si el proveedor
+      no cotiza no podemos distinguir "lo leyo y no le sirvio" de "nunca le
+      llego". Son dos problemas opuestos: uno se arregla cambiando el texto y
+      el otro cambiando el canal. La hipotesis del MVP no se puede responder
+      sin esa distincion.
+
+   2. CONTESTA AL QUE RESPONDE. Un numero de la Cloud API no tiene app de
+      WhatsApp donde leer nada: el proveedor que contesta el aviso le escribe
+      al vacio y se queda esperando. Aca se le devuelve el link directo al
+      pedido por el que se le habia escrito.
+
+   ---------------------------------------------------------------------
+   ARRANCA APAGADO, como todo lo demas
+   ---------------------------------------------------------------------
+   Meta no manda un solo evento hasta que la URL este configurada en el panel
+   de la app. Y sin WHATSAPP_VERIFY_TOKEN, la verificacion se rechaza, asi que
+   ni siquiera se puede configurar por accidente.
+
+   ---------------------------------------------------------------------
+   SOBRE LA FIRMA DE META, Y POR QUE NO SE VALIDA
+   ---------------------------------------------------------------------
+   Meta firma cada evento con X-Hub-Signature-256 sobre el cuerpo CRUDO. En
+   Vercel el cuerpo ya viene parseado y el crudo se perdio; recuperarlo exige
+   apagar el parseo, que es una opcion de ARCHIVO y romperia las otras tres
+   ramas de este mismo archivo. Ponerlo aparte gastaria una de las 2 funciones
+   que quedan del cupo de 12.
+
+   Se eligio acotar el daño en vez de gastar el cupo. Un evento falsificado no
+   puede hacer nada util:
+     - Los acuses solo actualizan filas que YA existen, buscando por el id de
+       mensaje que devolvio Meta al enviar. Un id inventado no matchea nada.
+     - La respuesta automatica solo sale a numeros que estan en avisos_wa y a
+       los que ya les escribimos en los ultimos 7 dias, y como maximo UNA vez
+       por telefono por dia. O sea que el peor caso es un mensaje de mas a un
+       proveedor al que ya le habiamos escrito.
+   Si algun dia esto maneja algo mas sensible que acuses, va a archivo propio
+   con el cuerpo crudo y firma validada.
+   ===================================================================== */
+
+// Cuanto para atras se busca el aviso al que corresponde una respuesta. Mas
+// que esto y estariamos contestando sobre un pedido que probablemente ya
+// cerro; el proveedor recibiria un link a algo que no puede cotizar.
+const WA_RESPUESTA_VENTANA_DIAS = 7;
+
+
+async function handlerWaWebhook(req, res) {
+  // --- Verificacion inicial (GET con hub.challenge) ---
+  if (req.method === 'GET') {
+    const esperado = (process.env.WHATSAPP_VERIFY_TOKEN || '').trim();
+    const modo = req.query['hub.mode'];
+    const token = req.query['hub.verify_token'];
+    const reto = req.query['hub.challenge'];
+    if (esperado && modo === 'subscribe' && token === esperado) {
+      console.log('[wa-webhook] verificacion OK');
+      // Meta espera el challenge crudo, sin comillas ni JSON.
+      return res.status(200).send(String(reto || ''));
+    }
+    console.warn('[wa-webhook] verificacion rechazada');
+    return res.status(403).send('forbidden');
+  }
+
+  if (req.method !== 'POST') return res.status(405).send('Method not allowed');
+
+  /* A Meta SIEMPRE se le contesta 200 y rapido. Si tarda o devuelve error,
+     reintenta el mismo evento una y otra vez y termina desactivando el
+     webhook. Todo lo que hacemos abajo es de mejor esfuerzo: si algo falla,
+     falla en silencio del lado nuestro y Meta se queda tranquila. */
+  res.status(200).json({ ok: true });
+
+  try {
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey || !SUPABASE_BASE) return;
+    const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+    for (const valor of valoresDelEvento(req.body)) {
+      for (const st of (valor.statuses || [])) await anotarAcuse(headers, st);
+      for (const msg of (valor.messages || [])) await responderA(headers, msg);
+    }
+  } catch (e) {
+    console.error('[wa-webhook] error procesando el evento:', e.message);
+  }
+}
+
+/* Meta anida los eventos tres niveles: entry[].changes[].value. Se aplana
+   con cuidado porque cualquier nivel puede faltar y un evento raro no puede
+   tirar abajo el procesamiento de los otros que vengan en la misma tanda. */
+export function valoresDelEvento(cuerpo) {
+  const salida = [];
+  const entries = cuerpo && Array.isArray(cuerpo.entry) ? cuerpo.entry : [];
+  for (const e of entries) {
+    const cambios = e && Array.isArray(e.changes) ? e.changes : [];
+    for (const c of cambios) {
+      if (c && c.value && typeof c.value === 'object') salida.push(c.value);
+    }
+  }
+  return salida;
+}
+
+/* Acuse de entrega o de lectura.
+
+   Se busca por wa_message_id, que es el id que Meta devolvio cuando mandamos
+   el mensaje y que guardamos justamente para esto. Un acuse de un id que no
+   conocemos se ignora: no es nuestro.
+
+   Los estados llegan en orden pero no siempre: puede venir 'read' sin haber
+   visto 'delivered'. Por eso cada uno escribe SU columna y no se asume nada
+   del anterior. Y no se pisa un valor ya escrito: el primer acuse es el que
+   vale, los reintentos de Meta traen el mismo evento varias veces. */
+async function anotarAcuse(headers, st) {
+  const id = st && st.id;
+  const estado = st && st.status;
+  if (!id || !estado) return;
+
+  const columna = estado === 'delivered' ? 'entregado_at'
+    : estado === 'read' ? 'leido_at'
+      : null;
+
+  // 'failed' merece quedar registrado aunque el envio se haya aceptado: el
+  // mensaje salio, Meta lo tomo, y despues no se pudo entregar.
+  if (estado === 'failed') {
+    const motivo = (st.errors && st.errors[0] && (st.errors[0].title || st.errors[0].message)) || 'failed';
+    await parchearAviso(headers, id, { estado: 'fallo', error: String(motivo).slice(0, 500) });
+    return;
+  }
+  if (!columna) return;   // 'sent' no aporta: ya lo sabiamos al mandarlo
+
+  const cuando = st.timestamp
+    ? new Date(Number(st.timestamp) * 1000).toISOString()
+    : new Date().toISOString();
+
+  await parchearAviso(headers, id, { [columna]: cuando }, `&${columna}=is.null`);
+}
+
+/* PATCH sobre la fila del aviso. El filtro extra evita pisar un valor que ya
+   estaba: Meta reintenta y manda el mismo acuse mas de una vez. */
+async function parchearAviso(headers, waMessageId, campos, filtroExtra) {
+  try {
+    const r = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?wa_message_id=eq.${encodeURIComponent(waMessageId)}` +
+      (filtroExtra || ''),
+      {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify(campos)
+      });
+    if (!r.ok) console.warn('[wa-webhook] no se pudo anotar el acuse:', r.status);
+  } catch (e) {
+    console.error('[wa-webhook] acuse:', e.message);
+  }
+}
+
+/* El proveedor contesto por WhatsApp en vez de tocar el link.
+
+   Se le devuelve el link del pedido por el que se le escribio. Es un mensaje
+   libre, no una plantilla: como el acaba de escribir, hay ventana abierta de
+   24 h y se puede responder texto suelto.
+
+   Tres frenos, en este orden:
+     1. el telefono tiene que estar en avisos_wa (si no, no es un proveedor
+        nuestro y no hay pedido que ofrecerle);
+     2. el aviso tiene que ser de los ultimos 7 dias (mas viejo y el pedido
+        probablemente ya cerro);
+     3. una sola respuesta automatica por telefono por dia (respondio_at),
+        para no entrar en un ida y vuelta con alguien que sigue escribiendo. */
+async function responderA(headers, msg) {
+  const de = String((msg && msg.from) || '').replace(/\D/g, '');
+  if (!de) return;
+
+  try {
+    const desde = new Date(Date.now() - WA_RESPUESTA_VENTANA_DIAS * 86400000).toISOString();
+    const r = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?telefono=eq.${encodeURIComponent(de)}` +
+      `&created_at=gte.${encodeURIComponent(desde)}` +
+      `&select=id,solicitud_id,respondio_at&order=created_at.desc&limit=1`,
+      { headers });
+    if (!r.ok) return;
+    const aviso = (await r.json())?.[0];
+    if (!aviso) {
+      console.log('[wa-webhook] respuesta de un numero que no esta en avisos_wa; se ignora');
+      return;
+    }
+
+    // Ya le contestamos hoy por este aviso: no se insiste.
+    if (aviso.respondio_at) {
+      const horas = (Date.now() - new Date(aviso.respondio_at).getTime()) / 3600000;
+      if (horas < 24) return;
+    }
+
+    // Se marca ANTES de mandar, igual que la reserva del envio: si el
+    // proveedor manda tres mensajes seguidos, no le salen tres respuestas.
+    await fetch(`${SUPABASE_BASE}/rest/v1/avisos_wa?id=eq.${encodeURIComponent(aviso.id)}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ respondio_at: new Date().toISOString() })
+    });
+
+    const token = (process.env.WHATSAPP_TOKEN || '').trim();
+    const phoneId = (process.env.WHATSAPP_PHONE_ID || '').trim();
+    if (!token || !phoneId) return;
+
+    const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
+    const link = `${appUrl}/?ir=cotizaciones&pedido=${encodeURIComponent(aviso.solicitud_id)}`;
+
+    await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: normalizarWa(de) || de,
+        type: 'text',
+        text: {
+          preview_url: false,
+          body: 'Gracias por responder. Este número es automático y no lee los mensajes.\n\n'
+            + 'Para enviar su cotización, entre acá:\n' + link
+            + '\n\nSi necesita ayuda, escríbanos desde la app.'
+        }
+      })
+    });
+    console.log(`[wa-webhook] respuesta automatica enviada por el aviso ${aviso.id}`);
+  } catch (e) {
+    console.error('[wa-webhook] respuesta automatica:', e.message);
   }
 }
