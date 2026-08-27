@@ -619,6 +619,51 @@ body, body *{
   .dash-action-btn{transition:none}
   .dash-action-btn:active{transform:none}
 }
+
+/* ---------------------------------------------------------------------
+   TIPOGRAFIA DEL DASHBOARD: Sora + Inter, igual que el perfil.
+   Sora en titulos y numeros, Inter en las bajadas. El contraste lo hace
+   el peso y el tracking cerrado, no un salto de tamano.
+
+   Los !important son obligatorios: la regla `body, body *` de la linea
+   16 le gana a todo lo demas. Sora e Inter ya se descargan en
+   index.html:82, asi que no se agrega ni un pedido de red.
+
+   Va en max-width:767px por lo mismo que el resto: de 768 para arriba el
+   bloque de escritorio (~1080) impone Fraunces en .dash-stat-num y
+   DM Sans en .dash-stat-label con !important, y ese diseno se deja
+   intacto hasta hacer la pasada de escritorio.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-consultas-rot{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.66rem;font-weight:600;letter-spacing:.16em;
+  }
+  .dash-consultas-num{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:2.1rem;font-weight:700;letter-spacing:-.04em;
+  }
+  .dash-stat-num{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:1.45rem;font-weight:700;letter-spacing:-.035em;
+  }
+  .dash-stat-label{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.58rem;font-weight:600;letter-spacing:.14em;
+  }
+  .dash-acciones-rot{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-weight:600;
+  }
+  .dash-action-tit{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.84rem;font-weight:700;letter-spacing:-.03em;line-height:1.25;
+  }
+  .dash-action-sub{
+    font-family:'Inter',system-ui,sans-serif !important;
+    font-size:.71rem;font-weight:400;line-height:1.4;
+  }
+}
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
 .rank-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;min-width:50px}
 .rank-info strong{font-family:'Fraunces',serif;font-size:.9rem;font-weight:800;display:block;margin-bottom:2px}
