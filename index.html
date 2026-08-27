@@ -1552,7 +1552,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   <div id="perfil-proveedor" style="display:none">
 
     <!-- ===== HEADER VERDE MARCA ===== -->
-    <div style="background:linear-gradient(160deg,#004D2E 0%,#006039 100%);padding:20px 20px 22px">
+    <div class="dash-head-verde">
       <!-- Top row -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
         <div style="display:flex;align-items:center;gap:10px">
@@ -1591,28 +1591,30 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <div id="dash-consulta-banner" style="display:none"></div>
 
       <!-- ===== CONSULTAS WHATSAPP (visible siempre, free y pro) ===== -->
-      <div style="background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);border-radius:14px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-        <div style="min-width:0;flex:1">
-          <div style="font-family:'Inter',sans-serif;font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.92)">Consultas por WhatsApp</div>
-          <div id="stat-consultas" style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:900;color:white;line-height:1;margin-top:6px">0</div>
-          <div id="consultas-delta" style="display:none;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#7fe0ac;margin-top:6px"></div>
+      <div class="dash-consultas">
+        <div class="dash-consultas-txt">
+          <div class="dash-consultas-rot">Consultas por WhatsApp</div>
+          <div class="dash-consultas-num" id="stat-consultas">0</div>
+          <!-- El display:none queda inline a proposito: app.js lo alterna
+               por .style.display y necesita ganarle a la clase. -->
+          <div class="dash-consultas-delta" id="consultas-delta" style="display:none"></div>
         </div>
-        <svg id="consultas-spark" width="96" height="40" viewBox="0 0 96 40" fill="none" style="display:none;flex-shrink:0"></svg>
+        <svg class="dash-consultas-spark" id="consultas-spark" width="96" height="40" viewBox="0 0 96 40" fill="none" style="display:none"></svg>
       </div>
 
       <!-- ===== STATS REALES ===== -->
       <div id="dash-stats-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="stat-visitas" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
-          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Visitas</div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="stat-visitas">0</div>
+          <div class="dash-stat-label">Visitas</div>
         </div>
-        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="stat-leads" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
-          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Contactos</div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="stat-leads">0</div>
+          <div class="dash-stat-label">Contactos</div>
         </div>
-        <div class="dash-stat-card" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:center">
-          <div class="dash-stat-num" id="dash-prodstat-count" style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:white">0</div>
-          <div class="dash-stat-label" style="font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px">Productos</div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-num" id="dash-prodstat-count">0</div>
+          <div class="dash-stat-label">Productos</div>
         </div>
       </div>
     </div>

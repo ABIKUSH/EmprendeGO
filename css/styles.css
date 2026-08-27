@@ -423,6 +423,111 @@ body, body *{
 .dash-stat{background:rgba(255,255,255,.1);border-radius:14px;padding:14px;backdrop-filter:blur(10px)}
 .dash-stat-val{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;color:white}
 .dash-stat-label{font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+
+/* =====================================================================
+   ENCABEZADO DEL DASHBOARD  (2026-08-27)
+   Estas reglas salieron de estilos inline del HTML. Iban inline y por
+   eso NINGUNA clase podia pintarlas: un style="" le gana a cualquier
+   selector. Los valores son identicos a los que estaban, asi que por si
+   solas no cambian nada de como se ve hoy.
+   ===================================================================== */
+.dash-consultas{
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.dash-consultas-txt{min-width:0;flex:1}
+.dash-consultas-rot{
+  font-size:.72rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.06em;color:rgba(255,255,255,.92);
+}
+.dash-consultas-num{font-size:2rem;font-weight:900;color:#fff;line-height:1;margin-top:6px}
+.dash-consultas-delta{align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#7fe0ac;margin-top:6px}
+.dash-consultas-spark{flex-shrink:0}
+/* Va DESPUES de .dash-stat-label de mas arriba para conservar los valores
+   que el inline venia imponiendo; si no, cambiarian de tamano y color. */
+.dash-stat-card{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:12px;text-align:center;
+}
+.dash-stat-num{font-size:1.4rem;font-weight:900;color:#fff}
+.dash-stat-label{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px;
+}
+
+/* ---------------------------------------------------------------------
+   EL FONDO DEL ENCABEZADO.
+   Salio de un style inline: era un degradado verde de dos paradas, o
+   sea CASI plano. Un degradado suave da poco que refractar, asi que se
+   le suman dos acentos radiales desenfocados (mismo principio que las
+   .acc-mancha del perfil, pero en clave verde/naranja de marca). Sin
+   esto el vidrio de abajo se ve lavado.
+   OJO: no confundir con .dash-header, que es otra clase, se usa en otra
+   pantalla y ya trae su propio radial.
+   --------------------------------------------------------------------- */
+.dash-head-verde{
+  position:relative;overflow:hidden;isolation:isolate;
+  background:linear-gradient(160deg,#004D2E 0%,#006039 100%);
+  padding:20px 20px 22px;
+}
+/* Los acentos van SOLO en telefono, igual que el vidrio al que alimentan:
+   de 768 para arriba el dashboard tiene su propio diseno y se deja
+   intacto. Sin vidrio encima, estos radiales no aportan nada. */
+@media (max-width:767px){
+  .dash-head-verde::before{
+    content:'';position:absolute;top:-70px;right:-60px;
+    width:230px;height:230px;border-radius:50%;z-index:-1;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,107,0,.34),transparent 68%);
+  }
+  .dash-head-verde::after{
+    content:'';position:absolute;bottom:-90px;left:-70px;
+    width:250px;height:250px;border-radius:50%;z-index:-1;pointer-events:none;
+    background:radial-gradient(circle,rgba(0,190,120,.26),transparent 68%);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   El vidrio, SOLO en telefono.
+   Las tarjetas ya eran translucidas (blanco al 9-10%) pero PLANAS: sin
+   blur real, sin canto de luz y sin brillo propio, que es lo que las
+   hace leer como vidrio y no como un rectangulo mas claro.
+
+   Va en max-width:767px y no suelto porque de 768 para arriba manda el
+   bloque "DASHBOARD DESKTOP REFINADO" (~1080), que repinta estas mismas
+   tarjetas en blanco. Escritorio queda intacto a proposito.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-consultas,.dash-stat-card{
+    position:relative;overflow:hidden;isolation:isolate;
+    background:rgba(255,255,255,.13);
+    -webkit-backdrop-filter:blur(18px) saturate(180%);
+            backdrop-filter:blur(18px) saturate(180%);
+    border:1px solid rgba(255,255,255,.26);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.38),   /* el canto que atrapa la luz */
+      inset 0 -1px 0 rgba(0,0,0,.14),        /* el espesor, abajo */
+      0 14px 34px -18px rgba(2,20,13,.85);   /* flota sobre el verde */
+  }
+  /* El brillo propio. Sobre un degradado plano el vidrio no tiene de
+     donde sacar reflejo y se ve muerto. */
+  .dash-consultas::before,.dash-stat-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.20),transparent 60%);
+  }
+  /* Mismos respaldos que .hero-cta: el solido es MAS CLARO que el header
+     para que la tarjeta siga leyendose levantada. */
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dash-consultas,.dash-stat-card{background:#14664A;border-color:rgba(255,255,255,.3)}
+  }
+}
+@media (max-width:767px) and (prefers-reduced-transparency:reduce){
+  .dash-consultas,.dash-stat-card{
+    background:#14664A;border-color:rgba(255,255,255,.3);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  .dash-consultas::before,.dash-stat-card::before{display:none}
+}
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
 .rank-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;min-width:50px}
 .rank-info strong{font-family:'Fraunces',serif;font-size:.9rem;font-weight:800;display:block;margin-bottom:2px}
