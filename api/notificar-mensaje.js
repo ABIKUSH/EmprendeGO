@@ -1163,11 +1163,19 @@ async function enviarUno(p, ctx) {
       limpiarParam(rubro, 40),
       limpiarParam(info.linea, 120),
       limpiarParam(info.cantidad, 40),
+      // Zona del comprador. NO filtra a quien se le manda (ver
+      // elegirDestinatarios): esta para que el proveedor decida solo si le
+      // sirve por envio. Nunca vacia: un parametro vacio hace fallar el envio.
+      limpiarParam((sol && sol.provincia) || 'A confirmar', 40),
       // El link va partido: la plantilla tiene el dominio fijo y solo el id
       // viaja como parametro. Asi Meta no ve una URL entera variable, que es
       // lo que hace que revisen la plantilla con lupa.
       limpiarParam(solicitud_id, 40)
     ];
+    /* OJO: son SEIS y el orden es el de la plantilla aprobada. Si se agrega o
+       se saca una linea alla, hay que tocar aca en el mismo movimiento: si no
+       coinciden, Meta rechaza la tanda entera y las filas quedan en 'fallo'
+       (el indice unico impide reintentarlas para ese pedido). */
 
     const waRes = await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
       method: 'POST',
