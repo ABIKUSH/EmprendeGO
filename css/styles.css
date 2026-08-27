@@ -175,8 +175,180 @@ body, body *{
 .hist-time{font-size:.72rem;color:var(--gray)}
 .perfil-actions{padding:20px}
 .action-row{display:flex;flex-direction:column;gap:10px}
-.action-btn{background:white;border:1.5px solid #dfe8e3;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--navy)}
-.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:14px;padding:14px;color:#ef4444;font-family:'Fraunces',serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+/* =====================================================================
+   ACCIONES DEL PERFIL  (reemplaza a .action-btn, 2026-08-27)
+   Eran tres tarjetas blancas identicas: nada indicaba cual importaba y
+   las tres competian por la misma atencion.
+
+   El vidrio se hereda de .hero-cta (mismo blur, mismo reflejo propio,
+   mismos tres respaldos) pero en paleta clara, para no meter un bloque
+   verde en el medio del perfil.
+
+   CLAVE: backdrop-filter difumina lo que hay DETRAS. Sobre el #F8F8F8
+   plano del body no hay nada que difuminar y el efecto no existe. Por
+   eso el panel pinta tres manchas de color desenfocadas por debajo:
+   .acc-mancha ES el efecto. Si se sacan, esto queda blanco sobre gris.
+   ===================================================================== */
+.acc-panel{
+  position:relative;overflow:hidden;isolation:isolate;
+  border-radius:18px;padding:16px 15px 18px;margin-bottom:14px;
+  background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
+  border:1px solid #E2EBE5;
+}
+.acc-mancha{position:absolute;border-radius:50%;filter:blur(38px);z-index:-2;pointer-events:none}
+.acc-m1{top:-40px;left:-30px;width:210px;height:210px;background:rgba(0,96,57,.30)}
+.acc-m2{bottom:-60px;right:-40px;width:230px;height:230px;background:rgba(255,107,0,.28)}
+.acc-m3{top:38%;left:45%;width:150px;height:150px;background:rgba(0,140,90,.22)}
+
+.acc-cta{
+  --acc-bg:rgba(255,255,255,.52);
+  --acc-solido:rgba(255,255,255,.94);   /* respaldo: opaco, no translucido */
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;gap:11px;width:100%;
+  margin:0 0 10px;padding:11px 13px;
+  border-radius:14px;cursor:pointer;text-align:left;color:#0b2a1e;
+
+  background:var(--acc-bg);
+  -webkit-backdrop-filter:blur(20px) saturate(190%);
+          backdrop-filter:blur(20px) saturate(190%);
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),   /* el canto que atrapa la luz */
+    inset 0 -1px 0 rgba(10,60,40,.07),     /* el espesor, abajo */
+    0 12px 30px -16px rgba(6,50,33,.45);   /* flota sobre el panel */
+  transition:transform 200ms cubic-bezier(.23,1,.32,1),box-shadow 200ms ease-out;
+}
+/* El brillo propio. Sin esto el vidrio no tiene de donde sacar reflejo. */
+.acc-cta::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.55),transparent 62%);
+}
+.acc-cta:active{transform:scale(.985)}
+.acc-cta:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .acc-cta:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(10,60,40,.07),0 16px 36px -16px rgba(6,50,33,.5)}
+}
+.acc-cta-ico{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#065F46;
+  background:rgba(255,255,255,.7);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95);
+}
+.acc-cta-txt{flex:1;min-width:0;display:block}
+.acc-cta-chev{display:flex;flex-shrink:0;color:#7d8f84}
+.acc-cta-plano{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  background:rgba(255,255,255,.3);color:#0d3d29;
+  border:1px solid rgba(255,255,255,.75);border-radius:12px;padding:12px;
+  cursor:pointer;font-size:.82rem;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+}
+
+/* --- Tipografia -----------------------------------------------------
+   Los !important son obligatorios: la regla `body, body *{font-family:
+   ... !important}` de la linea 16 de este archivo le gana a todo lo
+   demas, incluso a los estilos inline. Sin !important aca, esto
+   renderiza en la fuente del sistema como el resto de la app.
+   Sora e Inter YA se descargan en index.html:82 — no se agrega ni un
+   pedido de red. El contraste lo hace el peso y el tracking cerrado,
+   no un salto de tamano.
+   -------------------------------------------------------------------- */
+.acc-rotulo{
+  position:relative;z-index:1;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-weight:600;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;
+  color:#5d6f64;margin-bottom:12px;
+}
+.acc-cta-tit{
+  display:block;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.93rem;font-weight:700;letter-spacing:-.03em;
+  line-height:1.22;margin-bottom:5px;color:#0b2a1e;
+}
+/* #4f6057 sobre el panel da 5,8:1 — pasa AA holgado. El gris nunca se
+   aclara para acomodar al vidrio; se ajusta el texto o se ajusta el vidrio. */
+.acc-cta-sub{
+  display:block;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.75rem;font-weight:400;line-height:1.5;color:#4f6057;
+}
+.acc-cta-plano{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-weight:600;letter-spacing:-.01em;
+}
+
+/* --- Respaldos ------------------------------------------------------
+   Redefinen TOKENS y no reglas, igual que .hero-cta. El @supports
+   pregunta por las dos formas porque Safari viejo entiende
+   -webkit-backdrop-filter pero no la version sin prefijo. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .acc-cta{--acc-bg:var(--acc-solido)}
+  .acc-cta-plano{background:rgba(255,255,255,.9)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .acc-cta{--acc-bg:var(--acc-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .acc-cta::before{display:none}
+  .acc-cta-plano{background:rgba(255,255,255,.9);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .acc-mancha{opacity:.5}
+}
+@media (prefers-reduced-motion:reduce){
+  .acc-cta{transition:none}
+  .acc-cta:active{transform:none}
+}
+/* ---------------------------------------------------------------------
+   FILAS UTILITARIAS DEL PERFIL  (Terminos, Privacidad, Cerrar sesion)
+   Quedaban con el estilo viejo debajo del panel de vidrio y se veian
+   huerfanas.
+
+   A PROPOSITO NO LLEVAN VIDRIO: van sobre el #F8F8F8 plano del body, y
+   backdrop-filter sobre un color liso no hace nada mas que costar GPU.
+   Emparejan por tipografia, radio y borde, que es donde se nota.
+   Tampoco compiten con el panel: son navegacion, no acciones.
+   --------------------------------------------------------------------- */
+.perfil-fila{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;background:#fff;border:1px solid #E2EBE5;border-radius:14px;
+  padding:13px 15px;margin-top:8px;cursor:pointer;text-align:left;
+  text-decoration:none;color:#1f3329;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(6,50,33,.04);
+  transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.perfil-fila:active{transform:scale(.99)}
+.perfil-fila:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-fila:hover{border-color:#C9DCD2}
+}
+.perfil-fila-izq{display:flex;align-items:center;gap:10px;min-width:0}
+.perfil-fila-ico{display:flex;flex-shrink:0;color:#065F46}
+.perfil-fila-chev{display:flex;flex-shrink:0;color:#9aa79d}
+/* Mismo !important y mismo motivo que en .acc-*: la regla `body, body *`
+   de la linea 16 le gana a todo lo demas. */
+.perfil-fila-txt{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.84rem;font-weight:600;letter-spacing:-.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* El Fraunces que tenia nunca se aplico (lo pisaba la regla de la linea
+   16), asi que esto no cambia la fuente que se veia: la hace explicita. */
+.logout-btn{
+  width:100%;margin-top:14px;padding:13px;cursor:pointer;
+  background:#fff;border:1px solid #F0D8D8;border-radius:14px;color:#D14343;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.84rem;font-weight:600;letter-spacing:-.02em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+  transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.logout-btn:active{transform:scale(.99)}
+.logout-btn:focus-visible{outline:2px solid #D14343;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .logout-btn:hover{border-color:#E3B9B9}
+}
+@media (prefers-reduced-motion:reduce){
+  .perfil-fila,.logout-btn{transition:none}
+  .perfil-fila:active,.logout-btn:active{transform:none}
+}
 
 /* DASHBOARD */
 .dash-header{background:linear-gradient(135deg,var(--navy),#0a3a2b);padding:24px 20px;position:relative;overflow:hidden}
