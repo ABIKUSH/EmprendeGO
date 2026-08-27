@@ -224,6 +224,25 @@ tr:hover td{background:#fafbff}
 .report-meta{font-size:.75rem;color:#94a3b8;margin-bottom:12px}
 .report-actions{display:flex;gap:8px;flex-wrap:wrap}
 .report-resuelto{opacity:.5;pointer-events:none}
+/* EMBUDO DE AVISOS POR WHATSAPP */
+.wa-nota{background:#fef3c7;border:1px solid #fcd34d;border-radius:14px;padding:14px 16px;font-size:.83rem;line-height:1.6;color:#78350f;margin-bottom:18px}
+.wa-nota strong{color:#78350f}
+.wa-paso{background:white;border:1px solid #eef0f6;border-radius:14px;padding:14px 16px;margin-bottom:8px}
+.wa-paso-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
+.wa-paso-nom{font-size:.85rem;font-weight:700;color:var(--navy)}
+.wa-paso-num{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:900;color:var(--navy)}
+.wa-paso-pct{font-size:.75rem;font-weight:700;color:var(--gray);margin-left:8px}
+.wa-barra{height:9px;background:var(--light);border-radius:20px;overflow:hidden}
+.wa-barra span{display:block;height:100%;border-radius:20px;background:linear-gradient(90deg,var(--blue),var(--purple));transition:width .3s}
+.wa-barra.mala span{background:var(--red)}
+.wa-vs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
+@media(max-width:640px){.wa-vs{grid-template-columns:1fr}}
+.wa-vs-card{background:white;border:1px solid #eef0f6;border-radius:16px;padding:18px}
+.wa-vs-card.destacada{border-color:var(--blue);background:var(--blue-light)}
+.wa-vs-tit{font-size:.75rem;font-weight:800;color:var(--gray);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px}
+.wa-vs-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--navy);line-height:1}
+.wa-vs-pie{font-size:.78rem;color:var(--gray);margin-top:6px;line-height:1.5}
+.wa-explica{font-size:.8rem;color:var(--gray);line-height:1.6;margin:0 0 14px}
 </style>
 </head>
 <body>
@@ -262,6 +281,7 @@ tr:hover td{background:#fafbff}
     <button class="mobile-nav-btn" onclick="showPage('reportes',this)">🚨 Reportes</button>
     <button class="mobile-nav-btn" onclick="showPage('cotizaciones',this)">Cotizaciones</button>
     <button class="mobile-nav-btn" onclick="showPage('avisos',this)">📣 Avisos</button>
+    <button class="mobile-nav-btn" onclick="showPage('waembudo',this)">Embudo</button>
     <button class="mobile-nav-btn" onclick="showPage('informe',this)">📊 Informe</button>
     <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
     <button class="mobile-nav-btn" onclick="showPage('config',this)">⚙️ Config</button>
@@ -281,6 +301,7 @@ tr:hover td{background:#fafbff}
         <div class="nav-link" onclick="showPage('usuarios',this)"><span class="ni">👥</span>Usuarios</div>
         <div class="nav-link" onclick="showPage('planes',this)"><span class="ni">⭐</span>Planes & Pagos</div>
         <div class="nav-link" onclick="showPage('avisos',this)"><span class="ni">📣</span>Avisos WhatsApp<span class="nav-badge" id="nav-badge-avisos" style="background:var(--green)">0</span></div>
+        <div class="nav-link" onclick="showPage('waembudo',this)"><span class="ni" aria-hidden="true"><svg style="display:block;margin:0 auto" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></span>Embudo de avisos</div>
         <div class="nav-link" onclick="showPage('informe',this)"><span class="ni">📊</span>Informe semanal</div>
       </div>
       <div class="nav-group">
@@ -696,6 +717,83 @@ emprendego.com.ar</textarea>
             <tbody id="cotiz-borrados-table">
               <tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr>
             </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EMBUDO DE AVISOS POR WHATSAPP -->
+      <div class="page" id="page-waembudo">
+        <div class="page-title">Embudo de avisos por WhatsApp</div>
+        <div class="page-sub">Qué pasa con cada aviso que sale, y si el pedido avisado se cotiza más y más rápido que el que no se avisa.</div>
+
+        <div class="wa-nota">
+          <strong>Cómo leer esto mientras estamos probando.</strong>
+          Si en Vercel sigue puesta la variable <code>WHATSAPP_TEST_TO</code>, todos los avisos se desvían al teléfono del founder:
+          salieron de verdad y cuentan como enviados, pero <strong>ningún proveedor los recibió</strong>, así que la columna de
+          cotizaciones atribuidas va a dar cero y los rubros avisados no van a mover la aguja. Recién cuando esa variable se saque,
+          los números de acá abajo empiezan a significar algo.
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">El embudo</div>
+            <div class="table-actions">
+              <select class="filter-select" id="wa-ventana" onchange="pintarWaEmbudo()">
+                <option value="d7">Últimos 7 días</option>
+                <option value="d30">Últimos 30 días</option>
+                <option value="todo" selected>Todo</option>
+              </select>
+              <button class="tbl-btn view" onclick="cargarWaEmbudo()">Actualizar</button>
+            </div>
+          </div>
+          <p class="wa-explica">
+            La fila se reserva <em>antes</em> de mandar el mensaje: por eso "reservados" siempre es igual o mayor que la suma de
+            enviados y fallados. Cada paso se mide contra los reservados.
+          </p>
+          <div id="wa-embudo"><div style="color:var(--gray);text-align:center;padding:30px">Cargando...</div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">¿Sirve el aviso?</div></div>
+          <p class="wa-explica">
+            El grupo de control salió gratis: son los pedidos que se publicaron sin que saliera ningún aviso (los de rubro "Otro"
+            y todos los anteriores al lanzamiento). Se comparan <strong>tasas</strong>, no totales, porque los dos grupos tienen
+            tamaños distintos.
+          </p>
+          <div class="wa-vs" id="wa-efecto"></div>
+          <div class="wa-vs" id="wa-velocidad"></div>
+          <div id="wa-atribuido"></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">Por rubro</div></div>
+          <p class="wa-explica">
+            Sirve para dos cosas distintas: ver dónde el aviso rinde, y detectar rubros que reciben pedidos y no tienen a quién avisarle.
+          </p>
+          <table>
+            <thead><tr><th>Rubro</th><th>Pedidos</th><th>Con aviso</th><th>Destinatarios</th><th>Con cotización</th><th>Tasa</th></tr></thead>
+            <tbody id="wa-rubros"><tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">Avisos que fallaron</div></div>
+          <p class="wa-explica">Un motivo que se repite es un problema de configuración, no mala suerte.</p>
+          <table>
+            <thead><tr><th>Motivo</th><th>Veces</th><th>Último</th></tr></thead>
+            <tbody id="wa-fallos"><tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header"><div class="table-title">Reciben y nunca contestan</div></div>
+          <p class="wa-explica">
+            Proveedores con dos avisos o más que jamás cotizaron nada. Son los primeros que hay que sacar del reparto el día que
+            subamos el tope de destinatarios: ocupan un lugar y además son los que más riesgo traen de reportar el número.
+          </p>
+          <table>
+            <thead><tr><th>Proveedor</th><th>Rubro</th><th>Recibió</th><th>Leyó</th><th>Último</th></tr></thead>
+            <tbody id="wa-mudos"><tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Cargando...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -1978,6 +2076,133 @@ function filtrarCotizAdmin(){
   });
 }
 
+/* ============ EMBUDO DE AVISOS POR WHATSAPP ============
+   Todo sale de UNA sola RPC: admin_wa_embudo(). La tabla avisos_wa no se lee
+   nunca desde el navegador -- tiene telefonos adentro y va con RLS sin
+   policies. La funcion es SECURITY DEFINER, chequea que seas admin y devuelve
+   unicamente agregados. Ver sql/2026-08-27_tablero_avisos_wa.sql. */
+let _waEmbudo = null;
+
+async function cargarWaEmbudo(){
+  const cont = document.getElementById('wa-embudo');
+  if(!cont) return;
+  cont.innerHTML = '<div style="color:var(--gray);text-align:center;padding:30px">Cargando...</div>';
+  try{
+    const { data, error } = await sb.rpc('admin_wa_embudo');
+    if(error) throw error;
+    _waEmbudo = data || null;
+    pintarWaEmbudo();
+  }catch(e){
+    console.error('[wa-embudo]', e);
+    _waEmbudo = null;
+    cont.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;font-size:.85rem">No se pudo leer el embudo.<br>'
+      + '<span style="color:var(--gray);font-size:.8rem">' + escHtml(e.message || e.details || 'Error desconocido') + '</span></div>';
+    [['wa-rubros',6],['wa-fallos',3],['wa-mudos',5]].forEach(([id,cols]) => {
+      const t = document.getElementById(id);
+      if(t) t.innerHTML = '<tr><td colspan="'+cols+'" style="text-align:center;color:var(--gray);padding:20px">—</td></tr>';
+    });
+    ['wa-efecto','wa-velocidad','wa-atribuido'].forEach(id => {
+      const c = document.getElementById(id);
+      if(c) c.innerHTML = '';
+    });
+  }
+}
+
+function waPct(parte, total){
+  const t = Number(total) || 0;
+  if(!t) return 0;
+  return Math.round((Number(parte) || 0) / t * 100);
+}
+
+function waNum(x){
+  return (x === null || x === undefined || x === '') ? '—' : String(x);
+}
+
+function pintarWaEmbudo(){
+  if(!_waEmbudo) return;
+  const d = _waEmbudo;
+
+  /* --- 1) El embudo, en la ventana elegida --- */
+  const ventana = document.getElementById('wa-ventana')?.value || 'todo';
+  const v = (d.ventana && d.ventana[ventana]) || {};
+  const base = Number(v.reservados) || 0;
+
+  // Los pasos van en el orden real del recorrido. "Fallados" se pinta en rojo
+  // porque es el unico donde un numero alto es mala noticia.
+  const pasos = [
+    ['Reservados',   v.reservados,   'La fila se anota antes de mandar. Es la base de todos los porcentajes.', false],
+    ['Enviados',     v.enviados,     'Meta aceptó el mensaje.', false],
+    ['Fallados',     v.fallos,       'Meta lo rechazó. El motivo está más abajo.', true],
+    ['Entregados',   v.entregados,   'Llegó al teléfono del proveedor.', false],
+    ['Leídos',       v.leidos,       'El proveedor lo abrió.', false],
+    ['Respondieron', v.respondieron, 'Contestó algo por WhatsApp.', false]
+  ];
+  document.getElementById('wa-embudo').innerHTML = base === 0
+    ? '<div style="color:var(--gray);text-align:center;padding:30px;font-size:.85rem">Todavía no salió ningún aviso en esta ventana.</div>'
+    : pasos.map(([nom, n, pie, malo]) => {
+        const val = Number(n) || 0, pct = waPct(val, base);
+        return '<div class="wa-paso">'
+          + '<div class="wa-paso-top"><span class="wa-paso-nom">' + escHtml(nom) + '</span>'
+          + '<span><span class="wa-paso-num">' + val + '</span><span class="wa-paso-pct">' + pct + '%</span></span></div>'
+          + '<div class="wa-barra' + (malo ? ' mala' : '') + '"><span style="width:' + pct + '%"></span></div>'
+          + '<div style="font-size:.75rem;color:var(--gray);margin-top:7px">' + escHtml(pie) + '</div>'
+          + '</div>';
+      }).join('');
+
+  /* --- 2) Con aviso contra sin aviso: tasa de respuesta --- */
+  const ef = d.efecto || {};
+  const ca = ef.con_aviso || {}, sa = ef.sin_aviso || {};
+  document.getElementById('wa-efecto').innerHTML =
+      waTarjeta('Pedidos CON aviso', waPct(ca.con_cotiz, ca.pedidos) + '%',
+                (Number(ca.con_cotiz)||0) + ' de ' + (Number(ca.pedidos)||0) + ' pedidos recibieron al menos una cotización.', true)
+    + waTarjeta('Pedidos SIN aviso', waPct(sa.con_cotiz, sa.pedidos) + '%',
+                (Number(sa.con_cotiz)||0) + ' de ' + (Number(sa.pedidos)||0) + ' pedidos recibieron al menos una cotización.', false);
+
+  /* --- 3) La otra mitad de la hipotesis: cuanto TARDA la primera cotizacion --- */
+  const ve = d.velocidad || {};
+  document.getElementById('wa-velocidad').innerHTML =
+      waTarjeta('Con aviso: primera cotización', waNum(ve.con_aviso) + (ve.con_aviso == null ? '' : ' h'),
+                'Horas promedio desde que se publica el pedido hasta la primera respuesta.', true)
+    + waTarjeta('Sin aviso: primera cotización', waNum(ve.sin_aviso) + (ve.sin_aviso == null ? '' : ' h'),
+                'Mismo cálculo sobre los pedidos que nunca dispararon un aviso.', false);
+
+  /* --- 4) Atribucion fina, proveedor por proveedor --- */
+  const at = d.atribuido || {};
+  const atN = Number(at.avisos) || 0, atC = Number(at.cotizaron) || 0;
+  document.getElementById('wa-atribuido').innerHTML =
+    '<p class="wa-explica" style="margin:6px 0 0">De los <strong>' + atN + '</strong> avisos que salieron, <strong>' + atC
+    + '</strong> terminaron en una cotización de ese mismo proveedor a ese mismo pedido (' + waPct(atC, atN)
+    + '%). Solo cuentan las cotizaciones posteriores al aviso: si el proveedor ya había cotizado antes, el aviso no hizo nada.</p>';
+
+  /* --- 5) Tablas --- */
+  const rub = Array.isArray(d.por_rubro) ? d.por_rubro : [];
+  document.getElementById('wa-rubros').innerHTML = rub.length
+    ? rub.map(r => '<tr><td><strong>' + escHtml(r.rubro || '—') + '</strong></td><td>' + (r.pedidos||0) + '</td><td>'
+        + (r.con_aviso||0) + '</td><td>' + (r.destinatarios||0) + '</td><td>' + (r.con_cotiz||0) + '</td><td><strong>'
+        + waPct(r.con_cotiz, r.pedidos) + '%</strong></td></tr>').join('')
+    : '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Todavía no hay pedidos</td></tr>';
+
+  const fal = Array.isArray(d.fallos) ? d.fallos : [];
+  document.getElementById('wa-fallos').innerHTML = fal.length
+    ? fal.map(f => '<tr><td>' + escHtml(f.motivo || '—') + '</td><td><strong>' + (f.n||0) + '</strong></td><td>'
+        + escHtml(cotizFecha(f.ultimo)) + '</td></tr>').join('')
+    : '<tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">Ningún aviso falló</td></tr>';
+
+  const mud = Array.isArray(d.mudos) ? d.mudos : [];
+  document.getElementById('wa-mudos').innerHTML = mud.length
+    ? mud.map(m => '<tr><td><strong>' + escHtml(m.nombre || '—') + '</strong></td><td style="max-width:240px;font-size:.78rem;color:var(--gray)">'
+        + escHtml(m.rubro || '—') + '</td><td>' + (m.recibidos||0) + '</td><td>' + (m.leidos||0) + '</td><td>'
+        + escHtml(cotizFecha(m.ultimo)) + '</td></tr>').join('')
+    : '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px">Nadie recibió dos avisos sin contestar</td></tr>';
+}
+
+function waTarjeta(titulo, numero, pie, destacada){
+  return '<div class="wa-vs-card' + (destacada ? ' destacada' : '') + '">'
+    + '<div class="wa-vs-tit">' + escHtml(titulo) + '</div>'
+    + '<div class="wa-vs-num">' + escHtml(numero) + '</div>'
+    + '<div class="wa-vs-pie">' + escHtml(pie) + '</div></div>';
+}
+
 function showPage(name, el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(n=>n.classList.remove('active'));
@@ -1994,6 +2219,7 @@ function showPage(name, el){
   if(name==='novedades') cargarNovedadesAdmin();
   if(name==='rubros') cargarRubros();
   if(name==='avisos') cargarAvisos();
+  if(name==='waembudo') cargarWaEmbudo();
   if(name==='informe') cargarInforme();
 }
 
