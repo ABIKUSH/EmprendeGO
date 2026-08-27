@@ -1635,38 +1635,44 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
 
     <!-- ===== ACCIONES RÁPIDAS ===== -->
-    <div style="padding:0 16px 0">
-      <div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:800;color:#999;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Acciones rápidas</div>
-      <div id="dash-quick-actions" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button class="dash-action-btn" onclick="openAddProduct();haptic('light')" style="background:#006039;color:white;border:none;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+    <!-- Las manchas van aca por lo mismo que en el perfil: estos botones
+         estan sobre el gris del body y backdrop-filter necesita algo
+         detras. Reusan .acc-mancha, que ya esta definida en %. -->
+    <div class="dash-acciones">
+      <span class="acc-mancha acc-m1" aria-hidden="true"></span>
+      <span class="acc-mancha acc-m2" aria-hidden="true"></span>
+      <span class="acc-mancha acc-m4" aria-hidden="true"></span>
+      <div class="dash-acciones-rot">Acciones rápidas</div>
+      <div id="dash-quick-actions">
+        <button class="dash-action-btn dash-action-btn--primario" onclick="openAddProduct();haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Agregar</div><div style="font-size:.7rem;opacity:.7">producto</div></div>
+          <div><div class="dash-action-tit">Agregar</div><div class="dash-action-sub">producto</div></div>
         </button>
         <!-- Botón Mensajes oculto: el chat interno está desactivado, todos los proveedores usan WhatsApp -->
         <button class="dash-action-btn" onclick="document.getElementById('provMsgListModal').classList.add('open');cargarConversaciones();haptic('light')" style="display:none;background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;align-items:center;gap:10px;cursor:pointer;text-align:left;position:relative">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 0 2 2z"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Mensajes</div><div style="font-size:.7rem;color:#999">ver todos</div></div>
+          <div><div class="dash-action-tit">Mensajes</div><div class="dash-action-sub">ver todos</div></div>
           <span id="dash-msgs-new" style="position:absolute;top:8px;right:8px;background:#EF4444;color:white;font-size:.55rem;font-weight:800;padding:2px 6px;border-radius:8px;display:none">NEW</span>
         </button>
-        <button class="dash-action-btn" onclick="exportarContactosCSV(this);haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="exportarContactosCSV(this);haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Contactos</div><div style="font-size:.7rem;color:#999">exportar CSV</div></div>
+          <div><div class="dash-action-tit">Contactos</div><div class="dash-action-sub">exportar CSV</div></div>
         </button>
-        <button class="dash-action-btn" onclick="abrirMisProductos();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="abrirMisProductos();haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Productos</div><div style="font-size:.7rem;color:#999" id="dash-prod-count">0 publicados</div></div>
+          <div><div class="dash-action-tit">Productos</div><div class="dash-action-sub" id="dash-prod-count">0 publicados</div></div>
         </button>
-        <button class="dash-action-btn" onclick="abrirEditarPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="abrirEditarPerfil();haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Editar</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
+          <div><div class="dash-action-tit">Editar</div><div class="dash-action-sub">mi perfil</div></div>
         </button>
-        <button class="dash-action-btn" onclick="compartirMiPerfil();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="compartirMiPerfil();haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Compartir</div><div style="font-size:.7rem;color:#999">mi perfil</div></div>
+          <div><div class="dash-action-tit">Compartir</div><div class="dash-action-sub">mi perfil</div></div>
         </button>
-        <button class="dash-action-btn" onclick="verMiPerfilPublico();haptic('light')" style="background:white;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;padding:14px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;text-align:left">
+        <button class="dash-action-btn" onclick="verMiPerfilPublico();haptic('light')">
           <span class="dash-action-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
-          <div><div style="font-family:'Inter',sans-serif;font-size:.82rem;font-weight:700">Ver perfil</div><div style="font-size:.7rem;color:#999">como comprador</div></div>
+          <div><div class="dash-action-tit">Ver perfil</div><div class="dash-action-sub">como comprador</div></div>
         </button>
       </div>
     </div>

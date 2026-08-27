@@ -528,6 +528,97 @@ body, body *{
   }
   .dash-consultas::before,.dash-stat-card::before{display:none}
 }
+/* =====================================================================
+   ACCIONES RAPIDAS DEL DASHBOARD  (2026-08-27)
+   Los 7 botones tenian TODO el estilo inline, por eso ninguna clase
+   podia pintarlos. Los valores base de abajo son identicos a los que
+   estaban: por si solos no cambian nada de como se ve hoy.
+   ===================================================================== */
+.dash-acciones{padding:0 16px}
+/* Las manchas solo existen cuando hay vidrio que las use (ver mas abajo). */
+.dash-acciones > .acc-mancha{display:none}
+.dash-acciones-rot{
+  font-size:.82rem;font-weight:800;color:#999;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;
+}
+#dash-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dash-action-btn{
+  background:#fff;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;
+  padding:14px 12px;display:flex;align-items:center;gap:10px;
+  cursor:pointer;text-align:left;
+}
+/* El primero es la accion principal y va solido, como estaba. */
+.dash-action-btn--primario{background:#006039;color:#fff;border-color:transparent}
+.dash-action-tit{font-size:.82rem;font-weight:700}
+.dash-action-sub{font-size:.7rem;color:#999}
+.dash-action-btn--primario .dash-action-sub{color:inherit;opacity:.7}
+
+/* ---------------------------------------------------------------------
+   El vidrio, SOLO en telefono.
+   Estos botones van sobre el gris del body, donde backdrop-filter no
+   tiene nada que difuminar. Por eso el bloque entero se apoya en un
+   panel con manchas de color desenfocadas, igual que las acciones del
+   perfil: reusa .acc-mancha, que ya esta definida en % mas arriba.
+
+   De 768 para arriba manda el bloque "DASHBOARD DESKTOP REFINADO"
+   (~1080), que repinta estos botones en blanco con !important y los
+   pone en 4 columnas. Escritorio queda igual que hoy, a proposito.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-acciones{
+    position:relative;overflow:hidden;isolation:isolate;
+    margin:0 16px;padding:16px 15px 18px;border-radius:18px;
+    background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
+    border:1px solid #E2EBE5;
+  }
+  .dash-acciones > .acc-mancha{display:block}
+  .dash-acciones-rot{position:relative;z-index:1;font-size:.62rem;letter-spacing:.16em;color:#5d6f64;margin-bottom:12px}
+
+  .dash-action-btn{
+    --da-bg:rgba(255,255,255,.5);
+    --da-solido:rgba(255,255,255,.94);
+    position:relative;overflow:hidden;isolation:isolate;z-index:1;
+    background:var(--da-bg);color:#0b2a1e;
+    -webkit-backdrop-filter:blur(20px) saturate(190%);
+            backdrop-filter:blur(20px) saturate(190%);
+    border:1px solid rgba(255,255,255,.85);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 -1px 0 rgba(10,60,40,.07),
+      0 12px 28px -16px rgba(6,50,33,.45);
+    transition:transform 160ms cubic-bezier(.23,1,.32,1),box-shadow 200ms ease-out;
+  }
+  .dash-action-btn::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.55),transparent 62%);
+  }
+  .dash-action-btn:active{transform:scale(.985)}
+  .dash-action-btn:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+
+  /* El principal NO lleva vidrio: es la accion que queremos que toquen y
+     tiene que seguir siendo el unico bloque solido de la grilla. */
+  .dash-action-btn--primario{
+    background:#006039;color:#fff;border-color:transparent;
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 12px 28px -14px rgba(0,96,57,.85);
+  }
+  .dash-action-btn--primario::before{display:none}
+
+  .dash-action-sub{color:#4f6057}
+
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dash-action-btn{--da-bg:var(--da-solido)}
+  }
+}
+@media (max-width:767px) and (prefers-reduced-transparency:reduce){
+  .dash-action-btn{--da-bg:var(--da-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .dash-action-btn::before{display:none}
+  .dash-acciones > .acc-mancha{opacity:.5}
+}
+@media (prefers-reduced-motion:reduce){
+  .dash-action-btn{transition:none}
+  .dash-action-btn:active{transform:none}
+}
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
 .rank-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;min-width:50px}
 .rank-info strong{font-family:'Fraunces',serif;font-size:.9rem;font-weight:800;display:block;margin-bottom:2px}
