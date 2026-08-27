@@ -1308,6 +1308,9 @@ let notificaciones = [];
 let notifLeidas = new Set();
 try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch (e) { }
 
+// Bandera solo de presentacion (ver renderNotifPanel).
+let _egNotifsCargando = true;
+
 async function initNotificaciones() {
   try {
     const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -1342,21 +1345,46 @@ async function initNotificaciones() {
     notificaciones = [];
   }
 
+  _egNotifsCargando = false;
+  // Si la campanita quedo abierta esperando, ahora si se puede pintar.
+  const panel = document.getElementById('notifPanel');
+  if (panel && panel.style.display === 'block') renderNotifPanel();
+
   const tieneNoLeidas = notificaciones.some(n => !notifLeidas.has(n.id));
   document.getElementById('notifDot').classList.toggle('show', tieneNoLeidas);
   const d2 = document.getElementById('notifDot2');
   if (d2) d2.classList.toggle('show', tieneNoLeidas);
 }
 
+/* Hueso de una notificacion. Reusa .notif-item / .notif-icon / .notif-text
+   para heredar el padding y la linea divisoria exactos. */
+function skelNotif() {
+  return `<div class="notif-item" style="pointer-events:none">
+    <div class="skeleton" style="width:38px;height:38px;border-radius:10px;flex-shrink:0"></div>
+    <div class="notif-text">
+      <div class="skeleton" style="height:12px;width:54%;margin-bottom:6px"></div>
+      <div class="skeleton" style="height:10px;width:82%"></div>
+    </div>
+    <div class="skeleton" style="width:24px;height:10px;flex-shrink:0"></div>
+  </div>`;
+}
+
 function renderNotifPanel() {
   const el = document.getElementById('notifList');
   if (!el) return;
-  el.innerHTML = notificaciones.map(n => `
+  // Si la campanita se abre antes de que termine initNotificaciones, el
+  // panel salia vacio (y parecia "no tenes nada", que es distinto de
+  // "todavia no se". initNotificaciones repinta al terminar.
+  if (_egNotifsCargando) {
+    egSkPintar(el, egSkRepetir(skelNotif(), 3), { stagger: true, timeout: false });
+    return;
+  }
+  egSkFin(el, notificaciones.map(n => `
     <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
       <div class="notif-icon ${n.tipo}"><span class="ni-mono">${escHtml(n.ini || '')}</span>${n.logo ? `<img class="ni-img" src="${escHtml(imgThumb(n.logo, 96, 72))}" alt="" onerror="this.remove()">` : ''}</div>
       <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
       <div class="notif-time">${escHtml(n.tiempo)}</div>
-    </div>`).join('');
+    </div>`).join(''));
 }
 function onNotifClick(id, provId) {
   notifLeidas.add(id);
@@ -3704,8 +3732,8 @@ function renderProdGrid() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#E8F2EE' : '#FFF8E1'};border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:${oculto ? '#006039' : '#92400e'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#E8F2EE' : '#FFF8E1'};border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:${oculto ? '#006039' : '#92400e'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
   }).join('');
@@ -3766,17 +3794,22 @@ async function cargarProductosProveedor() {
   // Si el modal quedo abierto esperando, ahora si se puede pintar de verdad.
   if (document.getElementById('misProductosModal')?.classList.contains('open')) ordenarMisProds(_misProdSort);
 }
-async function deleteProduct(id) {
+async function deleteProduct(id, btnEl) {
   if (!currentUser?.proveedorId) return;
+  // La lista se repinta al terminar, asi que este nodo desaparece; igual
+  // se bloquea para que un doble tap no dispare dos DELETE.
+  if (!egBtnCargando(btnEl, 'Borrando…')) return;
   try { await sb.from('productos').delete().eq('id', id).eq('proveedor_id', currentUser.proveedorId); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid();
   const modal = document.getElementById('misProductosModal');
   if (modal && modal.classList.contains('open')) ordenarMisProds(_misProdSort);
+  egBtnListo(btnEl);
   showToast('Producto eliminado');
 }
-async function toggleVisibleProduct(id, estaOculto) {
+async function toggleVisibleProduct(id, estaOculto, btnEl) {
   if (!currentUser?.proveedorId) return;
+  if (!egBtnCargando(btnEl, '…')) return;
   const nuevoVisible = estaOculto;
   try {
     await sb.from('productos').update({ visible: nuevoVisible }).eq('id', id).eq('proveedor_id', currentUser.proveedorId);
@@ -3791,6 +3824,7 @@ async function toggleVisibleProduct(id, estaOculto) {
     }
     showToast(nuevoVisible ? '✓ Producto visible' : 'Producto ocultado');
   } catch (e) { showToast('Error al actualizar'); }
+  egBtnListo(btnEl);
 }
 // ===== FOTO UPLOAD =====
 let fotoFile = null;
@@ -5862,7 +5896,7 @@ function renderCarrito() {
   const tieneWA = item0.provWA && item0.provWA.trim() !== '';
 
   if (tieneWA) {
-    actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA()"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Enviar pedido por WhatsApp</button>`;
+    actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA(this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Enviar pedido por WhatsApp</button>`;
   } else {
     actionsEl.innerHTML = `<div class="pro-lock"><div class="pro-lock-text">Este proveedor todavía no tiene WhatsApp configurado. Probá con otro proveedor o volvé más tarde.</div></div>`;
   }
@@ -5967,16 +6001,37 @@ async function guardarPedido() {
   } catch (e) { }
 }
 
-function enviarPedidoPorWA() {
+/* Freno contra el doble tap en el checkout.
+   guardarPedido() se dispara SIN await a proposito: el window.open de
+   abajo tiene que quedar dentro del mismo gesto del usuario o el
+   navegador lo bloquea como popup. Por eso el freno no puede ser
+   "esperar la respuesta": es esta bandera, que se suelta sola.
+   Sin esto, dos toques seguidos insertaban DOS pedidos en la base. */
+let _enviandoPedido = false;
+function _frenoPedido() {
+  if (_enviandoPedido) return false;
+  _enviandoPedido = true;
+  setTimeout(function () { _enviandoPedido = false; }, 2500);
+  return true;
+}
+
+function enviarPedidoPorWA(btnEl) {
   const item0 = carrito[0];
   if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
   if (!asegurarDatosComprador(enviarPedidoPorWA)) return;
+  // OJO: btnEl puede venir undefined. Si el comprador no tenia sus datos,
+  // asegurarDatosComprador abre el modal y confirmarDatosInvitado vuelve a
+  // llamar a esta funcion SIN argumentos. Ese pedido tiene que salir igual,
+  // asi que el boton es opcional y el freno de verdad es la bandera.
+  if (!_frenoPedido()) return;
+  egBtnCargando(btnEl, 'Abriendo WhatsApp…');
   const num = normalizarWAArg(item0.provWA);
   const msg = generarMensajePedido();
   guardarPedido();
   registrarContactoWA(item0.provId);
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   closeCarrito();
+  egBtnListo(btnEl);
 }
 
 function enviarPedidoPorChat() {
@@ -6625,8 +6680,8 @@ function buscarMisProds(query) {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
         ${(esProvPro() && !oculto)
           ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
           : ''}
@@ -6687,8 +6742,8 @@ function ordenarMisProds(tipo) {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
         ${(esProvPro() && !oculto)
           ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
           : ''}
@@ -6886,7 +6941,7 @@ async function cargarHeroLogos() {
   function setLogo(slot, url) {
     slot.style.opacity = '0';
     setTimeout(() => {
-      slot.innerHTML = `<img src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
+      slot.innerHTML = `<img class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
       slot.style.opacity = '1';
     }, 200);
   }
@@ -8073,7 +8128,7 @@ async function cargarMisNovedades() {
               <strong>${nvEsc(n.titulo)}</strong>
               <span class="nv-chip ${chip.clase}">${chip.txt}</span>
             </div>
-            <button class="nv-mia-borrar" onclick="borrarNovedad('${nvEsc(String(n.id))}')"
+            <button class="nv-mia-borrar" onclick="borrarNovedad('${nvEsc(String(n.id))}',this)"
                     aria-label="Borrar esta novedad">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </button>
@@ -8082,11 +8137,13 @@ async function cargarMisNovedades() {
     </div>`;
 }
 
-async function borrarNovedad(id) {
+async function borrarNovedad(id, btnEl) {
   if (!confirm('¿Borrar esta novedad? Sale del feed y no se puede recuperar.')) return;
 
   const provId = currentUser?.provData?.id;
   if (!provId) return;
+  // Va DESPUES del confirm(): si dice que no, el boton no se toca.
+  if (!egBtnCargando(btnEl, 'Borrando…')) return;
 
   // El .eq extra es cinturón y tiradores: la RLS ya lo impide del lado del
   // servidor, pero así el borrado es explícito y no depende sólo de eso.
@@ -8095,7 +8152,8 @@ async function borrarNovedad(id) {
     .eq('id', id)
     .eq('proveedor_id', provId);
 
-  if (error) { showToast('No pudimos borrarla. Probá de nuevo.'); return; }
+  if (error) { showToast('No pudimos borrarla. Probá de nuevo.'); egBtnListo(btnEl); return; }
+  egBtnListo(btnEl);
 
   haptic('medium');
   showToast('Novedad borrada');
@@ -8251,7 +8309,7 @@ async function abrirSelectorProducto() {
       ? `<img src="${nvEsc(imgThumb(foto, 120, 70))}" alt="" loading="lazy">`
       : '<span class="nv-selector-sinfoto"></span>';
     return `
-      <button type="button" class="nv-selector-item" onclick="elegirProducto('${nvEsc(String(p.id))}')">
+      <button type="button" class="nv-selector-item" onclick="elegirProducto('${nvEsc(String(p.id))}',false,this)">
         ${img}
         <span>
           <strong>${nvEsc(p.nombre)}</strong>
@@ -8274,9 +8332,12 @@ function nvFotoProducto(p) {
   return null;
 }
 
-async function elegirProducto(id, silencioso) {
+async function elegirProducto(id, silencioso, btnEl) {
   const provId = currentUser?.provData?.id;
   if (!provId) return;
+  // btnEl solo viene desde la lista del selector; la llamada programatica
+  // (publicarProductoEnNovedades) no manda boton y no debe bloquearse.
+  if (btnEl && !egBtnCargando(btnEl, 'Cargando…')) return;
 
   const { data, error } = await sb
     .from('productos')
@@ -8285,7 +8346,8 @@ async function elegirProducto(id, silencioso) {
     .eq('proveedor_id', provId)   // sólo un producto propio
     .maybeSingle();
 
-  if (error || !data) { showToast('No encontramos ese producto'); return; }
+  if (error || !data) { showToast('No encontramos ese producto'); egBtnListo(btnEl); return; }
+  egBtnListo(btnEl);
 
   nvProductoElegido = { id: data.id, nombre: data.nombre, foto: nvFotoProducto(data) };
 
