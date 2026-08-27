@@ -195,10 +195,15 @@ body, body *{
   background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
   border:1px solid #E2EBE5;
 }
-.acc-mancha{position:absolute;border-radius:50%;filter:blur(38px);z-index:-2;pointer-events:none}
-.acc-m1{top:-40px;left:-30px;width:210px;height:210px;background:rgba(0,96,57,.30)}
-.acc-m2{bottom:-60px;right:-40px;width:230px;height:230px;background:rgba(255,107,0,.28)}
-.acc-m3{top:38%;left:45%;width:150px;height:150px;background:rgba(0,140,90,.22)}
+/* Van en % y no en px porque el panel es alto y de altura variable: con
+   posiciones fijas la mitad de abajo se quedaba sin nada detras y el
+   vidrio de las ultimas filas no tenia que refractar. */
+.acc-mancha{position:absolute;border-radius:50%;filter:blur(42px);z-index:-2;pointer-events:none}
+.acc-m1{top:-4%;left:-14%;width:62%;padding-bottom:62%;height:0;background:rgba(0,96,57,.30)}
+.acc-m2{top:22%;right:-18%;width:66%;padding-bottom:66%;height:0;background:rgba(255,107,0,.26)}
+.acc-m3{top:46%;left:-10%;width:52%;padding-bottom:52%;height:0;background:rgba(0,140,90,.24)}
+.acc-m4{bottom:-6%;right:-12%;width:58%;padding-bottom:58%;height:0;background:rgba(0,110,70,.26)}
+.acc-m5{bottom:6%;left:8%;width:46%;padding-bottom:46%;height:0;background:rgba(255,140,60,.18)}
 
 .acc-cta{
   --acc-bg:rgba(255,255,255,.52);
@@ -297,22 +302,64 @@ body, body *{
   .acc-cta{transition:none}
   .acc-cta:active{transform:none}
 }
-/* ---------------------------------------------------------------------
-   FILAS UTILITARIAS DEL PERFIL  (Terminos, Privacidad, Cerrar sesion)
-   Quedaban con el estilo viejo debajo del panel de vidrio y se veian
-   huerfanas.
+/* Rotulo de la segunda seccion, ya dentro del panel. */
+.acc-seccion{margin-top:20px}
 
-   A PROPOSITO NO LLEVAN VIDRIO: van sobre el #F8F8F8 plano del body, y
-   backdrop-filter sobre un color liso no hace nada mas que costar GPU.
-   Emparejan por tipografia, radio y borde, que es donde se nota.
-   Tampoco compiten con el panel: son navegacion, no acciones.
+/* ---------------------------------------------------------------------
+   PLAN PRO, dentro del panel.
+   Sigue siendo verde solido a proposito: es lo unico que cobra plata en
+   esta pantalla y tiene que destacarse. Unifica por radio y tipografia,
+   no por color.
+   --------------------------------------------------------------------- */
+.acc-pro{
+  position:relative;z-index:1;
+  background:#006039;border-radius:14px;padding:15px 16px;cursor:pointer;
+  box-shadow:0 14px 32px -18px rgba(2,40,25,.9);
+  transition:transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.acc-pro:active{transform:scale(.99)}
+.acc-pro-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.acc-pro-tit{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.92rem;font-weight:700;letter-spacing:-.025em;color:#fff;
+}
+.acc-pro-precio{
+  font-family:'Sora',system-ui,sans-serif !important;
+  background:rgba(255,255,255,.2);color:#fff;font-size:.7rem;font-weight:600;
+  padding:4px 10px;border-radius:20px;white-space:nowrap;
+}
+.acc-pro-sub{
+  font-family:'Inter',system-ui,sans-serif !important;
+  color:rgba(255,255,255,.8);font-size:.78rem;line-height:1.5;margin-bottom:12px;
+}
+.acc-pro-btn{
+  font-family:'Sora',system-ui,sans-serif !important;
+  background:#fff;color:#006039;font-size:.82rem;font-weight:600;letter-spacing:-.02em;
+  border-radius:10px;padding:10px;text-align:center;
+}
+
+/* ---------------------------------------------------------------------
+   FILAS DE CUENTA  (Terminos, Privacidad, Cerrar sesion)
+   Ahora viven DENTRO del panel, asi que tienen las manchas detras y el
+   vidrio si funciona. Cuando estaban afuera, sobre el gris plano del
+   body, iban solidas a proposito: ahi backdrop-filter no hacia nada mas
+   que costar GPU.
+   Vidrio mas liviano que .acc-cta (menos blur, menos sombra) para que
+   no compitan con las acciones: son navegacion, no acciones.
    --------------------------------------------------------------------- */
 .perfil-fila{
+  --pf-bg:rgba(255,255,255,.42);
+  --pf-solido:rgba(255,255,255,.92);
+  position:relative;z-index:1;
   display:flex;align-items:center;justify-content:space-between;gap:10px;
-  width:100%;background:#fff;border:1px solid #E2EBE5;border-radius:14px;
-  padding:13px 15px;margin-top:8px;cursor:pointer;text-align:left;
+  width:100%;border-radius:13px;
+  padding:12px 13px;margin-top:8px;cursor:pointer;text-align:left;
   text-decoration:none;color:#1f3329;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 1px 2px rgba(6,50,33,.04);
+  background:var(--pf-bg);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+          backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,.8);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 18px -14px rgba(6,50,33,.4);
   transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
 }
 .perfil-fila:active{transform:scale(.99)}
@@ -333,21 +380,34 @@ body, body *{
 /* El Fraunces que tenia nunca se aplico (lo pisaba la regla de la linea
    16), asi que esto no cambia la fuente que se veia: la hace explicita. */
 .logout-btn{
-  width:100%;margin-top:14px;padding:13px;cursor:pointer;
-  background:#fff;border:1px solid #F0D8D8;border-radius:14px;color:#D14343;
+  --pf-bg:rgba(255,255,255,.42);
+  --pf-solido:rgba(255,255,255,.92);
+  position:relative;z-index:1;
+  width:100%;margin-top:8px;padding:12px;cursor:pointer;border-radius:13px;
+  background:var(--pf-bg);color:#C13636;
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+          backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,.8);
   font-family:'Sora',system-ui,sans-serif !important;
-  font-size:.84rem;font-weight:600;letter-spacing:-.02em;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+  font-size:.82rem;font-weight:600;letter-spacing:-.02em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 18px -14px rgba(6,50,33,.4);
   transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
 }
 .logout-btn:active{transform:scale(.99)}
-.logout-btn:focus-visible{outline:2px solid #D14343;outline-offset:3px}
+.logout-btn:focus-visible{outline:2px solid #C13636;outline-offset:3px}
 @media (hover:hover) and (pointer:fine){
-  .logout-btn:hover{border-color:#E3B9B9}
+  .logout-btn:hover{border-color:rgba(220,150,150,.85)}
+}
+/* Mismos respaldos que .acc-cta, por los mismos motivos. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .perfil-fila,.logout-btn{--pf-bg:var(--pf-solido)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .perfil-fila,.logout-btn{--pf-bg:var(--pf-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 @media (prefers-reduced-motion:reduce){
-  .perfil-fila,.logout-btn{transition:none}
-  .perfil-fila:active,.logout-btn:active{transform:none}
+  .perfil-fila,.logout-btn,.acc-pro{transition:none}
+  .perfil-fila:active,.logout-btn:active,.acc-pro:active{transform:none}
 }
 
 /* DASHBOARD */
