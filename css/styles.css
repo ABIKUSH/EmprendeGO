@@ -716,6 +716,217 @@ body, body *{
 .modal-header h3{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:800}
 .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray)}
 .modal-body{padding:20px 24px 32px}
+
+/* =====================================================================
+   MODAL DE CALIFICACION DEL COMPRADOR (#perfilCompradorModal)
+   Hereda el vidrio de .acc-cta (styles.css:208): mismo blur, mismo brillo
+   propio, mismos respaldos. No usa .chip porque .chip.active pinta el
+   degrade azul/violeta, que es del panel de administracion.
+
+   DOS COSAS QUE HAY QUE ENTENDER ANTES DE TOCAR ESTO:
+
+   1) backdrop-filter difumina lo que hay DETRAS. El modal es blanco plano,
+      asi que sin las .perfil-mancha no hay nada que refractar y los botones
+      quedan grises sobre blanco. Las manchas SON el efecto. Van sueltas en
+      el cuerpo del modal y NO adentro de un panel con borde: encajonados en
+      un recuadro verde los botones se leian como un formulario pegado
+      encima. Sueltas, el color queda de ambiente.
+
+   2) El reflejo que sigue al dedo (.perfil-op::after) es un radial-gradient
+      centrado en var(--mx) var(--my). Esas dos variables las escribe
+      _perfilBrillo() en app.js en cada pointermove. Sin el JS el gradiente
+      se queda en el centro y el boton igual funciona: es progresivo.
+   ===================================================================== */
+.perfil-cuerpo{position:relative;overflow:hidden;isolation:isolate}
+
+/* En % y no en px porque el cuerpo cambia de alto con el teclado abierto. */
+.perfil-mancha{position:absolute;border-radius:50%;filter:blur(52px);z-index:-2;pointer-events:none}
+.perfil-m1{top:2%;left:-22%;width:64%;padding-bottom:64%;height:0;background:rgba(0,96,57,.26)}
+.perfil-m2{top:26%;right:-24%;width:66%;padding-bottom:66%;height:0;background:rgba(255,107,0,.17)}
+.perfil-m3{bottom:-10%;left:14%;width:56%;padding-bottom:56%;height:0;background:rgba(0,140,90,.2)}
+
+/* --- Tipografia -----------------------------------------------------
+   Los !important son obligatorios: `body, body *{font-family:... !important}`
+   de la linea 16 le gana a todo, incluso a los estilos inline. Sora e Inter
+   YA se descargan en index.html:82, no se agrega un pedido de red.
+   El contraste lo hace el peso y el tracking, no un salto de tamano.
+   NO hay rotulos en VERSALITA con tracking abierto: eran justo lo que hacia
+   ver la encuesta como una plantilla. Las preguntas se leen como preguntas.
+   -------------------------------------------------------------------- */
+.perfil-intro{
+  position:relative;z-index:1;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.83rem;font-weight:400;line-height:1.6;color:#55655c;
+  margin-bottom:22px;
+}
+/* Lo unico que hay que retener del parrafo: que no se lo van a preguntar de
+   nuevo. El peso y el color hacen el realce; nada de subrayado ni color de
+   marca, que en un parrafo se leen como un link. */
+.perfil-intro strong{font-weight:600;color:#2b3d34}
+.perfil-campo{position:relative;z-index:1;margin-bottom:20px}
+.perfil-preg{
+  display:block;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.95rem;font-weight:700;letter-spacing:-.032em;
+  line-height:1.25;color:#0b2a1e;margin-bottom:11px;
+}
+
+/* Tres columnas parejas: las opciones son una escala y se comparan de un
+   vistazo. Con flex-wrap quedaba 2+1 y parecia un error de maquetado.
+   touch-action:pan-y deja que el modal siga scrolleando en vertical pero nos
+   cede el movimiento horizontal, que es el del gesto de arrastre. */
+.perfil-ops{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  touch-action:pan-y;
+}
+
+.perfil-op{
+  --po-bg:rgba(255,255,255,.5);
+  --po-solido:rgba(255,255,255,.94);     /* respaldo: opaco, no translucido */
+  --mx:50%;--my:50%;                     /* el JS los mueve con el dedo */
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:52px;padding:9px 7px;                 /* 52px de area de toque */
+  border-radius:15px;cursor:pointer;color:#123a2c;
+  -webkit-user-select:none;user-select:none;
+
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.8rem;font-weight:600;letter-spacing:-.022em;line-height:1.2;
+
+  background:var(--po-bg);
+  -webkit-backdrop-filter:blur(22px) saturate(200%);
+          backdrop-filter:blur(22px) saturate(200%);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),   /* el canto que atrapa la luz */
+    inset 0 -1px 0 rgba(10,60,40,.08),     /* el espesor, abajo */
+    0 10px 24px -16px rgba(6,50,33,.5);    /* flota sobre el blanco */
+  transition:transform 320ms cubic-bezier(.23,1,.32,1),
+             box-shadow 260ms ease-out,
+             opacity 220ms ease-out,
+             color 180ms ease-out;
+}
+/* El brillo propio, fijo. Sin esto el vidrio no tiene de donde sacar reflejo. */
+.perfil-op::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.6),transparent 62%);
+}
+/* El reflejo especular que SIGUE AL DEDO. Aparece al apoyar y se desvanece al
+   soltar; el centro lo mueve _perfilBrillo() desde app.js. */
+.perfil-op::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  opacity:0;transition:opacity 260ms ease-out;
+  background:radial-gradient(58% 130% at var(--mx) var(--my),rgba(255,255,255,.95),rgba(255,255,255,0) 72%);
+}
+.perfil-op.tocando::after{opacity:1}
+
+/* El que esta bajo el dedo se agranda; los otros ceden un poco. Es lo que
+   hace que el grupo se sienta blando en vez de una fila de cajas. */
+.perfil-op.tocando{
+  transform:scale(1.045);z-index:3;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(10,60,40,.08),
+    0 16px 34px -14px rgba(6,50,33,.55);
+}
+.perfil-ops.arrastrando .perfil-op:not(.tocando){transform:scale(.962);opacity:.88}
+
+.perfil-op:active{transform:scale(.975)}
+.perfil-op:focus-visible{outline:2px solid #065F46;outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-op:hover::after{opacity:.75}
+  .perfil-op:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(10,60,40,.08),0 14px 30px -14px rgba(6,50,33,.55)}
+}
+
+/* Elegido: verde de marca con el mismo espesor de vidrio, no un relleno
+   plano. El realce de arriba y la sombra interior de abajo son los que dan
+   el "hundido" — sin ellos parece un div pintado. */
+.perfil-op.active{
+  --po-bg:linear-gradient(168deg,#0a6a44,#054f36);
+  color:#fff;
+  border-color:rgba(255,255,255,.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -2px 7px rgba(2,32,21,.42),
+    0 12px 26px -12px rgba(4,60,39,.62);
+}
+.perfil-op.active::before{
+  background:radial-gradient(120% 90% at 18% -10%,rgba(255,255,255,.32),transparent 60%);
+}
+.perfil-op.active::after{
+  background:radial-gradient(58% 130% at var(--mx) var(--my),rgba(255,255,255,.4),rgba(255,255,255,0) 70%);
+}
+.perfil-op.active.tocando{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -2px 7px rgba(2,32,21,.42),
+    0 18px 36px -12px rgba(4,60,39,.7);
+}
+
+/* El rojo de .field-error es para un input; en un grupo de botones se marca
+   el contorno del grupo, que es lo que falta completar. */
+.perfil-ops.field-error{box-shadow:0 0 0 3px rgba(229,72,77,.3);border-radius:17px}
+
+.perfil-input{
+  width:100%;
+  background:rgba(255,255,255,.6);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+          backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.9);border-radius:15px;
+  padding:14px 16px;color:#0b2a1e;outline:none;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.92rem;font-weight:500;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(10,60,40,.06),0 8px 20px -16px rgba(6,50,33,.4);
+  transition:border-color 180ms ease-out,box-shadow 180ms ease-out;
+}
+.perfil-input::placeholder{color:#8d9d94}
+.perfil-input:focus{
+  border-color:rgba(6,95,70,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 3px rgba(6,95,70,.14);
+}
+.perfil-input.field-error{border-color:#e5484d}
+
+.perfil-enviar{
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px;
+  background:linear-gradient(168deg,#0a6a44,#054f36);color:#fff;cursor:pointer;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.94rem;font-weight:700;letter-spacing:-.022em;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -2px 7px rgba(2,32,21,.34),
+    0 16px 34px -16px rgba(4,60,39,.78);
+  transition:transform 260ms cubic-bezier(.23,1,.32,1),box-shadow 220ms ease-out;
+}
+.perfil-enviar::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(120% 90% at 16% -12%,rgba(255,255,255,.3),transparent 58%);
+}
+.perfil-enviar:active{transform:scale(.978)}
+.perfil-enviar:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-enviar:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -2px 7px rgba(2,32,21,.34),0 20px 40px -16px rgba(4,60,39,.85)}
+}
+
+/* --- Respaldos ------------------------------------------------------
+   Redefinen TOKENS y no reglas, igual que .acc-cta. El @supports pregunta
+   por las dos formas porque Safari viejo entiende -webkit-backdrop-filter
+   pero no la version sin prefijo. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .perfil-op{--po-bg:var(--po-solido)}
+  .perfil-input{background:rgba(255,255,255,.95)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .perfil-op{--po-bg:var(--po-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .perfil-op::before,.perfil-op::after{display:none}
+  .perfil-mancha{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .perfil-op,.perfil-enviar{transition:box-shadow 200ms ease-out}
+  .perfil-op.tocando,.perfil-op:active,.perfil-enviar:active{transform:none}
+  .perfil-ops.arrastrando .perfil-op:not(.tocando){transform:none;opacity:1}
+}
 .prod-modal{background:white;width:100%;max-width:430px;border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
 
 /* AI TEST */

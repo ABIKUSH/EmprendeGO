@@ -3135,11 +3135,19 @@
     const c = st.resultadoB && st.resultadoB.conteo;
     const p = (c && c.lista || []).find(x => String(x.id) === String(provId));
     if (!p) return;
+    // Mismo muro de calificacion que en el resto de la app (app.js). Aca tambien
+    // hace falta: el formulario B dice QUE busca pero no en que cantidad ni si
+    // revende, que es justo lo que el proveedor necesita para contestar. Si el
+    // comprador ya lo respondio antes, no se le vuelve a preguntar.
+    if (typeof asegurarPerfilComprador === 'function' &&
+      !asegurarPerfilComprador(() => window.cotizContactarDirecto(provId))) return;
     const r = st.resultadoB;
     const que = (r.productos || []).slice(0, 4).join(', ');
-    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO. ` +
-      `Estoy buscando un proveedor de ${r.rubro}${que ? ' (' + que + ')' : ''}. ` +
-      '¿Me pasa lista de precios y su mínimo de compra?';
+    const extra = typeof lineaPerfilComprador === 'function' ? lineaPerfilComprador() : '';
+    const msg = `Hola! Soy ${currentUser?.name || ''} de EmprendeGO.\n` +
+      `Estoy buscando un proveedor de ${r.rubro}${que ? ' (' + que + ')' : ''}.` +
+      extra +
+      '\n¿Me pasa lista de precios y su mínimo de compra?';
     try { registrarContactoWA(provId, p); } catch (e) { }
     try { abrirWA(p.whatsapp, msg); } catch (e) { toast('WhatsApp no disponible'); }
   };

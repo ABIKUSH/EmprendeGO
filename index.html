@@ -80,7 +80,7 @@ src="https://www.facebook.com/tr?id=1032515699633074&ev=PageView&noscript=1"
 <meta name="apple-mobile-web-app-title" content="EmprendeGO">
 
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Outfit:wght@300;400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=20260814-skel7">
+<link rel="stylesheet" href="css/styles.css?v=20260827-calif3">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -293,6 +293,51 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <input type="tel" id="invitado-wa-input" placeholder="Ej: 11 2345 6789" autocomplete="tel" inputmode="tel">
       </div>
       <button onclick="confirmarDatosInvitado()" style="width:100%;background:var(--green,#006039);border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;color:white;cursor:pointer">Continuar con el pedido →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CALIFICACION DEL COMPRADOR (se interpone antes de abrir WhatsApp) =====
+     Por que existe: hasta el 27-08-2026 los ~2.800 contactos mensuales salian
+     TODOS con el mismo texto que generaba la app (mensajeWAProv), sin nombre y
+     sin decir si el que escribe revende. El proveedor recibia 40 mensajes
+     identicos y no podia distinguir un mayorista de un curioso, asi que
+     terminaba ignorando a todos. Varios lo dijeron con esas palabras:
+     "mensajes demasiado minoristas".
+     Las opciones NO se escriben aca: las pinta egPintarOpcionesPerfil() desde
+     EG_REVENDE en app.js, para que los valores que se guardan en la base y los
+     que se ven en pantalla no puedan divergir. -->
+<div class="modal-overlay" id="perfilCompradorModal" onclick="closePerfilCompradorOnBg(event)">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header"><h3>Para que le respondan</h3><button class="modal-close" onclick="closePerfilCompradorModal()">✕</button></div>
+    <!-- Las manchas SON el efecto de vidrio: backdrop-filter difumina lo que hay
+         DETRAS, y sobre el blanco plano del modal no hay nada que difuminar. Van
+         sueltas en el cuerpo y no adentro de un panel con borde: el recuadro
+         verde encajonaba los botones y se veia como un formulario pegado
+         encima. Asi el color queda de ambiente y los botones flotan sobre el
+         blanco. Mismo criterio que .acc-mancha (styles.css:201), otro encuadre. -->
+    <div class="modal-body perfil-cuerpo">
+      <span class="perfil-mancha perfil-m1"></span>
+      <span class="perfil-mancha perfil-m2"></span>
+      <span class="perfil-mancha perfil-m3"></span>
+
+      <p class="perfil-intro">El mayorista responde primero a quien se presenta. <strong>Se lo preguntamos una sola vez.</strong></p>
+
+      <div class="perfil-campo">
+        <span class="perfil-preg" id="perfil-rot-rev">¿Compra para revender?</span>
+        <div class="perfil-ops" id="perfil-revende-ops" role="radiogroup" aria-labelledby="perfil-rot-rev"></div>
+      </div>
+
+      <div class="perfil-campo">
+        <label class="perfil-preg" for="perfil-nombre-input">¿Cómo se llama?</label>
+        <input type="text" id="perfil-nombre-input" class="perfil-input" placeholder="Ej: Martín G." autocomplete="name">
+      </div>
+
+      <button type="button" class="perfil-enviar" onclick="confirmarPerfilComprador()">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm5.8 14.16c-.24.68-1.42 1.3-1.96 1.35-.5.05-1.14.07-1.84-.11a16.8 16.8 0 0 1-1.67-.62c-2.94-1.27-4.86-4.23-5.01-4.43-.14-.2-1.19-1.58-1.19-3.02s.76-2.14 1.03-2.44c.27-.3.58-.37.78-.37h.56c.18 0 .42-.07.66.5.24.59.83 2.03.9 2.18.07.15.12.32.02.52-.1.2-.15.32-.3.5-.15.17-.31.39-.44.52-.15.15-.3.31-.13.61.17.3.76 1.25 1.63 2.03 1.12 1 2.06 1.31 2.36 1.46.3.15.47.12.64-.07.17-.2.74-.86.94-1.16.2-.3.39-.25.66-.15.27.1 1.7.8 1.99.95.3.15.49.22.56.34.07.13.07.72-.17 1.41Z"/></svg>
+        Enviar por WhatsApp
+      </button>
     </div>
   </div>
 </div>
@@ -2387,9 +2432,9 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div class="screen" id="screen-cotizaciones"></div>
 
 <script src="js/buscador.js?v=20260810-rescate"></script>
-<script src="js/app.js?v=20260826-privacidad"></script>
+<script src="js/app.js?v=20260827-calif3"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
-<script src="js/cotizaciones.js?v=20260825-deeplink2"></script>
+<script src="js/cotizaciones.js?v=20260827-calif3"></script>
 <script>
 // Matar cualquier service worker viejo y sus cachés (quedaban sirviendo app.js viejo).
 // La app no usa SW para funcionar; esto evita que los navegadores queden pegados a código viejo.

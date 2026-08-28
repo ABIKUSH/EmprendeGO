@@ -1906,7 +1906,7 @@ function renderProvCards(el, list) {
     const compb = e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
     if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb) { e.stopPropagation(); registrarContactoWA(wb.dataset.pid, { id: wb.dataset.pid, nombre: wb.dataset.nombre, rubro: wb.dataset.rubro }); abrirWA(wb.dataset.wa, mensajeWAProv({ nombre: wb.dataset.nombre, rubro: wb.dataset.rubro })); return; }
+    if (wb) { e.stopPropagation(); waDesdeTarjeta({ pid: wb.dataset.pid, wa: wb.dataset.wa, nombre: wb.dataset.nombre, rubro: wb.dataset.rubro }); return; }
     if (cb) { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
     if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
     if (card) abrirDetalle(card.dataset.id);
@@ -2108,7 +2108,20 @@ function registrarConsulta(id) {
     localStorage.setItem(k, Date.now());
     // registrar_consulta: inserta una fila con fecha en public.consultas (para reportes/tendencia
     // "este mes") Y mantiene el contador acumulado proveedores.consultas. Reemplaza a increment_consultas.
-    sb.rpc('registrar_consulta', { proveedor_id: id }).then(() => {}).catch(() => {});
+    const viejo = () => sb.rpc('registrar_consulta', { proveedor_id: id }).then(() => { }).catch(() => { });
+    const perfil = getPerfilComprador();
+    // Con calificacion va el RPC nuevo, que ademas de contar la consulta estampa
+    // cantidad/revende/nombre en la fila. Si la migracion todavia no corrio, ese
+    // RPC no existe: se cae al de siempre y la metrica vieja no se pierde.
+    if (perfil) {
+      sb.rpc('registrar_consulta_calificada', {
+        proveedor_id: id,
+        p_revende: perfil.revende,
+        p_nombre: perfil.nombre,
+      }).then(r => { if (r && r.error) viejo(); }).catch(viejo);
+    } else {
+      viejo();
+    }
   } catch (e) { }
 }
 
@@ -2154,16 +2167,232 @@ function pedirMasCatalogo(id) {
   haptic('light');
 }
 
+// ===== CALIFICACION DEL COMPRADOR =====
+//
+// Por que existe: hasta el 27-08-2026 los ~2.800 contactos mensuales salian
+// todos con EL MISMO texto, generado aca abajo. El proveedor recibia 40
+// mensajes identicos, sin nombre y sin saber si el que escribe revende o
+// compra una unidad para el. No podia distinguir un mayorista de un curioso,
+// asi que dejo de contestarlos a todos. Varios lo dijeron con esas palabras:
+// "mensajes demasiado minoristas".
+//
+// SE PREGUNTA UNA SOLA COSA, y no dos. Hubo una version con "cantidad
+// aproximada" y se cayo: el comprador le escribe AL PROVEEDOR, todavia no
+// eligio ningun producto, asi que no tiene una cantidad en la cabeza y la
+// pregunta lo traba. Si revende o no, en cambio, lo sabe siempre — y es
+// justo el dato que separa al mayorista del curioso.
+//
+// Se pregunta UNA sola vez por dispositivo (localStorage, igual que eg_favs) y
+// la respuesta viaja dentro del mensaje Y a la tabla consultas, que es lo que
+// despues deja decir "recibio 38 compradores mayoristas" en vez de
+// "recibio 61 clics".
+//
+// OJO: al que responde "es para mi" NO se lo frena. Se lo deja pasar y se lo
+// marca. Frenarlo daria bronca, algunos igual compran cantidad, y sobre todo
+// nos dejaria sin el numero que estamos tratando de averiguar: cuantos de los
+// que escriben son realmente revendedores. Primero medir; filtrar despues, si
+// el dato lo justifica.
+// `t` es la etiqueta del boton; `frase` es lo que termina leyendo el proveedor.
+const EG_REVENDE = [
+  { v: 'local', t: 'Tengo local', frase: 'Compro para revender (tengo local).' },
+  { v: 'online', t: 'Vendo online', frase: 'Compro para revender (vendo online).' },
+  { v: 'propio', t: 'Es para mí', frase: 'La compra es para uso personal.' },
+];
+
+let perfilComprador = null;
+try { perfilComprador = JSON.parse(localStorage.getItem('eg_perfil_comprador') || 'null'); } catch (e) { }
+let _perfilPendiente = null;
+let _perfilBorrador = { revende: '' };
+
+// Contacto desde una tarjeta del listado y desde el recomendador. Los datos del
+// proveedor se copian del dataset ANTES de abrir el modal: cuando la accion se
+// reintenta, el elemento del DOM puede haberse re-pintado y el dataset ya no
+// existe. Por eso recibe un objeto plano y no el nodo.
+function waDesdeTarjeta(d) {
+  if (!d || !d.wa) { showToast('WhatsApp no disponible'); return; }
+  if (!asegurarPerfilComprador(() => waDesdeTarjeta(d))) return;
+  registrarContactoWA(d.pid, { id: d.pid, nombre: d.nombre, rubro: d.rubro });
+  abrirWA(d.wa, mensajeWAProv({ nombre: d.nombre, rubro: d.rubro }));
+}
+
+function getPerfilComprador() {
+  const p = perfilComprador;
+  if (p && p.revende && p.nombre) return p;
+  return null;
+}
+
+// Espejo de asegurarDatosComprador(): si todavia no sabemos quien es, guarda la
+// accion, abre el modal y devuelve false. confirmarPerfilComprador() la vuelve
+// a llamar. Es importante que la accion termine haciendo el window.open DENTRO
+// del clic de "Enviar": si se dispara despues de un await, el navegador movil
+// lo bloquea como popup, y el 89% del trafico es movil.
+function asegurarPerfilComprador(accion) {
+  if (getPerfilComprador()) return true;
+  _perfilPendiente = accion;
+  openPerfilCompradorModal();
+  return false;
+}
+
+// Marca en el boton donde esta el dedo. Las dos variables alimentan el
+// reflejo especular del CSS (.perfil-op::after), que es un radial-gradient
+// centrado en var(--mx) var(--my): moviendo el punto, la luz sigue al dedo.
+function _perfilBrillo(b, x, y) {
+  const r = b.getBoundingClientRect();
+  b.style.setProperty('--mx', (100 * (x - r.left) / r.width).toFixed(1) + '%');
+  b.style.setProperty('--my', (100 * (y - r.top) / r.height).toFixed(1) + '%');
+}
+
+let _perfilIgnorarClick = false;
+
+function egPintarOpcionesPerfil() {
+  const el = document.getElementById('perfil-revende-ops');
+  if (!el) return;
+  el.classList.remove('field-error');
+  const elegido = _perfilBorrador.revende;
+  // role=radio + aria-checked: el contenedor es un radiogroup, asi que un lector
+  // de pantalla tiene que poder decir cual esta elegido. Sin esto son "tres
+  // botones" sin estado.
+  el.innerHTML = EG_REVENDE.map(o =>
+    `<button type="button" role="radio" aria-checked="${o.v === elegido ? 'true' : 'false'}" class="perfil-op${o.v === elegido ? ' active' : ''}" data-perfilvalor="${o.v}">${escHtml(o.t)}</button>`
+  ).join('');
+
+  const elegir = (v) => {
+    if (_perfilBorrador.revende === v) return;
+    _perfilBorrador.revende = v;
+    try { haptic('light'); } catch (e) { }
+    egPintarOpcionesPerfil();
+  };
+
+  // --- Gesto de arrastre, al modo del vidrio de iOS ------------------------
+  // El dedo baja sobre un boton y puede recorrer los tres sin levantarlo: el
+  // que esta debajo se agranda y el reflejo lo sigue; los otros se achican un
+  // poco. Se elige al LEVANTAR el dedo, no al apoyarlo, asi se puede pasear
+  // por las opciones y arrepentirse sin haber elegido nada.
+  //
+  // Se usa un solo juego de handlers en el grupo (no uno por boton) porque el
+  // grupo se re-pinta entero en cada eleccion y los handlers de los hijos se
+  // perderian. setPointerCapture en el CONTENEDOR es lo que hace que sigamos
+  // recibiendo el movimiento aunque el dedo se salga del boton original.
+  const bajoElDedo = (x, y) => {
+    const n = document.elementFromPoint(x, y);
+    const b = n && n.closest ? n.closest('[data-perfilvalor]') : null;
+    return (b && el.contains(b)) ? b : null;
+  };
+  const resaltar = (b, x, y) => {
+    el.querySelectorAll('.perfil-op').forEach(o => { if (o !== b) o.classList.remove('tocando'); });
+    if (!b) { el.classList.remove('arrastrando'); return; }
+    el.classList.add('arrastrando');
+    b.classList.add('tocando');
+    _perfilBrillo(b, x, y);
+  };
+  const soltar = () => {
+    el.classList.remove('arrastrando');
+    el.querySelectorAll('.perfil-op').forEach(o => o.classList.remove('tocando'));
+  };
+
+  el.onpointerdown = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    if (!b) return;
+    try { el.setPointerCapture(e.pointerId); } catch (err) { }
+    resaltar(b, e.clientX, e.clientY);
+  };
+  el.onpointermove = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    // Con el dedo apoyado se arrastra; sin apoyar, en desktop, el reflejo
+    // igual sigue al mouse sobre el boton de abajo.
+    if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) resaltar(b, e.clientX, e.clientY);
+    else if (b) _perfilBrillo(b, e.clientX, e.clientY);
+  };
+  el.onpointerup = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    try { el.releasePointerCapture(e.pointerId); } catch (err) { }
+    soltar();
+    if (b) {
+      // El click sintetico que viene despues del pointerup elegiria de nuevo:
+      // como el gesto pudo terminar sobre OTRO boton, se lo ignora una vez.
+      _perfilIgnorarClick = true;
+      setTimeout(() => { _perfilIgnorarClick = false; }, 350);
+      elegir(b.dataset.perfilvalor);
+    }
+  };
+  el.onpointercancel = () => soltar();
+  el.onpointerleave = () => { if (!el.classList.contains('arrastrando')) soltar(); };
+
+  // Sigue existiendo para teclado y para cualquier navegador sin Pointer Events.
+  el.onclick = (e) => {
+    if (_perfilIgnorarClick) { _perfilIgnorarClick = false; return; }
+    const b = e.target.closest('[data-perfilvalor]');
+    if (b) elegir(b.dataset.perfilvalor);
+  };
+}
+
+function openPerfilCompradorModal() {
+  _perfilBorrador = { revende: (perfilComprador && perfilComprador.revende) || '' };
+  const inp = document.getElementById('perfil-nombre-input');
+  // Si entro con Google ya sabemos como se llama: no se lo preguntamos de nuevo.
+  if (inp) {
+    inp.value = (perfilComprador && perfilComprador.nombre) || (currentUser && currentUser.name) || '';
+    inp.classList.remove('field-error');   // si quedo en rojo de un intento anterior
+  }
+  egPintarOpcionesPerfil();
+  document.getElementById('perfilCompradorModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closePerfilCompradorModal() {
+  document.getElementById('perfilCompradorModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _perfilPendiente = null;
+}
+function closePerfilCompradorOnBg(e) { if (e.target === document.getElementById('perfilCompradorModal')) closePerfilCompradorModal(); }
+
+function confirmarPerfilComprador() {
+  const inp = document.getElementById('perfil-nombre-input');
+  inp?.classList.remove('field-error');
+  const nombre = (inp?.value || '').trim();
+  if (!_perfilBorrador.revende) { document.getElementById('perfil-revende-ops')?.classList.add('field-error'); showToast('Indique si es para revender'); return; }
+  if (nombre.length < 2) { document.getElementById('perfil-nombre-input')?.classList.add('field-error'); showToast('Escriba su nombre'); return; }
+
+  perfilComprador = { revende: _perfilBorrador.revende, nombre };
+  try { localStorage.setItem('eg_perfil_comprador', JSON.stringify(perfilComprador)); } catch (e) { }
+  trackEvent('perfil_comprador', { tipo: perfilComprador.revende });
+
+  document.getElementById('perfilCompradorModal').classList.remove('open');
+  document.body.style.overflow = '';
+  const accion = _perfilPendiente;
+  _perfilPendiente = null;
+  // El window.open del mensaje sale de aca, que sigue siendo el mismo gesto de
+  // clic del boton "Enviar". No meter awaits en el medio.
+  if (typeof accion === 'function') accion();
+}
+
+// La linea que se le agrega al mensaje. Es lo unico que el proveedor necesita
+// para decidir en dos segundos si le contesta.
+function lineaPerfilComprador() {
+  const p = getPerfilComprador();
+  if (!p) return '';
+  const rev = EG_REVENDE.find(o => o.v === p.revende);
+  return rev ? `\n${rev.frase}` : '';
+}
+
+function saludoComprador() {
+  const p = getPerfilComprador();
+  return p && p.nombre ? `¡Hola! Soy ${p.nombre}.` : '¡Hola!';
+}
+
 function mensajeWAProv(prov) {
-  const nombre = prov?.nombre || 'tu negocio';
-  const rubro = prov?.rubro || 'tus productos';
-  return `¡Hola! Vi ${nombre} en EmprendeGO y me interesa conocer los precios mayoristas de ${rubro}. ¿Cuándo podemos hablar?`;
+  const nombre = prov?.nombre || 'su negocio';
+  const rubro = prov?.rubro || 'sus productos';
+  return `${saludoComprador()}\nVi ${nombre} en EmprendeGO y me interesan sus precios mayoristas de ${rubro}.`
+    + lineaPerfilComprador()
+    + `\n¿Cuándo podemos hablar?\n¡Gracias!`;
 }
 
 function mensajeWAProd(prod, prov) {
-  const np = prod?.nombre || 'tu producto';
+  const np = prod?.nombre || 'su producto';
   const precio = prod?.precio ? ' (vi el precio de $' + Number(prod.precio).toLocaleString('es-AR') + ')' : '';
-  return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
+  return `${saludoComprador()}\nVi "${np}"${precio} en EmprendeGO.`
+    + lineaPerfilComprador()
+    + `\n¿Cuál es el precio mayorista y el mínimo de compra?\n¡Gracias!`;
 }
 
 /* Hueso de la tarjeta chica del catalogo del proveedor: foto de 90px de
@@ -2406,7 +2635,14 @@ function abrirDetalle(id) {
 }
 
 function volverDetalle() { goBack('buscar'); }
-function detWA() { if (provActual && provActual.whatsapp) { registrarContactoWA(provActual.id, provActual); abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); } else showToast('WhatsApp no disponible'); }
+function detWA() {
+  if (!(provActual && provActual.whatsapp)) { showToast('WhatsApp no disponible'); return; }
+  // Se pasa detWA como accion pendiente: provActual sigue apuntando al mismo
+  // proveedor cuando el modal la vuelve a llamar (el modal no navega).
+  if (!asegurarPerfilComprador(detWA)) return;
+  registrarContactoWA(provActual.id, provActual);
+  abrirWA(provActual.whatsapp, mensajeWAProv(provActual));
+}
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
 // ===== CALCULADORA =====
@@ -4796,7 +5032,11 @@ function renderRecomendaciones(ranked, rubroSel) {
     const porque = reasons.length ? 'Te lo recomiendo porque ' + reasons.slice(0, 3).join(', ') + '.' : 'Buen match para lo que buscás.';
     const wa = normalizarWAArg(p.whatsapp);
     const waBtn = wa
-      ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarContactoWA('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
+      // Era un <a href="wa.me/..."> con el texto ya armado en el HTML. Tuvo que
+      // pasar a <button>: el mensaje ahora depende de la calificacion del
+      // comprador, que todavia no existe cuando se pinta la tarjeta, y un href
+      // fijo se lleva el texto viejo.
+      ? `<button type="button" onclick="event.stopPropagation();waDesdeTarjeta({pid:this.dataset.pid,wa:this.dataset.wa,nombre:this.dataset.nombre,rubro:this.dataset.rubro})" data-pid="${escHtml(String(p.id))}" data-wa="${escHtml(wa)}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer">WhatsApp</button>`
       : '';
     return `<div style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;position:relative">
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
@@ -5566,7 +5806,14 @@ function togglePdCalc() {
 }
 function volverDetProd() { goBack('inicio'); }
 function irAProveedorDesdeProd() { if (productoActual) abrirDetalle(productoActual.provId); }
-function detWAProd() { if (!productoActual) return; const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId)); if (prov && prov.whatsapp) { registrarContactoWA(productoActual.provId, prov); abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov)); } else showToast('WhatsApp no disponible'); }
+function detWAProd() {
+  if (!productoActual) return;
+  const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId));
+  if (!(prov && prov.whatsapp)) { showToast('WhatsApp no disponible'); return; }
+  if (!asegurarPerfilComprador(detWAProd)) return;
+  registrarContactoWA(productoActual.provId, prov);
+  abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov));
+}
 function detChatProd() { if (productoActual) abrirChatDirecto(productoActual.provId); }
 function calcProdDet() {
   const costo = productoActual ? productoActual.precio : 0;
