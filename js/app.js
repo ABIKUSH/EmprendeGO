@@ -1308,6 +1308,9 @@ let notificaciones = [];
 let notifLeidas = new Set();
 try { notifLeidas = new Set(JSON.parse(localStorage.getItem('eg_notif_leidas') || '[]')); } catch (e) { }
 
+// Bandera solo de presentacion (ver renderNotifPanel).
+let _egNotifsCargando = true;
+
 async function initNotificaciones() {
   try {
     const hace30dias = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -1342,21 +1345,46 @@ async function initNotificaciones() {
     notificaciones = [];
   }
 
+  _egNotifsCargando = false;
+  // Si la campanita quedo abierta esperando, ahora si se puede pintar.
+  const panel = document.getElementById('notifPanel');
+  if (panel && panel.style.display === 'block') renderNotifPanel();
+
   const tieneNoLeidas = notificaciones.some(n => !notifLeidas.has(n.id));
   document.getElementById('notifDot').classList.toggle('show', tieneNoLeidas);
   const d2 = document.getElementById('notifDot2');
   if (d2) d2.classList.toggle('show', tieneNoLeidas);
 }
 
+/* Hueso de una notificacion. Reusa .notif-item / .notif-icon / .notif-text
+   para heredar el padding y la linea divisoria exactos. */
+function skelNotif() {
+  return `<div class="notif-item" style="pointer-events:none">
+    <div class="skeleton" style="width:38px;height:38px;border-radius:10px;flex-shrink:0"></div>
+    <div class="notif-text">
+      <div class="skeleton" style="height:12px;width:54%;margin-bottom:6px"></div>
+      <div class="skeleton" style="height:10px;width:82%"></div>
+    </div>
+    <div class="skeleton" style="width:24px;height:10px;flex-shrink:0"></div>
+  </div>`;
+}
+
 function renderNotifPanel() {
   const el = document.getElementById('notifList');
   if (!el) return;
-  el.innerHTML = notificaciones.map(n => `
+  // Si la campanita se abre antes de que termine initNotificaciones, el
+  // panel salia vacio (y parecia "no tenes nada", que es distinto de
+  // "todavia no se". initNotificaciones repinta al terminar.
+  if (_egNotifsCargando) {
+    egSkPintar(el, egSkRepetir(skelNotif(), 3), { stagger: true, timeout: false });
+    return;
+  }
+  egSkFin(el, notificaciones.map(n => `
     <div class="notif-item ${notifLeidas.has(n.id) ? '' : 'unread'}" onclick="onNotifClick('${n.id}','${n.provId || ''}')">
       <div class="notif-icon ${n.tipo}"><span class="ni-mono">${escHtml(n.ini || '')}</span>${n.logo ? `<img class="ni-img" src="${escHtml(imgThumb(n.logo, 96, 72))}" alt="" onerror="this.remove()">` : ''}</div>
       <div class="notif-text"><strong>${escHtml(n.titulo)}</strong><span>${escHtml(n.texto)}</span></div>
       <div class="notif-time">${escHtml(n.tiempo)}</div>
-    </div>`).join('');
+    </div>`).join(''));
 }
 function onNotifClick(id, provId) {
   notifLeidas.add(id);
@@ -1878,7 +1906,7 @@ function renderProvCards(el, list) {
     const compb = e.target.closest('[data-compid]');
     const card = e.target.closest('[data-id]');
     if (fb) { e.stopPropagation(); toggleFav(fb.dataset.favid); return; }
-    if (wb) { e.stopPropagation(); registrarContactoWA(wb.dataset.pid, { id: wb.dataset.pid, nombre: wb.dataset.nombre, rubro: wb.dataset.rubro }); abrirWA(wb.dataset.wa, mensajeWAProv({ nombre: wb.dataset.nombre, rubro: wb.dataset.rubro })); return; }
+    if (wb) { e.stopPropagation(); waDesdeTarjeta({ pid: wb.dataset.pid, wa: wb.dataset.wa, nombre: wb.dataset.nombre, rubro: wb.dataset.rubro }); return; }
     if (cb) { e.stopPropagation(); abrirChatDirecto(cb.dataset.chatid); return; }
     if (compb) { e.stopPropagation(); toggleCompararById(compb.dataset.compid); return; }
     if (card) abrirDetalle(card.dataset.id);
@@ -2080,7 +2108,20 @@ function registrarConsulta(id) {
     localStorage.setItem(k, Date.now());
     // registrar_consulta: inserta una fila con fecha en public.consultas (para reportes/tendencia
     // "este mes") Y mantiene el contador acumulado proveedores.consultas. Reemplaza a increment_consultas.
-    sb.rpc('registrar_consulta', { proveedor_id: id }).then(() => {}).catch(() => {});
+    const viejo = () => sb.rpc('registrar_consulta', { proveedor_id: id }).then(() => { }).catch(() => { });
+    const perfil = getPerfilComprador();
+    // Con calificacion va el RPC nuevo, que ademas de contar la consulta estampa
+    // cantidad/revende/nombre en la fila. Si la migracion todavia no corrio, ese
+    // RPC no existe: se cae al de siempre y la metrica vieja no se pierde.
+    if (perfil) {
+      sb.rpc('registrar_consulta_calificada', {
+        proveedor_id: id,
+        p_revende: perfil.revende,
+        p_nombre: perfil.nombre,
+      }).then(r => { if (r && r.error) viejo(); }).catch(viejo);
+    } else {
+      viejo();
+    }
   } catch (e) { }
 }
 
@@ -2126,16 +2167,232 @@ function pedirMasCatalogo(id) {
   haptic('light');
 }
 
+// ===== CALIFICACION DEL COMPRADOR =====
+//
+// Por que existe: hasta el 27-08-2026 los ~2.800 contactos mensuales salian
+// todos con EL MISMO texto, generado aca abajo. El proveedor recibia 40
+// mensajes identicos, sin nombre y sin saber si el que escribe revende o
+// compra una unidad para el. No podia distinguir un mayorista de un curioso,
+// asi que dejo de contestarlos a todos. Varios lo dijeron con esas palabras:
+// "mensajes demasiado minoristas".
+//
+// SE PREGUNTA UNA SOLA COSA, y no dos. Hubo una version con "cantidad
+// aproximada" y se cayo: el comprador le escribe AL PROVEEDOR, todavia no
+// eligio ningun producto, asi que no tiene una cantidad en la cabeza y la
+// pregunta lo traba. Si revende o no, en cambio, lo sabe siempre — y es
+// justo el dato que separa al mayorista del curioso.
+//
+// Se pregunta UNA sola vez por dispositivo (localStorage, igual que eg_favs) y
+// la respuesta viaja dentro del mensaje Y a la tabla consultas, que es lo que
+// despues deja decir "recibio 38 compradores mayoristas" en vez de
+// "recibio 61 clics".
+//
+// OJO: al que responde "es para mi" NO se lo frena. Se lo deja pasar y se lo
+// marca. Frenarlo daria bronca, algunos igual compran cantidad, y sobre todo
+// nos dejaria sin el numero que estamos tratando de averiguar: cuantos de los
+// que escriben son realmente revendedores. Primero medir; filtrar despues, si
+// el dato lo justifica.
+// `t` es la etiqueta del boton; `frase` es lo que termina leyendo el proveedor.
+const EG_REVENDE = [
+  { v: 'local', t: 'Tengo local', frase: 'Compro para revender (tengo local).' },
+  { v: 'online', t: 'Vendo online', frase: 'Compro para revender (vendo online).' },
+  { v: 'propio', t: 'Es para mí', frase: 'La compra es para uso personal.' },
+];
+
+let perfilComprador = null;
+try { perfilComprador = JSON.parse(localStorage.getItem('eg_perfil_comprador') || 'null'); } catch (e) { }
+let _perfilPendiente = null;
+let _perfilBorrador = { revende: '' };
+
+// Contacto desde una tarjeta del listado y desde el recomendador. Los datos del
+// proveedor se copian del dataset ANTES de abrir el modal: cuando la accion se
+// reintenta, el elemento del DOM puede haberse re-pintado y el dataset ya no
+// existe. Por eso recibe un objeto plano y no el nodo.
+function waDesdeTarjeta(d) {
+  if (!d || !d.wa) { showToast('WhatsApp no disponible'); return; }
+  if (!asegurarPerfilComprador(() => waDesdeTarjeta(d))) return;
+  registrarContactoWA(d.pid, { id: d.pid, nombre: d.nombre, rubro: d.rubro });
+  abrirWA(d.wa, mensajeWAProv({ nombre: d.nombre, rubro: d.rubro }));
+}
+
+function getPerfilComprador() {
+  const p = perfilComprador;
+  if (p && p.revende && p.nombre) return p;
+  return null;
+}
+
+// Espejo de asegurarDatosComprador(): si todavia no sabemos quien es, guarda la
+// accion, abre el modal y devuelve false. confirmarPerfilComprador() la vuelve
+// a llamar. Es importante que la accion termine haciendo el window.open DENTRO
+// del clic de "Enviar": si se dispara despues de un await, el navegador movil
+// lo bloquea como popup, y el 89% del trafico es movil.
+function asegurarPerfilComprador(accion) {
+  if (getPerfilComprador()) return true;
+  _perfilPendiente = accion;
+  openPerfilCompradorModal();
+  return false;
+}
+
+// Marca en el boton donde esta el dedo. Las dos variables alimentan el
+// reflejo especular del CSS (.perfil-op::after), que es un radial-gradient
+// centrado en var(--mx) var(--my): moviendo el punto, la luz sigue al dedo.
+function _perfilBrillo(b, x, y) {
+  const r = b.getBoundingClientRect();
+  b.style.setProperty('--mx', (100 * (x - r.left) / r.width).toFixed(1) + '%');
+  b.style.setProperty('--my', (100 * (y - r.top) / r.height).toFixed(1) + '%');
+}
+
+let _perfilIgnorarClick = false;
+
+function egPintarOpcionesPerfil() {
+  const el = document.getElementById('perfil-revende-ops');
+  if (!el) return;
+  el.classList.remove('field-error');
+  const elegido = _perfilBorrador.revende;
+  // role=radio + aria-checked: el contenedor es un radiogroup, asi que un lector
+  // de pantalla tiene que poder decir cual esta elegido. Sin esto son "tres
+  // botones" sin estado.
+  el.innerHTML = EG_REVENDE.map(o =>
+    `<button type="button" role="radio" aria-checked="${o.v === elegido ? 'true' : 'false'}" class="perfil-op${o.v === elegido ? ' active' : ''}" data-perfilvalor="${o.v}">${escHtml(o.t)}</button>`
+  ).join('');
+
+  const elegir = (v) => {
+    if (_perfilBorrador.revende === v) return;
+    _perfilBorrador.revende = v;
+    try { haptic('light'); } catch (e) { }
+    egPintarOpcionesPerfil();
+  };
+
+  // --- Gesto de arrastre, al modo del vidrio de iOS ------------------------
+  // El dedo baja sobre un boton y puede recorrer los tres sin levantarlo: el
+  // que esta debajo se agranda y el reflejo lo sigue; los otros se achican un
+  // poco. Se elige al LEVANTAR el dedo, no al apoyarlo, asi se puede pasear
+  // por las opciones y arrepentirse sin haber elegido nada.
+  //
+  // Se usa un solo juego de handlers en el grupo (no uno por boton) porque el
+  // grupo se re-pinta entero en cada eleccion y los handlers de los hijos se
+  // perderian. setPointerCapture en el CONTENEDOR es lo que hace que sigamos
+  // recibiendo el movimiento aunque el dedo se salga del boton original.
+  const bajoElDedo = (x, y) => {
+    const n = document.elementFromPoint(x, y);
+    const b = n && n.closest ? n.closest('[data-perfilvalor]') : null;
+    return (b && el.contains(b)) ? b : null;
+  };
+  const resaltar = (b, x, y) => {
+    el.querySelectorAll('.perfil-op').forEach(o => { if (o !== b) o.classList.remove('tocando'); });
+    if (!b) { el.classList.remove('arrastrando'); return; }
+    el.classList.add('arrastrando');
+    b.classList.add('tocando');
+    _perfilBrillo(b, x, y);
+  };
+  const soltar = () => {
+    el.classList.remove('arrastrando');
+    el.querySelectorAll('.perfil-op').forEach(o => o.classList.remove('tocando'));
+  };
+
+  el.onpointerdown = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    if (!b) return;
+    try { el.setPointerCapture(e.pointerId); } catch (err) { }
+    resaltar(b, e.clientX, e.clientY);
+  };
+  el.onpointermove = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    // Con el dedo apoyado se arrastra; sin apoyar, en desktop, el reflejo
+    // igual sigue al mouse sobre el boton de abajo.
+    if (el.hasPointerCapture && el.hasPointerCapture(e.pointerId)) resaltar(b, e.clientX, e.clientY);
+    else if (b) _perfilBrillo(b, e.clientX, e.clientY);
+  };
+  el.onpointerup = (e) => {
+    const b = bajoElDedo(e.clientX, e.clientY);
+    try { el.releasePointerCapture(e.pointerId); } catch (err) { }
+    soltar();
+    if (b) {
+      // El click sintetico que viene despues del pointerup elegiria de nuevo:
+      // como el gesto pudo terminar sobre OTRO boton, se lo ignora una vez.
+      _perfilIgnorarClick = true;
+      setTimeout(() => { _perfilIgnorarClick = false; }, 350);
+      elegir(b.dataset.perfilvalor);
+    }
+  };
+  el.onpointercancel = () => soltar();
+  el.onpointerleave = () => { if (!el.classList.contains('arrastrando')) soltar(); };
+
+  // Sigue existiendo para teclado y para cualquier navegador sin Pointer Events.
+  el.onclick = (e) => {
+    if (_perfilIgnorarClick) { _perfilIgnorarClick = false; return; }
+    const b = e.target.closest('[data-perfilvalor]');
+    if (b) elegir(b.dataset.perfilvalor);
+  };
+}
+
+function openPerfilCompradorModal() {
+  _perfilBorrador = { revende: (perfilComprador && perfilComprador.revende) || '' };
+  const inp = document.getElementById('perfil-nombre-input');
+  // Si entro con Google ya sabemos como se llama: no se lo preguntamos de nuevo.
+  if (inp) {
+    inp.value = (perfilComprador && perfilComprador.nombre) || (currentUser && currentUser.name) || '';
+    inp.classList.remove('field-error');   // si quedo en rojo de un intento anterior
+  }
+  egPintarOpcionesPerfil();
+  document.getElementById('perfilCompradorModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closePerfilCompradorModal() {
+  document.getElementById('perfilCompradorModal').classList.remove('open');
+  document.body.style.overflow = '';
+  _perfilPendiente = null;
+}
+function closePerfilCompradorOnBg(e) { if (e.target === document.getElementById('perfilCompradorModal')) closePerfilCompradorModal(); }
+
+function confirmarPerfilComprador() {
+  const inp = document.getElementById('perfil-nombre-input');
+  inp?.classList.remove('field-error');
+  const nombre = (inp?.value || '').trim();
+  if (!_perfilBorrador.revende) { document.getElementById('perfil-revende-ops')?.classList.add('field-error'); showToast('Indique si es para revender'); return; }
+  if (nombre.length < 2) { document.getElementById('perfil-nombre-input')?.classList.add('field-error'); showToast('Escriba su nombre'); return; }
+
+  perfilComprador = { revende: _perfilBorrador.revende, nombre };
+  try { localStorage.setItem('eg_perfil_comprador', JSON.stringify(perfilComprador)); } catch (e) { }
+  trackEvent('perfil_comprador', { tipo: perfilComprador.revende });
+
+  document.getElementById('perfilCompradorModal').classList.remove('open');
+  document.body.style.overflow = '';
+  const accion = _perfilPendiente;
+  _perfilPendiente = null;
+  // El window.open del mensaje sale de aca, que sigue siendo el mismo gesto de
+  // clic del boton "Enviar". No meter awaits en el medio.
+  if (typeof accion === 'function') accion();
+}
+
+// La linea que se le agrega al mensaje. Es lo unico que el proveedor necesita
+// para decidir en dos segundos si le contesta.
+function lineaPerfilComprador() {
+  const p = getPerfilComprador();
+  if (!p) return '';
+  const rev = EG_REVENDE.find(o => o.v === p.revende);
+  return rev ? `\n${rev.frase}` : '';
+}
+
+function saludoComprador() {
+  const p = getPerfilComprador();
+  return p && p.nombre ? `¡Hola! Soy ${p.nombre}.` : '¡Hola!';
+}
+
 function mensajeWAProv(prov) {
-  const nombre = prov?.nombre || 'tu negocio';
-  const rubro = prov?.rubro || 'tus productos';
-  return `¡Hola! Vi ${nombre} en EmprendeGO y me interesa conocer los precios mayoristas de ${rubro}. ¿Cuándo podemos hablar?`;
+  const nombre = prov?.nombre || 'su negocio';
+  const rubro = prov?.rubro || 'sus productos';
+  return `${saludoComprador()}\nVi ${nombre} en EmprendeGO y me interesan sus precios mayoristas de ${rubro}.`
+    + lineaPerfilComprador()
+    + `\n¿Cuándo podemos hablar?\n¡Gracias!`;
 }
 
 function mensajeWAProd(prod, prov) {
-  const np = prod?.nombre || 'tu producto';
+  const np = prod?.nombre || 'su producto';
   const precio = prod?.precio ? ' (vi el precio de $' + Number(prod.precio).toLocaleString('es-AR') + ')' : '';
-  return `¡Hola! Vi "${np}"${precio} en EmprendeGO. ¿Cuál es el precio mayorista y el mínimo de compra? Gracias!`;
+  return `${saludoComprador()}\nVi "${np}"${precio} en EmprendeGO.`
+    + lineaPerfilComprador()
+    + `\n¿Cuál es el precio mayorista y el mínimo de compra?\n¡Gracias!`;
 }
 
 /* Hueso de la tarjeta chica del catalogo del proveedor: foto de 90px de
@@ -2378,7 +2635,14 @@ function abrirDetalle(id) {
 }
 
 function volverDetalle() { goBack('buscar'); }
-function detWA() { if (provActual && provActual.whatsapp) { registrarContactoWA(provActual.id, provActual); abrirWA(provActual.whatsapp, mensajeWAProv(provActual)); } else showToast('WhatsApp no disponible'); }
+function detWA() {
+  if (!(provActual && provActual.whatsapp)) { showToast('WhatsApp no disponible'); return; }
+  // Se pasa detWA como accion pendiente: provActual sigue apuntando al mismo
+  // proveedor cuando el modal la vuelve a llamar (el modal no navega).
+  if (!asegurarPerfilComprador(detWA)) return;
+  registrarContactoWA(provActual.id, provActual);
+  abrirWA(provActual.whatsapp, mensajeWAProv(provActual));
+}
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
 // ===== CALCULADORA =====
@@ -3704,8 +3968,8 @@ function renderProdGrid() {
       </div>
       <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#E8F2EE' : '#FFF8E1'};border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:${oculto ? '#006039' : '#92400e'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#E8F2EE' : '#FFF8E1'};border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:${oculto ? '#006039' : '#92400e'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:8px;padding:6px 12px;font-size:.72rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
       </div>
     </div>`;
   }).join('');
@@ -3766,17 +4030,22 @@ async function cargarProductosProveedor() {
   // Si el modal quedo abierto esperando, ahora si se puede pintar de verdad.
   if (document.getElementById('misProductosModal')?.classList.contains('open')) ordenarMisProds(_misProdSort);
 }
-async function deleteProduct(id) {
+async function deleteProduct(id, btnEl) {
   if (!currentUser?.proveedorId) return;
+  // La lista se repinta al terminar, asi que este nodo desaparece; igual
+  // se bloquea para que un doble tap no dispare dos DELETE.
+  if (!egBtnCargando(btnEl, 'Borrando…')) return;
   try { await sb.from('productos').delete().eq('id', id).eq('proveedor_id', currentUser.proveedorId); } catch (e) { }
   productos = productos.filter(p => String(p.id) !== String(id));
   renderProdGrid();
   const modal = document.getElementById('misProductosModal');
   if (modal && modal.classList.contains('open')) ordenarMisProds(_misProdSort);
+  egBtnListo(btnEl);
   showToast('Producto eliminado');
 }
-async function toggleVisibleProduct(id, estaOculto) {
+async function toggleVisibleProduct(id, estaOculto, btnEl) {
   if (!currentUser?.proveedorId) return;
+  if (!egBtnCargando(btnEl, '…')) return;
   const nuevoVisible = estaOculto;
   try {
     await sb.from('productos').update({ visible: nuevoVisible }).eq('id', id).eq('proveedor_id', currentUser.proveedorId);
@@ -3791,6 +4060,7 @@ async function toggleVisibleProduct(id, estaOculto) {
     }
     showToast(nuevoVisible ? '✓ Producto visible' : 'Producto ocultado');
   } catch (e) { showToast('Error al actualizar'); }
+  egBtnListo(btnEl);
 }
 // ===== FOTO UPLOAD =====
 let fotoFile = null;
@@ -4762,7 +5032,11 @@ function renderRecomendaciones(ranked, rubroSel) {
     const porque = reasons.length ? 'Te lo recomiendo porque ' + reasons.slice(0, 3).join(', ') + '.' : 'Buen match para lo que buscás.';
     const wa = normalizarWAArg(p.whatsapp);
     const waBtn = wa
-      ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(mensajeWAProv(p))}" onclick="event.stopPropagation();registrarContactoWA('${p.id}')" target="_blank" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;text-decoration:none">WhatsApp</a>`
+      // Era un <a href="wa.me/..."> con el texto ya armado en el HTML. Tuvo que
+      // pasar a <button>: el mensaje ahora depende de la calificacion del
+      // comprador, que todavia no existe cuando se pinta la tarjeta, y un href
+      // fijo se lleva el texto viejo.
+      ? `<button type="button" onclick="event.stopPropagation();waDesdeTarjeta({pid:this.dataset.pid,wa:this.dataset.wa,nombre:this.dataset.nombre,rubro:this.dataset.rubro})" data-pid="${escHtml(String(p.id))}" data-wa="${escHtml(wa)}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:10px;padding:10px;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer">WhatsApp</button>`
       : '';
     return `<div style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;position:relative">
       ${i === 0 ? `<div style="position:absolute;top:-8px;left:14px;background:#006039;color:white;font-size:.62rem;font-weight:800;padding:3px 9px;border-radius:8px;letter-spacing:.03em">★ TU MEJOR MATCH</div>` : ''}
@@ -5532,7 +5806,14 @@ function togglePdCalc() {
 }
 function volverDetProd() { goBack('inicio'); }
 function irAProveedorDesdeProd() { if (productoActual) abrirDetalle(productoActual.provId); }
-function detWAProd() { if (!productoActual) return; const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId)); if (prov && prov.whatsapp) { registrarContactoWA(productoActual.provId, prov); abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov)); } else showToast('WhatsApp no disponible'); }
+function detWAProd() {
+  if (!productoActual) return;
+  const prov = (proveedoresDB).find(x => String(x.id) === String(productoActual.provId));
+  if (!(prov && prov.whatsapp)) { showToast('WhatsApp no disponible'); return; }
+  if (!asegurarPerfilComprador(detWAProd)) return;
+  registrarContactoWA(productoActual.provId, prov);
+  abrirWA(prov.whatsapp, mensajeWAProd(productoActual, prov));
+}
 function detChatProd() { if (productoActual) abrirChatDirecto(productoActual.provId); }
 function calcProdDet() {
   const costo = productoActual ? productoActual.precio : 0;
@@ -5862,7 +6143,7 @@ function renderCarrito() {
   const tieneWA = item0.provWA && item0.provWA.trim() !== '';
 
   if (tieneWA) {
-    actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA()"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Enviar pedido por WhatsApp</button>`;
+    actionsEl.innerHTML = `<button class="carrito-wa-btn" onclick="enviarPedidoPorWA(this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg> Enviar pedido por WhatsApp</button>`;
   } else {
     actionsEl.innerHTML = `<div class="pro-lock"><div class="pro-lock-text">Este proveedor todavía no tiene WhatsApp configurado. Probá con otro proveedor o volvé más tarde.</div></div>`;
   }
@@ -5967,16 +6248,37 @@ async function guardarPedido() {
   } catch (e) { }
 }
 
-function enviarPedidoPorWA() {
+/* Freno contra el doble tap en el checkout.
+   guardarPedido() se dispara SIN await a proposito: el window.open de
+   abajo tiene que quedar dentro del mismo gesto del usuario o el
+   navegador lo bloquea como popup. Por eso el freno no puede ser
+   "esperar la respuesta": es esta bandera, que se suelta sola.
+   Sin esto, dos toques seguidos insertaban DOS pedidos en la base. */
+let _enviandoPedido = false;
+function _frenoPedido() {
+  if (_enviandoPedido) return false;
+  _enviandoPedido = true;
+  setTimeout(function () { _enviandoPedido = false; }, 2500);
+  return true;
+}
+
+function enviarPedidoPorWA(btnEl) {
   const item0 = carrito[0];
   if (!item0.provWA) { showToast('Este proveedor no tiene WhatsApp configurado'); return; }
   if (!asegurarDatosComprador(enviarPedidoPorWA)) return;
+  // OJO: btnEl puede venir undefined. Si el comprador no tenia sus datos,
+  // asegurarDatosComprador abre el modal y confirmarDatosInvitado vuelve a
+  // llamar a esta funcion SIN argumentos. Ese pedido tiene que salir igual,
+  // asi que el boton es opcional y el freno de verdad es la bandera.
+  if (!_frenoPedido()) return;
+  egBtnCargando(btnEl, 'Abriendo WhatsApp…');
   const num = normalizarWAArg(item0.provWA);
   const msg = generarMensajePedido();
   guardarPedido();
   registrarContactoWA(item0.provId);
   window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, '_blank');
   closeCarrito();
+  egBtnListo(btnEl);
 }
 
 function enviarPedidoPorChat() {
@@ -6625,8 +6927,8 @@ function buscarMisProds(query) {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
         ${(esProvPro() && !oculto)
           ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
           : ''}
@@ -6687,8 +6989,8 @@ function ordenarMisProds(tipo) {
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
         <button onclick="editarProducto('${escHtml(String(p.id))}','${escHtml(p.nombre || '')}',${p.precio || 0},'${escHtml(String(p.stock || 0))}','${escHtml(p.categoria || p.cat || '')}','${escHtml(p.categoria_principal || '')}')" style="background:#f5f5f5;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#555;cursor:pointer">Editar</button>
-        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto})" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
-        <button onclick="deleteProduct('${escHtml(String(p.id))}')" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
+        <button onclick="toggleVisibleProduct('${escHtml(String(p.id))}',${oculto},this)" style="background:${oculto ? '#e8f5e9' : '#f5f5f5'};border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:${oculto ? '#006039' : '#666'};cursor:pointer">${oculto ? 'Mostrar' : 'Ocultar'}</button>
+        <button onclick="deleteProduct('${escHtml(String(p.id))}',this)" style="background:#fff0f0;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:700;color:#ef4444;cursor:pointer">Eliminar</button>
         ${(esProvPro() && !oculto)
           ? `<button onclick="publicarProductoEnNovedades('${escHtml(String(p.id))}')" title="Publicarlo en el feed de Novedades" style="background:#FFF1E6;border:none;border-radius:6px;padding:5px 10px;font-size:.7rem;font-weight:800;color:#FF6B00;cursor:pointer">Novedad</button>`
           : ''}
@@ -6886,7 +7188,7 @@ async function cargarHeroLogos() {
   function setLogo(slot, url) {
     slot.style.opacity = '0';
     setTimeout(() => {
-      slot.innerHTML = `<img src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
+      slot.innerHTML = `<img class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(url, 96, 72))}" alt="" onerror="this.remove()" style="width:100%;height:100%;object-fit:cover;display:block;background:#fff">`;
       slot.style.opacity = '1';
     }, 200);
   }
@@ -8073,7 +8375,7 @@ async function cargarMisNovedades() {
               <strong>${nvEsc(n.titulo)}</strong>
               <span class="nv-chip ${chip.clase}">${chip.txt}</span>
             </div>
-            <button class="nv-mia-borrar" onclick="borrarNovedad('${nvEsc(String(n.id))}')"
+            <button class="nv-mia-borrar" onclick="borrarNovedad('${nvEsc(String(n.id))}',this)"
                     aria-label="Borrar esta novedad">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </button>
@@ -8082,11 +8384,13 @@ async function cargarMisNovedades() {
     </div>`;
 }
 
-async function borrarNovedad(id) {
+async function borrarNovedad(id, btnEl) {
   if (!confirm('¿Borrar esta novedad? Sale del feed y no se puede recuperar.')) return;
 
   const provId = currentUser?.provData?.id;
   if (!provId) return;
+  // Va DESPUES del confirm(): si dice que no, el boton no se toca.
+  if (!egBtnCargando(btnEl, 'Borrando…')) return;
 
   // El .eq extra es cinturón y tiradores: la RLS ya lo impide del lado del
   // servidor, pero así el borrado es explícito y no depende sólo de eso.
@@ -8095,7 +8399,8 @@ async function borrarNovedad(id) {
     .eq('id', id)
     .eq('proveedor_id', provId);
 
-  if (error) { showToast('No pudimos borrarla. Probá de nuevo.'); return; }
+  if (error) { showToast('No pudimos borrarla. Probá de nuevo.'); egBtnListo(btnEl); return; }
+  egBtnListo(btnEl);
 
   haptic('medium');
   showToast('Novedad borrada');
@@ -8251,7 +8556,7 @@ async function abrirSelectorProducto() {
       ? `<img src="${nvEsc(imgThumb(foto, 120, 70))}" alt="" loading="lazy">`
       : '<span class="nv-selector-sinfoto"></span>';
     return `
-      <button type="button" class="nv-selector-item" onclick="elegirProducto('${nvEsc(String(p.id))}')">
+      <button type="button" class="nv-selector-item" onclick="elegirProducto('${nvEsc(String(p.id))}',false,this)">
         ${img}
         <span>
           <strong>${nvEsc(p.nombre)}</strong>
@@ -8274,9 +8579,12 @@ function nvFotoProducto(p) {
   return null;
 }
 
-async function elegirProducto(id, silencioso) {
+async function elegirProducto(id, silencioso, btnEl) {
   const provId = currentUser?.provData?.id;
   if (!provId) return;
+  // btnEl solo viene desde la lista del selector; la llamada programatica
+  // (publicarProductoEnNovedades) no manda boton y no debe bloquearse.
+  if (btnEl && !egBtnCargando(btnEl, 'Cargando…')) return;
 
   const { data, error } = await sb
     .from('productos')
@@ -8285,7 +8593,8 @@ async function elegirProducto(id, silencioso) {
     .eq('proveedor_id', provId)   // sólo un producto propio
     .maybeSingle();
 
-  if (error || !data) { showToast('No encontramos ese producto'); return; }
+  if (error || !data) { showToast('No encontramos ese producto'); egBtnListo(btnEl); return; }
+  egBtnListo(btnEl);
 
   nvProductoElegido = { id: data.id, nombre: data.nombre, foto: nvFotoProducto(data) };
 

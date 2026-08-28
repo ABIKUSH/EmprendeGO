@@ -175,8 +175,240 @@ body, body *{
 .hist-time{font-size:.72rem;color:var(--gray)}
 .perfil-actions{padding:20px}
 .action-row{display:flex;flex-direction:column;gap:10px}
-.action-btn{background:white;border:1.5px solid #dfe8e3;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:600;color:var(--navy)}
-.logout-btn{background:none;border:1.5px solid #fee2e2;border-radius:14px;padding:14px;color:#ef4444;font-family:'Fraunces',serif;font-size:.9rem;font-weight:700;cursor:pointer;width:100%;margin-top:8px}
+/* =====================================================================
+   ACCIONES DEL PERFIL  (reemplaza a .action-btn, 2026-08-27)
+   Eran tres tarjetas blancas identicas: nada indicaba cual importaba y
+   las tres competian por la misma atencion.
+
+   El vidrio se hereda de .hero-cta (mismo blur, mismo reflejo propio,
+   mismos tres respaldos) pero en paleta clara, para no meter un bloque
+   verde en el medio del perfil.
+
+   CLAVE: backdrop-filter difumina lo que hay DETRAS. Sobre el #F8F8F8
+   plano del body no hay nada que difuminar y el efecto no existe. Por
+   eso el panel pinta tres manchas de color desenfocadas por debajo:
+   .acc-mancha ES el efecto. Si se sacan, esto queda blanco sobre gris.
+   ===================================================================== */
+.acc-panel{
+  position:relative;overflow:hidden;isolation:isolate;
+  border-radius:18px;padding:16px 15px 18px;margin-bottom:14px;
+  background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
+  border:1px solid #E2EBE5;
+}
+/* Van en % y no en px porque el panel es alto y de altura variable: con
+   posiciones fijas la mitad de abajo se quedaba sin nada detras y el
+   vidrio de las ultimas filas no tenia que refractar. */
+.acc-mancha{position:absolute;border-radius:50%;filter:blur(42px);z-index:-2;pointer-events:none}
+.acc-m1{top:-4%;left:-14%;width:62%;padding-bottom:62%;height:0;background:rgba(0,96,57,.30)}
+.acc-m2{top:22%;right:-18%;width:66%;padding-bottom:66%;height:0;background:rgba(255,107,0,.26)}
+.acc-m3{top:46%;left:-10%;width:52%;padding-bottom:52%;height:0;background:rgba(0,140,90,.24)}
+.acc-m4{bottom:-6%;right:-12%;width:58%;padding-bottom:58%;height:0;background:rgba(0,110,70,.26)}
+.acc-m5{bottom:6%;left:8%;width:46%;padding-bottom:46%;height:0;background:rgba(255,140,60,.18)}
+
+.acc-cta{
+  --acc-bg:rgba(255,255,255,.52);
+  --acc-solido:rgba(255,255,255,.94);   /* respaldo: opaco, no translucido */
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;gap:11px;width:100%;
+  margin:0 0 10px;padding:11px 13px;
+  border-radius:14px;cursor:pointer;text-align:left;color:#0b2a1e;
+
+  background:var(--acc-bg);
+  -webkit-backdrop-filter:blur(20px) saturate(190%);
+          backdrop-filter:blur(20px) saturate(190%);
+  border:1px solid rgba(255,255,255,.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.95),   /* el canto que atrapa la luz */
+    inset 0 -1px 0 rgba(10,60,40,.07),     /* el espesor, abajo */
+    0 12px 30px -16px rgba(6,50,33,.45);   /* flota sobre el panel */
+  transition:transform 200ms cubic-bezier(.23,1,.32,1),box-shadow 200ms ease-out;
+}
+/* El brillo propio. Sin esto el vidrio no tiene de donde sacar reflejo. */
+.acc-cta::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.55),transparent 62%);
+}
+.acc-cta:active{transform:scale(.985)}
+.acc-cta:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .acc-cta:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(10,60,40,.07),0 16px 36px -16px rgba(6,50,33,.5)}
+}
+.acc-cta-ico{
+  width:34px;height:34px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#065F46;
+  background:rgba(255,255,255,.7);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95);
+}
+.acc-cta-txt{flex:1;min-width:0;display:block}
+.acc-cta-chev{display:flex;flex-shrink:0;color:#7d8f84}
+.acc-cta-plano{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:7px;width:100%;
+  background:rgba(255,255,255,.3);color:#0d3d29;
+  border:1px solid rgba(255,255,255,.75);border-radius:12px;padding:12px;
+  cursor:pointer;font-size:.82rem;
+  -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
+}
+
+/* --- Tipografia -----------------------------------------------------
+   Los !important son obligatorios: la regla `body, body *{font-family:
+   ... !important}` de la linea 16 de este archivo le gana a todo lo
+   demas, incluso a los estilos inline. Sin !important aca, esto
+   renderiza en la fuente del sistema como el resto de la app.
+   Sora e Inter YA se descargan en index.html:82 — no se agrega ni un
+   pedido de red. El contraste lo hace el peso y el tracking cerrado,
+   no un salto de tamano.
+   -------------------------------------------------------------------- */
+.acc-rotulo{
+  position:relative;z-index:1;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-weight:600;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;
+  color:#5d6f64;margin-bottom:12px;
+}
+.acc-cta-tit{
+  display:block;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.93rem;font-weight:700;letter-spacing:-.03em;
+  line-height:1.22;margin-bottom:5px;color:#0b2a1e;
+}
+/* #4f6057 sobre el panel da 5,8:1 — pasa AA holgado. El gris nunca se
+   aclara para acomodar al vidrio; se ajusta el texto o se ajusta el vidrio. */
+.acc-cta-sub{
+  display:block;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.75rem;font-weight:400;line-height:1.5;color:#4f6057;
+}
+.acc-cta-plano{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-weight:600;letter-spacing:-.01em;
+}
+
+/* --- Respaldos ------------------------------------------------------
+   Redefinen TOKENS y no reglas, igual que .hero-cta. El @supports
+   pregunta por las dos formas porque Safari viejo entiende
+   -webkit-backdrop-filter pero no la version sin prefijo. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .acc-cta{--acc-bg:var(--acc-solido)}
+  .acc-cta-plano{background:rgba(255,255,255,.9)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .acc-cta{--acc-bg:var(--acc-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .acc-cta::before{display:none}
+  .acc-cta-plano{background:rgba(255,255,255,.9);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .acc-mancha{opacity:.5}
+}
+@media (prefers-reduced-motion:reduce){
+  .acc-cta{transition:none}
+  .acc-cta:active{transform:none}
+}
+/* Rotulo de la segunda seccion, ya dentro del panel. */
+.acc-seccion{margin-top:20px}
+
+/* ---------------------------------------------------------------------
+   PLAN PRO, dentro del panel.
+   Sigue siendo verde solido a proposito: es lo unico que cobra plata en
+   esta pantalla y tiene que destacarse. Unifica por radio y tipografia,
+   no por color.
+   --------------------------------------------------------------------- */
+.acc-pro{
+  position:relative;z-index:1;
+  background:#006039;border-radius:14px;padding:15px 16px;cursor:pointer;
+  box-shadow:0 14px 32px -18px rgba(2,40,25,.9);
+  transition:transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.acc-pro:active{transform:scale(.99)}
+.acc-pro-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.acc-pro-tit{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.92rem;font-weight:700;letter-spacing:-.025em;color:#fff;
+}
+.acc-pro-precio{
+  font-family:'Sora',system-ui,sans-serif !important;
+  background:rgba(255,255,255,.2);color:#fff;font-size:.7rem;font-weight:600;
+  padding:4px 10px;border-radius:20px;white-space:nowrap;
+}
+.acc-pro-sub{
+  font-family:'Inter',system-ui,sans-serif !important;
+  color:rgba(255,255,255,.8);font-size:.78rem;line-height:1.5;margin-bottom:12px;
+}
+.acc-pro-btn{
+  font-family:'Sora',system-ui,sans-serif !important;
+  background:#fff;color:#006039;font-size:.82rem;font-weight:600;letter-spacing:-.02em;
+  border-radius:10px;padding:10px;text-align:center;
+}
+
+/* ---------------------------------------------------------------------
+   FILAS DE CUENTA  (Terminos, Privacidad, Cerrar sesion)
+   Ahora viven DENTRO del panel, asi que tienen las manchas detras y el
+   vidrio si funciona. Cuando estaban afuera, sobre el gris plano del
+   body, iban solidas a proposito: ahi backdrop-filter no hacia nada mas
+   que costar GPU.
+   Vidrio mas liviano que .acc-cta (menos blur, menos sombra) para que
+   no compitan con las acciones: son navegacion, no acciones.
+   --------------------------------------------------------------------- */
+.perfil-fila{
+  --pf-bg:rgba(255,255,255,.42);
+  --pf-solido:rgba(255,255,255,.92);
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  width:100%;border-radius:13px;
+  padding:12px 13px;margin-top:8px;cursor:pointer;text-align:left;
+  text-decoration:none;color:#1f3329;
+  background:var(--pf-bg);
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+          backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,.8);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 18px -14px rgba(6,50,33,.4);
+  transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.perfil-fila:active{transform:scale(.99)}
+.perfil-fila:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-fila:hover{border-color:#C9DCD2}
+}
+.perfil-fila-izq{display:flex;align-items:center;gap:10px;min-width:0}
+.perfil-fila-ico{display:flex;flex-shrink:0;color:#065F46}
+.perfil-fila-chev{display:flex;flex-shrink:0;color:#9aa79d}
+/* Mismo !important y mismo motivo que en .acc-*: la regla `body, body *`
+   de la linea 16 le gana a todo lo demas. */
+.perfil-fila-txt{
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.84rem;font-weight:600;letter-spacing:-.02em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+/* El Fraunces que tenia nunca se aplico (lo pisaba la regla de la linea
+   16), asi que esto no cambia la fuente que se veia: la hace explicita. */
+.logout-btn{
+  --pf-bg:rgba(255,255,255,.42);
+  --pf-solido:rgba(255,255,255,.92);
+  position:relative;z-index:1;
+  width:100%;margin-top:8px;padding:12px;cursor:pointer;border-radius:13px;
+  background:var(--pf-bg);color:#C13636;
+  -webkit-backdrop-filter:blur(16px) saturate(180%);
+          backdrop-filter:blur(16px) saturate(180%);
+  border:1px solid rgba(255,255,255,.8);
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.82rem;font-weight:600;letter-spacing:-.02em;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 6px 18px -14px rgba(6,50,33,.4);
+  transition:border-color 180ms ease,transform 160ms cubic-bezier(.23,1,.32,1);
+}
+.logout-btn:active{transform:scale(.99)}
+.logout-btn:focus-visible{outline:2px solid #C13636;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .logout-btn:hover{border-color:rgba(220,150,150,.85)}
+}
+/* Mismos respaldos que .acc-cta, por los mismos motivos. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .perfil-fila,.logout-btn{--pf-bg:var(--pf-solido)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .perfil-fila,.logout-btn{--pf-bg:var(--pf-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .perfil-fila,.logout-btn,.acc-pro{transition:none}
+  .perfil-fila:active,.logout-btn:active,.acc-pro:active{transform:none}
+}
 
 /* DASHBOARD */
 .dash-header{background:linear-gradient(135deg,var(--navy),#0a3a2b);padding:24px 20px;position:relative;overflow:hidden}
@@ -191,6 +423,247 @@ body, body *{
 .dash-stat{background:rgba(255,255,255,.1);border-radius:14px;padding:14px;backdrop-filter:blur(10px)}
 .dash-stat-val{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;color:white}
 .dash-stat-label{font-size:.72rem;color:rgba(255,255,255,.6);margin-top:2px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+
+/* =====================================================================
+   ENCABEZADO DEL DASHBOARD  (2026-08-27)
+   Estas reglas salieron de estilos inline del HTML. Iban inline y por
+   eso NINGUNA clase podia pintarlas: un style="" le gana a cualquier
+   selector. Los valores son identicos a los que estaban, asi que por si
+   solas no cambian nada de como se ve hoy.
+   ===================================================================== */
+.dash-consultas{
+  background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
+  border-radius:14px;padding:14px 16px;margin-bottom:10px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.dash-consultas-txt{min-width:0;flex:1}
+.dash-consultas-rot{
+  font-size:.72rem;font-weight:800;text-transform:uppercase;
+  letter-spacing:.06em;color:rgba(255,255,255,.92);
+}
+.dash-consultas-num{font-size:2rem;font-weight:900;color:#fff;line-height:1;margin-top:6px}
+.dash-consultas-delta{align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#7fe0ac;margin-top:6px}
+.dash-consultas-spark{flex-shrink:0}
+/* Va DESPUES de .dash-stat-label de mas arriba para conservar los valores
+   que el inline venia imponiendo; si no, cambiarian de tamano y color. */
+.dash-stat-card{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:12px;text-align:center;
+}
+.dash-stat-num{font-size:1.4rem;font-weight:900;color:#fff}
+.dash-stat-label{
+  font-size:.62rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;color:rgba(255,255,255,.5);margin-top:3px;
+}
+
+/* ---------------------------------------------------------------------
+   EL FONDO DEL ENCABEZADO.
+   Salio de un style inline: era un degradado verde de dos paradas, o
+   sea CASI plano. Un degradado suave da poco que refractar, asi que se
+   le suman dos acentos radiales desenfocados (mismo principio que las
+   .acc-mancha del perfil, pero en clave verde/naranja de marca). Sin
+   esto el vidrio de abajo se ve lavado.
+   OJO: no confundir con .dash-header, que es otra clase, se usa en otra
+   pantalla y ya trae su propio radial.
+   --------------------------------------------------------------------- */
+.dash-head-verde{
+  position:relative;overflow:hidden;isolation:isolate;
+  background:linear-gradient(160deg,#004D2E 0%,#006039 100%);
+  padding:20px 20px 22px;
+}
+/* Los acentos van SOLO en telefono, igual que el vidrio al que alimentan:
+   de 768 para arriba el dashboard tiene su propio diseno y se deja
+   intacto. Sin vidrio encima, estos radiales no aportan nada. */
+@media (max-width:767px){
+  .dash-head-verde::before{
+    content:'';position:absolute;top:-70px;right:-60px;
+    width:230px;height:230px;border-radius:50%;z-index:-1;pointer-events:none;
+    background:radial-gradient(circle,rgba(255,107,0,.34),transparent 68%);
+  }
+  .dash-head-verde::after{
+    content:'';position:absolute;bottom:-90px;left:-70px;
+    width:250px;height:250px;border-radius:50%;z-index:-1;pointer-events:none;
+    background:radial-gradient(circle,rgba(0,190,120,.26),transparent 68%);
+  }
+}
+
+/* ---------------------------------------------------------------------
+   El vidrio, SOLO en telefono.
+   Las tarjetas ya eran translucidas (blanco al 9-10%) pero PLANAS: sin
+   blur real, sin canto de luz y sin brillo propio, que es lo que las
+   hace leer como vidrio y no como un rectangulo mas claro.
+
+   Va en max-width:767px y no suelto porque de 768 para arriba manda el
+   bloque "DASHBOARD DESKTOP REFINADO" (~1080), que repinta estas mismas
+   tarjetas en blanco. Escritorio queda intacto a proposito.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-consultas,.dash-stat-card{
+    position:relative;overflow:hidden;isolation:isolate;
+    background:rgba(255,255,255,.13);
+    -webkit-backdrop-filter:blur(18px) saturate(180%);
+            backdrop-filter:blur(18px) saturate(180%);
+    border:1px solid rgba(255,255,255,.26);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.38),   /* el canto que atrapa la luz */
+      inset 0 -1px 0 rgba(0,0,0,.14),        /* el espesor, abajo */
+      0 14px 34px -18px rgba(2,20,13,.85);   /* flota sobre el verde */
+  }
+  /* El brillo propio. Sobre un degradado plano el vidrio no tiene de
+     donde sacar reflejo y se ve muerto. */
+  .dash-consultas::before,.dash-stat-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.20),transparent 60%);
+  }
+  /* Mismos respaldos que .hero-cta: el solido es MAS CLARO que el header
+     para que la tarjeta siga leyendose levantada. */
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dash-consultas,.dash-stat-card{background:#14664A;border-color:rgba(255,255,255,.3)}
+  }
+}
+@media (max-width:767px) and (prefers-reduced-transparency:reduce){
+  .dash-consultas,.dash-stat-card{
+    background:#14664A;border-color:rgba(255,255,255,.3);
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+  }
+  .dash-consultas::before,.dash-stat-card::before{display:none}
+}
+/* =====================================================================
+   ACCIONES RAPIDAS DEL DASHBOARD  (2026-08-27)
+   Los 7 botones tenian TODO el estilo inline, por eso ninguna clase
+   podia pintarlos. Los valores base de abajo son identicos a los que
+   estaban: por si solos no cambian nada de como se ve hoy.
+   ===================================================================== */
+.dash-acciones{padding:0 16px}
+/* Las manchas solo existen cuando hay vidrio que las use (ver mas abajo). */
+.dash-acciones > .acc-mancha{display:none}
+.dash-acciones-rot{
+  font-size:.82rem;font-weight:800;color:#999;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;
+}
+#dash-quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dash-action-btn{
+  background:#fff;color:#1A1A1A;border:1.5px solid #E8F2EE;border-radius:14px;
+  padding:14px 12px;display:flex;align-items:center;gap:10px;
+  cursor:pointer;text-align:left;
+}
+/* El primero es la accion principal y va solido, como estaba. */
+.dash-action-btn--primario{background:#006039;color:#fff;border-color:transparent}
+.dash-action-tit{font-size:.82rem;font-weight:700}
+.dash-action-sub{font-size:.7rem;color:#999}
+.dash-action-btn--primario .dash-action-sub{color:inherit;opacity:.7}
+
+/* ---------------------------------------------------------------------
+   El vidrio, SOLO en telefono.
+   Estos botones van sobre el gris del body, donde backdrop-filter no
+   tiene nada que difuminar. Por eso el bloque entero se apoya en un
+   panel con manchas de color desenfocadas, igual que las acciones del
+   perfil: reusa .acc-mancha, que ya esta definida en % mas arriba.
+
+   De 768 para arriba manda el bloque "DASHBOARD DESKTOP REFINADO"
+   (~1080), que repinta estos botones en blanco con !important y los
+   pone en 4 columnas. Escritorio queda igual que hoy, a proposito.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-acciones{
+    position:relative;overflow:hidden;isolation:isolate;
+    margin:0 16px;padding:16px 15px 18px;border-radius:18px;
+    background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
+    border:1px solid #E2EBE5;
+  }
+  .dash-acciones > .acc-mancha{display:block}
+  .dash-acciones-rot{position:relative;z-index:1;font-size:.62rem;letter-spacing:.16em;color:#5d6f64;margin-bottom:12px}
+
+  .dash-action-btn{
+    --da-bg:rgba(255,255,255,.5);
+    --da-solido:rgba(255,255,255,.94);
+    position:relative;overflow:hidden;isolation:isolate;z-index:1;
+    background:var(--da-bg);color:#0b2a1e;
+    -webkit-backdrop-filter:blur(20px) saturate(190%);
+            backdrop-filter:blur(20px) saturate(190%);
+    border:1px solid rgba(255,255,255,.85);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 -1px 0 rgba(10,60,40,.07),
+      0 12px 28px -16px rgba(6,50,33,.45);
+    transition:transform 160ms cubic-bezier(.23,1,.32,1),box-shadow 200ms ease-out;
+  }
+  .dash-action-btn::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.55),transparent 62%);
+  }
+  .dash-action-btn:active{transform:scale(.985)}
+  .dash-action-btn:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+
+  /* El principal NO lleva vidrio: es la accion que queremos que toquen y
+     tiene que seguir siendo el unico bloque solido de la grilla. */
+  .dash-action-btn--primario{
+    background:#006039;color:#fff;border-color:transparent;
+    -webkit-backdrop-filter:none;backdrop-filter:none;
+    box-shadow:0 12px 28px -14px rgba(0,96,57,.85);
+  }
+  .dash-action-btn--primario::before{display:none}
+
+  .dash-action-sub{color:#4f6057}
+
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dash-action-btn{--da-bg:var(--da-solido)}
+  }
+}
+@media (max-width:767px) and (prefers-reduced-transparency:reduce){
+  .dash-action-btn{--da-bg:var(--da-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .dash-action-btn::before{display:none}
+  .dash-acciones > .acc-mancha{opacity:.5}
+}
+@media (prefers-reduced-motion:reduce){
+  .dash-action-btn{transition:none}
+  .dash-action-btn:active{transform:none}
+}
+
+/* ---------------------------------------------------------------------
+   TIPOGRAFIA DEL DASHBOARD: Sora + Inter, igual que el perfil.
+   Sora en titulos y numeros, Inter en las bajadas. El contraste lo hace
+   el peso y el tracking cerrado, no un salto de tamano.
+
+   Los !important son obligatorios: la regla `body, body *` de la linea
+   16 le gana a todo lo demas. Sora e Inter ya se descargan en
+   index.html:82, asi que no se agrega ni un pedido de red.
+
+   Va en max-width:767px por lo mismo que el resto: de 768 para arriba el
+   bloque de escritorio (~1080) impone Fraunces en .dash-stat-num y
+   DM Sans en .dash-stat-label con !important, y ese diseno se deja
+   intacto hasta hacer la pasada de escritorio.
+   --------------------------------------------------------------------- */
+@media (max-width:767px){
+  .dash-consultas-rot{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.66rem;font-weight:600;letter-spacing:.16em;
+  }
+  .dash-consultas-num{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:2.1rem;font-weight:700;letter-spacing:-.04em;
+  }
+  .dash-stat-num{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:1.45rem;font-weight:700;letter-spacing:-.035em;
+  }
+  .dash-stat-label{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.58rem;font-weight:600;letter-spacing:.14em;
+  }
+  .dash-acciones-rot{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-weight:600;
+  }
+  .dash-action-tit{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.84rem;font-weight:700;letter-spacing:-.03em;line-height:1.25;
+  }
+  .dash-action-sub{
+    font-family:'Inter',system-ui,sans-serif !important;
+    font-size:.71rem;font-weight:400;line-height:1.4;
+  }
+}
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
 .rank-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;flex-shrink:0;min-width:50px}
 .rank-info strong{font-family:'Fraunces',serif;font-size:.9rem;font-weight:800;display:block;margin-bottom:2px}
@@ -243,6 +716,217 @@ body, body *{
 .modal-header h3{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:800}
 .modal-close{background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--gray)}
 .modal-body{padding:20px 24px 32px}
+
+/* =====================================================================
+   MODAL DE CALIFICACION DEL COMPRADOR (#perfilCompradorModal)
+   Hereda el vidrio de .acc-cta (styles.css:208): mismo blur, mismo brillo
+   propio, mismos respaldos. No usa .chip porque .chip.active pinta el
+   degrade azul/violeta, que es del panel de administracion.
+
+   DOS COSAS QUE HAY QUE ENTENDER ANTES DE TOCAR ESTO:
+
+   1) backdrop-filter difumina lo que hay DETRAS. El modal es blanco plano,
+      asi que sin las .perfil-mancha no hay nada que refractar y los botones
+      quedan grises sobre blanco. Las manchas SON el efecto. Van sueltas en
+      el cuerpo del modal y NO adentro de un panel con borde: encajonados en
+      un recuadro verde los botones se leian como un formulario pegado
+      encima. Sueltas, el color queda de ambiente.
+
+   2) El reflejo que sigue al dedo (.perfil-op::after) es un radial-gradient
+      centrado en var(--mx) var(--my). Esas dos variables las escribe
+      _perfilBrillo() en app.js en cada pointermove. Sin el JS el gradiente
+      se queda en el centro y el boton igual funciona: es progresivo.
+   ===================================================================== */
+.perfil-cuerpo{position:relative;overflow:hidden;isolation:isolate}
+
+/* En % y no en px porque el cuerpo cambia de alto con el teclado abierto. */
+.perfil-mancha{position:absolute;border-radius:50%;filter:blur(52px);z-index:-2;pointer-events:none}
+.perfil-m1{top:2%;left:-22%;width:64%;padding-bottom:64%;height:0;background:rgba(0,96,57,.26)}
+.perfil-m2{top:26%;right:-24%;width:66%;padding-bottom:66%;height:0;background:rgba(255,107,0,.17)}
+.perfil-m3{bottom:-10%;left:14%;width:56%;padding-bottom:56%;height:0;background:rgba(0,140,90,.2)}
+
+/* --- Tipografia -----------------------------------------------------
+   Los !important son obligatorios: `body, body *{font-family:... !important}`
+   de la linea 16 le gana a todo, incluso a los estilos inline. Sora e Inter
+   YA se descargan en index.html:82, no se agrega un pedido de red.
+   El contraste lo hace el peso y el tracking, no un salto de tamano.
+   NO hay rotulos en VERSALITA con tracking abierto: eran justo lo que hacia
+   ver la encuesta como una plantilla. Las preguntas se leen como preguntas.
+   -------------------------------------------------------------------- */
+.perfil-intro{
+  position:relative;z-index:1;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.83rem;font-weight:400;line-height:1.6;color:#55655c;
+  margin-bottom:22px;
+}
+/* Lo unico que hay que retener del parrafo: que no se lo van a preguntar de
+   nuevo. El peso y el color hacen el realce; nada de subrayado ni color de
+   marca, que en un parrafo se leen como un link. */
+.perfil-intro strong{font-weight:600;color:#2b3d34}
+.perfil-campo{position:relative;z-index:1;margin-bottom:20px}
+.perfil-preg{
+  display:block;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.95rem;font-weight:700;letter-spacing:-.032em;
+  line-height:1.25;color:#0b2a1e;margin-bottom:11px;
+}
+
+/* Tres columnas parejas: las opciones son una escala y se comparan de un
+   vistazo. Con flex-wrap quedaba 2+1 y parecia un error de maquetado.
+   touch-action:pan-y deja que el modal siga scrolleando en vertical pero nos
+   cede el movimiento horizontal, que es el del gesto de arrastre. */
+.perfil-ops{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  touch-action:pan-y;
+}
+
+.perfil-op{
+  --po-bg:rgba(255,255,255,.5);
+  --po-solido:rgba(255,255,255,.94);     /* respaldo: opaco, no translucido */
+  --mx:50%;--my:50%;                     /* el JS los mueve con el dedo */
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:52px;padding:9px 7px;                 /* 52px de area de toque */
+  border-radius:15px;cursor:pointer;color:#123a2c;
+  -webkit-user-select:none;user-select:none;
+
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.8rem;font-weight:600;letter-spacing:-.022em;line-height:1.2;
+
+  background:var(--po-bg);
+  -webkit-backdrop-filter:blur(22px) saturate(200%);
+          backdrop-filter:blur(22px) saturate(200%);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),   /* el canto que atrapa la luz */
+    inset 0 -1px 0 rgba(10,60,40,.08),     /* el espesor, abajo */
+    0 10px 24px -16px rgba(6,50,33,.5);    /* flota sobre el blanco */
+  transition:transform 320ms cubic-bezier(.23,1,.32,1),
+             box-shadow 260ms ease-out,
+             opacity 220ms ease-out,
+             color 180ms ease-out;
+}
+/* El brillo propio, fijo. Sin esto el vidrio no tiene de donde sacar reflejo. */
+.perfil-op::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.6),transparent 62%);
+}
+/* El reflejo especular que SIGUE AL DEDO. Aparece al apoyar y se desvanece al
+   soltar; el centro lo mueve _perfilBrillo() desde app.js. */
+.perfil-op::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  opacity:0;transition:opacity 260ms ease-out;
+  background:radial-gradient(58% 130% at var(--mx) var(--my),rgba(255,255,255,.95),rgba(255,255,255,0) 72%);
+}
+.perfil-op.tocando::after{opacity:1}
+
+/* El que esta bajo el dedo se agranda; los otros ceden un poco. Es lo que
+   hace que el grupo se sienta blando en vez de una fila de cajas. */
+.perfil-op.tocando{
+  transform:scale(1.045);z-index:3;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -1px 0 rgba(10,60,40,.08),
+    0 16px 34px -14px rgba(6,50,33,.55);
+}
+.perfil-ops.arrastrando .perfil-op:not(.tocando){transform:scale(.962);opacity:.88}
+
+.perfil-op:active{transform:scale(.975)}
+.perfil-op:focus-visible{outline:2px solid #065F46;outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-op:hover::after{opacity:.75}
+  .perfil-op:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.98),inset 0 -1px 0 rgba(10,60,40,.08),0 14px 30px -14px rgba(6,50,33,.55)}
+}
+
+/* Elegido: verde de marca con el mismo espesor de vidrio, no un relleno
+   plano. El realce de arriba y la sombra interior de abajo son los que dan
+   el "hundido" — sin ellos parece un div pintado. */
+.perfil-op.active{
+  --po-bg:linear-gradient(168deg,#0a6a44,#054f36);
+  color:#fff;
+  border-color:rgba(255,255,255,.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -2px 7px rgba(2,32,21,.42),
+    0 12px 26px -12px rgba(4,60,39,.62);
+}
+.perfil-op.active::before{
+  background:radial-gradient(120% 90% at 18% -10%,rgba(255,255,255,.32),transparent 60%);
+}
+.perfil-op.active::after{
+  background:radial-gradient(58% 130% at var(--mx) var(--my),rgba(255,255,255,.4),rgba(255,255,255,0) 70%);
+}
+.perfil-op.active.tocando{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.36),
+    inset 0 -2px 7px rgba(2,32,21,.42),
+    0 18px 36px -12px rgba(4,60,39,.7);
+}
+
+/* El rojo de .field-error es para un input; en un grupo de botones se marca
+   el contorno del grupo, que es lo que falta completar. */
+.perfil-ops.field-error{box-shadow:0 0 0 3px rgba(229,72,77,.3);border-radius:17px}
+
+.perfil-input{
+  width:100%;
+  background:rgba(255,255,255,.6);
+  -webkit-backdrop-filter:blur(18px) saturate(180%);
+          backdrop-filter:blur(18px) saturate(180%);
+  border:1px solid rgba(255,255,255,.9);border-radius:15px;
+  padding:14px 16px;color:#0b2a1e;outline:none;
+  font-family:'Inter',system-ui,sans-serif !important;
+  font-size:.92rem;font-weight:500;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(10,60,40,.06),0 8px 20px -16px rgba(6,50,33,.4);
+  transition:border-color 180ms ease-out,box-shadow 180ms ease-out;
+}
+.perfil-input::placeholder{color:#8d9d94}
+.perfil-input:focus{
+  border-color:rgba(6,95,70,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95),0 0 0 3px rgba(6,95,70,.14);
+}
+.perfil-input.field-error{border-color:#e5484d}
+
+.perfil-enviar{
+  position:relative;overflow:hidden;isolation:isolate;z-index:1;
+  display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:16px;
+  background:linear-gradient(168deg,#0a6a44,#054f36);color:#fff;cursor:pointer;
+  font-family:'Sora',system-ui,sans-serif !important;
+  font-size:.94rem;font-weight:700;letter-spacing:-.022em;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.32),
+    inset 0 -2px 7px rgba(2,32,21,.34),
+    0 16px 34px -16px rgba(4,60,39,.78);
+  transition:transform 260ms cubic-bezier(.23,1,.32,1),box-shadow 220ms ease-out;
+}
+.perfil-enviar::before{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:radial-gradient(120% 90% at 16% -12%,rgba(255,255,255,.3),transparent 58%);
+}
+.perfil-enviar:active{transform:scale(.978)}
+.perfil-enviar:focus-visible{outline:2px solid #065F46;outline-offset:3px}
+@media (hover:hover) and (pointer:fine){
+  .perfil-enviar:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.32),inset 0 -2px 7px rgba(2,32,21,.34),0 20px 40px -16px rgba(4,60,39,.85)}
+}
+
+/* --- Respaldos ------------------------------------------------------
+   Redefinen TOKENS y no reglas, igual que .acc-cta. El @supports pregunta
+   por las dos formas porque Safari viejo entiende -webkit-backdrop-filter
+   pero no la version sin prefijo. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .perfil-op{--po-bg:var(--po-solido)}
+  .perfil-input{background:rgba(255,255,255,.95)}
+}
+@media (prefers-reduced-transparency:reduce){
+  .perfil-op{--po-bg:var(--po-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .perfil-op::before,.perfil-op::after{display:none}
+  .perfil-mancha{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .perfil-op,.perfil-enviar{transition:box-shadow 200ms ease-out}
+  .perfil-op.tocando,.perfil-op:active,.perfil-enviar:active{transform:none}
+  .perfil-ops.arrastrando .perfil-op:not(.tocando){transform:none;opacity:1}
+}
 .prod-modal{background:white;width:100%;max-width:430px;border-radius:24px 24px 0 0;max-height:90vh;overflow-y:auto;animation:slideUp .3s ease}
 
 /* AI TEST */
