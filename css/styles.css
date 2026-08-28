@@ -565,14 +565,14 @@ body, body *{
    pone en 4 columnas. Escritorio queda igual que hoy, a proposito.
    --------------------------------------------------------------------- */
 @media (max-width:767px){
-  .dash-acciones{
-    position:relative;overflow:hidden;isolation:isolate;
-    margin:0 16px;padding:16px 15px 18px;border-radius:18px;
-    background:linear-gradient(165deg,#F2F7F4,#E4EFE8 75%);
-    border:1px solid #E2EBE5;
-  }
-  .dash-acciones > .acc-mancha{display:block}
-  .dash-acciones-rot{position:relative;z-index:1;font-size:.62rem;letter-spacing:.16em;color:#5d6f64;margin-bottom:12px}
+  /* SIN caja, a proposito. Un recuadro tintado con botones bordeados
+     adentro son cajas dentro de cajas: se ve barato y ademas ensuciaba,
+     porque el tinte verde-gris quedaba sucio al lado del blanco limpio
+     del resto. El tinte y las manchas se mudaron al fondo de toda la
+     pantalla (#perfil-proveedor, mas abajo), asi que los botones flotan
+     sobre esa superficie y no sobre un panel propio. */
+  .dash-acciones{padding:0 16px}
+  .dash-acciones-rot{font-size:.62rem;letter-spacing:.16em;color:#5d6f64;margin-bottom:12px}
 
   .dash-action-btn{
     --da-bg:rgba(255,255,255,.5);
@@ -620,6 +620,79 @@ body, body *{
   .dash-action-btn:active{transform:none}
 }
 
+/* =====================================================================
+   LA SUPERFICIE DEL DASHBOARD  (2026-08-28)
+   Antes cada seccion resolvia su propio fondo y quedaba un parche: el
+   recuadro tintado de Acciones rapidas contra tarjetas blancas sueltas.
+
+   Ahora el tinte y las manchas viven UNA sola vez, en el fondo de la
+   pantalla, y todas las tarjetas de abajo flotan sobre el. Eso es lo
+   que hace que la seccion se lea entera y no por pedazos.
+
+   Van como background-image y no como elementos: no hace falta
+   overflow:hidden ni z-index en un contenedor que envuelve media app,
+   que es donde se rompen cosas.
+   ===================================================================== */
+.dash-card{background:#fff;border:1px solid #E8F2EE;border-radius:16px;padding:14px}
+.dash-card-tit{font-size:.88rem;font-weight:800;color:#111;margin-bottom:4px}
+.dash-rotulo{
+  font-size:.82rem;font-weight:800;color:#999;
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;
+}
+
+@media (max-width:767px){
+  #perfil-proveedor{
+    min-height:100vh;
+    background:
+      radial-gradient(46% 30% at 6% 16%,rgba(0,96,57,.14),transparent 70%),
+      radial-gradient(50% 28% at 96% 34%,rgba(255,107,0,.12),transparent 70%),
+      radial-gradient(44% 26% at 10% 62%,rgba(0,150,95,.12),transparent 70%),
+      radial-gradient(50% 30% at 92% 86%,rgba(0,110,70,.12),transparent 70%),
+      linear-gradient(180deg,#F5F9F6 0%,#EAF2ED 100%);
+    background-repeat:no-repeat;
+  }
+
+  .dash-rotulo,.dash-acciones-rot{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.62rem;font-weight:600;letter-spacing:.16em;
+    color:#5d6f64;margin-bottom:12px;
+  }
+
+  /* El vidrio de las tarjetas de abajo: Integraciones, Completitud,
+     Pedidos y Ayuda. Mismo material que los botones, un punto menos de
+     sombra porque son contenedores y no cosas que se tocan.
+
+     El !important del fondo NO es pereza: app.js hace
+     card.style.background = '#fff' sobre #tn-card en tiempo de ejecucion
+     (app.js:7478 y 7505), y un inline puesto por JS le gana a cualquier
+     clase. Sin !important, la tarjeta de Tienda Nube seria la unica
+     blanca de la pantalla. */
+  .dash-card{
+    --dc-bg:rgba(255,255,255,.55);
+    --dc-solido:rgba(255,255,255,.95);
+    position:relative;overflow:hidden;isolation:isolate;
+    background:var(--dc-bg) !important;
+    -webkit-backdrop-filter:blur(20px) saturate(190%);
+            backdrop-filter:blur(20px) saturate(190%);
+    border:1px solid rgba(255,255,255,.85);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.95),
+      inset 0 -1px 0 rgba(10,60,40,.06),
+      0 12px 28px -16px rgba(6,50,33,.42);
+  }
+  .dash-card::before{
+    content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;
+    background:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.55),transparent 62%);
+  }
+  @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+    .dash-card{--dc-bg:var(--dc-solido)}
+  }
+}
+@media (max-width:767px) and (prefers-reduced-transparency:reduce){
+  .dash-card{--dc-bg:var(--dc-solido);-webkit-backdrop-filter:none;backdrop-filter:none}
+  .dash-card::before{display:none}
+}
+
 /* ---------------------------------------------------------------------
    TIPOGRAFIA DEL DASHBOARD: Sora + Inter, igual que el perfil.
    Sora en titulos y numeros, Inter en las bajadas. El contraste lo hace
@@ -662,6 +735,10 @@ body, body *{
   .dash-action-sub{
     font-family:'Inter',system-ui,sans-serif !important;
     font-size:.71rem;font-weight:400;line-height:1.4;
+  }
+  .dash-card-tit{
+    font-family:'Sora',system-ui,sans-serif !important;
+    font-size:.86rem;font-weight:700;letter-spacing:-.03em;color:#0b2a1e;
   }
 }
 .ranking-card{margin:16px 20px 0;background:white;border-radius:16px;padding:16px;display:flex;align-items:center;gap:14px}
