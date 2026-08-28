@@ -160,6 +160,10 @@ export default async function handler(req, res) {
 
    La baja se respeta por email contra email_optouts, que es la misma tabla
    que usa el "Cancelar suscripcion" de los anuncios.
+
+   ⚠️ El comprador se resuelve por EMAIL, nunca por solicitudes.usuario_id:
+   ese id es auth.uid() y usuarios.id es otra cosa. Ver el comentario largo
+   en el cuerpo antes de volver a cruzarlos.
    ===================================================================== */
 
 async function handlerCotizacion(req, res) {
@@ -183,7 +187,7 @@ async function handlerCotizacion(req, res) {
   try {
     const solRes = await fetch(
       `${SUPABASE_BASE}/rest/v1/solicitudes?id=eq.${encodeURIComponent(solicitud_id)}` +
-      `&select=usuario_id,usuario_email,titulo,respuestas`, { headers });
+      `&select=usuario_id,usuario_email,titulo,respuestas,tipo`, { headers });
     const sol = (await solRes.json())?.[0];
     if (!sol) return res.status(404).json({ error: 'not found' });
     if (!sol.usuario_email) return saltear('sin_email');
@@ -201,16 +205,25 @@ async function handlerCotizacion(req, res) {
       `&select=email&limit=1`, { headers });
     if ((await outRes.json())?.[0]) return saltear('dado_de_baja');
 
+    /* El comprador se busca por EMAIL, no por solicitudes.usuario_id.
+       ⚠️ NO son el mismo id: solicitudes.usuario_id tiene default auth.uid()
+       (el id de Supabase Auth) y usuarios.id es la PK propia de esa tabla,
+       que se genera sola en el upsert por email de checkSession(). Cruzados
+       dan 0 de 28; por email dan 28 de 28. Buscar por id hacia que esta rama
+       no encontrara nunca al comprador: el enfriamiento no frenaba nada, el
+       last_notified_at no se escribia y —lo grave— el link de baja del mail
+       apuntaba a un usuario inexistente, asi que api/unsub contestaba
+       "listo, lo dimos de baja" sin guardar nada y el mail seguia saliendo. */
+    const emailNorm = String(sol.usuario_email).trim().toLowerCase();
+    const uRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/usuarios?email=eq.${encodeURIComponent(emailNorm)}` +
+      `&select=id,last_notified_at&limit=1`, { headers });
+    const usuario = (await uRes.json())?.[0];
+
     // Freno 2: enfriamiento por comprador.
-    if (sol.usuario_id) {
-      const uRes = await fetch(
-        `${SUPABASE_BASE}/rest/v1/usuarios?id=eq.${encodeURIComponent(sol.usuario_id)}` +
-        `&select=last_notified_at`, { headers });
-      const usuario = (await uRes.json())?.[0];
-      if (usuario?.last_notified_at) {
-        const minutos = (Date.now() - new Date(usuario.last_notified_at).getTime()) / 60000;
-        if (minutos < 15) return saltear('cooldown');
-      }
+    if (usuario?.last_notified_at) {
+      const minutos = (Date.now() - new Date(usuario.last_notified_at).getTime()) / 60000;
+      if (minutos < 15) return saltear('cooldown');
     }
 
     const resendKey = process.env.RESEND_API_KEY;
@@ -220,13 +233,32 @@ async function handlerCotizacion(req, res) {
     }
 
     const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
-    const unsubUrl = sol.usuario_id
-      ? `${appUrl}/api/unsub?u=${encodeURIComponent(sol.usuario_id)}&c=cotizaciones`
+    const unsubUrl = usuario?.id
+      ? `${appUrl}/api/unsub?u=${encodeURIComponent(usuario.id)}&c=cotizaciones`
       : appUrl;
+    /* Al pedido, no a la home. El deep-link ya existe (lo usa el aviso por
+       WhatsApp) y lo lee el `params` del tope del DOMContentLoaded. Mandar a
+       la home obliga al comprador a buscar su propio pedido justo cuando lo
+       unico que quiere es ver quien le respondio. */
+    const verUrl = `${appUrl}/?ir=cotizaciones&pedido=${encodeURIComponent(solicitud_id)}`;
     // El titulo lo escribio el comprador: se escapa antes de meterlo en el HTML.
     const tituloSafe = escHtml(String(sol.titulo || 'su pedido').slice(0, 120));
     const n = Number(sol.respuestas) || 1;
-    const cuantas = n === 1 ? 'una cotización' : `${n} cotizaciones`;
+    /* Un pedido de tipo "proveedor" (busco proveedor fijo de X) no recibe
+       cotizaciones con precio: recibe proveedores que dicen que le pueden
+       abastecer. Prometerle "cotizaciones" y "compare precios" es prometerle
+       una pantalla que no va a encontrar. */
+    const esB = sol.tipo === 'proveedor';
+    const cuantas = esB
+      ? (n === 1 ? 'un proveedor' : `${n} proveedores`)
+      : (n === 1 ? 'una cotización' : `${n} cotizaciones`);
+    const titular = esB
+      ? `${n === 1 ? 'Le respondió' : 'Le respondieron'} ${cuantas}`
+      : `Ya tiene ${cuantas}`;
+    const bajada = esB
+      ? 'Entre a ver qué le puede abastecer cada uno, con qué mínimo de compra y cómo entrega, y contacte al que le sirva.'
+      : 'Entre a comparar precio, mínimo de compra y tiempo de entrega, y contacte al que le sirva.';
+    const cta = esB ? 'Ver los proveedores' : 'Ver las cotizaciones';
     const VERDE = '#006039';
 
     const emailRes = await fetch('https://api.resend.com/emails', {
@@ -235,7 +267,7 @@ async function handlerCotizacion(req, res) {
       body: JSON.stringify({
         from: 'EmprendeGO <notificaciones@emprendego.com.ar>',
         to: [sol.usuario_email],
-        subject: `Le cotizaron “${String(sol.titulo || 'su pedido').slice(0, 60)}”`,
+        subject: `${esB ? 'Le respondieron' : 'Le cotizaron'} “${String(sol.titulo || 'su pedido').slice(0, 60)}”`,
         // Gmail muestra el boton nativo de baja con estas dos cabeceras, y
         // api/unsub ya acepta el POST de un solo clic que exige la segunda.
         headers: {
@@ -246,15 +278,15 @@ async function handlerCotizacion(req, res) {
           <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f4f5f3;">
             <div style="background:#fff;border-radius:14px;padding:30px 28px;">
               <div style="font-family:Georgia,'Times New Roman',serif;font-size:19px;font-weight:700;color:${VERDE};margin-bottom:20px;">EmprendeGO</div>
-              <h2 style="margin:0 0 10px;font-size:19px;color:#2c3330;">Ya tiene ${cuantas}</h2>
+              <h2 style="margin:0 0 10px;font-size:19px;color:#2c3330;">${titular}</h2>
               <p style="margin:0 0 8px;font-size:14.5px;line-height:1.6;color:#5c6661;">
                 Su pedido <strong style="color:#2c3330;">${tituloSafe}</strong> recibió respuesta de proveedores mayoristas.
               </p>
               <p style="margin:0 0 24px;font-size:14.5px;line-height:1.6;color:#5c6661;">
-                Entre a comparar precio, mínimo de compra y tiempo de entrega, y contacte al que le sirva.
+                ${bajada}
               </p>
-              <a href="${appUrl}" style="display:inline-block;background:${VERDE};color:#fff;padding:13px 26px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14.5px;">
-                Ver las cotizaciones
+              <a href="${verUrl}" style="display:inline-block;background:${VERDE};color:#fff;padding:13px 26px;border-radius:10px;text-decoration:none;font-weight:700;font-size:14.5px;">
+                ${cta}
               </a>
             </div>
             <p style="margin-top:20px;font-size:12px;color:#9aa5a0;text-align:center;line-height:1.5;">
@@ -271,8 +303,12 @@ async function handlerCotizacion(req, res) {
       return res.status(200).json({ ok: false, error: 'email_send_failed' });
     }
 
-    if (sol.usuario_id) {
-      await fetch(`${SUPABASE_BASE}/rest/v1/usuarios?id=eq.${encodeURIComponent(sol.usuario_id)}`, {
+    /* Se escribe con el id que vino de la busqueda por email. Con el
+       usuario_id de la solicitud esto pateaba cero filas y el enfriamiento
+       de arriba no arrancaba nunca. Ademas es el unico rastro de que el
+       mail salio: esta rama no escribe en email_logs. */
+    if (usuario?.id) {
+      await fetch(`${SUPABASE_BASE}/rest/v1/usuarios?id=eq.${encodeURIComponent(usuario.id)}`, {
         method: 'PATCH',
         headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
         body: JSON.stringify({ last_notified_at: new Date().toISOString() })

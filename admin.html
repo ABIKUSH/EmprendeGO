@@ -1874,7 +1874,11 @@ function cotizErr(e){
   return m || 'Error';
 }
 
+// Number(null) y Number('') dan 0, y isFinite(0) es true: sin el chequeo de
+// vacio, una cotizacion sin precio se pintaba "$0" y parecia que el proveedor
+// habia ofrecido regalar la mercaderia.
 function cotizPlata(n){
+  if(n === null || n === undefined || n === '') return '—';
   const v = Number(n);
   return isFinite(v) ? '$' + v.toLocaleString('es-AR',{maximumFractionDigits:2}) : '—';
 }
@@ -1898,6 +1902,41 @@ function cotizEstado(s){
 function cotizCorto(t, n){
   const s = String(t || '');
   return s.length > n ? s.slice(0, n - 1) + '…' : s;
+}
+
+/* Hay DOS formas de responder un pedido y no comparten ni una columna:
+
+     tipo 'producto'  -> precio, entrega, minimo, pagos
+     tipo 'proveedor' -> cubre (que puede abastecer), minimo, envio
+
+   El panel pintaba siempre la primera. Una respuesta de proveedor caia ahi
+   con las cuatro columnas en NULL y se leia "Por unidad: $0 · Entrega: — ·
+   Minimo: — · Pagos: —", o sea una cotizacion rota, cuando en realidad el
+   proveedor habia contestado bien y lo unico que faltaba mostrar era `cubre`.
+   Es la misma bifurcacion que hace cardCotizacion() en js/cotizaciones.js. */
+function cotizCuerpoAdmin(c){
+  const dato = (etq, val) => `<span><span style="color:var(--gray)">${etq}:</span> ${escHtml(val || '—')}</span>`;
+  const fila = html => `<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:.82rem">${html}</div>`;
+
+  if(c.tipo === 'proveedor'){
+    // cubre es jsonb: llega como array de JavaScript, no como texto.
+    const cubre = Array.isArray(c.cubre) ? c.cubre.filter(Boolean) : [];
+    return fila(
+      dato('Mínimo', c.minimo) +
+      dato('Envío', c.envio)
+    ) + (cubre.length
+      ? `<div style="margin-top:8px;font-size:.82rem">
+           <span style="color:var(--gray)">Puede abastecer:</span> ${escHtml(cubre.join(' · '))}
+         </div>`
+      : '');
+  }
+
+  return fila(
+    `<span><span style="color:var(--gray)">Por unidad:</span> <strong>${escHtml(cotizPlata(c.precio))}</strong></span>` +
+    dato('Entrega', c.entrega) +
+    dato('Mínimo', c.minimo) +
+    dato('Pagos', c.pagos)
+  );
 }
 
 async function cargarCotizacionesAdmin(){
@@ -1989,12 +2028,7 @@ async function verCotizacionesDe(id, btn){
           </div>
           <button class="tbl-btn reject" data-id="${escHtml(c.id)}" data-sol="${escHtml(id)}" onclick="eliminarCotizacionAdmin(this.dataset.id,this.dataset.sol)">Eliminar</button>
         </div>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px;font-size:.82rem">
-          <span><span style="color:var(--gray)">Por unidad:</span> <strong>${escHtml(cotizPlata(c.precio))}</strong></span>
-          <span><span style="color:var(--gray)">Entrega:</span> ${escHtml(c.entrega || '—')}</span>
-          <span><span style="color:var(--gray)">Mínimo:</span> ${escHtml(c.minimo || '—')}</span>
-          <span><span style="color:var(--gray)">Pagos:</span> ${escHtml(c.pagos || '—')}</span>
-        </div>
+        ${cotizCuerpoAdmin(c)}
         ${c.nota ? `<div style="margin-top:10px;font-size:.82rem;color:var(--gray);font-style:italic">"${escHtml(c.nota)}"</div>` : ''}
       </div>`).join('')
       : '<div style="color:var(--gray);font-size:.82rem;padding:8px">Este pedido todavía no recibió ninguna cotización.</div>';

@@ -4241,10 +4241,14 @@
 
   /* ---------------- vista RESPUESTAS (comprador ve sus cotizaciones) ---------------- */
 
-  window.cotizVerRespuestas = async function (id) {
+  window.cotizVerRespuestas = async function (id, respaldo) {
     // Puede venir de "Mis pedidos" o de mi propia tarjeta en el feed publico.
+    // `respaldo` es para el deep-link del mail: ahi el pedido puede ser viejo
+    // y no estar en ninguna de las dos listas, pero irAlPedido ya lo trajo
+    // suelto de la base y seria absurdo volver a pedirlo o no mostrarlo.
     const p = st.misPedidos.find(x => String(x.id) === String(id))
-      || st.feed.find(x => String(x.id) === String(id));
+      || st.feed.find(x => String(x.id) === String(id))
+      || respaldo;
     if (!p) return;
     st.pedidoActual = p;
     st.cargando = true; render();
@@ -5294,8 +5298,19 @@
 
     if (!s) { render(); return toast('Ese pedido ya no está disponible'); }
 
-    // Un comprador que toca el link (o un proveedor todavia sin aprobar) ve
-    // el pedido en el feed, pero no hay formulario que abrirle.
+    /* El mismo link lo tocan las dos puntas y no quieren lo mismo.
+
+       Al PROVEEDOR el link se lo manda el aviso por WhatsApp y lo que quiere
+       es el formulario para responder (abajo).
+
+       Al COMPRADOR se lo manda el mail de "le cotizaron": lo que quiere es
+       ver QUIEN le respondio. Su propio pedido no lo puede cotizar, asi que
+       dejarlo parado en el feed generico es hacerle buscar de nuevo lo que el
+       mail le prometio que ya estaba. */
+    if (esMio(s)) return window.cotizVerRespuestas(s.id, s);
+
+    // Un comprador ajeno al pedido (o un proveedor todavia sin aprobar) ve el
+    // pedido en el feed, pero no hay formulario que abrirle.
     if (!currentUser || !currentUser.proveedorId) { render(); return; }
 
     if (st.misCotiz && st.misCotiz[s.id]) {
