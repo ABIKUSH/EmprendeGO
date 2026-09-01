@@ -952,8 +952,45 @@ document.addEventListener('DOMContentLoaded', () => {
       if (++intentosCotiz < 10) setTimeout(abrirCotiz, 300);
     };
     setTimeout(abrirCotiz, 600);
+  } else if (irParam === 'cargar') {
+    // Deep-link a "cargar producto". Lo usa el aviso que se le manda al
+    // proveedor con catalogo vacio: al 01-09-2026 hay 121 perfiles sin un solo
+    // producto que igual reciben 4.738 visitas y 1.376 consultas por mes. El
+    // proveedor NO vuelve solo a la app (quedo demostrado con Cotizaciones), asi
+    // que el link tiene que dejarlo parado en la pantalla de carga, no en la
+    // home a buscar donde es.
+    history.replaceState({}, '', window.location.pathname);
+    _egCargaPendiente = true;
+    egAbrirCargaPendiente();
   }
 });
+
+// ===== DEEP-LINK ?ir=cargar =====
+// checkSession() es asincronica: cuando corre el handler de arriba todavia no
+// sabemos si hay proveedor. Se reintenta un rato y, si no aparece, se lo deja en
+// su panel para que entre. La bandera queda levantada y handleLogin() retoma el
+// pedido apenas se identifica, asi el link tambien sirve para el que llega sin
+// la sesion puesta.
+let _egCargaPendiente = false;
+let _egIntentosCarga = 0;
+
+function egAbrirCargaPendiente() {
+  if (!_egCargaPendiente) return;
+  if (currentUser && currentUser.type === 'proveedor') {
+    _egCargaPendiente = false;
+    _egIntentosCarga = 0;
+    try { goTo('perfil'); } catch (e) { }
+    // openAddProduct() mira `productos` para el tope de 30 del plan gratis: se le
+    // da un respiro al panel para que termine de cargarlos antes de abrir.
+    setTimeout(() => { try { openAddProduct(); } catch (e) { } }, 700);
+    return;
+  }
+  if (++_egIntentosCarga < 20) { setTimeout(egAbrirCargaPendiente, 300); return; }
+  // Sin sesion de proveedor despues de ~6s: lo dejamos en la pantalla donde esta
+  // el ingreso. El pedido sigue pendiente.
+  _egIntentosCarga = 0;
+  try { goTo('perfil'); } catch (e) { }
+}
 setTimeout(checkReveal, 500);
 
 // ===== ESTADO GLOBAL =====
@@ -3247,6 +3284,9 @@ function handleLogin(user) {
   // que es el grueso, no dejaba rastro. "tipo" separa comprador de proveedor.
   trackEvent('login', { method: 'google', tipo: user.type === 'proveedor' ? 'proveedor' : 'comprador' });
   try { updatePerfilUI(); } catch (e) { console.error('[updatePerfilUI]', e); }
+  // El que entro por ?ir=cargar sin la sesion puesta: recien ahora sabemos que es
+  // proveedor, asi que se retoma el pedido y se le abre la carga.
+  if (_egCargaPendiente && user.type === 'proveedor') setTimeout(egAbrirCargaPendiente, 400);
 }
 
 function verificarExpiracionPlan(prov) {
