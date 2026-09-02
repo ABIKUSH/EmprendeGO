@@ -56,7 +56,8 @@ function prov(id, extra) {
 async function main() {
   const api = await import('../api/notificar-mensaje.js');
   const rub = await import('../api/_rubros.js');
-  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba, valoresDelEvento } = api;
+  const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba, valoresDelEvento,
+          esFalloNuestro } = api;
   const { rubroCoincide, rubroEsCiego } = rub;
 
   /* =================================================================== */
@@ -399,6 +400,43 @@ async function main() {
       entry: [{ changes: [{ value: { messages: [1] } }, null, { value: null }, { value: { statuses: [2] } }] }]
     });
     igual(v.length, 2, 'los dos sanos tienen que sobrevivir');
+  });
+
+  /* =================================================================== */
+  /* Que se reintenta y que no. Es la unica pieza del reintento que se puede
+     probar sin red: si esta lista se afloja, un reenvio empieza a insistirle
+     a numeros que nos rebotan, que es como se quema el numero de la empresa.
+     Los textos son los que devolvio Meta de verdad, copiados de avisos_wa. */
+  seccion('esFalloNuestro: culpa nuestra vs. del destinatario');
+
+  test('el fallo de facturacion del 2026-09-01 se reintenta', () => {
+    asegurar(esFalloNuestro('Business eligibility payment issue'));
+  });
+
+  test('el numero sin registrar del 24-25/08 se reintenta', () => {
+    asegurar(esFalloNuestro('(#133010) Account not registered'));
+    asegurar(esFalloNuestro('Account not registered'));
+  });
+
+  test('un token vencido se reintenta', () => {
+    asegurar(esFalloNuestro('(#190) Error validating access token'));
+  });
+
+  test('un rechazo del destinatario NO se reintenta', () => {
+    asegurar(!esFalloNuestro('Message undeliverable'));
+    asegurar(!esFalloNuestro('(#131026) Message Undeliverable'));
+    asegurar(!esFalloNuestro('(#131030) Recipient phone number not in allowed list'));
+  });
+
+  test('un motivo desconocido NO se reintenta (lista blanca, no negra)', () => {
+    asegurar(!esFalloNuestro('algo raro que nunca vimos'));
+    asegurar(!esFalloNuestro('http_500'));
+  });
+
+  test('sin motivo no se adivina', () => {
+    asegurar(!esFalloNuestro(''));
+    asegurar(!esFalloNuestro(null));
+    asegurar(!esFalloNuestro(undefined));
   });
 
   /* =================================================================== */

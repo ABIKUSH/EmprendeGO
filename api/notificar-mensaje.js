@@ -946,6 +946,43 @@ export function normalizarWa(tel) {
   return d;
 }
 
+
+/* ¿EL AVISO FALLO POR CULPA NUESTRA O DEL DESTINATARIO?
+
+   avisos_wa_unico impide reintentar un (pedido, proveedor) que ya fallo, y
+   esa regla esta bien para lo que la motivo: si un numero nos rebota,
+   insistirle es exactamente lo que baja la calificacion de calidad del
+   numero. Pero mete en la misma bolsa dos cosas que no son lo mismo.
+
+   El 2026-09-01 Meta rechazo 18 avisos con "Business eligibility payment
+   issue" —la cuenta se quedo sin metodo de pago valido— y antes, el 24 y 25
+   de agosto, otros 43 con "(#133010) Account not registered", porque el
+   numero todavia no estaba dado de alta. En los 61 casos el proveedor nunca
+   fue el problema: el mensaje no salio de casa. Dejarlos bloqueados para
+   siempre es perder los pedidos, no cuidar el numero.
+
+   Lista BLANCA y no lista negra, a proposito: un error que no reconocemos se
+   trata como del destinatario y no se reintenta. Equivocarse para el lado de
+   no mandar cuesta un aviso; equivocarse para el otro cuesta el numero.
+
+   Los tres patrones salen de errores reales que estan hoy en la tabla, no de
+   la documentacion de Meta. Si aparece uno nuevo que sea claramente nuestro,
+   se agrega aca con la fecha y el texto exacto que devolvio Meta. */
+const WA_FALLOS_NUESTROS = [
+  // Cuenta sin metodo de pago valido. El envio ni se intenta del lado de Meta.
+  /business eligibility payment issue/i,
+  // El numero de origen no estaba registrado en la Cloud API todavia.
+  /\(#133010\)|account not registered/i,
+  // El token vencio o se revoco: nada que ver con el destinatario.
+  /\(#190\)|access token/i
+];
+
+export function esFalloNuestro(error) {
+  const e = String(error || '').trim();
+  if (!e) return false;                       // sin motivo no se adivina
+  return WA_FALLOS_NUESTROS.some(rx => rx.test(e));
+}
+
 /* El numero al que se desvian TODOS los envios mientras se prueba
    (WHATSAPP_TEST_TO). Se limpia pero NO pasa por normalizarWa().
 
@@ -1030,6 +1067,19 @@ async function handlerWaPedido(req, res) {
     // una persona con el rubro correcto. Ver rubroEsCiego() en _rubros.js.
     if (rubroEsCiego(rubro)) return saltear('rubro_ciego', { rubro });
 
+    /* Reintento de los avisos que fallaron por culpa NUESTRA.
+
+       Solo en el camino de admin: el reenvio lo dispara una persona que sabe
+       que el problema de fondo (la facturacion, el alta del numero) ya se
+       resolvio. Automatizarlo seria reintentar contra una cuenta que sigue
+       rota y quemar la calificacion del numero de a 8 mensajes por pedido.
+
+       Marcar reintentado=true libera el lugar en avisos_wa_unico, que ahora
+       es parcial, y la fila vieja queda como registro de lo que paso. Los
+       fallos del DESTINATARIO no se tocan: ver esFalloNuestro(). */
+    let liberados = 0;
+    if (porAdmin) liberados = await liberarFallosNuestros(headers, solicitud_id);
+
     // --- 2) Tope diario global ---
     const cuentaRes = await fetch(
       `${SUPABASE_BASE}/rest/v1/avisos_wa?created_at=gte.${encodeURIComponent(inicioDelDiaAR())}&select=id`,
@@ -1103,7 +1153,7 @@ async function handlerWaPedido(req, res) {
     console.log(`[wa-pedido] pedido ${solicitud_id} (${rubro}): ${enviados} de ${lote.length} enviados`);
     return res.status(200).json({
       ok: true, enviados, candidatos: destinatarios.length,
-      fallos: fallos.slice(0, 5), rubro, prueba: !!forzarA
+      fallos: fallos.slice(0, 5), rubro, prueba: !!forzarA, liberados
     });
 
   } catch (err) {
@@ -1256,6 +1306,62 @@ async function enviarUno(p, ctx) {
     console.error('[wa-pedido] fallo el envio:', e.message);
     await cerrarAviso(headers, reservaId, { estado: 'fallo', error: String(e.message).slice(0, 500) });
     return { ok: false, motivo: e.message };
+  }
+}
+
+/* Da por perdidos los avisos de un pedido que fallaron por culpa nuestra, y
+   asi habilita a mandarlos de nuevo. Devuelve cuantos libero.
+
+   Nunca lanza. Si esto falla, el reenvio sigue igual: los que ya fallaron
+   chocan contra el indice unico y se saltean como 'duplicado'. O sea, en el
+   peor caso el reenvio hace lo mismo que hacia antes de esta funcion.
+
+   Dos filtros, y los dos importan:
+     - estado='fallo' y reintentado=false: no se tocan los 'enviado' (llegaron)
+       ni los 'reservado' (pueden estar en vuelo justo ahora).
+     - esFalloNuestro(error): el filtro se hace ACA, en el servidor, leyendo
+       los motivos uno por uno. No se manda como filtro en la URL a proposito:
+       un ilike en PostgREST tendria que repetir los patrones en otro idioma y
+       serian dos listas que se despegan la primera vez que se toque una. */
+async function liberarFallosNuestros(headers, solicitudId) {
+  try {
+    const r = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?solicitud_id=eq.${encodeURIComponent(solicitudId)}` +
+      `&estado=eq.fallo&reintentado=is.false&select=id,error&limit=200`, { headers });
+    if (!r.ok) {
+      // Lo mas probable: la columna reintentado todavia no existe porque no
+      // se corrio sql/2026-09-02_reintento_avisos_wa.sql. Se avisa y se sigue.
+      console.warn('[wa-pedido] no se pudo leer los fallos a reintentar:', r.status, await r.text());
+      return 0;
+    }
+
+    /* esUUID() ademas de esFalloNuestro(): los ids se pegan crudos en la URL
+       (sin encodeURIComponent, porque la coma de in.(...) es el separador y
+       encodearla lo rompe), asi que se valida la forma antes de concatenar en
+       vez de confiar en que la base solo devuelve uuids. Un uuid no tiene
+       ningun caracter que necesite escaparse. */
+    const ids = ((await r.json()) || [])
+      .filter(f => f && esUUID(f.id) && esFalloNuestro(f.error))
+      .map(f => f.id);
+    if (!ids.length) return 0;
+
+    // in.(...) en una sola llamada: son 8 filas por pedido como maximo.
+    const upd = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?id=in.(${ids.join(',')})`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ reintentado: true })
+    });
+    if (!upd.ok) {
+      console.warn('[wa-pedido] no se pudo marcar el reintento:', upd.status, await upd.text());
+      return 0;
+    }
+
+    console.log(`[wa-pedido] ${ids.length} aviso(s) de ${solicitudId} habilitados para reintento`);
+    return ids.length;
+  } catch (e) {
+    console.error('[wa-pedido] fallo al liberar reintentos:', e.message);
+    return 0;
   }
 }
 

@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EmprendeGo — Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&display=swap" rel="stylesheet">
+<!-- IBM Plex Mono es la voz de documento de la tarjeta del informe (etiquetas y
+     campos en versalitas). Va acá y no en styles.css porque solo la usa el
+     canvas de admin: si falta, la tarjeta cae a monospace del sistema y se ve
+     distinta en cada máquina. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
@@ -522,7 +526,7 @@ tr:hover td{background:#fafbff}
       <!-- INFORME SEMANAL -->
       <div class="page" id="page-informe">
         <div class="page-title">Informe semanal</div>
-        <div class="page-sub">Enviá a cada proveedor su resumen de actividad. Tocá <strong>🖼️ Tarjeta</strong> para descargar la imagen con la marca y sus números, y <strong>📲 Enviar</strong> para abrir WhatsApp (después adjuntás la tarjeta descargada en el chat).</div>
+        <div class="page-sub">Enviá a cada proveedor su resumen de actividad. Tocá <strong>Tarjeta</strong> para descargar la imagen con la marca y sus números, y <strong>Enviar</strong> para abrir WhatsApp (después adjuntás la tarjeta descargada en el chat).</div>
 
         <div class="table-card" style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap">
           <div style="min-width:200px;flex:1">
@@ -557,8 +561,8 @@ emprendego.com.ar</textarea>
           <div class="table-title" style="margin-bottom:8px">✅ Cómo enviar el informe a cada proveedor</div>
           <ol style="margin:0;padding-left:20px;font-size:.84rem;color:var(--navy);line-height:1.7">
             <li><strong>Una vez por semana</strong> (ej: lunes) apretá <strong>📸 Tomar foto de la semana</strong> arriba. Esto fija el punto de partida para medir el crecimiento. <em>La primera vez el informe muestra solo los totales; el "+X esta semana" aparece a partir del lunes siguiente.</em></li>
-            <li>En la fila de cada proveedor, tocá <strong>🖼️ Tarjeta</strong> → se descarga la imagen con SUS números reales.</li>
-            <li>Tocá <strong>📲 Enviar</strong> → se abre el WhatsApp de ese proveedor con el texto ya escrito.</li>
+            <li>En la fila de cada proveedor, tocá <strong>Tarjeta</strong> → se descarga la imagen con SUS números reales.</li>
+            <li>Tocá <strong>Enviar</strong> → se abre el WhatsApp de ese proveedor con el texto ya escrito.</li>
             <li><strong>Adjuntá la imagen</strong> que se descargó y enviá. La columna "Último envío" te marca a quién ya le mandaste.</li>
           </ol>
         </div>
@@ -1218,7 +1222,7 @@ async function cargarTodosProveedores(){
         <td><div class="action-group">
           <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
           ${esProveedorConcierge(p)
-            ? `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-weight:700" data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${nombreEsc}" data-rubro="${escHtml(p.rubro||'')}" onclick="presentarWA(this.dataset.wa,this.dataset.nombre,this.dataset.rubro)" title="Mandar mensaje de presentación (cuenta cargada por nosotros)">📲 Presentar</button>`
+            ? `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-weight:700" data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${nombreEsc}" data-rubro="${escHtml(p.rubro||'')}" onclick="presentarWA(this.dataset.wa,this.dataset.nombre,this.dataset.rubro)" title="Mandar mensaje de presentación (cuenta cargada por nosotros)">Presentar</button>`
             : ''}
           ${p.plan==='pro'
             ? `<button class="tbl-btn warn" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="quitarPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Quitar</button>`
@@ -1982,6 +1986,7 @@ async function cargarCotizacionesAdmin(){
         <td><strong>${n}</strong></td>
         <td><div class="action-group">
           <button class="tbl-btn view" data-id="${escHtml(s.id)}" onclick="verCotizacionesDe(this.dataset.id,this)">Ver${n ? ' ('+n+')' : ''}</button>
+          ${abierto ? `<button class="tbl-btn" data-id="${escHtml(s.id)}" data-rubro="${escHtml(s.rubro || '')}" onclick="reenviarAvisoWa(this.dataset.id,this.dataset.rubro,this)" title="Volver a avisar por WhatsApp a los proveedores de este rubro">Reenviar aviso</button>` : ''}
           ${abierto ? `<button class="tbl-btn warn" data-id="${escHtml(s.id)}" onclick="cerrarSolicitudAdmin(this.dataset.id)">Cerrar</button>` : ''}
           <button class="tbl-btn reject" data-id="${escHtml(s.id)}" data-titulo="${escHtml(s.titulo || '')}" onclick="eliminarSolicitudAdmin(this.dataset.id,this.dataset.titulo)">Eliminar</button>
         </div></td>
@@ -1995,6 +2000,126 @@ async function cargarCotizacionesAdmin(){
     filtrarCotizAdmin();
   } catch(e){
     tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--gray);padding:20px">${escHtml(cotizErr(e))}</td></tr>`;
+  }
+}
+
+/* =====================================================================
+   REENVIAR EL AVISO POR WHATSAPP DE UN PEDIDO
+
+   POR QUÉ EXISTE
+   El 2026-09-01 Meta rechazó 18 avisos con "Business eligibility payment
+   issue" (la cuenta quedó sin método de pago). Los tres pedidos afectados
+   siguen abiertos y con cero cotizaciones: los proveedores nunca se
+   enteraron. Antes había pasado lo mismo con 43 avisos del 24 y 25 de
+   agosto por "Account not registered". No había forma de reenviarlos: el
+   endpoint sólo acepta pedidos de menos de 15 minutos, y el índice único de
+   avisos_wa bloquea para siempre un par (pedido, proveedor) que ya falló.
+
+   Este botón usa la única puerta que ya existía para eso: ?action=wa_pedido
+   con sesión de admin y rubro forzado. Con sesión válida el servidor saltea
+   la ventana de 15 minutos y da por perdidos los fallos que fueron culpa
+   nuestra (ver esFalloNuestro en api/notificar-mensaje.js). Los rechazos del
+   destinatario NO se reintentan, ni desde acá ni desde ningún lado.
+
+   Igual que el anuncio por mail: esto es la capa visual. Todas las barreras
+   reales (sesión de admin, pedido abierto, tope diario, enfriamiento por
+   proveedor, anti-duplicado) las revalida el backend. Manipular este JS no
+   consigue un envío que el servidor no permita.
+   ===================================================================== */
+
+// Rubros a los que se puede forzar un pedido que quedó en "Otro". Son los
+// nombres canónicos de RUBRO_LEGACY en api/_rubros.js: si se manda uno que
+// no está ahí, el fan-out no encuentra a nadie y no se manda nada.
+const RUBROS_AVISO = ['Indumentaria','Calzado','Tecnología','Electrónica','Bazar','Hogar y Deco',
+  'Belleza y Salud','Perfumería','Bijouterie y Accesorios','Marroquinería y Bolsos','Deportes',
+  'Juguetería','Librería y Papelería','Alimentos','Limpieza','Blanquería','Textil y Telas',
+  'Muebles','Iluminación','Ferretería','Herramientas','Construcción','Automotor','Mascotas',
+  'Bebés y Niños','Lencería','Packaging','Servicios'];
+
+// Mismo criterio que rubroEsCiego() en api/_rubros.js: un pedido en "Otro" no
+// dispara nada solo, hay que decirle a mano a qué rubro va.
+function rubroCiegoAdmin(r){
+  const c = String(r || '').trim();
+  return c === '' || c === 'Otro' || c === 'Otros';
+}
+
+// Traduce los motivos que devuelve el backend a algo que se pueda leer.
+function motivoAvisoWa(j){
+  const m = {
+    wa_apagado: 'El envío por WhatsApp está apagado (faltan WHATSAPP_TOKEN y WHATSAPP_PHONE_ID en Vercel).',
+    sin_bitacora: 'No se pudo leer la tabla avisos_wa. Falta correr la migración.',
+    pedido_cerrado: 'El pedido está cerrado.',
+    pedido_vencido: 'El pedido ya venció.',
+    pedido_viejo: 'El pedido tiene más de 15 minutos y la sesión de admin no se aceptó. Volvé a entrar al panel.',
+    rubro_ciego: 'Ese rubro no identifica nada. Elegí un rubro concreto.',
+    sin_destinatarios: 'No quedó ningún proveedor para avisar: o ya recibieron este pedido, o ninguno tiene ese rubro con WhatsApp válido.',
+    tope_diario: 'Se llegó al tope diario de mensajes.'
+  };
+  return m[j.skipped] || ('No se envió nada (' + escHtml(String(j.skipped || 'motivo desconocido')) + ').');
+}
+
+async function reenviarAvisoWa(id, rubroPedido, btn){
+  let rubro = String(rubroPedido || '').trim();
+
+  // Un pedido en "Otro" no se puede avisar sin decidir el rubro a mano: son
+  // ~4 de cada 10 y es justamente el caso que el founder revisa uno por uno.
+  if(rubroCiegoAdmin(rubro)){
+    const elegido = prompt(
+      'Este pedido está en "' + (rubro || 'sin rubro') + '" y no dispara avisos solo.\n\n' +
+      'Escribí a qué rubro mandarlo:\n\n' + RUBROS_AVISO.join(' · '), '');
+    if(elegido === null) return;
+    rubro = String(elegido).trim();
+    if(!rubro) return;
+    if(!RUBROS_AVISO.includes(rubro) &&
+       !confirm('"' + rubro + '" no está en la lista de rubros conocidos.\n\n' +
+                'Lo más probable es que no le llegue a nadie. ¿Seguir igual?')) return;
+  }
+
+  if(!confirm('¿Reenviar el aviso por WhatsApp de este pedido?\n\n' +
+              'Rubro: ' + rubro + '\n\n' +
+              'Se le manda a un máximo de 8 proveedores. Los que ya lo recibieron ' +
+              'se saltean solos; los que fallaron por un problema nuestro se reintentan. ' +
+              'Esto no se puede deshacer.')) return;
+
+  const etiqueta = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try{
+    const { data:{ session } } = await sb.auth.getSession();
+    if(!session) throw new Error('Tu sesión venció. Volvé a entrar al panel.');
+
+    const r = await fetch('/api/notificar-mensaje?action=wa_pedido', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}` },
+      body: JSON.stringify({ solicitud_id: id, rubro })
+    });
+    const j = await r.json().catch(()=>({}));
+
+    if(!r.ok) throw new Error(j.detalle || j.error || ('HTTP ' + r.status));
+
+    if(j.skipped){
+      btn.disabled = false;
+      btn.textContent = etiqueta;
+      alert(motivoAvisoWa(j));
+      return;
+    }
+
+    const n = Number(j.enviados || 0);
+    btn.textContent = n ? ('Enviado (' + n + ')') : 'Sin envíos';
+    btn.disabled = n > 0;
+    alert(
+      (n ? 'Se enviaron ' + n + ' aviso(s).' : 'No salió ningún aviso.') +
+      '\nRubro: ' + (j.rubro || rubro) +
+      '\nCandidatos: ' + (j.candidatos != null ? j.candidatos : '—') +
+      (j.liberados ? '\nReintentos habilitados: ' + j.liberados : '') +
+      (j.prueba ? '\n\nOJO: WHATSAPP_TEST_TO está puesto, así que todo fue a ese número de prueba y no a los proveedores.' : '') +
+      (j.fallos && j.fallos.length ? '\n\nFallos: ' + j.fallos.join(' | ') : '')
+    );
+  } catch(e){
+    btn.disabled = false;
+    btn.textContent = etiqueta;
+    alert('No se pudo reenviar: ' + (e.message || 'error desconocido'));
   }
 }
 
@@ -2342,7 +2467,7 @@ function botonWA(prov, tipo, reenviar){
   const estilo = reenviar
     ? 'background:#f1f5f9;color:#475569;font-weight:700'
     : 'background:#dcfce7;color:#16a34a;font-weight:700';
-  const label = reenviar ? '🔁 Reenviar' : '📲 Enviar WhatsApp';
+  const label = reenviar ? 'Reenviar' : 'Enviar WhatsApp';
   return `<button class="tbl-btn" style="${estilo}" onclick='enviarAvisoWA("${tipo}", decodeURIComponent("${safe}"))'>${label}</button>`;
 }
 
@@ -2430,7 +2555,7 @@ async function cargarAvisos(){
       return `<tr>
         <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
         <td style="font-size:.75rem;color:var(--gray)">${ultCol}</td>
-        <td><button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarDifusion(decodeURIComponent("${safe}"))'>📲 Enviar</button></td>
+        <td><button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarDifusion(decodeURIComponent("${safe}"))'>Enviar</button></td>
       </tr>`;
     }).join('') : '<tr><td colspan="3" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores con WhatsApp cargado</td></tr>';
 
@@ -2532,9 +2657,9 @@ async function cargarInforme(){
         : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
       const tieneWA = !!normalizarWAArgAdmin(p.whatsapp);
       const safe = encodeURIComponent(JSON.stringify({ id: p.id, nombre: p.nombre || '', whatsapp: p.whatsapp || '', visitas, consultas, vsem: dv != null ? dv : 0, csem: dc != null ? dc : 0, desde: base ? base._d.toISOString().slice(0,10) : null })).replace(/'/g, '%27');
-      const btnTarjeta = `<button class="tbl-btn" style="background:#eef2ff;color:#1847C8;font-weight:700" onclick='generarTarjetaInforme(decodeURIComponent("${safe}"))'>🖼️ Tarjeta</button>`;
+      const btnTarjeta = `<button class="tbl-btn" style="background:#eef2ff;color:#1847C8;font-weight:700" onclick='generarTarjetaInforme(decodeURIComponent("${safe}"))'>Tarjeta</button>`;
       const accion = tieneWA
-        ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${btnTarjeta}<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarInforme(decodeURIComponent("${safe}"))'>📲 Enviar</button></div>`
+        ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${btnTarjeta}<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarInforme(decodeURIComponent("${safe}"))'>Enviar</button></div>`
         : btnTarjeta;
       return `<tr>
         <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
@@ -2613,166 +2738,247 @@ function _tjTrunc(ctx, txt, maxW){
   while (t.length > 3 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
   return t + '…';
 }
-// Paleta de marca EmprendeGO (verde #006039 + acento naranja)
-const TJ_GREEN = '#006039', TJ_GREEN_LT = '#0E9F6E', TJ_DARK = '#0B3325', TJ_ORANGE = '#FF6B00', TJ_MUTE = '#8FB8A6';
-function _tjGrad(ctx, x, y, w, h){
-  const g = ctx.createLinearGradient(x, y, x + w, y + h);
-  g.addColorStop(0, TJ_GREEN_LT); g.addColorStop(1, TJ_GREEN); return g;
-}
-// Texto con tracking (espaciado entre letras) para el "eyebrow"
+/* ===================================================================
+   PALETA DE LA TARJETA — "ESTADO DE CUENTA", NO DASHBOARD
+
+   La versión anterior era fondo verde oscuro con dos glows radiales
+   difuminados (naranja arriba, verde abajo) y dos tarjetas de métrica con
+   ícono en badge degradado y flecha verde de crecimiento. Eso es, punto por
+   punto, el aspecto por defecto de cualquier pieza generada con IA hoy: si el
+   proveedor la asocia a eso, el número que dice adentro deja de ser creíble.
+
+   El reemplazo no sale de un catálogo de estilos: sale del mundo del que la
+   recibe. El que abre esto es un mayorista de Once, y el papel que maneja
+   todos los días es el remito y la lista de precios — encabezado, campos
+   reglados, total, sello. Ese es el lenguaje que ese señor lee como serio.
+
+   El papel es verde pálido de libro contable a propósito, y NO el crema
+   #F4F1EA que usa todo el mundo: engancha con el verde de marca y no se
+   parece a la plantilla de nadie. El naranja aparece UNA sola vez, en el
+   sello. Es lo único fuerte de la pieza. =================================== */
+const TJ = {
+  papel:  '#EDF1EA',   // ground: verde pálido de libro contable
+  tinta:  '#06402B',   // verde de marca, todo el texto principal
+  suave:  '#7F9188',   // verde grisado, etiquetas y datos secundarios
+  regla:  '#C9D6CD',   // filetes de los campos
+  sello:  '#FF6B00',   // naranja de marca: SOLO el sello
+  panel:  '#FFFFFF'    // el recuadro de la cifra principal
+};
+
+// Texto con tracking (espaciado entre letras). Las versalitas de IBM Plex Mono
+// son la voz de documento de la pieza y sin tracking se leen apretadas.
 function _tjSpaced(ctx, txt, x, y, sp){
   let cx = x;
   for (const ch of txt){ ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; }
+}
+// Ancho que va a ocupar _tjSpaced, para poder centrar o alinear a la derecha.
+function _tjSpacedW(ctx, txt, sp){
+  let w = 0;
+  for (const ch of txt) w += ctx.measureText(ch).width + sp;
+  return w - sp;
 }
 // Pre-carga las fuentes web para que el canvas no caiga a Arial
 async function _tjEnsureFonts(){
   if (!document.fonts || !document.fonts.load) return;
   try {
     await Promise.all([
-      document.fonts.load('800 100px Sora'),
-      document.fonts.load('800 70px Sora'),
-      document.fonts.load('700 40px Fraunces'),
-      document.fonts.load('700 30px "DM Sans"'),
-      document.fonts.load('600 26px "DM Sans"'),
-      document.fonts.load('500 30px "DM Sans"'),
-      document.fonts.load('400 26px "DM Sans"')
+      document.fonts.load('800 200px Sora'),
+      document.fonts.load('800 58px Sora'),
+      document.fonts.load('700 34px Sora'),
+      document.fonts.load('900 44px Fraunces'),
+      document.fonts.load('600 22px "IBM Plex Mono"'),
+      document.fonts.load('600 24px "IBM Plex Mono"'),
+      document.fonts.load('700 26px "IBM Plex Mono"'),
+      document.fonts.load('500 24px "IBM Plex Mono"')
     ]);
     await document.fonts.ready;
   } catch(e){}
 }
-// Ícono "ojo" (visitas) dibujado como vector
-function _tjIconEye(ctx, cx, cy, s, color){
+/* EL SELLO. Es el elemento firma de la pieza y lo único fuerte que tiene.
+
+   Está tomado del remito: en Argentina no hay comprobante que no lleve uno.
+   Va rotado y PISANDO el filete del encabezado porque un sello real se aplica
+   sobre el documento ya impreso — si estuviera prolijamente alineado en su
+   casillero dejaría de leerse como sello y volvería a ser un badge.
+
+   Y lleva adentro el período real, o sea información, no decoración: es el
+   dato que le dice al proveedor de cuándo a cuándo son los números. */
+function _tjSello(ctx, cxRight, cy, texto){
   ctx.save();
-  ctx.strokeStyle = color; ctx.lineWidth = s*0.16; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(cx - s, cy);
-  ctx.quadraticCurveTo(cx, cy - s*0.78, cx + s, cy);
-  ctx.quadraticCurveTo(cx, cy + s*0.78, cx - s, cy);
-  ctx.stroke();
-  ctx.fillStyle = color;
-  ctx.beginPath(); ctx.arc(cx, cy, s*0.34, 0, Math.PI*2); ctx.fill();
+  ctx.font = '700 26px "IBM Plex Mono", monospace';
+  const sp = 3;
+  const tw = _tjSpacedW(ctx, texto, sp);
+  const w = tw + 76, h = 92;
+
+  ctx.translate(cxRight - w/2, cy);
+  ctx.rotate(-4 * Math.PI / 180);
+
+  // Doble filete: el de afuera grueso, el de adentro fino. Así se imprimen los
+  // sellos de goma y es lo que lo separa de un recuadro cualquiera.
+  ctx.strokeStyle = TJ.sello;
+  ctx.lineWidth = 4;
+  _tjRR(ctx, -w/2, -h/2, w, h, 10); ctx.stroke();
+  ctx.lineWidth = 1.5;
+  _tjRR(ctx, -w/2 + 11, -h/2 + 11, w - 22, h - 22, 5); ctx.stroke();
+
+  ctx.fillStyle = TJ.sello;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.font = '600 15px "IBM Plex Mono", monospace';
+  const lw = _tjSpacedW(ctx, 'PERIODO', 4);
+  _tjSpaced(ctx, 'PERIODO', -lw/2, -16, 4);
+  ctx.font = '700 26px "IBM Plex Mono", monospace';
+  _tjSpaced(ctx, texto, -tw/2, 16, sp);
+
   ctx.restore();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
-// Ícono "globo de chat" (consultas) dibujado como vector
-function _tjIconChat(ctx, cx, cy, s, color){
-  ctx.save();
-  ctx.strokeStyle = color; ctx.lineWidth = s*0.16; ctx.lineJoin = 'round';
-  const w = s*2.0, h = s*1.55, x = cx - w/2, y = cy - h/2 - s*0.18, r = s*0.42;
-  _tjRR(ctx, x, y, w, h, r); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(x + w*0.28, y + h - 1);
-  ctx.lineTo(x + w*0.20, y + h + s*0.52);
-  ctx.lineTo(x + w*0.50, y + h - 1);
-  ctx.closePath(); ctx.fillStyle = color; ctx.fill();
-  ctx.fillStyle = color;
-  [-1, 0, 1].forEach(i => { ctx.beginPath(); ctx.arc(cx + i*s*0.46, y + h/2, s*0.12, 0, Math.PI*2); ctx.fill(); });
-  ctx.restore();
+
+/* UN CAMPO REGLADO: etiqueta a la izquierda, cifra a la derecha, filete arriba.
+
+   Es la estructura de la lista de precios y del remito, y acá encima es
+   información de verdad: cada renglón es una medición distinta. No se usa como
+   adorno ni se repite para rellenar. */
+function _tjFila(ctx, x, y, w, etiqueta, valor){
+  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = TJ.suave;
+  ctx.font = '500 22px "IBM Plex Mono", monospace';
+  ctx.textAlign = 'left';
+  _tjSpaced(ctx, etiqueta, x, y + 40, 2.5);
+
+  ctx.fillStyle = TJ.tinta;
+  ctx.font = '700 34px Sora, Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(String(valor), x + w, y + 40);
+
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
 function _tjPeriodoBadge(p){
   const hoy = new Date();
-  const f = d => d.toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
+  /* El mes se recorta a tres letras a mano. toLocaleDateString('es-AR') con
+     month:'short' devuelve "sept" (cuatro) para septiembre segun la version de
+     ICU, y adentro del sello queda "2 SEPT" al lado de "26 AGO": dos largos
+     distintos que desalinean el unico elemento fuerte de la pieza. */
+  const f = d => {
+    const mes = d.toLocaleDateString('es-AR', { month: 'short' }).replace(/\./g, '').slice(0, 3);
+    return d.getDate() + ' ' + mes;
+  };
   if (p.desde){ const d = new Date(p.desde + 'T03:00:00Z'); return f(d) + ' – ' + f(hoy); }
   return 'al ' + f(hoy);
 }
-// Tarjeta de estadística: el número de ESTA SEMANA va grande, el histórico abajo
-function _tjStat(ctx, x, y, w, h, type, semanal, label, total){
-  const MUTE = '#5B6B8C', GREEN = '#0E9F6E';
-  _tjRR(ctx, x, y, w, h, 30); ctx.fillStyle = '#F7F9FD'; ctx.fill();
-  ctx.strokeStyle = '#E5EBF6'; ctx.lineWidth = 2; ctx.stroke();
-  const px = x + 46;
-  // badge de ícono con gradiente de marca
-  const bw = 88, byy = y + 46;
-  _tjRR(ctx, px, byy, bw, bw, 24); ctx.fillStyle = _tjGrad(ctx, px, byy, bw, bw); ctx.fill();
-  const icx = px + bw/2, icy = byy + bw/2;
-  if (type === 'eye') _tjIconEye(ctx, icx, icy, 27, '#FFFFFF');
-  else _tjIconChat(ctx, icx, icy, 22, '#FFFFFF');
+/* LA TARJETA. Un estado de cuenta, no una placa de redes.
 
-  const n = parseInt(semanal, 10) || 0;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+   JERARQUÍA: hay UNA sola cifra grande y es la de consultas del período —
+   los compradores que pidieron el contacto. Antes competían dos números del
+   mismo tamaño (visitas y consultas) y el ojo no sabía cuál mirar, cuando en
+   realidad las visitas no le venden nada a nadie: el proveedor decide si esto
+   le sirve por la cantidad de gente que lo quiso contactar. Todo lo demás
+   bajó a renglones de respaldo.
 
-  // número grande = lo que pasó esta semana
-  const numY = y + h - 152;
-  let numX = px;
-  if (n > 0){
-    // flecha de crecimiento a la izquierda del número
-    const ay = numY - 34;
-    ctx.strokeStyle = GREEN; ctx.lineWidth = 9; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(px + 16, ay + 32); ctx.lineTo(px + 16, ay - 28);
-    ctx.moveTo(px - 6, ay - 6); ctx.lineTo(px + 16, ay - 32); ctx.lineTo(px + 38, ay - 6);
-    ctx.stroke();
-    numX = px + 58;
-  }
-  ctx.fillStyle = n > 0 ? GREEN : TJ_DARK;
-  ctx.font = '800 112px Sora, Arial, sans-serif';
-  ctx.fillText(String(n), numX, numY);
-
-  // etiqueta ("Consultas esta semana")
-  ctx.fillStyle = TJ_DARK; ctx.font = '700 30px "DM Sans", Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, label, w - 92), px, y + h - 98);
-
-  // historial acumulado, en chico
-  ctx.fillStyle = MUTE; ctx.font = '500 27px "DM Sans", Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, 'Histórico: ' + (total != null ? total : 0), w - 92), px, y + h - 48);
-}
-async function generarTarjetaInforme(provJson){
-  let p; try { p = JSON.parse(provJson); } catch(e){ return; }
+   EL PERÍODO NO DICE "ESTA SEMANA". El delta se calcula contra la última foto
+   de informe_snapshots, que puede tener bastante más de siete días. Poner
+   "esta semana" sobre una ventana de dos meses es mentirle al proveedor sin
+   ganar nada, así que las fechas reales van en el sello. */
+/* Dibujar y descargar van separados: _tjRender() devuelve el canvas y no toca
+   el DOM. Así la misma función sirve para la vista previa (varias tarjetas en
+   pantalla, sin bajar nada) y para el botón del panel. */
+async function _tjRender(p){
   await _tjEnsureFonts();
-  const W = 1080, H = 1080, m = 72;
+
+  const W = 1080, H = 1080, m = 84, cw = W - 2*m;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
 
-  // fondo verde de marca con degradé + glows
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, '#0A5236'); bg.addColorStop(1, '#03291B');
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-  const glow1 = ctx.createRadialGradient(W - 120, 90, 0, W - 120, 90, 560);
-  glow1.addColorStop(0, 'rgba(255,107,0,0.28)'); glow1.addColorStop(1, 'rgba(255,107,0,0)');
-  ctx.fillStyle = glow1; ctx.fillRect(0, 0, W, H);
-  const glow2 = ctx.createRadialGradient(70, H - 70, 0, 70, H - 70, 500);
-  glow2.addColorStop(0, 'rgba(14,159,110,0.40)'); glow2.addColorStop(1, 'rgba(14,159,110,0)');
-  ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
+  // ---- Papel ----
+  ctx.fillStyle = TJ.papel; ctx.fillRect(0, 0, W, H);
+  // Filete de membrete al tope, a sangre. Es lo único que "enmarca" la pieza:
+  // no hay recuadro exterior, para que se lea como hoja y no como tarjeta.
+  ctx.fillStyle = TJ.tinta; ctx.fillRect(0, 0, W, 12);
 
-  // ---- Header: marca + badge de período ----
-  ctx.textBaseline = 'alphabetic';
-  _tjRR(ctx, m, m + 4, 36, 36, 12); ctx.fillStyle = _tjGrad(ctx, m, m + 4, 36, 36); ctx.fill();
-  ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'left'; ctx.font = '700 40px Fraunces, Georgia, serif';
-  ctx.fillText('EmprendeGO', m + 52, m + 34);
-  const per = _tjPeriodoBadge(p);
-  ctx.font = '600 26px "DM Sans", Arial, sans-serif';
-  const pw = ctx.measureText(per).width + 52;
-  const bx = W - m - pw, by = m - 2, bh = 52;
-  _tjRR(ctx, bx, by, pw, bh, 26); ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,0.20)'; ctx.lineWidth = 2; ctx.stroke();
-  ctx.fillStyle = '#CDE7DB'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(per, bx + 26, by + bh/2 + 1); ctx.textBaseline = 'alphabetic';
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
 
-  // ---- Hero: eyebrow + nombre ----
-  ctx.fillStyle = TJ_MUTE; ctx.font = '700 26px "DM Sans", Arial, sans-serif';
-  _tjSpaced(ctx, 'INFORME DE ACTIVIDAD', m, m + 168, 6);
-  ctx.fillStyle = '#FFFFFF'; ctx.font = '800 70px Sora, Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', W - 2*m), m, m + 252);
+  // ---- Membrete ----
+  ctx.fillStyle = TJ.tinta;
+  ctx.font = '900 44px Fraunces, Georgia, serif';
+  ctx.fillText('EmprendeGO', m, 132);
 
-  // ---- Tarjetas de estadística ----
-  const gap = 36;
-  const cardW = (W - 2*m - gap) / 2;
-  const cardH = 396;
-  const cardY = m + 320;
-  _tjStat(ctx, m, cardY, cardW, cardH, 'eye', p.vsem || 0, 'Visitas esta semana', p.visitas != null ? p.visitas : 0);
-  _tjStat(ctx, m + cardW + gap, cardY, cardW, cardH, 'chat', p.csem || 0, 'Consultas esta semana', p.consultas != null ? p.consultas : 0);
+  ctx.fillStyle = TJ.suave;
+  ctx.font = '600 20px "IBM Plex Mono", monospace';
+  _tjSpaced(ctx, 'INFORME DE ACTIVIDAD', m, 170, 4);
 
-  // ---- Footer ----
-  const fy = cardY + cardH + 64;
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(m, fy); ctx.lineTo(W - m, fy); ctx.stroke();
-  ctx.textAlign = 'left'; ctx.fillStyle = '#FFFFFF'; ctx.font = '700 30px "DM Sans", Arial, sans-serif';
-  ctx.fillText('Datos oficiales de tu panel', m, fy + 54);
-  ctx.fillStyle = TJ_MUTE; ctx.font = '400 26px "DM Sans", Arial, sans-serif';
-  ctx.fillText('Verificalos ingresando a tu cuenta', m, fy + 92);
-  ctx.textAlign = 'right'; ctx.fillStyle = '#CDE7DB'; ctx.font = '700 28px "DM Sans", Arial, sans-serif';
-  ctx.fillText('emprendego.com.ar', W - m, fy + 74);
+  // Filete del encabezado. El sello lo pisa: se dibuja después, a propósito.
+  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(m, 214); ctx.lineTo(W - m, 214); ctx.stroke();
+
+  _tjSello(ctx, W - m, 150, _tjPeriodoBadge(p).toUpperCase());
+
+  // ---- Destinatario ----
+  ctx.fillStyle = TJ.suave;
+  ctx.font = '500 22px "IBM Plex Mono", monospace';
+  _tjSpaced(ctx, 'PROVEEDOR', m, 278, 2.5);
+
+  ctx.fillStyle = TJ.tinta;
+  ctx.font = '800 58px Sora, Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', cw), m, 344);
+
+  /* ---- La cifra ----
+     La cifra y su etiqueta van UNO AL LADO DEL OTRO, no la etiqueta arriba y
+     el número abajo a la izquierda. Con la etiqueta arriba, el número quedaba
+     solo contra el borde izquierdo con media plancha de blanco a la derecha, y
+     eso no se lee como aire: se lee como que algo no cargó. Apoyados, se leen
+     como una sola frase —"26 compradores pidieron su contacto"— que es
+     exactamente lo que el mensaje tiene que decir. */
+  const panelY = 392, panelH = 300;
+  _tjRR(ctx, m, panelY, cw, panelH, 8);
+  ctx.fillStyle = TJ.panel; ctx.fill();
+  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 2; ctx.stroke();
+
+  const px = m + 56, medio = panelY + panelH/2;
+  const cs = parseInt(p.csem, 10) || 0;
+
+  ctx.fillStyle = TJ.tinta;
+  ctx.font = '800 170px Sora, Arial, sans-serif';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText(String(cs), px, medio + 60);
+  const numW = ctx.measureText(String(cs)).width;
+
+  ctx.fillStyle = TJ.suave;
+  ctx.font = '600 24px "IBM Plex Mono", monospace';
+  const lx = px + numW + 46;
+  _tjSpaced(ctx, 'COMPRADORES',          lx, medio - 12, 2.5);
+  _tjSpaced(ctx, 'PIDIERON SU CONTACTO', lx, medio + 28, 2.5);
+
+  // ---- Renglones de respaldo ----
+  let ry = 736;
+  const paso = 72;
+  _tjFila(ctx, m, ry, cw, 'VISITAS A SU PERFIL', p.vsem || 0);          ry += paso;
+  _tjFila(ctx, m, ry, cw, 'CONSULTAS ACUMULADAS', p.consultas != null ? p.consultas : 0); ry += paso;
+  _tjFila(ctx, m, ry, cw, 'VISITAS ACUMULADAS', p.visitas != null ? p.visitas : 0);       ry += paso;
+  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(m, ry); ctx.lineTo(W - m, ry); ctx.stroke();
+
+  // ---- Pie ----
+  // De USTED, como todo lo que va de cara al proveedor.
+  const pieY = 1012;
   ctx.textAlign = 'left';
+  ctx.fillStyle = TJ.tinta;
+  ctx.font = '600 24px "IBM Plex Mono", monospace';
+  ctx.fillText('emprendego.com.ar', m, pieY);
+
+  ctx.fillStyle = TJ.suave;
+  ctx.font = '500 20px "IBM Plex Mono", monospace';
+  const pie = 'DATOS DE SU PANEL';
+  _tjSpaced(ctx, pie, W - m - _tjSpacedW(ctx, pie, 3), pieY, 3);
+
+  return cv;
+}
+
+async function generarTarjetaInforme(provJson){
+  let p; try { p = JSON.parse(provJson); } catch(e){ return; }
+  const cv = await _tjRender(p);
 
   cv.toBlob(function(blob){
     if (!blob) { showToast('No se pudo generar la tarjeta'); return; }
@@ -2782,7 +2988,7 @@ async function generarTarjetaInforme(provJson){
     a.href = url; a.download = 'Informe_' + safeName + '.png';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
-    showToast('🖼️ Tarjeta descargada — adjuntala en WhatsApp');
+    showToast('Tarjeta descargada — adjuntala en WhatsApp');
   }, 'image/png');
 }
 
