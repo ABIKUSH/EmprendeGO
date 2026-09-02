@@ -4,11 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>EmprendeGo — Admin</title>
-<!-- IBM Plex Mono es la voz de documento de la tarjeta del informe (etiquetas y
-     campos en versalitas). Va acá y no en styles.css porque solo la usa el
-     canvas de admin: si falta, la tarjeta cae a monospace del sistema y se ve
-     distinta en cada máquina. -->
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Inter se carga para la tarjeta del informe: la receta de vidrio aprobada es
+     Sora en los títulos + Inter en las bajadas, que es lo que usa la app.
+     El canvas necesita la fuente cargada de verdad o cae a Arial. -->
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL = 'https://seubtijmyoahnyspvidq.supabase.co';
@@ -2739,119 +2738,163 @@ function _tjTrunc(ctx, txt, maxW){
   return t + '…';
 }
 /* ===================================================================
-   PALETA DE LA TARJETA — "ESTADO DE CUENTA", NO DASHBOARD
+   LA TARJETA ES LA APP: VERDE DE MARCA + LIQUID GLASS
 
-   La versión anterior era fondo verde oscuro con dos glows radiales
-   difuminados (naranja arriba, verde abajo) y dos tarjetas de métrica con
-   ícono en badge degradado y flecha verde de crecimiento. Eso es, punto por
-   punto, el aspecto por defecto de cualquier pieza generada con IA hoy: si el
-   proveedor la asocia a eso, el número que dice adentro deja de ser creíble.
+   Se probó una versión "estado de cuenta" (papel claro, versalitas mono,
+   sello de remito) y el founder la bajó: no representaba a EmprendeGO. La
+   app es verde con vidrio, y una pieza que recibe el proveedor tiene que
+   verse como el producto del que habla. Queda anotado para no repetirlo.
 
-   El reemplazo no sale de un catálogo de estilos: sale del mundo del que la
-   recibe. El que abre esto es un mayorista de Once, y el papel que maneja
-   todos los días es el remito y la lista de precios — encabezado, campos
-   reglados, total, sello. Ese es el lenguaje que ese señor lee como serio.
+   Esto sigue la receta de vidrio aprobada, la misma de .acc-panel/.acc-cta
+   en css/styles.css:
 
-   El papel es verde pálido de libro contable a propósito, y NO el crema
-   #F4F1EA que usa todo el mundo: engancha con el verde de marca y no se
-   parece a la plantilla de nadie. El naranja aparece UNA sola vez, en el
-   sello. Es lo único fuerte de la pieza. =================================== */
+   1. El vidrio difumina LO QUE HAY DETRÁS. Sobre un color liso no existe.
+      Acá el fondo se fabrica: degradado verde + manchas de color muy
+      desenfocadas, y el panel difumina eso de verdad (ctx.filter blur sobre
+      una copia del fondo). No es un blanco translúcido pintado encima.
+   2. UNA sola superficie para toda la pieza, nunca un panel por sección.
+      Un recuadro con tarjetas adentro son cajas dentro de cajas y se ve
+      barato — corrección explícita del founder.
+   3. Los tres respaldos del vidrio: el canto que atrapa la luz arriba, el
+      espesor abajo, y la sombra que lo hace flotar.
+   4. UN elemento sólido para que no todo compita: la barra naranja.
+   5. Sora en los títulos, Inter en las bajadas.
+   =================================================================== */
 const TJ = {
-  papel:  '#EDF1EA',   // ground: verde pálido de libro contable
-  tinta:  '#06402B',   // verde de marca, todo el texto principal
-  suave:  '#7F9188',   // verde grisado, etiquetas y datos secundarios
-  regla:  '#C9D6CD',   // filetes de los campos
-  sello:  '#FF6B00',   // naranja de marca: SOLO el sello
-  panel:  '#FFFFFF'    // el recuadro de la cifra principal
+  verde:    '#006039',   // verde de marca
+  verdeAlt: '#0E9F6E',
+  fondoA:   '#0A5236',   // degradado del fondo, arriba
+  fondoB:   '#03291B',   // y abajo
+  naranja:  '#FF6B00',   // acento: la barra sólida y nada más
+  blanco:   '#FFFFFF',
+  tenue:    'rgba(255,255,255,.62)',   // etiquetas sobre verde
+  filete:   'rgba(255,255,255,.14)'    // separadores adentro del vidrio
 };
 
-// Texto con tracking (espaciado entre letras). Las versalitas de IBM Plex Mono
-// son la voz de documento de la pieza y sin tracking se leen apretadas.
+/* EL FONDO. Sin esto el vidrio no tiene qué refractar.
+
+   Son las mismas manchas que .acc-mancha en styles.css (verde de marca,
+   naranja, verde claro) pero como degradados radiales, que es el equivalente
+   en canvas de un círculo con filter:blur(42px). Van repartidas y de tamaños
+   distintos a propósito: si quedan dos glows simétricos, la pieza vuelve a
+   ser el fondo oscuro con manchitas que ya se descartó una vez. */
+function _tjFondo(ctx, W, H){
+  const g = ctx.createLinearGradient(0, 0, W * .35, H);
+  g.addColorStop(0, TJ.fondoA); g.addColorStop(1, TJ.fondoB);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  /* EL NARANJA VA BAJO Y EN LAS ESQUINAS, y no es un gusto: naranja fuerte
+     sobre verde no da naranja, da OLIVA. Con la mancha al .34 y grande, todo
+     el lado derecho se ponía mostaza y la pieza dejaba de leerse verde. Acá
+     entra como calorcito en los bordes, que es lo que hace el acento en la
+     app, y el campo queda verde de marca. */
+  const manchas = [
+    [-0.08, -0.05, 0.58, 'rgba(0,150,95,.55)'],
+    [ 1.06,  0.08, 0.40, 'rgba(255,107,0,.20)'],
+    [ 0.14,  0.55, 0.48, 'rgba(14,159,110,.30)'],
+    [ 1.04,  0.94, 0.44, 'rgba(255,107,0,.18)'],
+    [ 0.30,  1.06, 0.46, 'rgba(0,125,80,.42)']
+  ];
+  for (const [fx, fy, fr, color] of manchas){
+    const x = fx * W, y = fy * H, r = fr * W;
+    const rad = ctx.createRadialGradient(x, y, 0, x, y, r);
+    rad.addColorStop(0, color);
+    rad.addColorStop(1, color.replace(/[\d.]+\)$/, '0)'));
+    ctx.fillStyle = rad; ctx.fillRect(0, 0, W, H);
+  }
+}
+
+/* EL VIDRIO. Difumina de verdad: toma el fondo YA DIBUJADO, lo desenfoca y lo
+   pinta recortado a la forma del panel. Eso es lo que hace backdrop-filter, y
+   es la diferencia entre vidrio y un rectángulo blanco al 13%.
+
+   Después van los tres respaldos de la receta, que son los que le dan cuerpo:
+   el canto de luz arriba, el espesor abajo y la sombra que lo despega. */
+function _tjVidrio(ctx, fondo, x, y, w, h, r){
+  // La sombra va primero y sobre una forma opaca: si se dibujara junto con el
+  // relleno translúcido, la sombra se vería A TRAVÉS del panel.
+  ctx.save();
+  ctx.shadowColor = 'rgba(3,30,20,.55)';
+  ctx.shadowBlur = 46; ctx.shadowOffsetY = 18;
+  _tjRR(ctx, x, y, w, h, r);
+  ctx.fillStyle = 'rgba(3,30,20,.35)'; ctx.fill();
+  ctx.restore();
+
+  // El desenfoque del fondo, recortado al panel.
+  ctx.save();
+  _tjRR(ctx, x, y, w, h, r); ctx.clip();
+  ctx.filter = 'blur(26px)';
+  ctx.drawImage(fondo, 0, 0);
+  ctx.filter = 'none';
+
+  // La tintada. Sobre verde va baja: .13, como dice la receta.
+  ctx.fillStyle = 'rgba(255,255,255,.13)';
+  ctx.fillRect(x, y, w, h);
+
+  // El brillo propio. Sin esto el vidrio se ve muerto.
+  const sheen = ctx.createRadialGradient(x + w*.14, y - h*.12, 0, x + w*.14, y - h*.12, w*.95);
+  sheen.addColorStop(0, 'rgba(255,255,255,.20)');
+  sheen.addColorStop(.62, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sheen; ctx.fillRect(x, y, w, h);
+  ctx.restore();
+
+  // El canto que atrapa la luz (arriba) y el espesor (abajo).
+  ctx.save();
+  _tjRR(ctx, x, y, w, h, r); ctx.clip();
+  ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x + r, y + 1.5); ctx.lineTo(x + w - r, y + 1.5); ctx.stroke();
+  ctx.strokeStyle = 'rgba(0,40,26,.35)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(x + r, y + h - 1.5); ctx.lineTo(x + w - r, y + h - 1.5); ctx.stroke();
+  ctx.restore();
+
+  // El borde.
+  ctx.strokeStyle = 'rgba(255,255,255,.30)'; ctx.lineWidth = 2;
+  _tjRR(ctx, x, y, w, h, r); ctx.stroke();
+}
+
+// Texto con tracking (espaciado entre letras). Lo usa la etiqueta en
+// versalitas del panel: en mayúsculas y a tamaño chico, sin abrir el
+// espaciado las letras se amontonan y el bloque se lee como una mancha.
 function _tjSpaced(ctx, txt, x, y, sp){
   let cx = x;
   for (const ch of txt){ ctx.fillText(ch, cx, y); cx += ctx.measureText(ch).width + sp; }
-}
-// Ancho que va a ocupar _tjSpaced, para poder centrar o alinear a la derecha.
-function _tjSpacedW(ctx, txt, sp){
-  let w = 0;
-  for (const ch of txt) w += ctx.measureText(ch).width + sp;
-  return w - sp;
 }
 // Pre-carga las fuentes web para que el canvas no caiga a Arial
 async function _tjEnsureFonts(){
   if (!document.fonts || !document.fonts.load) return;
   try {
     await Promise.all([
-      document.fonts.load('800 200px Sora'),
-      document.fonts.load('800 58px Sora'),
+      document.fonts.load('800 190px Sora'),
+      document.fonts.load('800 56px Sora'),
       document.fonts.load('700 34px Sora'),
-      document.fonts.load('900 44px Fraunces'),
-      document.fonts.load('600 22px "IBM Plex Mono"'),
-      document.fonts.load('600 24px "IBM Plex Mono"'),
-      document.fonts.load('700 26px "IBM Plex Mono"'),
-      document.fonts.load('500 24px "IBM Plex Mono"')
+      document.fonts.load('900 42px Fraunces'),
+      document.fonts.load('600 22px Inter'),
+      document.fonts.load('500 26px Inter'),
+      document.fonts.load('500 34px Inter'),
+      document.fonts.load('600 24px Inter')
     ]);
     await document.fonts.ready;
   } catch(e){}
 }
-/* EL SELLO. Es el elemento firma de la pieza y lo único fuerte que tiene.
+/* UN RENGLÓN ADENTRO DEL VIDRIO: etiqueta a la izquierda, cifra a la derecha,
+   filete finito arriba.
 
-   Está tomado del remito: en Argentina no hay comprobante que no lleve uno.
-   Va rotado y PISANDO el filete del encabezado porque un sello real se aplica
-   sobre el documento ya impreso — si estuviera prolijamente alineado en su
-   casillero dejaría de leerse como sello y volvería a ser un badge.
-
-   Y lleva adentro el período real, o sea información, no decoración: es el
-   dato que le dice al proveedor de cuándo a cuándo son los números. */
-function _tjSello(ctx, cxRight, cy, texto){
-  ctx.save();
-  ctx.font = '700 26px "IBM Plex Mono", monospace';
-  const sp = 3;
-  const tw = _tjSpacedW(ctx, texto, sp);
-  const w = tw + 76, h = 92;
-
-  ctx.translate(cxRight - w/2, cy);
-  ctx.rotate(-4 * Math.PI / 180);
-
-  // Doble filete: el de afuera grueso, el de adentro fino. Así se imprimen los
-  // sellos de goma y es lo que lo separa de un recuadro cualquiera.
-  ctx.strokeStyle = TJ.sello;
-  ctx.lineWidth = 4;
-  _tjRR(ctx, -w/2, -h/2, w, h, 10); ctx.stroke();
-  ctx.lineWidth = 1.5;
-  _tjRR(ctx, -w/2 + 11, -h/2 + 11, w - 22, h - 22, 5); ctx.stroke();
-
-  ctx.fillStyle = TJ.sello;
-  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.font = '600 15px "IBM Plex Mono", monospace';
-  const lw = _tjSpacedW(ctx, 'PERIODO', 4);
-  _tjSpaced(ctx, 'PERIODO', -lw/2, -16, 4);
-  ctx.font = '700 26px "IBM Plex Mono", monospace';
-  _tjSpaced(ctx, texto, -tw/2, 16, sp);
-
-  ctx.restore();
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-}
-
-/* UN CAMPO REGLADO: etiqueta a la izquierda, cifra a la derecha, filete arriba.
-
-   Es la estructura de la lista de precios y del remito, y acá encima es
-   información de verdad: cada renglón es una medición distinta. No se usa como
-   adorno ni se repite para rellenar. */
+   Filete y no recuadro a propósito: meter cada dato en su cajita adentro del
+   panel serían cajas dentro de cajas, que es justo lo que la receta prohíbe. */
 function _tjFila(ctx, x, y, w, etiqueta, valor){
-  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 1.5;
+  ctx.strokeStyle = TJ.filete; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
 
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = TJ.suave;
-  ctx.font = '500 22px "IBM Plex Mono", monospace';
   ctx.textAlign = 'left';
-  _tjSpaced(ctx, etiqueta, x, y + 40, 2.5);
+  ctx.fillStyle = TJ.tenue;
+  ctx.font = '500 26px Inter, Arial, sans-serif';
+  ctx.fillText(etiqueta, x, y + 42);
 
-  ctx.fillStyle = TJ.tinta;
+  ctx.fillStyle = TJ.blanco;
   ctx.font = '700 34px Sora, Arial, sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(String(valor), x + w, y + 40);
+  ctx.fillText(String(valor), x + w, y + 42);
 
   ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
 }
@@ -2887,91 +2930,102 @@ function _tjPeriodoBadge(p){
 async function _tjRender(p){
   await _tjEnsureFonts();
 
-  const W = 1080, H = 1080, m = 84, cw = W - 2*m;
+  const W = 1080, H = 1080, m = 72;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
 
-  // ---- Papel ----
-  ctx.fillStyle = TJ.papel; ctx.fillRect(0, 0, W, H);
-  // Filete de membrete al tope, a sangre. Es lo único que "enmarca" la pieza:
-  // no hay recuadro exterior, para que se lea como hoja y no como tarjeta.
-  ctx.fillStyle = TJ.tinta; ctx.fillRect(0, 0, W, 12);
+  // ---- 1) El fondo, en su propio lienzo ----
+  // Se guarda aparte porque el vidrio necesita volver a leerlo para
+  // desenfocarlo: si solo estuviera pintado en el lienzo final, difuminarlo
+  // arrastraría también lo que ya se dibujó encima.
+  const fondo = document.createElement('canvas');
+  fondo.width = W; fondo.height = H;
+  _tjFondo(fondo.getContext('2d'), W, H);
+  ctx.drawImage(fondo, 0, 0);
 
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
 
-  // ---- Membrete ----
-  ctx.fillStyle = TJ.tinta;
-  ctx.font = '900 44px Fraunces, Georgia, serif';
-  ctx.fillText('EmprendeGO', m, 132);
+  // ---- 2) Encabezado, sobre el verde ----
+  ctx.fillStyle = TJ.blanco;
+  ctx.font = '900 42px Fraunces, Georgia, serif';
+  ctx.fillText('EmprendeGO', m, 116);
 
-  ctx.fillStyle = TJ.suave;
-  ctx.font = '600 20px "IBM Plex Mono", monospace';
-  _tjSpaced(ctx, 'INFORME DE ACTIVIDAD', m, 170, 4);
-
-  // Filete del encabezado. El sello lo pisa: se dibuja después, a propósito.
-  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(m, 214); ctx.lineTo(W - m, 214); ctx.stroke();
-
-  _tjSello(ctx, W - m, 150, _tjPeriodoBadge(p).toUpperCase());
-
-  // ---- Destinatario ----
-  ctx.fillStyle = TJ.suave;
-  ctx.font = '500 22px "IBM Plex Mono", monospace';
-  _tjSpaced(ctx, 'PROVEEDOR', m, 278, 2.5);
-
-  ctx.fillStyle = TJ.tinta;
-  ctx.font = '800 58px Sora, Arial, sans-serif';
-  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', cw), m, 344);
-
-  /* ---- La cifra ----
-     La cifra y su etiqueta van UNO AL LADO DEL OTRO, no la etiqueta arriba y
-     el número abajo a la izquierda. Con la etiqueta arriba, el número quedaba
-     solo contra el borde izquierdo con media plancha de blanco a la derecha, y
-     eso no se lee como aire: se lee como que algo no cargó. Apoyados, se leen
-     como una sola frase —"26 compradores pidieron su contacto"— que es
-     exactamente lo que el mensaje tiene que decir. */
-  const panelY = 392, panelH = 300;
-  _tjRR(ctx, m, panelY, cw, panelH, 8);
-  ctx.fillStyle = TJ.panel; ctx.fill();
-  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 2; ctx.stroke();
-
-  const px = m + 56, medio = panelY + panelH/2;
-  const cs = parseInt(p.csem, 10) || 0;
-
-  ctx.fillStyle = TJ.tinta;
-  ctx.font = '800 170px Sora, Arial, sans-serif';
-  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText(String(cs), px, medio + 60);
-  const numW = ctx.measureText(String(cs)).width;
-
-  ctx.fillStyle = TJ.suave;
-  ctx.font = '600 24px "IBM Plex Mono", monospace';
-  const lx = px + numW + 46;
-  _tjSpaced(ctx, 'COMPRADORES',          lx, medio - 12, 2.5);
-  _tjSpaced(ctx, 'PIDIERON SU CONTACTO', lx, medio + 28, 2.5);
-
-  // ---- Renglones de respaldo ----
-  let ry = 736;
-  const paso = 72;
-  _tjFila(ctx, m, ry, cw, 'VISITAS A SU PERFIL', p.vsem || 0);          ry += paso;
-  _tjFila(ctx, m, ry, cw, 'CONSULTAS ACUMULADAS', p.consultas != null ? p.consultas : 0); ry += paso;
-  _tjFila(ctx, m, ry, cw, 'VISITAS ACUMULADAS', p.visitas != null ? p.visitas : 0);       ry += paso;
-  ctx.strokeStyle = TJ.regla; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(m, ry); ctx.lineTo(W - m, ry); ctx.stroke();
-
-  // ---- Pie ----
-  // De USTED, como todo lo que va de cara al proveedor.
-  const pieY = 1012;
+  const per = _tjPeriodoBadge(p);
+  ctx.fillStyle = TJ.tenue;
+  ctx.font = '600 24px Inter, Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(per, W - m, 112);
   ctx.textAlign = 'left';
-  ctx.fillStyle = TJ.tinta;
-  ctx.font = '600 24px "IBM Plex Mono", monospace';
+
+  // ---- 3) UNA sola superficie de vidrio con todo adentro ----
+  const gx = m, gy = 168, gw = W - 2*m, gh = 762;
+  _tjVidrio(ctx, fondo, gx, gy, gw, gh, 34);
+
+  const pd = 58, ix = gx + pd, iw = gw - 2*pd;
+
+  ctx.fillStyle = TJ.tenue;
+  ctx.font = '600 22px Inter, Arial, sans-serif';
+  _tjSpaced(ctx, 'PROVEEDOR', ix, gy + 76, 2);
+
+  ctx.fillStyle = TJ.blanco;
+  ctx.font = '800 56px Sora, Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, p.nombre || 'Proveedor', iw), ix, gy + 148);
+
+  // El único elemento sólido de la pieza. Si todo es vidrio se pierde la
+  // jerarquía y vuelve el problema de que nada manda.
+  _tjRR(ctx, ix, gy + 186, 76, 8, 4);
+  ctx.fillStyle = TJ.naranja; ctx.fill();
+
+  // La cifra. Es lo único que el proveedor tiene que leer sí o sí.
+  const cs = parseInt(p.csem, 10) || 0;
+  ctx.fillStyle = TJ.blanco;
+  ctx.font = '800 190px Sora, Arial, sans-serif';
+  ctx.fillText(String(cs), ix, gy + 400);
+
+  /* "ABRIERON SU WHATSAPP" Y NO "PIDIERON SU CONTACTO".
+
+     Lo que se cuenta es el clic en "Contactar por WhatsApp" del perfil, que
+     es un <a href="wa.me/..."> y le abre al comprador el chat con este
+     proveedor. Lo que pasa DESPUÉS ocurre adentro de WhatsApp, donde no
+     vemos nada: no sabemos si escribió.
+
+     "Pidieron su contacto" se leía de dos formas —¿me escribieron o pidieron
+     mi número?— y encima la lectura optimista afirma más de lo que podemos
+     probar. Si el proveedor entiende "me escribieron 26" y en el celular
+     tiene 8 mensajes, concluye que el número es inventado, y ahí se cae
+     exactamente la credibilidad que la tarjeta viene a construir.
+
+     "Abrieron su WhatsApp" es literal, es verificable, y deja lugar a que la
+     diferencia sean los que abrieron el chat y no escribieron. */
+  ctx.fillStyle = 'rgba(255,255,255,.80)';
+  ctx.font = '500 34px Inter, Arial, sans-serif';
+  ctx.fillText(_tjTrunc(ctx, 'compradores abrieron su WhatsApp', iw), ix, gy + 456);
+
+  // ---- 4) Renglones de respaldo, adentro del mismo vidrio ----
+  let ry = gy + 522;
+  const paso = 70;
+  _tjFila(ctx, ix, ry, iw, 'Visitas a su perfil', p.vsem || 0);                            ry += paso;
+  _tjFila(ctx, ix, ry, iw, 'Consultas acumuladas', p.consultas != null ? p.consultas : 0); ry += paso;
+  _tjFila(ctx, ix, ry, iw, 'Visitas acumuladas', p.visitas != null ? p.visitas : 0);       ry += paso;
+  // Filete de cierre: sin él, el espacio que queda hasta el borde del vidrio
+  // se lee como que faltó algo en vez de como margen.
+  ctx.strokeStyle = TJ.filete; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(ix, ry); ctx.lineTo(ix + iw, ry); ctx.stroke();
+
+  // ---- 5) Pie, sobre el verde ----
+  // De USTED, como todo lo que va de cara al proveedor.
+  const pieY = 1022;
+  ctx.fillStyle = TJ.blanco;
+  ctx.font = '600 24px Inter, Arial, sans-serif';
+  ctx.textAlign = 'left';
   ctx.fillText('emprendego.com.ar', m, pieY);
 
-  ctx.fillStyle = TJ.suave;
-  ctx.font = '500 20px "IBM Plex Mono", monospace';
-  const pie = 'DATOS DE SU PANEL';
-  _tjSpaced(ctx, pie, W - m - _tjSpacedW(ctx, pie, 3), pieY, 3);
+  ctx.fillStyle = TJ.tenue;
+  ctx.font = '500 22px Inter, Arial, sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText('Datos de su panel', W - m, pieY);
+  ctx.textAlign = 'left';
 
   return cv;
 }
