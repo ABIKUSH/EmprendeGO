@@ -1776,6 +1776,15 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006039" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>Contactar soporte por WhatsApp
         </a>
       </div>
+      <!-- Baja del resumen semanal por WhatsApp. Lo pinta
+           renderBajaInforme() desde app.js y queda vacío si la columna
+           notif_informe todavía no existe (migración sin correr).
+
+           Vive acá, en el panel, porque la plantilla aprobada en Meta cierra
+           con "puede desactivarlo desde su panel": si esto se mueve o se
+           saca, esa promesa queda en falso y Meta exige una vía de baja. -->
+      <div id="dash-baja-informe"></div>
+
       <div style="text-align:center;margin-top:10px">
         <span onclick="goTo('terminos')" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">Términos y Condiciones</span>
         <span style="font-size:.75rem;color:#CCC;margin:0 6px">·</span>
@@ -2428,7 +2437,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div class="screen" id="screen-cotizaciones"></div>
 
 <script src="js/buscador.js?v=20260810-rescate"></script>
-<script src="js/app.js?v=20260901-cargar"></script>
+<script src="js/app.js?v=20260901-informe"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
 <script src="js/cotizaciones.js?v=20260828-maildeeplink"></script>
 <script>

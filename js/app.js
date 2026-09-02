@@ -952,6 +952,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (++intentosCotiz < 10) setTimeout(abrirCotiz, 300);
     };
     setTimeout(abrirCotiz, 600);
+  } else if (irParam === 'perfil') {
+    // Deep-link al panel del proveedor. Lo usa el resumen semanal por WhatsApp
+    // para el proveedor que YA tiene catalogo cargado (el que no lo tiene va a
+    // ?ir=cargar). Es tambien donde vive el interruptor para darse de baja del
+    // resumen, que es lo que promete la ultima linea de la plantilla de Meta.
+    history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => { try { goTo('perfil'); } catch (e) { } }, 600);
   } else if (irParam === 'cargar') {
     // Deep-link a "cargar producto". Lo usa el aviso que se le manda al
     // proveedor con catalogo vacio: al 01-09-2026 hay 121 perfiles sin un solo
@@ -3405,6 +3412,7 @@ function updatePerfilUI() {
     renderBannerProDashboard();
     renderTiendaNubeSection();
     renderMercadoLibreSection();
+    renderBajaInforme();
     const badge = document.getElementById('dash-pro-badge-el');
     if (badge && currentUser.provData) {
       const pd2 = currentUser.provData;
@@ -7500,6 +7508,72 @@ async function iniciarPagoPro(btnEl) {
 
 
 // ===== TIENDA NUBE =====
+/* ===== LA BAJA DEL RESUMEN SEMANAL (proveedores.notif_informe) =====
+
+   Meta exige una vía de baja para los mensajes de plantilla, y la plantilla
+   del resumen cierra prometiendo que se desactiva "desde su panel". Esto es
+   ese interruptor: si se saca, la promesa queda en falso.
+
+   Va en su propia consulta y no pegada a la del dashboard a propósito. Si se
+   pidiera junto con las demás columnas y notif_informe todavía no existiera
+   (migración sin correr), PostgREST rechaza el SELECT entero y se caería el
+   panel completo por una columna opcional. Acá lo peor que pasa es que el
+   interruptor no aparezca.
+
+   Es deliberadamente discreto —un link, sin tarjeta ni color— por el mismo
+   criterio que bloqueBajaWa() en cotizaciones.js: tiene que estar y ser fácil
+   de encontrar, no invitar a apagarlo. */
+async function renderBajaInforme() {
+  const cont = document.getElementById('dash-baja-informe');
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  const provId = currentUser?.proveedorId || currentUser?.provData?.id;
+  if (!provId) return;
+
+  try {
+    const { data, error } = await sb.from('proveedores')
+      .select('notif_informe').eq('id', provId).maybeSingle();
+    if (error) throw error;
+
+    // Sin fila o sin valor se asume que SÍ lo recibe: es el default de la base.
+    const activo = !(data && data.notif_informe === false);
+    cont.dataset.activo = activo ? '1' : '0';
+    cont.innerHTML = `<div style="text-align:center;margin-top:14px">
+      <span onclick="toggleBajaInforme(this)" style="font-size:.75rem;color:#999;text-decoration:underline;cursor:pointer">${activo
+        ? 'No recibir el resumen semanal por WhatsApp'
+        : 'Volver a recibir el resumen semanal por WhatsApp'}</span>
+    </div>`;
+  } catch (e) {
+    // 42703 (columna inexistente) o 403 (falta el GRANT por columna). En los
+    // dos casos: esconder el interruptor, no romper el panel.
+    console.warn('[informe] notif_informe: falta correr sql/2026-09-01_informe_semanal_wa.sql', e);
+  }
+}
+
+async function toggleBajaInforme(el) {
+  const provId = currentUser?.proveedorId || currentUser?.provData?.id;
+  const cont = document.getElementById('dash-baja-informe');
+  if (!provId || !cont) return;
+
+  const valor = cont.dataset.activo !== '1';   // si estaba activo, se apaga
+  if (el) { el.style.opacity = '.5'; el.style.pointerEvents = 'none'; }
+
+  try {
+    const { error } = await sb.from('proveedores')
+      .update({ notif_informe: valor }).eq('id', provId);
+    if (error) throw error;
+    showToast(valor
+      ? 'Listo: le mandamos su resumen todos los lunes'
+      : 'Listo: no le vamos a mandar más el resumen semanal');
+    renderBajaInforme();
+  } catch (e) {
+    console.warn('[informe] no se pudo guardar la baja', e);
+    if (el) { el.style.opacity = '1'; el.style.pointerEvents = 'auto'; }
+    showToast('No se pudo guardar. Intentá de nuevo.');
+  }
+}
+
 async function renderTiendaNubeSection() {
   const btnArea = document.getElementById('tn-btn-area');
   const statusLabel = document.getElementById('tn-status-label');

@@ -116,7 +116,7 @@ Hipótesis única que se está midiendo: *¿el proveedor cotiza más rápido si 
 | Llegada del link | `js/cotizaciones.js` → `irAlPedido()`; `window.abrirCotizaciones(pedidoId)` acepta un id |
 | Baja del proveedor | `proveedores.notif_wa` + `cotizBajaWa()`; se pinta en el feed y en la pantalla de rubros |
 | Migración | `sql/2026-08-24_aviso_wa_pedidos.sql` |
-| Pruebas | `node test/aviso-wa.test.js` (49 comprobaciones, sin red ni base) |
+| Pruebas | `node test/aviso-wa.test.js` (55 comprobaciones, sin red ni base) |
 | Tablero | `admin.html` → **Embudo de avisos**, alimentado por `admin_wa_embudo()` (`sql/2026-08-27_tablero_avisos_wa.sql`) |
 
 ⚠️ **`avisos_wa` NO se lee nunca desde el navegador.** Tiene teléfonos adentro y va con RLS sin policies ni grants. El panel entra por `admin_wa_embudo()`, que es SECURITY DEFINER detrás de `admin_cotiz_guard()` y devuelve **solo agregados**: ni un teléfono, ni un `wa_message_id`, ni un id de fila. Si hace falta un dato nuevo en el tablero, se agrega adentro de esa función — no se abre la tabla.
@@ -171,6 +171,37 @@ El 2026-09-01 Meta rechazó 18 avisos con **`Business eligibility payment issue`
 
 Los que ya recibieron el aviso se saltean solos contra el índice único, y los que fallaron nunca llegaron a escribir `last_wa_at`, así que el orden de `elegirDestinatarios()` los pone **primeros** en el reenvío sin necesidad de tocar nada.
 
+### Resumen semanal al proveedor (2026-09-01)
+
+Todos los lunes, a cada proveedor con movimiento: **cuántos compradores le pidieron el contacto esa semana**. Nada más — no vende Pro, no pide nada.
+
+**Por qué existe, medido el 2026-09-01 sobre la base real:** en 30 días se entregaron **2.680 contactos a 152 proveedores** y hubo **1.380 intentos de ver un catálogo** en 132 perfiles. De los 157 aprobados, **4 pagan**. "Todo Tienda" recibió 140 contactos ese mes, está en plan gratis, tiene el catálogo vacío y no tiene forma de enterarse. Y por el otro lado: **13 proveedores tuvieron Pro alguna vez y quedan 4 vigentes** — los 9 que se fueron pagaron, nunca vieron un número y no renovaron. El producto ya entrega valor; lo entrega invisible. Esto es el recibo.
+
+| Pieza | Dónde |
+|---|---|
+| Envío | `api/notificar-mensaje.js` → `?action=wa_informe` (rama nueva; sigue sin entrar otro archivo en `api/`) |
+| Disparo | `api/recordatorio-planes.js` → `dispararInformeSemanal()`, los lunes |
+| Baja del proveedor | `proveedores.notif_informe` + `renderBajaInforme()`/`toggleBajaInforme()` en `js/app.js`, pintado en `#dash-baja-informe` del panel |
+| Deep-link | `?ir=perfil` (con catálogo) y `?ir=cargar` (sin catálogo) |
+| Migración | `sql/2026-09-01_informe_semanal_wa.sql` (aplicada el 2026-09-01) |
+| Pruebas | `node test/informe-wa.test.js` (25 comprobaciones, sin red ni base) |
+
+⚠️ **EL INTERRUPTOR ES `WHATSAPP_TEMPLATE_INFORME`, Y NO TIENE VALOR POR DEFECTO.** Sin esa variable devuelve `{skipped:'sin_plantilla'}` y no manda nada. Ojo con el motivo: el aviso de *pedidos* ya está prendido, o sea que `WHATSAPP_TOKEN`/`WHATSAPP_PHONE_ID` existen y el corte `wa_apagado` **no** frena esta rama. Si hubiera un nombre por defecto, el primer lunes después del deploy el cron saldría a mandar contra una plantilla que Meta no aprobó: los ~54 envíos fallarían, quedarían escritos en `informes_wa`, y el índice único `(proveedor_id, semana)` impide reintentarlos — se pierde el primer lunes entero. La variable se define en Vercel **el día que Meta apruebe la plantilla**, con el nombre exacto aprobado.
+
+⚠️ **La plantilla todavía no está aprobada (al 2026-09-02).** Meta rechazó la primera versión pidiendo categoría *marketing*; el texto exacto que se reenvió como *utility* está en el comentario de `INF_TEMPLATE`, que es la única copia fuera de Meta. `WHATSAPP_TEST_TO` sigue desviando todo a un número.
+
+⚠️ **NUNCA mandar un número flojo.** `INF_MINIMO_CONTACTOS = 3`: el que no llega no recibe nada. Un "esta semana lo contactaron 0 personas" es un mensaje **pago** que argumenta en contra de EmprendeGO. Por el mismo motivo el mensaje **no compara contra la semana anterior**: la mitad de las semanas el número baja. Con el piso en 3, al 2026-09-01 entran **54 de los 157 aprobados**.
+
+⚠️ **`notif_wa === false` apaga también el resumen**, aunque `notif_informe` siga en `true`. El que apagó los avisos de pedidos dijo "no me mandes WhatsApp", no "no me mandes esa categoría".
+
+⚠️ **La paginación de `contarPorProveedor()` no es opcional.** PostgREST corta en 1000 filas y no avisa (ver `project_supabase_1000_filas`): hoy van ~620 consultas semanales y subiendo, y sin paginar una parte de los proveedores empezaría a recibir números más chicos que los reales, en silencio.
+
+⚠️ **No se agregó un tercer cron.** `vercel.json` ya tiene dos y el plan Hobby limita la cantidad sin que la doc pública diga cuál es el tope (mismo caso que el límite de 12 funciones). El resumen se cuelga del cron diario de `recordatorio-planes`, que chequea si es lunes en hora argentina. Si algún día hay más cupo, la entrada de `vercel.json` está escrita en el comentario de `dispararInformeSemanal()`.
+
+⚠️ **`informes_wa` no se lee nunca desde el navegador** (tiene teléfonos): RLS activada, cero policies, cero grants. El anti-duplicado es el índice único `(proveedor_id, semana)` y **la fila se RESERVA antes de mandar**, igual que `avisos_wa` y `email_logs`.
+
+⚠️ **`enviarInforme()` NO toca `proveedores.last_wa_at`.** Esa columna ordena el reparto del aviso de *pedidos*; si el resumen la pisara, todos quedarían con la misma fecha cada lunes y el reparto se volvería arbitrario.
+
 ### PWA
 
 `manifest.json` + `sw.js` (service worker). The SW currently just clears caches on activate.
@@ -184,7 +215,7 @@ Los que ya recibieron el aviso se saltean solos contra el índice único, y los 
 - TN / ML full catalog import: `renderTiendaNubeSection()` / `renderMercadoLibreSection()` paint the dashboard tile in 3 states (not-Pro → gray locked, Pro+disconnected → brand color "Connect", Pro+connected → "Sync"). After sync the category-mapping modal opens if new categories arrived.
 - Pro gate: `esProvPro()` reads `currentUser.provData.plan === 'pro'` and checks `plan_hasta` expiry. The backend re-validates Plan Pro before any sync — never trust the UI gate alone.
 - Approval flow: admin sets `estado='aprobado'` on `proveedores` row
-- Deep-links por query string: `?pago=`, `?tn=`, `?ml=`, `?p=` (producto), `?prov=` (proveedor), `?ir=planes`, `?ir=cotizaciones`, **`?ir=cotizaciones&pedido=<uuid>`** (aviso de pedido por WhatsApp) y `?ir=cargar` (deja al proveedor parado en la carga de producto). Si agregás uno nuevo, fijate que no choque con estos.
+- Deep-links por query string: `?pago=`, `?tn=`, `?ml=`, `?p=` (producto), `?prov=` (proveedor), `?ir=planes`, `?ir=cotizaciones`, **`?ir=cotizaciones&pedido=<uuid>`** (aviso de pedido por WhatsApp), `?ir=cargar` y `?ir=perfil` (los dos destinos del resumen semanal). Si agregás uno nuevo, fijate que no choque con estos.
 
 ⚠️ **Los parámetros se leen UNA sola vez, en la constante `params` del tope del handler de `DOMContentLoaded`. Nunca leas `window.location.search` más abajo de esa línea: viene vacío.** La primera sentencia del handler es `history.pushState(null, '', window.location.pathname)` (arreglo del botón atrás de Android, `f8015f2`), y `pathname` es la ruta **sin** query string, así que ese pushState borra los parámetros de la URL. Estuvo roto en silencio del 2026-05-12 al 2026-08-25 y dejó mudos los avisos de TN/ML/MP y el deep-link del mail de anuncio; los síntomas son carteles que no aparecen, no errores, por eso nadie lo notó. `?p=` y `?prov=` se salvaron porque se leen fuera del handler.
 

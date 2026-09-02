@@ -13,6 +13,11 @@ export default async function handler(req, res) {
      configurado. Entra por el rewrite /api/wa-webhook de vercel.json. */
   if (req.query?.action === 'wa_webhook') return handlerWaWebhook(req, res);
 
+  /* El resumen semanal tambien va ANTES del chequeo de metodo: lo dispara el
+     cron de Vercel, que invoca por GET. La autorizacion la hace el propio
+     handler (CRON_SECRET o sesion de admin), no este if. */
+  if (req.query?.action === 'wa_informe') return handlerWaInforme(req, res);
+
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   // Rama de anuncios manuales del panel de admin (?action=anuncio).
@@ -1378,6 +1383,486 @@ async function cerrarAviso(headers, id, campos) {
     });
   } catch (e) {
     console.error('[wa-pedido] no se pudo cerrar el aviso:', e.message);
+  }
+}
+
+
+/* =====================================================================
+   RESUMEN SEMANAL AL PROVEEDOR  (?action=wa_informe)
+   =====================================================================
+
+   Todos los lunes, a cada proveedor que tuvo movimiento: cuantos compradores
+   le pidieron el contacto esa semana. Nada mas. No vende Pro, no pide nada.
+
+   ---------------------------------------------------------------------
+   POR QUE EXISTE
+   ---------------------------------------------------------------------
+   Medido el 2026-09-01 sobre la base real, no estimado: en 30 dias se
+   entregaron 2.680 contactos de compradores a 152 proveedores. De los 157
+   aprobados, 4 pagan. "Todo Tienda" recibio 140 contactos ese mes, esta en
+   plan gratis, tiene el catalogo vacio y no tiene forma de enterarse.
+
+   Y el churn dice lo mismo desde el otro lado: 13 proveedores tuvieron Pro
+   alguna vez y quedan 4 vigentes. Los 9 que se fueron pagaron, nunca vieron
+   un numero, y no renovaron.
+
+   O sea: el producto ya entrega valor y lo entrega INVISIBLE. Esto no es una
+   funcion de marketing, es el recibo de algo que ya paso.
+
+   ---------------------------------------------------------------------
+   ARRANCA APAGADO, IGUAL QUE EL AVISO DE PEDIDOS
+   ---------------------------------------------------------------------
+   Sin WHATSAPP_TOKEN y WHATSAPP_PHONE_ID no manda nada y devuelve
+   {skipped:'wa_apagado'}. Y WHATSAPP_TEST_TO desvia TODO a un solo numero.
+   Ademas hace falta que Meta apruebe la plantilla nueva (el texto exacto esta
+   abajo, en INF_TEMPLATE). Hasta entonces esto se puede desplegar sin riesgo.
+
+   ---------------------------------------------------------------------
+   LA REGLA QUE MAS IMPORTA: NUNCA MANDAR UN NUMERO FLOJO
+   ---------------------------------------------------------------------
+   Un resumen que dice "esta semana lo contactaron 0 personas" es un mensaje
+   que argumenta EN CONTRA de EmprendeGO, y encima gastando un mensaje pago.
+   Por eso hay un piso (INF_MINIMO_CONTACTOS) y el que no lo pasa no recibe
+   nada. El silencio no miente; un cero desanima.
+
+   Es tambien la razon por la que el mensaje NO compara contra la semana
+   anterior: la mitad de las semanas el numero baja, y no hace falta pagarle
+   a Meta para darle una mala noticia a un proveedor.
+
+   ---------------------------------------------------------------------
+   FASES FUTURAS (marcadas donde engancharian, sin implementar)
+   ---------------------------------------------------------------------
+   - Muro medido: cuando exista, la linea de accion de textoInforme() es donde
+     entra "se quedo sin contactos gratis este mes".
+   - Detalle de que buscaban: hoy consultas no guarda el termino de busqueda,
+     asi que no se puede decir sin inventarlo.
+   ===================================================================== */
+
+/* Piso de contactos para que el resumen salga. Ver la regla de arriba.
+
+   En 3 y no en 1 a proposito: con 1 el mensaje dice "lo contacto una persona",
+   que leido un lunes a la mañana suena a que la plataforma no funciona. Con el
+   piso en 3, medido sobre la semana del 2026-09-01, entran ~58 proveedores de
+   los 157 aprobados. Los otros 99 no reciben nada, que es exactamente lo
+   correcto: no tenemos buenas noticias para ellos todavia. */
+const INF_MINIMO_CONTACTOS = 3;
+
+/* Tope de resumenes por corrida. Con ~58 destinatarios reales no se toca;
+   esta para que un error de calculo no termine en 900 mensajes. Mismo criterio
+   que WA_TOPE_DIARIO del aviso de pedidos. */
+const INF_TOPE_TANDA = 150;
+
+/* Nombre de la plantilla del resumen. Es OTRA plantilla, distinta de
+   pedido_nuevo_rubro: Meta aprueba texto por texto.
+
+   EL TEXTO A DAR DE ALTA EN META (categoria "utility", es_AR). Vive aca
+   porque el cuerpo lo guarda Meta y no este repo:
+
+     Hola, {{1}}. Este es su resumen semanal de EmprendeGO.
+
+     Esta semana {{2}} compradores pidieron su contacto.
+     {{3}}
+
+     {{4}}
+     https://emprendego.com.ar/?ir={{5}}
+
+     Si no quiere recibir este resumen, puede desactivarlo desde su panel.
+
+   ESTE ES EL TEXTO QUE SE MANDO A REVISION A META el 2026-09-01. Si se toca
+   una coma aca sin volver a darla de alta alla, no pasa nada malo (el cuerpo
+   lo guarda Meta); pero se pierde la unica copia fiel de lo aprobado.
+
+   La segunda linea dice "Esta semana {{2}} compradores pidieron su contacto"
+   y NO "Compradores que pidieron su contacto: {{2}}". Es la misma informacion
+   y sigue siendo igual de factual —o sea, sigue entrando en "utility"— pero
+   la version con dos puntos se lee como un renglon de planilla y esta se lee
+   como alguien contandole algo. El numero es lo unico que importa del mensaje
+   entero: no puede ir escrito como un dato administrativo.
+
+   Las mismas tres reglas que la otra plantilla, por los mismos motivos:
+   1. NADA de signos de exclamacion ni de tono promocional. Si Meta lo
+      reclasifica de "utility" a "marketing", en Argentina el mensaje pasa de
+      USD 0,012 a USD 0,0618: cinco veces mas caro, cada semana, para siempre.
+   2. NO termina en variable: la ultima linea es fija.
+   3. El dominio va escrito fijo y solo viaja el destino como {{5}}.
+
+   La ultima linea dice "desde su panel" y NO "en la misma pantalla" (que es lo
+   que dice la de pedidos) porque {{5}} manda a dos lugares distintos segun el
+   proveedor. El interruptor esta en el panel, que se ve desde los dos.
+
+   ---------------------------------------------------------------------
+   SIN VALOR POR DEFECTO, Y ESO ES EL INTERRUPTOR DE ENCENDIDO
+   ---------------------------------------------------------------------
+   Ojo: el aviso de PEDIDOS ya esta prendido, o sea que WHATSAPP_TOKEN y
+   WHATSAPP_PHONE_ID existen. El corte {skipped:'wa_apagado'} NO frena a esta
+   rama, asi que si esto tuviera un nombre por defecto, el primer lunes
+   despues del deploy el cron saldria a mandar con una plantilla que Meta
+   todavia no aprobo. Los 54 envios fallarian, quedarian escritos en
+   informes_wa, y el indice unico (proveedor_id, semana) impide reintentarlos:
+   se perderia el primer lunes entero, que es el que mas importa.
+
+   Por eso la variable no tiene default. Se define en Vercel el dia que Meta
+   apruebe la plantilla, con el nombre exacto que quedo aprobado, y ese es el
+   momento correcto para que esto empiece a andar. */
+const INF_TEMPLATE = (process.env.WHATSAPP_TEMPLATE_INFORME || '').trim();
+
+
+/* El lunes de la semana en curso, en hora argentina, como 'YYYY-MM-DD'.
+
+   Es la mitad del anti-duplicado: dos corridas del mismo lunes calculan el
+   mismo valor y la segunda choca contra informes_wa_unico. Argentina no aplica
+   horario de verano, asi que siempre es UTC-3 (mismo criterio que
+   inicioDelDiaAR). */
+export function lunesDeLaSemanaAR(ahora = new Date()) {
+  const ar = new Date(ahora.getTime() - 3 * 3600 * 1000);
+  // getUTCDay sobre la fecha ya corrida a AR: 0 domingo, 1 lunes...
+  const atras = (ar.getUTCDay() + 6) % 7;   // lunes -> 0, domingo -> 6
+  const lunes = new Date(Date.UTC(ar.getUTCFullYear(), ar.getUTCMonth(), ar.getUTCDate() - atras));
+  return lunes.toISOString().slice(0, 10);
+}
+
+
+/* Cuenta filas por proveedor_id, paginando de a 1000.
+
+   LA PAGINACION NO ES OPCIONAL: PostgREST corta en 1000 filas y NO avisa —
+   devuelve 200 con menos datos. Sin esto, el dia que las consultas semanales
+   pasen de 1000 (hoy van ~620 y subiendo) una parte de los proveedores
+   empezaria a recibir numeros mas chicos que los reales, en silencio.
+
+   Devuelve un Map(proveedor_id -> cantidad), o null si la tabla no se pudo
+   leer (que el que llama trata como "no mandar nada", nunca como cero). */
+async function contarPorProveedor(headers, tabla, desdeISO, filtroExtra = '') {
+  const PASO = 1000;
+  const cuenta = new Map();
+  let desde = 0;
+
+  for (;;) {
+    // order=id.asc: sin un orden estable la paginacion puede repetir o saltear
+    // filas entre paginas.
+    const url = `${SUPABASE_BASE}/rest/v1/${tabla}?select=proveedor_id&order=id.asc` +
+      (desdeISO ? `&created_at=gte.${encodeURIComponent(desdeISO)}` : '') +
+      filtroExtra;
+
+    const r = await fetch(url, { headers: { ...headers, Range: `${desde}-${desde + PASO - 1}` } });
+    if (!r.ok) {
+      console.error(`[wa-informe] no se pudo leer ${tabla}:`, r.status, await r.text());
+      return null;
+    }
+
+    const filas = (await r.json()) || [];
+    for (const f of filas) {
+      if (f && f.proveedor_id) cuenta.set(f.proveedor_id, (cuenta.get(f.proveedor_id) || 0) + 1);
+    }
+
+    if (filas.length < PASO) return cuenta;
+    desde += PASO;
+    // Freno duro: 50 paginas son 50.000 filas. Si se llega aca hay un bug, y
+    // es mejor un numero incompleto que una funcion que no termina nunca.
+    if (desde >= 50000) {
+      console.warn(`[wa-informe] ${tabla}: corte de seguridad a las 50.000 filas`);
+      return cuenta;
+    }
+  }
+}
+
+
+/* A QUIEN SE LE MANDA.
+
+   Es un filtro simple a proposito: el resumen no compite por un lugar (como si
+   pasa con el aviso de pedidos, donde entran 8 de 35), asi que no hay reparto
+   ni ranking. Recibe el que tiene algo bueno para leer. */
+export function elegirParaInforme(proveedores, contactos, yaEnviados) {
+  const cuenta = contactos instanceof Map ? contactos : new Map();
+  const hechos = yaEnviados instanceof Set ? yaEnviados : new Set();
+
+  return (proveedores || []).filter(p => {
+    if (!p) return false;
+
+    /* notif_wa es el interruptor del aviso de PEDIDOS, pero apagarlo tambien
+       apaga esto. Motivo: el proveedor que lo apago dijo "no me mandes
+       WhatsApp", no "no me mandes esta categoria de WhatsApp". Respetar la
+       version literal seria abusar de una distincion que el nunca hizo. */
+    if (p.notif_wa === false) return false;
+    if (p.notif_informe === false) return false;           // se dio de baja del resumen
+
+    if (!normalizarWa(p.whatsapp)) return false;           // sin numero usable
+    if (hechos.has(p.id)) return false;                    // ya recibio el de esta semana
+    return (cuenta.get(p.id) || 0) >= INF_MINIMO_CONTACTOS;
+  }).sort((a, b) => {
+    // El numero mas grande primero. Solo importa si la tanda se corta por
+    // INF_TOPE_TANDA: en ese caso salen los resumenes que mas convencen.
+    const d = (cuenta.get(b.id) || 0) - (cuenta.get(a.id) || 0);
+    if (d !== 0) return d;
+    return String(a.id).localeCompare(String(b.id));   // desempate estable
+  }).slice(0, INF_TOPE_TANDA);
+}
+
+
+/* LAS DOS LINEAS VARIABLES DEL MENSAJE.
+
+   Ninguna de las dos puede quedar vacia ni en cero: un parametro vacio hace
+   fallar el envio entero, y un cero es justamente la mala noticia que este
+   mensaje no tiene que dar.
+
+   - Segunda linea: si hubo intentos de ver el catalogo, se cuentan. Si no, se
+     le dice en que busquedas aparece, que es verdad siempre y ademas le
+     recuerda para que esta.
+
+   - Linea de accion: al 2026-09-01 hay 121 perfiles aprobados SIN un solo
+     producto que igual reciben contactos. Para esos la accion util no es
+     "mire su panel" sino "cargue el catalogo", y el link los deja parados en
+     la pantalla de carga (?ir=cargar, deep-link que ya existe).
+
+     FASE FUTURA: cuando exista el muro medido, la linea de accion del que se
+     paso del cupo se reemplaza aca. */
+export function textoInforme(p, nContactos, nCatalogo, tieneProductos) {
+  const linea2 = nCatalogo > 0
+    ? (nCatalogo === 1
+      ? 'Ademas, una persona quiso ver su catalogo.'
+      : `Ademas, ${nCatalogo} personas quisieron ver su catalogo.`)
+    : `Su perfil aparece en las busquedas de: ${limpiarParam((p && p.rubro) || 'su rubro', 70)}`;
+
+  const accion = tieneProductos
+    ? 'Puede ver el detalle en su panel:'
+    : 'Cargue sus productos para que lo encuentren por lo que vende:';
+
+  return {
+    linea2,
+    accion,
+    destino: tieneProductos ? 'perfil' : 'cargar',
+    contactos: String(nContactos)
+  };
+}
+
+
+async function handlerWaInforme(req, res) {
+  /* AUTORIZACION. Dos puertas, igual que recordatorio-planes:
+       - el cron de Vercel, que manda Authorization: Bearer <CRON_SECRET>
+       - una sesion de admin de verdad, para dispararlo a mano
+     Sin ninguna de las dos no pasa nada: esto manda mensajes pagos a ~60
+     numeros de una, no puede quedar abierto. */
+  const adminSecret = process.env.ADMIN_SECRET;
+  const esCron = req.headers.authorization === `Bearer ${process.env.CRON_SECRET || adminSecret}`;
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !SUPABASE_BASE) {
+    console.error('[wa-informe] falta SUPABASE_SERVICE_ROLE_KEY o SUPABASE_URL');
+    return res.status(500).json({ error: 'server config error' });
+  }
+
+  let admin = null;
+  if (!esCron) {
+    admin = await verificarAdmin(req, serviceKey);
+    if (!admin) return res.status(401).json({ error: 'no autorizado' });
+  }
+
+  const saltear = (motivo, extra) => res.status(200).json({ ok: true, skipped: motivo, ...extra });
+
+  const token = (process.env.WHATSAPP_TOKEN || '').trim();
+  const phoneId = (process.env.WHATSAPP_PHONE_ID || '').trim();
+  if (!token || !phoneId) return saltear('wa_apagado');
+
+  /* El encendido de ESTA rama. Ver el comentario de INF_TEMPLATE: como el
+     aviso de pedidos ya esta prendido, wa_apagado no alcanza para frenar el
+     resumen, y mandar contra una plantilla que Meta no aprobo quema el lunes
+     entero por el indice unico. Se prende definiendo la variable. */
+  if (!INF_TEMPLATE) return saltear('sin_plantilla');
+
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  const semana = lunesDeLaSemanaAR();
+  const desde7d = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+
+  /* seco=1 calcula todo y NO manda nada. Es la unica forma de ver a quien le
+     tocaria y con que numeros antes de gastar un mensaje. Solo para admin: al
+     cron no le sirve y no tiene por que poder pedirlo. */
+  const seco = !!admin && String(req.query?.seco || '') === '1';
+
+  try {
+    // --- 1) Los numeros de la semana ---
+    const contactos = await contarPorProveedor(headers, 'consultas', desde7d);
+    if (!contactos) return saltear('sin_datos');
+
+    // Si intentos_catalogo falla, el resumen sale igual con la segunda linea
+    // alternativa. Es un dato de color; los contactos son el mensaje.
+    const catalogo = (await contarPorProveedor(headers, 'intentos_catalogo', desde7d)) || new Map();
+
+    // Quien tiene catalogo cargado. Define la linea de accion y a donde apunta
+    // el link. visible=not.is.false deja afuera lo que el sync de ML apago: un
+    // catalogo entero pausado es, a estos efectos, un perfil vacio.
+    const productos = (await contarPorProveedor(headers, 'productos', null, '&visible=not.is.false')) || new Map();
+
+    // --- 2) Quienes ya lo recibieron esta semana ---
+    // El indice unico es la garantia real; esto evita gastar los intentos.
+    const yaRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/informes_wa?semana=eq.${semana}&select=proveedor_id&limit=1000`,
+      { headers });
+    if (!yaRes.ok) {
+      // La tabla no existe -> falta correr la migracion. Mismo criterio que el
+      // aviso de pedidos: sin bitacora no se manda, porque la bitacora ES el
+      // anti-duplicado y sin ella un reintento manda todo dos veces.
+      console.warn('[wa-informe] falta correr sql/2026-09-01_informe_semanal_wa.sql');
+      return saltear('sin_bitacora');
+    }
+    const yaEnviados = new Set(((await yaRes.json()) || []).map(f => f.proveedor_id));
+
+    // --- 3) Los destinatarios ---
+    const provRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/proveedores?estado=eq.aprobado` +
+      `&select=id,nombre,rubro,whatsapp,notif_wa,notif_informe&limit=1000`,
+      { headers });
+    if (!provRes.ok) {
+      // Pasa si notif_informe todavia no existe: PostgREST rechaza el select
+      // entero. Misma conclusion que arriba.
+      console.warn('[wa-informe] no se pudo leer proveedores:', provRes.status, await provRes.text());
+      return saltear('sin_bitacora');
+    }
+
+    const destinatarios = elegirParaInforme(await provRes.json(), contactos, yaEnviados);
+    if (!destinatarios.length) return saltear('sin_destinatarios', { semana });
+
+    if (seco) {
+      return res.status(200).json({
+        ok: true, seco: true, semana, candidatos: destinatarios.length,
+        detalle: destinatarios.slice(0, 40).map(p => ({
+          nombre: p.nombre,
+          contactos: contactos.get(p.id) || 0,
+          catalogo: catalogo.get(p.id) || 0,
+          productos: productos.get(p.id) || 0
+        }))
+      });
+    }
+
+    // --- 4) El envio ---
+    const forzarA = numeroDePrueba(process.env.WHATSAPP_TEST_TO);
+    let enviados = 0;
+    const fallos = [];
+
+    // De a 5, igual que el aviso de pedidos: 150 secuenciales no entran en el
+    // limite de tiempo de la funcion y 150 en paralelo es una rafaga que Meta
+    // puede leer como abuso.
+    for (let i = 0; i < destinatarios.length; i += 5) {
+      const tanda = destinatarios.slice(i, i + 5);
+      const rtas = await Promise.all(tanda.map(p => enviarInforme(p, {
+        headers, token, phoneId, forzarA, semana,
+        nContactos: contactos.get(p.id) || 0,
+        nCatalogo: catalogo.get(p.id) || 0,
+        tieneProductos: (productos.get(p.id) || 0) > 0
+      })));
+      rtas.forEach(r => {
+        if (r.ok) enviados++;
+        else if (r.motivo !== 'duplicado') fallos.push(r.motivo);
+      });
+    }
+
+    console.log(`[wa-informe] semana ${semana}: ${enviados} de ${destinatarios.length} enviados`);
+    return res.status(200).json({
+      ok: true, semana, enviados, candidatos: destinatarios.length,
+      fallos: fallos.slice(0, 5), prueba: !!forzarA
+    });
+
+  } catch (err) {
+    console.error('[wa-informe] error inesperado:', err.message);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+}
+
+
+/* UN resumen. Nunca lanza. Mismo orden que enviarUno(): RESERVAR -> mandar ->
+   confirmar, porque el 409 contra informes_wa_unico es el unico anti-duplicado
+   que aguanta dos invocaciones simultaneas del cron. */
+async function enviarInforme(p, ctx) {
+  const { headers, token, phoneId, forzarA, semana, nContactos, nCatalogo, tieneProductos } = ctx;
+  const destino = forzarA || normalizarWa(p.whatsapp);
+
+  // 1) Reserva.
+  let reservaId = null;
+  try {
+    const r = await fetch(`${SUPABASE_BASE}/rest/v1/informes_wa`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({
+        proveedor_id: p.id, semana, telefono: destino,
+        contactos: nContactos, catalogo: nCatalogo, estado: 'reservado'
+      })
+    });
+    if (r.status === 409) return { ok: false, motivo: 'duplicado' };
+    if (!r.ok) {
+      console.error('[wa-informe] no se pudo reservar:', r.status, await r.text());
+      return { ok: false, motivo: 'sin_registro' };
+    }
+    reservaId = (await r.json())?.[0]?.id || null;
+  } catch (e) {
+    console.error('[wa-informe] no se pudo reservar:', e.message);
+    return { ok: false, motivo: 'sin_registro' };
+  }
+
+  // 2) El mensaje.
+  try {
+    const t = textoInforme(p, nContactos, nCatalogo, tieneProductos);
+    const params = [
+      limpiarParam(p.nombre, 40),
+      limpiarParam(t.contactos, 10),
+      limpiarParam(t.linea2, 120),
+      limpiarParam(t.accion, 120),
+      limpiarParam(t.destino, 20)
+    ];
+    /* SON CINCO y el orden es el de la plantilla. Si se toca el texto en Meta,
+       hay que tocar esto en el mismo movimiento: si no coinciden, Meta rechaza
+       la tanda entera y las filas quedan en 'fallo' (y el indice unico impide
+       reintentarlas esa semana). */
+
+    const waRes = await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: destino,
+        type: 'template',
+        template: {
+          name: INF_TEMPLATE,
+          language: { code: WA_LANG },
+          components: [{ type: 'body', parameters: params.map(text => ({ type: 'text', text })) }]
+        }
+      })
+    });
+
+    const cuerpo = await waRes.json().catch(() => ({}));
+    if (!waRes.ok) {
+      const motivo = cuerpo?.error?.message || `http_${waRes.status}`;
+      console.error(`[wa-informe] Meta rechazo el envio a ${p.id}:`, JSON.stringify(cuerpo?.error || cuerpo));
+      await cerrarInforme(headers, reservaId, { estado: 'fallo', error: String(motivo).slice(0, 500) });
+      return { ok: false, motivo };
+    }
+
+    await cerrarInforme(headers, reservaId, {
+      estado: 'enviado', wa_message_id: cuerpo?.messages?.[0]?.id || null
+    });
+
+    /* A proposito NO se toca proveedores.last_wa_at. Esa columna ordena el
+       reparto del aviso de PEDIDOS ("el que hace mas que no recibe uno va
+       primero"). Si el resumen semanal la pisara, todos quedarian con la misma
+       fecha cada lunes y el reparto de pedidos se volveria arbitrario. */
+    return { ok: true };
+
+  } catch (e) {
+    console.error('[wa-informe] fallo el envio:', e.message);
+    await cerrarInforme(headers, reservaId, { estado: 'fallo', error: String(e.message).slice(0, 500) });
+    return { ok: false, motivo: e.message };
+  }
+}
+
+// Cierra la reserva. Nunca lanza: si esto falla, la fila queda en 'reservado',
+// que es justamente como se detecta un envio que se corto por la mitad.
+async function cerrarInforme(headers, id, campos) {
+  if (!id) return;
+  try {
+    await fetch(`${SUPABASE_BASE}/rest/v1/informes_wa?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(campos)
+    });
+  } catch (e) {
+    console.error('[wa-informe] no se pudo cerrar el informe:', e.message);
   }
 }
 
