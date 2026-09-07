@@ -449,7 +449,15 @@ function matchesQuery(p, q) {
   if (quitarAcentos(p.nombre.toLowerCase()).includes(qn)) return true;
   if (quitarAcentos((p.rubro || '').toLowerCase()).includes(qn)) return true;
   if (matchesZona(p.provincia, qn)) return true;
-  if (p.descripcion && quitarAcentos(p.descripcion.toLowerCase()).includes(qn)) return true;
+  // OJO CON EL NOMBRE DEL CAMPO: cargarProveedores() guarda la descripcion en
+  // `desc`, no en `descripcion`. Esta linea leia `p.descripcion` (siempre
+  // undefined) desde el primer commit, asi que la descripcion del proveedor
+  // NUNCA participo de la busqueda. Medido sobre 90 dias: 1.980 busquedas que
+  // devolvieron cero tenian un proveedor aprobado con ese mismo termino escrito
+  // en su descripcion. Se leen las dos formas porque no todos los objetos de
+  // proveedor salen del mismo mapeo (mostrarDetalle ya hacia exactamente esto).
+  const desc = p.desc || p.descripcion;
+  if (desc && quitarAcentos(desc.toLowerCase()).includes(qn)) return true;
   for (const [sub, rubros] of Object.entries(SUBCATEGORIA_MAP)) {
     if (sub.includes(qn) || qn.includes(sub.split(' ')[0])) {
       if (rubros.some(r => matchesCat(p.rubro, r))) return true;
@@ -533,7 +541,8 @@ const _egBlobProv = new WeakMap();
 function _provBlob(p) {
   let b = _egBlobProv.get(p);
   if (b === undefined) {
-    b = egNorm([p.nombre, p.rubro, p.provincia, p.descripcion].join(' ')).split(' ');
+    // `desc` primero: es como se llama el campo en proveedoresDB (ver matchesQuery).
+    b = egNorm([p.nombre, p.rubro, p.provincia, p.desc || p.descripcion].join(' ')).split(' ');
     _egBlobProv.set(p, b);
   }
   return b;

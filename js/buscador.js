@@ -219,7 +219,10 @@ function egVocabulario() {
     egSumarPalabras(mapa, p.nombre, 1);
     egSumarPalabras(mapa, p.rubro, 1);
     egSumarPalabras(mapa, p.provincia, 1);
-    egSumarPalabras(mapa, p.descripcion, 1);
+    // `desc` es el nombre real del campo en proveedoresDB; `descripcion` quedaba
+    // siempre undefined y el vocabulario nacia sin una sola palabra de las
+    // descripciones (ver matchesQuery en app.js).
+    egSumarPalabras(mapa, p.desc || p.descripcion, 1);
   }
   for (const p of prods) {
     egSumarPalabras(mapa, p.nombre, 1);
