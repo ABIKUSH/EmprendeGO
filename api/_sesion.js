@@ -25,10 +25,57 @@ export function tokenDeReq(req) {
   return raw.startsWith('Bearer ') ? raw.slice(7).trim() : '';
 }
 
+// Decide si un usuario de Supabase Auth sirve para atribuirle un proveedor, y
+// devuelve su email normalizado, o null.
+//
+// Está separada de emailDeSesion() a propósito: acá vive la decisión de
+// seguridad y no habla con la red, así que se puede probar de verdad. Lo pidió
+// Codex el 2026-09-07, y tenía razón: las pruebas cubrían las cáscaras y no
+// esto, que es lo único que decide de quién es un proveedor.
+export function emailUsable(user) {
+  if (!user) return null;
+  // Sin email confirmado no se atribuye nada. Ver el comentario largo de
+  // emailDeSesion(): la pertenencia se decide por email, así que aceptar uno
+  // sin confirmar sería dejar que cualquiera reclame el proveedor de otro
+  // registrándose con su dirección.
+  if (!user.email_confirmed_at && !user.confirmed_at) return null;
+  const email = String(user.email || '').toLowerCase().trim();
+  return email || null;
+}
+
+// ¿El id de tienda que devolvió Tienda Nube sirve?
+//
+// ⚠️ Existe por un error puntual: el callback hacía `String(tokenData.user_id)`
+// ANTES de comprobar nada. Si TN contestaba sin user_id, eso daba la cadena
+// "undefined", que no está vacía y por lo tanto pasaba el `if (!storeId)`. El
+// proveedor quedaba guardado con tn_store_id = "undefined" y toda
+// sincronización posterior fallaba sin explicación.
+export function idTiendaValido(v) {
+  if (v === undefined || v === null || v === '') return false;
+  const s = String(v).trim();
+  return s !== '' && s !== 'undefined' && s !== 'null' && s !== 'NaN';
+}
+
 // Valida el token contra Supabase Auth y devuelve el email en minúsculas, o null.
 // Mismo patrón que verificarAdmin() en notificar-mensaje.js: se le pregunta a
 // /auth/v1/user en vez de decodificar el JWT a mano, así no hay que sumar una
 // dependencia (el proyecto no tiene package.json ni build step).
+//
+// ⚠️ EXIGE EL EMAIL CONFIRMADO, y no es redundante.
+//
+// La pertenencia a un proveedor se decide por email (`proveedores.email`), así
+// que un email sin confirmar sería una forma de reclamar el proveedor de otro:
+// alguien se registra con el email de un mayorista, entra, y queda como dueño
+// de su fila — con acceso a conectar y sincronizar su catálogo.
+//
+// Hoy eso no pasa porque el proyecto tiene activada la confirmación de email en
+// Supabase (verificado el 2026-09-07: de 15 usuarios sin confirmar, ninguno
+// consiguió iniciar sesión nunca). Pero eso es una casilla del panel de
+// Supabase, no una garantía del código: si alguien la desactiva, el agujero se
+// abre en silencio y sin dejar rastro. El chequeo va acá para que la seguridad
+// no dependa de una configuración que no está a la vista.
+//
+// Lo marcó Codex el 2026-09-07.
 export async function emailDeSesion(req, base, serviceKey) {
   const token = tokenDeReq(req);
   if (!token) return null;
@@ -38,8 +85,8 @@ export async function emailDeSesion(req, base, serviceKey) {
     });
     if (!r.ok) return null;
     const user = await r.json();
-    const email = String(user?.email || '').toLowerCase().trim();
-    return email || null;
+
+    return emailUsable(user);
   } catch (e) {
     console.error('[sesion] no se pudo validar el token:', e.message);
     return null;

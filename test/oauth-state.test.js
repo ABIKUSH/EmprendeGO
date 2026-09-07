@@ -27,7 +27,7 @@
 import {
   leerCookie, iguales, nombreCookie,
   cabeceraCookie, cabeceraCookieBorrada,
-  tokenDeReq, STATE_VIGENCIA_MIN
+  tokenDeReq, emailUsable, idTiendaValido, STATE_VIGENCIA_MIN
 } from '../api/_sesion.js';
 
 let ok = 0;
@@ -226,6 +226,66 @@ test('devuelve vacio si el esquema no es Bearer', () => {
 
 test('no confunde "Bearer" pegado a otra cosa', () => {
   igual(tokenDeReq(req({ authorization: 'Bearerabc' })), '');
+});
+
+// ---------------------------------------------------------------------------
+seccion('emailUsable: de quien es un proveedor');
+
+/* Esta es la funcion mas delicada del archivo. La pertenencia a un proveedor se
+   decide por email, asi que si esto devuelve un email cuando no deberia, el que
+   llama se queda con el proveedor de otro: puede conectar su cuenta de Mercado
+   Libre y sincronizarle el catalogo. */
+
+test('acepta un usuario con el email confirmado', () => {
+  igual(emailUsable({ email: 'Prov@Ejemplo.com', email_confirmed_at: '2026-01-01T00:00:00Z' }),
+    'prov@ejemplo.com', 'y lo normaliza a minusculas');
+});
+
+test('acepta la variante vieja confirmed_at', () => {
+  igual(emailUsable({ email: 'a@b.com', confirmed_at: '2026-01-01T00:00:00Z' }), 'a@b.com');
+});
+
+/* El caso que importa: alguien se registra con el email de un mayorista y no lo
+   confirma nunca. Si esto lo aceptara, quedaria como dueno de su fila. */
+test('RECHAZA un email sin confirmar', () => {
+  igual(emailUsable({ email: 'victima@mayorista.com' }), null);
+  igual(emailUsable({ email: 'victima@mayorista.com', email_confirmed_at: null }), null);
+});
+
+test('rechaza un usuario sin email', () => {
+  igual(emailUsable({ email_confirmed_at: '2026-01-01T00:00:00Z' }), null);
+  igual(emailUsable({ email: '   ', email_confirmed_at: '2026-01-01T00:00:00Z' }), null);
+});
+
+test('rechaza null y undefined sin explotar', () => {
+  igual(emailUsable(null), null);
+  igual(emailUsable(undefined), null);
+});
+
+// ---------------------------------------------------------------------------
+seccion('idTiendaValido: el bug de la cadena "undefined"');
+
+test('acepta un id real', () => {
+  asegurar(idTiendaValido(4456833));
+  asegurar(idTiendaValido('4456833'));
+});
+
+/* El bug: el callback hacia String(tokenData.user_id) ANTES de comprobar nada.
+   Con user_id ausente eso daba "undefined", que no es cadena vacia y por lo
+   tanto pasaba el chequeo. El proveedor quedaba guardado con
+   tn_store_id = "undefined" y despues toda sincronizacion fallaba. */
+test('RECHAZA la cadena "undefined"', () => {
+  asegurar(!idTiendaValido(String(undefined)), 'este era el bug exacto');
+  asegurar(!idTiendaValido('undefined'));
+});
+
+test('rechaza faltante, vacio y basura equivalente', () => {
+  asegurar(!idTiendaValido(undefined));
+  asegurar(!idTiendaValido(null));
+  asegurar(!idTiendaValido(''));
+  asegurar(!idTiendaValido('   '));
+  asegurar(!idTiendaValido('null'));
+  asegurar(!idTiendaValido(String(NaN)));
 });
 
 // ---------------------------------------------------------------------------

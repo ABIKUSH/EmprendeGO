@@ -14,7 +14,7 @@
 import { applyRateLimit, esUUID } from './_ratelimit.js';
 import { afinarRubro } from './_rubros.js';
 import {
-  duenoDeProveedor, crearState, consumirState,
+  duenoDeProveedor, crearState, consumirState, idTiendaValido,
   cabeceraCookie, cabeceraCookieBorrada, leerCookie, iguales
 } from './_sesion.js';
 
@@ -178,14 +178,24 @@ async function handlerCallback(req, res) {
 
   const tokenData = await tokenRes.json();
   const accessToken = tokenData.access_token;
-  const storeId = String(tokenData.user_id);
 
-  console.log('[tn-callback] token TN ok — store_id:', storeId, '| access_token presente:', !!accessToken);
-
-  if (!accessToken || !storeId) {
-    console.error('[tn-callback] token o store_id faltante en respuesta TN:', JSON.stringify(tokenData));
+  // ⚠️ Se valida user_id ANTES de convertirlo a texto. Decía
+  // `String(tokenData.user_id)` arriba de todo: si Tienda Nube contestaba sin
+  // user_id, eso daba la cadena "undefined", que es no vacía y por lo tanto
+  // pasaba el `if (!storeId)` de abajo como si fuera válida. El proveedor
+  // quedaba guardado con tn_store_id = "undefined" y toda sincronización
+  // posterior fallaba sin que nada explicara por qué.
+  if (!accessToken || !idTiendaValido(tokenData.user_id)) {
+    // ⚠️ Acá había un JSON.stringify(tokenData). Aunque falte el user_id, esa
+    // respuesta puede traer un access_token válido, y quedaba escrito en los
+    // logs de Vercel. Se informa QUÉ faltó, nunca los valores.
+    console.error('[tn-callback] respuesta TN incompleta, faltan:',
+      [!accessToken && 'access_token', tokenData.user_id == null && 'user_id'].filter(Boolean).join(', '));
     return res.redirect('https://emprendego.com.ar/?tn=error');
   }
+
+  const storeId = String(tokenData.user_id);
+  console.log('[tn-callback] token TN ok — store_id:', storeId);
 
   // Verificar que el registro existe antes de hacer PATCH
   const getUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}&select=id`;
@@ -197,16 +207,23 @@ async function handlerCallback(req, res) {
     }
   });
   const text = await getRes.text();
-  console.log('[tn-callback] status:', getRes.status, 'body raw:', text);
 
   if (!getRes.ok || text === '[]') {
-    console.error('[tn-callback] proveedor no encontrado en Supabase. id buscado:', proveedorId);
+    console.error('[tn-callback] proveedor no encontrado. status:', getRes.status);
     return res.redirect('https://emprendego.com.ar/?tn=error');
   }
 
-  // PATCH con Prefer: return=representation para ver la fila actualizada
+  // ⚠️ return=minimal, NO return=representation.
+  //
+  // Decía `representation`, que hace que PostgREST devuelva la fila entera de
+  // `proveedores` actualizada, y esa respuesta se escribía completa en el log
+  // (`'| body:', patchBody`). No filtraba solo el token de Tienda Nube: se
+  // llevaba puesta la fila entera — tn_access_token, ml_access_token,
+  // ml_refresh_token, el WhatsApp y el email del proveedor — a los logs de
+  // Vercel, en cada conexión.
+  //
+  // No hace falta ver la fila: acá solo interesa si el UPDATE salió bien.
   const patchUrl = `${supabaseUrl}/rest/v1/proveedores?id=eq.${proveedorId}`;
-  console.log('[tn-callback] PATCH URL:', patchUrl);
 
   const patchRes = await fetch(patchUrl, {
     method: 'PATCH',
@@ -214,16 +231,15 @@ async function handlerCallback(req, res) {
       'apikey': supabaseKey,
       'Authorization': `Bearer ${supabaseKey}`,
       'Content-Type': 'application/json',
-      'Prefer': 'return=representation'
+      'Prefer': 'return=minimal'
     },
     body: JSON.stringify({ tn_store_id: storeId, tn_access_token: accessToken })
   });
 
-  const patchBody = await patchRes.text();
-  console.log('[tn-callback] PATCH status:', patchRes.status, '| body:', patchBody);
-
   if (!patchRes.ok) {
-    console.error('[tn-callback] error PATCH Supabase:', patchRes.status, patchBody);
+    // Sin cuerpo: con return=minimal ya no trae la fila, pero aunque un error
+    // de PostgREST no la traiga, tampoco se registra por las dudas.
+    console.error('[tn-callback] error guardando la conexión. status:', patchRes.status);
     return res.redirect('https://emprendego.com.ar/?tn=error');
   }
 
