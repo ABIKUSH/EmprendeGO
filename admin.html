@@ -334,7 +334,7 @@ tr:hover td{background:#fafbff}
           <div class="metric-card"><div class="metric-icon">🏭</div><div class="metric-val" id="metric-proveedores">—</div><div class="metric-label">Proveedores activos</div><div class="metric-trend up" id="trend-proveedores"></div></div>
           <div class="metric-card"><div class="metric-icon">👥</div><div class="metric-val" id="metric-usuarios">—</div><div class="metric-label">Usuarios registrados</div><div class="metric-trend up" id="trend-usuarios"></div></div>
           <div class="metric-card"><div class="metric-icon">⏳</div><div class="metric-val" id="metric-pendientes" style="color:var(--orange)">—</div><div class="metric-label">Aprobaciones pendientes</div><div class="metric-trend" id="trend-pendientes" style="color:var(--orange)"></div></div>
-          <div class="metric-card"><div class="metric-icon">⭐</div><div class="metric-val" id="metric-pro">—</div><div class="metric-label">Proveedores Pro</div><div class="metric-trend up" id="trend-pro"></div></div>
+          <div class="metric-card"><div class="metric-icon">⭐</div><div class="metric-val" id="metric-pro">—</div><div class="metric-label">Proveedores Pro vigentes</div><div class="metric-trend up" id="trend-pro"></div></div>
           <div class="metric-card"><div class="metric-icon">📦</div><div class="metric-val" id="metric-productos">—</div><div class="metric-label">Total productos</div></div>
           <div class="metric-card"><div class="metric-icon">💬</div><div class="metric-val" id="metric-mensajes">—</div><div class="metric-label">Mensajes totales</div></div>
           <div class="metric-card"><div class="metric-icon">🔍</div><div class="metric-val" id="metric-busquedas">—</div><div class="metric-label">Búsquedas totales</div></div>
@@ -994,18 +994,58 @@ function setDashDate(){
   document.getElementById('dash-date').textContent = now.toLocaleDateString('es-AR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 }
 
+// ===== TRAER UNA TABLA ENTERA =====
+//
+// POR QUE EXISTE: la API de Supabase devuelve como maximo 1000 filas por
+// consulta y NO avisa cuando corta. El panel mostraba "1.000 usuarios
+// registrados" cuando habia 1.036, y ese numero se iba a quedar clavado en
+// 1.000 para siempre. Los sintomas son numeros redondos y listas incompletas,
+// nunca un error, por eso puede pasar meses sin que nadie lo note.
+//
+// Recibe una FUNCION que arma la consulta, no la consulta ya armada: los query
+// builders de supabase-js se consumen al ejecutarse y no se pueden reusar para
+// pedir la pagina siguiente.
+//
+// El orden importa: sin un .order() estable, dos paginas pueden repetir o
+// saltear filas. Todas las llamadas de este archivo ordenan por algo fijo.
+//
+// Devuelve { data, error } igual que supabase-js, asi el codigo que la usa no
+// cambia de forma.
+async function traerTodasLasFilas(armarConsulta, PAGE = 1000){
+  const todas = [];
+  for (let desde = 0; ; desde += PAGE){
+    const { data, error } = await armarConsulta().range(desde, desde + PAGE - 1);
+    if (error) return { data: todas, error };
+    if (!data || !data.length) break;
+    todas.push(...data);
+    if (data.length < PAGE) break;
+  }
+  return { data: todas, error: null };
+}
+
+// Plan Pro que sigue vigente. El panel contaba a cualquiera con plan='pro' sin
+// mirar el vencimiento y mostraba 13 cuando habia 5: 8 ya habian vencido. La
+// app publica siempre valido la fecha (esProvPro en js/app.js); el panel era el
+// unico lugar donde no, justo el que se usa para saber cuantos clientes hay.
+// El 'T03:00:00Z' es medianoche de Argentina, igual que en la app.
+function esProVigente(p){
+  return p && p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date());
+}
+
 // ===== SUPABASE: DASHBOARD METRICS =====
 async function cargarDashboard(){
   try {
     const [
-      {data:provs}, {data:users}, {count:totalBusqs}, {data:reportes},
+      {data:provs}, {count:totalUsers}, {count:totalBusqs}, {data:reportes},
       {count:totalProductos}, {count:totalMensajes},
       {data:ultProvs}, {data:ultUsers}, busqs
     ] = await Promise.all([
-      sb.from('proveedores').select('id,plan,estado,rubro,provincia,nombre,created_at').order('created_at',{ascending:false}),
-      sb.from('usuarios').select('id,nombre,email,created_at').order('created_at',{ascending:false}),
+      traerTodasLasFilas(()=>sb.from('proveedores').select('id,plan,plan_hasta,estado,rubro,provincia,nombre,created_at').order('created_at',{ascending:false}).order('id')),
+      // Contar del lado del servidor y no traer las filas: es un numero, no una
+      // lista. Traerlas era lo que clavaba la tarjeta en 1.000 (ver traerTodasLasFilas).
+      sb.from('usuarios').select('*', {count:'exact',head:true}),
       sb.from('busquedas').select('*', {count:'exact',head:true}),
-      sb.from('reportes').select('id,estado'),
+      traerTodasLasFilas(()=>sb.from('reportes').select('id,estado').order('id')),
       sb.from('productos').select('*', {count:'exact',head:true}),
       sb.from('mensajes').select('*', {count:'exact',head:true}),
       sb.from('proveedores').select('nombre,created_at').order('created_at',{ascending:false}).limit(5),
@@ -1014,15 +1054,17 @@ async function cargarDashboard(){
     ]);
 
     const activos = provs?.filter(p=>p.estado==='aprobado').length || 0;
-    const totalUsers = users?.length || 0;
     const totalPend = provs?.filter(p=>p.estado==='pendiente').length || 0;
-    const proPlan = provs?.filter(p=>p.plan==='pro').length || 0;
-    const gratisActivos = provs?.filter(p=>p.estado==='aprobado'&&p.plan!=='pro').length || 0;
+    // Pro VIGENTE, no "alguna vez fue Pro". El vencido cuenta como gratis, que
+    // es exactamente lo que es: no paga y no tiene los beneficios.
+    const proPlan = provs?.filter(esProVigente).length || 0;
+    const proVencidos = (provs?.filter(p=>p.plan==='pro').length || 0) - proPlan;
+    const gratisActivos = provs?.filter(p=>p.estado==='aprobado'&&!esProVigente(p)).length || 0;
     const reportesSinResolver = reportes?.filter(r=>r.estado!=='resuelto').length || 0;
 
     // Métricas
     document.getElementById('metric-proveedores').textContent = activos;
-    document.getElementById('metric-usuarios').textContent = totalUsers.toLocaleString('es-AR');
+    document.getElementById('metric-usuarios').textContent = (totalUsers || 0).toLocaleString('es-AR');
     document.getElementById('metric-pendientes').textContent = totalPend;
     document.getElementById('metric-pro').textContent = proPlan;
     document.getElementById('metric-productos').textContent = (totalProductos || 0).toLocaleString('es-AR');
@@ -1030,6 +1072,12 @@ async function cargarDashboard(){
     document.getElementById('metric-busquedas').textContent = (totalBusqs || 0).toLocaleString('es-AR');
     document.getElementById('metric-reportes').textContent = reportesSinResolver;
     document.getElementById('trend-pendientes').textContent = totalPend > 0 ? 'Requiere atención' : 'Todo al día ✓';
+    // Los vencidos no se esconden: son los que hay que ir a recuperar.
+    const trendPro = document.getElementById('trend-pro');
+    if(trendPro){
+      trendPro.textContent = proVencidos > 0 ? `${proVencidos} vencido${proVencidos===1?'':'s'} sin renovar` : '';
+      trendPro.className = proVencidos > 0 ? 'metric-trend' : 'metric-trend up';
+    }
     const trendRep = document.getElementById('trend-reportes');
     if(trendRep) trendRep.textContent = reportesSinResolver > 0 ? 'Requiere revisión' : '';
 
@@ -1407,10 +1455,13 @@ async function cargarUsuarios(){
     // Las tres consultas van en paralelo. Las dos de email están envueltas en
     // un catch propio: si esas tablas todavía no existen (o falla la RLS), la
     // tabla de usuarios tiene que seguir cargando igual que siempre.
+    // Las tres van paginadas: usuarios ya pasa las 1000 filas y email_logs va
+    // camino a pasarlas. Sin paginar, la tabla se corta ahi y los que quedan
+    // afuera no reciben la campaña, sin que nada lo indique.
     const [{data, error}, logsRes, bajasRes] = await Promise.all([
-      sb.from('usuarios').select('*').order('created_at',{ascending:false}),
-      sb.from('email_logs').select('usuario_id,estado,enviado_at').eq('campana', ANUNCIO_CAMPANA).then(r=>r, ()=>({error:true})),
-      sb.from('email_optouts').select('email').then(r=>r, ()=>({error:true}))
+      traerTodasLasFilas(()=>sb.from('usuarios').select('*').order('created_at',{ascending:false}).order('id')),
+      traerTodasLasFilas(()=>sb.from('email_logs').select('usuario_id,estado,enviado_at').eq('campana', ANUNCIO_CAMPANA).order('id')).then(r=>r, ()=>({error:true})),
+      traerTodasLasFilas(()=>sb.from('email_optouts').select('email').order('email')).then(r=>r, ()=>({error:true}))
     ]);
     if(error) throw error;
 
@@ -1634,7 +1685,7 @@ async function quitarPlanPro(id, nombre) {
 // ===== REPORTES =====
 async function cargarReportes(){
   const el = document.getElementById('reportes-list');
-  const {data, error} = await sb.from('reportes').select('*').order('created_at',{ascending:false});
+  const {data, error} = await traerTodasLasFilas(()=>sb.from('reportes').select('*').order('created_at',{ascending:false}).order('id'));
   if(error || !data?.length){
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray)">No hay reportes pendientes ✓</div>';
     return;
@@ -1765,7 +1816,7 @@ function eliminarProveedorDesdeModal(){
 async function cargarPlanes(){
   const tbody = document.getElementById('planes-table');
   try {
-    const {data, error} = await sb.from('proveedores').select('id,nombre,plan_desde,plan_hasta').eq('plan','pro').order('plan_hasta',{ascending:true});
+    const {data, error} = await traerTodasLasFilas(()=>sb.from('proveedores').select('id,nombre,plan_desde,plan_hasta').eq('plan','pro').order('plan_hasta',{ascending:true}).order('id'));
     if(error) throw error;
     await cargarProvPrivados(); mergePriv(data);
     const hoy = new Date();
@@ -1801,18 +1852,14 @@ async function cargarPlanes(){
 let _busqCache = null;
 async function traerTodasLasBusquedas(){
   if (_busqCache) return _busqCache;
-  const PAGE = 1000, todas = [];
-  for (let desde = 0; ; desde += PAGE){
-    const {data, error} = await sb.from('busquedas')
-      .select('termino,resultados')
-      .order('created_at',{ascending:false})
-      .range(desde, desde + PAGE - 1);
-    if (error || !data || !data.length) break;
-    todas.push(...data);
-    if (data.length < PAGE) break;
-  }
-  _busqCache = todas;
-  return todas;
+  // Esta paginacion se escribio primero, a mano; ahora usa el mismo helper que
+  // el resto del panel para que haya una sola forma de traer una tabla entera.
+  const { data } = await traerTodasLasFilas(()=>sb.from('busquedas')
+    .select('termino,resultados')
+    .order('created_at',{ascending:false})
+    .order('id'));
+  _busqCache = data;
+  return data;
 }
 
 async function cargarBusquedas(){
@@ -1850,7 +1897,7 @@ async function cargarBusquedas(){
 async function cargarRubros(){
   const tbody = document.getElementById('rubros-table');
   try {
-    const {data} = await sb.from('proveedores').select('rubro').eq('estado','aprobado');
+    const {data} = await traerTodasLasFilas(()=>sb.from('proveedores').select('id,rubro').eq('estado','aprobado').order('id'));
     const count = {};
     (data||[]).forEach(p=>{ if(p.rubro){ count[p.rubro]=(count[p.rubro]||0)+1; }});
     const sorted = Object.entries(count).sort((a,b)=>b[1]-a[1]);
@@ -2480,8 +2527,8 @@ async function cargarAvisos(){
   try {
     // 1) Proveedores aprobados + 2) historial de avisos (degradado si la tabla aún no existe)
     const [{ data: provs, error: provErr }, notifRes] = await Promise.all([
-      sb.from('proveedores').select('id,nombre,whatsapp,plan,plan_desde,plan_hasta,created_at,estado').eq('estado','aprobado'),
-      sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at')
+      traerTodasLasFilas(()=>sb.from('proveedores').select('id,nombre,whatsapp,plan,plan_desde,plan_hasta,created_at,estado').eq('estado','aprobado').order('id')),
+      traerTodasLasFilas(()=>sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at').order('id'))
     ]);
     if (provErr) throw provErr;
     const notifs = notifRes.error ? [] : (notifRes.data || []);
@@ -2602,9 +2649,11 @@ async function cargarInforme(){
   if (!tb) return;
   try {
     const [{ data: provs, error: provErr }, notifRes, snapRes] = await Promise.all([
-      sb.from('proveedores').select('id,nombre,whatsapp,visitas,consultas,estado').eq('estado','aprobado'),
-      sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at'),
-      sb.from('informe_snapshots').select('proveedor_id,visitas,consultas,tomado_at')
+      traerTodasLasFilas(()=>sb.from('proveedores').select('id,nombre,whatsapp,visitas,consultas,estado').eq('estado','aprobado').order('id')),
+      traerTodasLasFilas(()=>sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at').order('id')),
+      // informe_snapshots suma ~54 filas por semana: es la proxima que iba a
+      // pasar las 1000 y a romper el delta "+X esta semana" sin avisar.
+      traerTodasLasFilas(()=>sb.from('informe_snapshots').select('proveedor_id,visitas,consultas,tomado_at').order('id'))
     ]);
     if (provErr) throw provErr;
     const notifs = notifRes.error ? [] : (notifRes.data || []);
@@ -2706,7 +2755,7 @@ function enviarInforme(provJson){
 async function tomarFotoSemanal(){
   if (!confirm('¿Tomar la foto de la semana? Guarda los totales de hoy para medir el crecimiento de los próximos días.')) return;
   try {
-    const { data: provs, error } = await sb.from('proveedores').select('id,visitas,consultas').eq('estado','aprobado');
+    const { data: provs, error } = await traerTodasLasFilas(()=>sb.from('proveedores').select('id,visitas,consultas').eq('estado','aprobado').order('id'));
     if (error) throw error;
     const filas = (provs || []).map(p => ({ proveedor_id: p.id, visitas: p.visitas || 0, consultas: p.consultas || 0 }));
     if (!filas.length) { showToast('No hay proveedores para registrar'); return; }
