@@ -7746,7 +7746,13 @@ function mostrarMapeoTN(categorias_tn) {
   const mapaActual = currentUser?.provData?.tn_categoria_map || {};
   list.innerHTML = categorias_tn.map(cat => {
     const opts = TN_CATEGORIAS_EG.map(c =>
-      `<option value="${c}" ${(mapaActual[cat] || 'Otros') === c ? 'selected' : ''}>${c}</option>`
+      // 'Otro', no 'Otros': asi se llama en TN_CATEGORIAS_EG. Decia 'Otros', que
+      // no coincidia con ninguna opcion, asi que NINGUNA quedaba con selected y
+      // el navegador elegia la primera de la lista — que es 'Tecnologia'. Un
+      // proveedor abria el modal, no tocaba nada, apretaba Confirmar y se le
+      // guardaba el catalogo entero como Tecnologia. Asi terminaron 191
+      // productos mal categorizados, entre ellos 109 de una libreria.
+      `<option value="${c}" ${(mapaActual[cat] || 'Otro') === c ? 'selected' : ''}>${c}</option>`
     ).join('');
     return `<div style="background:#F8FAF8;border-radius:10px;padding:12px 14px">
       <div style="font-size:.78rem;font-weight:700;color:#444;margin-bottom:6px">TN: <span style="color:#006039">${escHtml(cat)}</span></div>
@@ -7965,7 +7971,13 @@ function mostrarMapeoML(categorias_ml) {
   const mapaActual = currentUser?.provData?.ml_categoria_map || {};
   list.innerHTML = categorias_ml.map(cat => {
     const opts = TN_CATEGORIAS_EG.map(c =>
-      `<option value="${c}" ${(mapaActual[cat] || 'Otros') === c ? 'selected' : ''}>${c}</option>`
+      // 'Otro', no 'Otros': asi se llama en TN_CATEGORIAS_EG. Decia 'Otros', que
+      // no coincidia con ninguna opcion, asi que NINGUNA quedaba con selected y
+      // el navegador elegia la primera de la lista — que es 'Tecnologia'. Un
+      // proveedor abria el modal, no tocaba nada, apretaba Confirmar y se le
+      // guardaba el catalogo entero como Tecnologia. Asi terminaron 191
+      // productos mal categorizados, entre ellos 109 de una libreria.
+      `<option value="${c}" ${(mapaActual[cat] || 'Otro') === c ? 'selected' : ''}>${c}</option>`
     ).join('');
     return `<div style="background:#FFFBEA;border-radius:10px;padding:12px 14px">
       <div style="font-size:.78rem;font-weight:700;color:#444;margin-bottom:6px">ML: <span style="color:#E8A800">${escHtml(cat)}</span></div>
