@@ -34,11 +34,23 @@ export function tokenDeReq(req) {
 // esto, que es lo único que decide de quién es un proveedor.
 export function emailUsable(user) {
   if (!user) return null;
-  // Sin email confirmado no se atribuye nada. Ver el comentario largo de
-  // emailDeSesion(): la pertenencia se decide por email, así que aceptar uno
-  // sin confirmar sería dejar que cualquiera reclame el proveedor de otro
-  // registrándose con su dirección.
-  if (!user.email_confirmed_at && !user.confirmed_at) return null;
+
+  // ⚠️ SOLO email_confirmed_at. NO vale confirmed_at, y esto no es un detalle.
+  //
+  // En Supabase, confirmed_at es una columna generada:
+  // LEAST(email_confirmed_at, phone_confirmed_at). Se llena cuando se confirma
+  // el email O el teléfono. Un usuario que verificó únicamente su teléfono
+  // tiene confirmed_at puesto y email_confirmed_at en null.
+  //
+  // Estaba aceptando confirmed_at como alternativa, y eso reabría exactamente
+  // el agujero que este chequeo venía a cerrar: alguien se registra con el
+  // email de un mayorista, verifica un teléfono propio, y queda como dueño de
+  // la fila de ese proveedor. La pertenencia se decide por email, así que lo
+  // único que vale es que ESE email esté verificado.
+  //
+  // Lo marcó Codex el 2026-09-07, después de que yo pusiera el fallback.
+  if (!user.email_confirmed_at) return null;
+
   const email = String(user.email || '').toLowerCase().trim();
   return email || null;
 }

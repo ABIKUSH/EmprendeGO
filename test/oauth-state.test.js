@@ -241,8 +241,19 @@ test('acepta un usuario con el email confirmado', () => {
     'prov@ejemplo.com', 'y lo normaliza a minusculas');
 });
 
-test('acepta la variante vieja confirmed_at', () => {
-  igual(emailUsable({ email: 'a@b.com', confirmed_at: '2026-01-01T00:00:00Z' }), 'a@b.com');
+/* confirmed_at NO alcanza, y este es el caso que casi se cuela.
+   En Supabase confirmed_at es una columna generada:
+   LEAST(email_confirmed_at, phone_confirmed_at). Se llena tambien cuando se
+   verifico SOLO el telefono. Aceptarlo dejaria que alguien se registre con el
+   email de un mayorista, verifique un telefono propio, y se quede con su ficha. */
+test('RECHAZA confirmed_at sin email_confirmed_at (solo verifico el telefono)', () => {
+  igual(emailUsable({ email: 'victima@mayorista.com', confirmed_at: '2026-01-01T00:00:00Z' }), null);
+  igual(emailUsable({
+    email: 'victima@mayorista.com',
+    confirmed_at: '2026-01-01T00:00:00Z',
+    phone_confirmed_at: '2026-01-01T00:00:00Z',
+    email_confirmed_at: null
+  }), null);
 });
 
 /* El caso que importa: alguien se registra con el email de un mayorista y no lo
