@@ -899,12 +899,35 @@ async function handleMLSync(req, res) {
     accessToken = refreshed.access_token;
   }
 
-  // 5) Listar todos los items activos del usuario ML (paginado)
+  // 5) Listar todos los items activos del usuario ML
+  //
+  // ⚠️ Acá había un `maxItems = 1000` con el comentario "tope de seguridad", y
+  // no era inofensivo: se combinaba con el paso 9 (ocultar lo que ya no está en
+  // ML) para BORRAR catálogo del proveedor.
+  //
+  // El paso 9 marca visible=false todo producto que no venga en esta lista,
+  // porque asume que el proveedor lo dio de baja. Con la lista cortada en 1.000,
+  // el producto 1.001 en adelante quedaba fuera de la lista sin haberse dado de
+  // baja de nada — y se ocultaba solo, en cada sincronización, sin un error ni
+  // un aviso. Libreria Integral MAYA, que es Pro, tenía exactamente 1.000
+  // productos: el número redondo era la firma del tope.
+  //
+  // Además el tope no era solo nuestro: el listado por `offset` de ML no pasa de
+  // 1.000 resultados. Para catálogos más grandes hay que usar `search_type=scan`,
+  // que devuelve un `scroll_id` y se recorre de a tandas sin offset.
+  //
+  // `listadoCompleto` es la red de seguridad: si por lo que sea no se pudo traer
+  // el catálogo entero, el paso 9 NO se ejecuta. Vale más quedarse con productos
+  // de más (alguno dado de baja que sigue visible) que ocultarle a un proveedor
+  // media tienda por un problema nuestro.
   const allItemIds = [];
-  let offset = 0;
+  let listadoCompleto = true;
   const pageSize = 50;
-  const maxItems = 1000; // tope de seguridad
-  while (offset < maxItems) {
+  const TOPE_OFFSET_ML = 1000;   // límite de la API de ML para el modo con offset
+  const TOPE_DURO = 20000;       // freno propio, para que un caso raro no cuelgue la función
+
+  let offset = 0;
+  while (offset < TOPE_OFFSET_ML) {
     const searchUrl = `https://api.mercadolibre.com/users/${prov.ml_user_id}/items/search?status=active&limit=${pageSize}&offset=${offset}`;
     const sr = await fetch(searchUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!sr.ok) {
@@ -919,7 +942,44 @@ async function handleMLSync(req, res) {
     offset += pageSize;
   }
 
-  console.log(`[ml-sync] proveedor ${proveedorId} — ${allItemIds.length} items encontrados`);
+  // Si se llenó el listado por offset, el catálogo es más grande que el tope de
+  // ML. Se rehace entero por scan: es la única forma de pasar de 1.000.
+  if (allItemIds.length >= TOPE_OFFSET_ML) {
+    console.log('[ml-sync] catálogo grande, pasando a modo scan');
+    const porScan = [];
+    let scrollId = null;
+    listadoCompleto = false;   // hasta que el scan termine bien, no se confía
+
+    try {
+      while (porScan.length < TOPE_DURO) {
+        const scanUrl = `https://api.mercadolibre.com/users/${prov.ml_user_id}/items/search` +
+          `?search_type=scan&status=active&limit=100` +
+          (scrollId ? `&scroll_id=${encodeURIComponent(scrollId)}` : '');
+        const sr = await fetch(scanUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
+        if (!sr.ok) throw new Error('scan respondió ' + sr.status);
+
+        const data = await sr.json();
+        const ids = data.results || [];
+        if (!ids.length) { listadoCompleto = true; break; }
+
+        porScan.push(...ids);
+        scrollId = data.scroll_id;
+        if (!scrollId) { listadoCompleto = true; break; }
+      }
+      if (porScan.length) {
+        allItemIds.length = 0;
+        allItemIds.push(...porScan);
+      }
+    } catch (e) {
+      // Se sigue con los 1.000 del listado normal, pero marcados como
+      // incompletos: se importa lo que hay y NO se oculta nada.
+      console.error('[ml-sync] el scan falló, se importa parcial sin ocultar:', e.message);
+      listadoCompleto = false;
+    }
+  }
+
+  console.log(`[ml-sync] proveedor ${proveedorId} — ${allItemIds.length} items encontrados` +
+    (listadoCompleto ? '' : ' (LISTADO INCOMPLETO: no se oculta nada)'));
 
   if (!allItemIds.length) {
     return res.status(200).json({ importados: 0, total: 0, categorias_ml: [] });
@@ -1032,9 +1092,18 @@ async function handleMLSync(req, res) {
 
   // 10) Ocultar productos cuyo ml_item_id ya no este en la lista activa de ML
   //     (pausados, finalizados o dados de baja en Mercado Libre).
+  //
+  // ⚠️ SOLO si el listado del paso 5 vino completo. Este bloque decide por
+  // AUSENCIA: lo que no está en la lista, se oculta. Con una lista incompleta
+  // eso deja de significar "el proveedor lo dio de baja" y pasa a significar
+  // "no lo llegamos a leer" — y le borramos del catálogo productos que están
+  // publicados y a la venta. Es exactamente lo que venía pasando con los
+  // catálogos de más de 1.000 productos.
   let ocultados = 0;
   const activeIds = rows.map(r => r.ml_item_id);
-  if (activeIds.length > 0) {
+  if (!listadoCompleto) {
+    console.warn('[ml-sync] listado incompleto: se importa pero NO se oculta nada');
+  } else if (activeIds.length > 0) {
     // PostgREST: not.in.(a,b,c) — coma-separados sin comillas para strings simples
     const notInList = activeIds.join(',');
     const hideRes = await fetch(
