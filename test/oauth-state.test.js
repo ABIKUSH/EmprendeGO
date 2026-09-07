@@ -29,6 +29,7 @@ import {
   cabeceraCookie, cabeceraCookieBorrada,
   tokenDeReq, emailUsable, idTiendaValido, STATE_VIGENCIA_MIN
 } from '../api/_sesion.js';
+import { atributosUtiles } from '../api/ml.js';
 
 let ok = 0;
 const fallas = [];
@@ -297,6 +298,53 @@ test('rechaza faltante, vacio y basura equivalente', () => {
   asegurar(!idTiendaValido('   '));
   asegurar(!idTiendaValido('null'));
   asegurar(!idTiendaValido(String(NaN)));
+});
+
+// ---------------------------------------------------------------------------
+seccion('atributosUtiles: lo que hace publicable un producto');
+
+/* Estos son los datos que ML exige para publicar (marca, color, talle, genero)
+   y que el proveedor ya cargo en SU publicacion. Si esto los pierde, el
+   comprador tiene que volver a completarlos producto por producto, y ahi se
+   cae la promesa entera de Mi Negocio. */
+
+test('se queda con los que tienen valor', () => {
+  const r = atributosUtiles([
+    { id: 'BRAND', name: 'Marca', value_id: null, value_name: 'Palette' },
+    { id: 'COLOR', name: 'Color', value_id: '52049', value_name: 'Blanco' }
+  ]);
+  igual(r.length, 2);
+  igual(r[0].id, 'BRAND');
+  igual(r[0].value_name, 'Palette');
+  igual(r[1].value_id, '52049', 'el value_id es lo que ML espera en los de lista');
+});
+
+/* Una publicacion trae ~70 atributos y casi todos vienen vacios. Guardarlos
+   multiplicaria el peso de la tabla de productos para no usar nada. */
+test('descarta los vacios', () => {
+  const r = atributosUtiles([
+    { id: 'BRAND', value_name: 'Palette' },
+    { id: 'GTIN', value_id: null, value_name: null },
+    { id: 'MODEL', value_id: null, value_name: null }
+  ]);
+  igual(r.length, 1);
+  igual(r[0].id, 'BRAND');
+});
+
+test('devuelve null cuando no queda nada util', () => {
+  igual(atributosUtiles([{ id: 'GTIN', value_id: null, value_name: null }]), null);
+  igual(atributosUtiles([]), null);
+  igual(atributosUtiles(null), null);
+  igual(atributosUtiles(undefined), null);
+});
+
+test('no explota con basura', () => {
+  igual(atributosUtiles('no soy un array'), null);
+  igual(atributosUtiles([null, undefined, {}]), null);
+});
+
+test('descarta los que no traen id: sin id no se puede publicar', () => {
+  igual(atributosUtiles([{ value_name: 'Blanco' }]), null);
 });
 
 // ---------------------------------------------------------------------------

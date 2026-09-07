@@ -102,6 +102,30 @@ async function idCategoriaML(rubro, accessToken) {
   } catch (e) { return null; }
 }
 
+// Se queda solo con los atributos que tienen valor, y solo con lo que hace
+// falta para volver a publicar: el id que usa ML, el valor elegido y su texto.
+//
+// No se guarda la respuesta cruda a proposito. Una publicacion trae del orden
+// de 70 atributos y la enorme mayoria vienen vacios, mas metadatos que no
+// sirven para republicar. Guardar todo multiplicaria por diez el peso de la
+// tabla de productos para no usar nada de eso.
+//
+// `value_id` es el que vale cuando el atributo es de lista (Color, Talle,
+// Genero): ML espera el id, no el texto. `value_name` se guarda igual porque
+// es lo unico legible y porque los atributos de texto libre (Marca, Modelo) no
+// tienen id.
+export function atributosUtiles(attrs) {
+  if (!Array.isArray(attrs) || !attrs.length) return null;
+  const utiles = attrs
+    .filter(a => a && a.id && (a.value_id || a.value_name))
+    .map(a => ({
+      id: a.id,
+      value_id: a.value_id || null,
+      value_name: a.value_name || null
+    }));
+  return utiles.length ? utiles : null;
+}
+
 function setCors(req, res) {
   const origin = req.headers.origin || '';
   if (ALLOWED_ORIGINS.includes(origin)) {
@@ -905,7 +929,23 @@ async function handleMLSync(req, res) {
   const items = [];
   for (let i = 0; i < allItemIds.length; i += 20) {
     const batch = allItemIds.slice(i, i + 20);
-    const detailUrl = `https://api.mercadolibre.com/items?ids=${batch.join(',')}&attributes=id,title,price,available_quantity,thumbnail,pictures,status,category_id`;
+    // ⚠️ El ultimo `attributes` de la lista NO es una repeticion del parametro:
+    // el parametro `attributes=` elige que campos devuelve ML, y uno de esos
+    // campos se llama justamente `attributes` — los datos de ficha del producto
+    // (marca, modelo, color, talle, genero, material).
+    //
+    // Se piden porque son EXACTAMENTE lo que Mercado Libre exige para publicar.
+    // Medido el 2026-09-07 sobre categorias reales: publicar pide entre 3 y 7
+    // atributos obligatorios (Sabanas 4, Zapatillas 5, Remeras 7, Perfumes 3), y
+    // ninguno de ellos existe en el catalogo de EmprendeGO, que solo tiene
+    // nombre, precio, stock, descripcion e imagenes.
+    //
+    // Pero el proveedor YA los cargo, porque sin ellos no habria podido publicar
+    // en ML. Hasta hoy los tirabamos en el momento de importar y despues habria
+    // que pedirselos de nuevo al comprador, producto por producto — que es
+    // justo lo que mata el circuito "publico en un click" de Mi Negocio.
+    // Ver mesa/08-claude-publicar-en-ml.md.
+    const detailUrl = `https://api.mercadolibre.com/items?ids=${batch.join(',')}&attributes=id,title,price,available_quantity,thumbnail,pictures,status,category_id,attributes`;
     const dr = await fetch(detailUrl, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (!dr.ok) {
       console.error('[ml-sync] error detalle batch:', dr.status);
@@ -957,6 +997,7 @@ async function handleMLSync(req, res) {
         imagen_url: pic,
         imagenes: pics.length ? pics : null,
         categoria_ml: categoriaML,
+        ml_atributos: atributosUtiles(it.attributes),
         // Igual que en TN: la categoría de origen es demasiado gruesa para
         // separar la lencería de la ropa común, así que se afina por nombre.
         categoria_principal: afinarRubro(nombre, rubroMapeado),
