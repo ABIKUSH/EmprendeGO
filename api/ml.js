@@ -1,5 +1,9 @@
 import { applyRateLimit, esUUID } from './_ratelimit.js';
 import { afinarRubro } from './_rubros.js';
+import {
+  duenoDeProveedor, crearState, consumirState,
+  cabeceraCookie, cabeceraCookieBorrada, leerCookie, iguales
+} from './_sesion.js';
 
 const ALLOWED_ORIGINS = [
   'https://emprendego.com.ar',
@@ -117,10 +121,23 @@ export default async function handler(req, res) {
     return handleMLOAuthCallback(req, res);
   }
 
-  // Inicio de OAuth: dashboard del proveedor pide conectar su cuenta de ML.
-  // GET /api/ml?proveedor_id=<uuid>  -> redirige a la pantalla de autorizacion de ML.
+  // Inicio de OAuth: el dashboard del proveedor pide la URL para conectar su cuenta.
+  // POST /api/ml?action=oauth_url  body: { proveedor_id }  + Authorization: Bearer <jwt>
+  //   -> { url } y deja la cookie que ata el flujo a este navegador.
+  if (req.method === 'POST' && req.query.action === 'oauth_url') {
+    return handleMLOAuthUrl(req, res);
+  }
+
+  // Ruta vieja: GET /api/ml?proveedor_id=<uuid> redirigia directo a ML sin pedir
+  // sesion ni comprobar de quien era ese proveedor. Era el agujero: cualquiera
+  // podia armar el link con un proveedor_id ajeno (son publicos, viajan en
+  // /api/catalogo) o hacerle abrir el suyo a un vendedor para quedarse con sus
+  // tokens. Se responde 410 en vez de 404 para que quede claro que la ruta
+  // existio y se retiro, no que se escribio mal.
   if (req.method === 'GET' && req.query.proveedor_id && !req.query.id) {
-    return handleMLOAuthStart(req, res);
+    return res.status(410).json({
+      error: 'Esta forma de conectar ya no está disponible. Actualizá la página e intentá de nuevo.'
+    });
   }
 
   // Sincronizar productos desde ML al catalogo del proveedor.
@@ -240,12 +257,39 @@ async function scrapeProductPage(id) {
 // ============================================================
 // OAuth Mercado Libre — inicio (proveedor pide conectar)
 // ============================================================
-function handleMLOAuthStart(req, res) {
-  const proveedorId = req.query.proveedor_id;
-  console.log('[ml-auth] proveedor_id recibido:', proveedorId);
+// Devuelve la URL de autorizacion de ML para el proveedor que la pide.
+//
+// No redirige: contesta JSON y es el navegador el que despues navega. Ese cambio
+// es lo que permite exigir la sesion, porque una navegacion directa (un
+// window.location) no puede llevar el header Authorization.
+async function handleMLOAuthUrl(req, res) {
+  // Crear states es barato pero escribe en la base: que no se pueda abusar.
+  if (!applyRateLimit(req, res, { bucket: 'ml-oauth', limit: 10, windowMs: 60000 })) return;
+
+  const body = await readJsonBody(req);
+  const proveedorId = body.proveedor_id;
+  if (!esUUID(proveedorId)) return res.status(400).json({ error: 'proveedor_id inválido' });
 
   const appId = process.env.ML_APP_ID;
   if (!appId) return res.status(500).json({ error: 'ML_APP_ID no configurado' });
+
+  const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: 'Credenciales Supabase no configuradas' });
+  }
+
+  // La sesion tiene que ser duena de ESE proveedor. Sin esto, cualquiera puede
+  // iniciar un flujo apuntando a la fila de otro.
+  const email = await duenoDeProveedor(req, supabaseUrl, supabaseKey, proveedorId);
+  if (!email) {
+    return res.status(403).json({ error: 'Iniciá sesión con la cuenta del proveedor para conectar Mercado Libre.' });
+  }
+
+  const state = await crearState(supabaseUrl, supabaseKey, {
+    proveedorId, proveedor: 'ml', email
+  });
+  if (!state) return res.status(500).json({ error: 'No se pudo iniciar la conexión. Probá de nuevo.' });
 
   const redirectUri = process.env.ML_REDIRECT_URI || 'https://emprendego.com.ar/api/ml';
 
@@ -257,10 +301,12 @@ function handleMLOAuthStart(req, res) {
     `&client_id=${encodeURIComponent(appId)}` +
     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
     `&scope=${encodeURIComponent('read offline_access')}` +
-    `&state=${encodeURIComponent(proveedorId)}`;
+    `&state=${encodeURIComponent(state)}`;
 
-  console.log('[ml-auth] redirigiendo a:', authUrl);
-  return res.redirect(302, authUrl);
+  // La cookie viaja al navegador que pidio la URL. El callback exige que vuelva.
+  res.setHeader('Set-Cookie', cabeceraCookie('ml', state, req.headers.host));
+  console.log('[ml-auth] state creado para proveedor', proveedorId);
+  return res.status(200).json({ url: authUrl });
 }
 
 // ============================================================
@@ -268,16 +314,17 @@ function handleMLOAuthStart(req, res) {
 // ============================================================
 async function handleMLOAuthCallback(req, res) {
   const { code, state, error, error_description } = req.query;
-  const proveedorId = state;
 
-  console.log('[ml-callback] params:', { code: code ? '***' : null, error, state });
+  // ⚠️ El state NO se escribe en el log: mientras vive es una credencial de un
+  // solo uso, y los logs de Vercel los ve mas gente que la base.
+  console.log('[ml-callback] params:', { code: code ? '***' : null, error, state: state ? '***' : null });
 
   if (error) {
     console.error('[ml-callback] error desde ML:', error, error_description);
     return res.redirect(302, `https://emprendego.com.ar/?ml=error&reason=${encodeURIComponent(error)}`);
   }
 
-  if (!code || !esUUID(proveedorId)) {
+  if (!code || !state) {
     return res.status(400).send('Parámetros inválidos');
   }
 
@@ -287,14 +334,46 @@ async function handleMLOAuthCallback(req, res) {
   const supabaseUrl = (process.env.SUPABASE_URL || '').replace(/\/+$/, '').replace(/\/rest\/v1$/, '');
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  if (!appId || !clientSecret) {
-    console.error('[ml-callback] ML_APP_ID o ML_APP_SECRET no configurados');
-    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=server');
-  }
+  // ⚠️ ESTE BLOQUE ES EL ARREGLO. No se toca sin releer
+  // sql/2026-09-07_oauth_state_seguro.sql.
+  //
+  // Dos controles, y hacen falta los dos:
+  //
+  //   a) La COOKIE ata el flujo al navegador que lo empezo. Es lo unico que frena
+  //      el ataque de "abrime este link": un atacante puede pedir un state legitimo
+  //      para su propio proveedor, pero si se lo hace abrir a un vendedor real, el
+  //      navegador de la victima no lleva la cookie y esto corta antes de guardar
+  //      nada.
+  //
+  //   b) El CONSUMO del state es atomico y dice a que proveedor pertenece. El
+  //      proveedor_id ya no sale de la URL: sale de la base.
   if (!supabaseUrl || !supabaseKey) {
     console.error('[ml-callback] credenciales Supabase no configuradas');
     return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=server');
   }
+
+  res.setHeader('Set-Cookie', cabeceraCookieBorrada('ml', req.headers.host));
+
+  const cookieState = leerCookie(req, 'ml');
+  if (!iguales(cookieState, String(state))) {
+    console.error('[ml-callback] rechazado: el state no coincide con la cookie del navegador');
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=state');
+  }
+
+  const fila = await consumirState(supabaseUrl, supabaseKey, String(state), 'ml');
+  if (!fila) {
+    console.error('[ml-callback] rechazado: state inexistente, vencido o ya usado');
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=state');
+  }
+
+  const proveedorId = fila.proveedor_id;
+
+  if (!appId || !clientSecret) {
+    console.error('[ml-callback] ML_APP_ID o ML_APP_SECRET no configurados');
+    return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=server');
+  }
+  // El chequeo de las credenciales de Supabase ya se hizo mas arriba: hace falta
+  // antes de consumir el state.
 
   // Intercambiar code por access_token + refresh_token
   let tokenData;
@@ -329,7 +408,15 @@ async function handleMLOAuthCallback(req, res) {
   console.log('[ml-callback] token ML ok — user_id:', user_id, '| expires_in:', expires_in);
 
   if (!access_token || !refresh_token || !user_id) {
-    console.error('[ml-callback] respuesta ML incompleta:', JSON.stringify(tokenData));
+    // ⚠️ Acá había un JSON.stringify(tokenData) entero. Si ML contestaba con un
+    // access_token válido pero sin user_id, ese token quedaba escrito en los logs
+    // de Vercel. Se registra QUÉ faltó, nunca los valores.
+    const faltan = [
+      !access_token && 'access_token',
+      !refresh_token && 'refresh_token',
+      !user_id && 'user_id'
+    ].filter(Boolean);
+    console.error('[ml-callback] respuesta ML incompleta, faltan:', faltan.join(', '));
     return res.redirect(302, 'https://emprendego.com.ar/?ml=error&reason=token');
   }
 
@@ -739,6 +826,14 @@ async function handleMLSync(req, res) {
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !supabaseKey) {
     return res.status(500).json({ error: 'Credenciales Supabase no configuradas' });
+  }
+
+  // Antes esto aceptaba cualquier proveedor_id: alcanzaba con conocer el UUID
+  // —que es publico, viaja en /api/catalogo— para disparar la importacion de un
+  // proveedor ajeno. No filtraba datos (la respuesta son contadores), pero
+  // gastaba recursos y delataba si ese proveedor estaba en Pro y conectado.
+  if (!(await duenoDeProveedor(req, supabaseUrl, supabaseKey, proveedorId))) {
+    return res.status(403).json({ error: 'Iniciá sesión con la cuenta del proveedor para sincronizar.' });
   }
 
   // 1) Leer proveedor (plan + credenciales ML + mapeo de categorias)

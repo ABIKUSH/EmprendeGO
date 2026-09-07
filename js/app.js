@@ -886,12 +886,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // reason=state lo devuelve el callback cuando la conexión no se puede atribuir
+  // al navegador que la empezó: venció (15 minutos), ya se usó, o se abrió en un
+  // dispositivo distinto del que la inició. Le llega a un proveedor real cuando
+  // deja la pantalla de permisos abierta y vuelve más tarde, así que el texto
+  // tiene que decirle qué hacer y no mostrarle la palabra "state".
+  const MSG_OAUTH_VENCIDO = 'La conexión venció o se abrió en otro dispositivo. Conviene volver a empezar desde el panel.';
+
   const tnParam = params.get('tn');
   if (tnParam === 'ok') {
     setTimeout(() => showToast('Tienda Nube conectada. Ya podés sincronizar tus productos.'), 1200);
     history.replaceState({}, '', window.location.pathname);
   } else if (tnParam === 'error') {
-    setTimeout(() => showToast('Error al conectar Tienda Nube. Intentá de nuevo.'), 1200);
+    const msgTn = params.get('reason') === 'state' ? MSG_OAUTH_VENCIDO : 'Error al conectar Tienda Nube. Intentá de nuevo.';
+    setTimeout(() => showToast(msgTn), 1200);
     history.replaceState({}, '', window.location.pathname);
   }
 
@@ -901,7 +909,10 @@ document.addEventListener('DOMContentLoaded', () => {
     history.replaceState({}, '', window.location.pathname);
   } else if (mlParam === 'error') {
     const reason = params.get('reason');
-    setTimeout(() => showToast(reason ? `Error al conectar Mercado Libre (${reason}). Intentá de nuevo.` : 'Error al conectar Mercado Libre. Intentá de nuevo.'), 1200);
+    const msgMl = reason === 'state'
+      ? MSG_OAUTH_VENCIDO
+      : (reason ? `Error al conectar Mercado Libre (${reason}). Intentá de nuevo.` : 'Error al conectar Mercado Libre. Intentá de nuevo.');
+    setTimeout(() => showToast(msgMl), 1200);
     history.replaceState({}, '', window.location.pathname);
   }
 
@@ -7635,12 +7646,58 @@ async function renderTiendaNubeSection() {
   }
 }
 
-function conectarTiendaNube(btn) {
+// Cabeceras con el token de la sesión, para los endpoints que exigen saber quién
+// llama. Devuelve null si no hay sesión viva, así el que llama corta y avisa.
+//
+// Existe desde el 2026-09-07: antes, conectar Mercado Libre o Tienda Nube y
+// sincronizar el catálogo eran operaciones anónimas del lado del servidor. El
+// proveedor_id viajaba solo, y es público (va en /api/catalogo), así que
+// cualquiera podía usarlo. Ver sql/2026-09-07_oauth_state_seguro.sql.
+async function cabecerasConSesion() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session?.access_token) return null;
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${session.access_token}`
+  };
+}
+
+// Pide al servidor la URL de autorización y recién después navega.
+//
+// ⚠️ El paso de más no es un rodeo: una navegación directa (window.location) no
+// puede llevar el header Authorization, así que el servidor no tendría forma de
+// saber quién pide conectar ni si es dueño de ese proveedor. Además el servidor
+// deja en este navegador una cookie que el callback va a exigir de vuelta, y eso
+// es lo que impide que el flujo lo termine otra persona.
+async function conectarTiendaNube(btn) {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   btn.disabled = true;
+  const labelOriginal = btn.innerHTML;
   btn.textContent = 'Redirigiendo...';
-  window.location.href = '/api/tiendanube?action=auth&proveedor_id=' + encodeURIComponent(proveedorId);
+  try {
+    const headers = await cabecerasConSesion();
+    if (!headers) {
+      showToast('Tu sesión venció. Volvé a entrar y probá de nuevo.');
+      btn.disabled = false; btn.innerHTML = labelOriginal;
+      return;
+    }
+    const res = await fetch('/api/tiendanube?action=oauth_url', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ proveedor_id: proveedorId })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.url) {
+      showToast(data.error || 'No se pudo iniciar la conexión. Probá de nuevo.');
+      btn.disabled = false; btn.innerHTML = labelOriginal;
+      return;
+    }
+    window.location.href = data.url;
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+    btn.disabled = false; btn.innerHTML = labelOriginal;
+  }
 }
 
 async function sincronizarTiendaNube(btn) {
@@ -7649,9 +7706,15 @@ async function sincronizarTiendaNube(btn) {
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';
   try {
+    const headers = await cabecerasConSesion();
+    if (!headers) {
+      showToast('Tu sesión venció. Volvé a entrar y probá de nuevo.');
+      btn.disabled = false;
+      return;
+    }
     const res = await fetch('/api/tiendanube?action=sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ proveedor_id: proveedorId })
     });
     const data = await res.json();
@@ -7824,13 +7887,37 @@ async function renderMercadoLibreSection() {
   }
 }
 
-function conectarMercadoLibre(btn) {
+// Mismo camino que conectarTiendaNube: se pide la URL con la sesión puesta y
+// recién después se navega. Ver el comentario de cabecerasConSesion().
+async function conectarMercadoLibre(btn) {
   const proveedorId = currentUser?.proveedorId;
   if (!proveedorId) return;
   btn.disabled = true;
+  const labelOriginal = btn.innerHTML;
   btn.textContent = 'Redirigiendo...';
-  // El endpoint /api/ml detecta proveedor_id y redirige a auth.mercadolibre.com.ar
-  window.location.href = '/api/ml?proveedor_id=' + encodeURIComponent(proveedorId);
+  try {
+    const headers = await cabecerasConSesion();
+    if (!headers) {
+      showToast('Tu sesión venció. Volvé a entrar y probá de nuevo.');
+      btn.disabled = false; btn.innerHTML = labelOriginal;
+      return;
+    }
+    const res = await fetch('/api/ml?action=oauth_url', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ proveedor_id: proveedorId })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.url) {
+      showToast(data.error || 'No se pudo iniciar la conexión. Probá de nuevo.');
+      btn.disabled = false; btn.innerHTML = labelOriginal;
+      return;
+    }
+    window.location.href = data.url;
+  } catch {
+    showToast('Error de conexión. Intentá más tarde.');
+    btn.disabled = false; btn.innerHTML = labelOriginal;
+  }
 }
 
 async function sincronizarMercadoLibre(btn) {
@@ -7840,9 +7927,15 @@ async function sincronizarMercadoLibre(btn) {
   btn.disabled = true;
   btn.textContent = '⏳ Sincronizando...';
   try {
+    const headers = await cabecerasConSesion();
+    if (!headers) {
+      showToast('Tu sesión venció. Volvé a entrar y probá de nuevo.');
+      btn.disabled = false; btn.innerHTML = labelOriginal;
+      return;
+    }
     const res = await fetch('/api/ml?action=sync', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ proveedor_id: proveedorId })
     });
     const data = await res.json();
