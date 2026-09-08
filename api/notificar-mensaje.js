@@ -18,6 +18,11 @@ export default async function handler(req, res) {
      handler (CRON_SECRET o sesion de admin), no este if. */
   if (req.query?.action === 'wa_informe') return handlerWaInforme(req, res);
 
+  /* La cola de la mañana, por el mismo motivo: la dispara el cron por GET.
+     Suelta los avisos de los pedidos que se publicaron de noche, cuando el
+     corte horario de handlerWaPedido no los dejo salir. */
+  if (req.query?.action === 'wa_pendientes') return handlerWaPendientes(req, res);
+
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   // Rama de anuncios manuales del panel de admin (?action=anuncio).
@@ -774,9 +779,12 @@ function plantillaAnuncioCotizaciones(nombreCrudo, unsubUrl) {
    - Estructurar el pedido con IA: iria en el armado de params de enviarUno(),
      convirtiendo el texto libre del comprador en datos comparables antes de
      armar el mensaje.
-   - Ranking por desempeño del proveedor: iria en el .sort() de
-     elegirDestinatarios(), reemplazando el orden por provincia + antiguedad.
-     Hoy no hay con que medir desempeño (2 cotizaciones en toda la historia).
+   - Ranking por desempeño del proveedor: HECHO el 2026-09-08, ya no es una
+     fase futura. Vive en el .sort() de elegirDestinatarios() y se alimenta de
+     cargarDesempeno(); ver WA_MUDO_FONDO / WA_MUDO_CORTE. Se pudo hacer
+     porque ahora si hay con que medir: cuando esto se escribio habia 2
+     cotizaciones en toda la historia y hoy hay 364 avisos con acuse de
+     entrega y lectura.
    - Muro medido (Pro se entera antes que Free): la constante
      WA_RETARDO_FREE_MIN ya esta puesta en cero justo para eso. Cuando valga
      mas que cero, los Free salen en una segunda tanda demorada. Esta ahora
@@ -787,14 +795,60 @@ function plantillaAnuncioCotizaciones(nombreCrudo, unsubUrl) {
 
 /* A cuantos proveedores como maximo se avisa por pedido.
 
-   En 8 a proposito, y NO porque sea el numero correcto: es el arranque
-   prudente. El numero de EmprendeGO ya fue restringido una vez por presentar
-   proveedores en masa, asi que se empieza chico, se mira la calificacion de
-   calidad en el panel de Meta unos dias, y recien ahi se sube.
+   ARRANCO EN 8 y ese 8 era el arranque prudente, no el numero correcto: el
+   numero de EmprendeGO ya habia sido restringido una vez por presentar
+   proveedores en masa, asi que se empezo chico para mirar la calificacion de
+   calidad en el panel de Meta antes de subir.
 
-   El techo natural es 25: el rubro mas poblado (Indumentaria) tiene 35
-   aprobados y con 25 el orden por provincia todavia decide quien entra. */
-const WA_LIMITE_DESTINATARIOS = 8;
+   SUBIDO A 20 el 2026-09-08, contra la medicion del embudo (admin_wa_embudo,
+   ventana "Todo"): 364 avisos reservados, 322 aceptados por Meta, 293
+   entregados y 232 leidos, sin una sola restriccion del numero. Los 42 fallos
+   fueron todos de configuracion nuestra y estan fechados: 21 "Account not
+   registered" hasta el 25/08 (el numero no estaba de alta) y 18 "Business
+   eligibility payment issue" hasta el 01/09 (la facturacion caida). Del 01/09
+   en adelante solo hubo 3 "Message undeliverable", que son telefonos mal
+   cargados de proveedores puntuales. O sea: el canal aguanta.
+
+   Por que 20 y no 25: Indumentaria tiene 35 aprobados, asi que con 20 el
+   orden sigue decidiendo quien entra y el ranking de abajo sigue teniendo
+   efecto. Con 25 casi no quedaria nadie afuera en el resto de los rubros y
+   perderiamos la senal de si priorizar sirve. */
+const WA_LIMITE_DESTINATARIOS = 20;
+
+/* RANKING POR DESEMPEÑO. Este es el lugar que el .sort() de
+   elegirDestinatarios tenia marcado como "fase futura" desde el 24-08.
+
+   POR QUE SE IMPLEMENTA AHORA, medido el 2026-09-08: de los 232 avisos que el
+   proveedor abrio, solo 14 terminaron en una cotizacion (4%). Mirando quien
+   los recibe aparece el motivo: hay proveedores anotados en 5 a 7 rubros a la
+   vez —"Todo Tienda" figura en Tecnologia, Hogar y Deco, Bazar, Belleza y
+   Salud, Deportes, Iluminacion y Electronica— que por eso califican para casi
+   cualquier pedido y se llevan los lugares SIEMPRE. Los dos peores casos,
+   EMA IMPORTADORA y Libreria Integral MAYA, recibieron 13 avisos cada uno y
+   no cotizaron nunca, ni una vez. Con 8 lugares por pedido, esos lugares se
+   los estaban comiendo ellos.
+
+   DOS UMBRALES Y NO UNO, a proposito:
+
+   - WA_MUDO_FONDO manda al final de la cola, no afuera. Es una señal blanda:
+     5 avisos sin cotizar puede ser mala suerte de rubro o una mala racha, y
+     si en ese rubro no hay nadie mas, es mejor mandarle a el que a nadie.
+     Como el orden solo importa cuando hay mas candidatos que lugares, en los
+     rubros flacos no cambia nada.
+
+   - WA_MUDO_CORTE lo saca. 12 avisos leidos sin una sola cotizacion ya no es
+     ruido: es alguien que no va a contestar, y seguir escribiendole es gastar
+     un mensaje pago y arriesgar que reporte el numero, que es el unico daño
+     de esta funcion que no se puede deshacer. Esta en 12 porque al 2026-09-08
+     los unicos dos por encima de ese valor son justamente EMA y MAYA; no es
+     un numero redondo elegido de antemano.
+
+   OJO CON EL SENTIDO DE "no cotizo nunca": es sobre TODA su historia en
+   cotizaciones, no sobre este pedido. Un proveedor que cotizo una sola vez
+   hace tres meses no entra en ninguna de las dos listas. La regla busca al
+   que nunca dio señales de vida, no al que anda flojo. */
+const WA_MUDO_FONDO = 5;
+const WA_MUDO_CORTE = 12;
 
 /* Tope de avisos por proveedor en 24 h, en ventana movil.
 
@@ -827,6 +881,49 @@ const WA_RETARDO_FREE_MIN = 0;
 // Cuantos minutos despues de publicado se acepta avisar. El navegador llama
 // a los 2 segundos; el margen es para una conexion lenta o un reintento.
 const WA_VENTANA_MIN = 15;
+
+/* FRANJA HORARIA. Fuera de esta ventana el aviso NO sale: queda esperando y
+   lo suelta el cron de la mañana (ver ?action=wa_pendientes).
+
+   POR QUE, medido el 2026-09-08: en el embudo hay tandas de avisos saliendo a
+   las 23:38 y a las 23:45, y pedidos publicados a las 04:42 de la mañana. El
+   mayorista tiene el local cerrado: el mensaje le llega, lo lee al otro dia
+   entre veinte notificaciones, y el pedido ya perdio el dia. El promedio
+   actual hasta la primera cotizacion es de 44,1 h y una parte de eso es puro
+   esperar a que abra.
+
+   Hora argentina fija (UTC-3, el pais no mueve el reloj). Se calcula
+   corriendo la fecha y leyendo en UTC por el mismo motivo que
+   dispararInformeSemanal(): la funcion corre en un servidor en UTC y
+   getHours() daria la hora del servidor, no la del proveedor.
+
+   Los limites no son redondos por gusto: 9 es cuando abre el mayorista de
+   Once y 21 es tarde pero todavia razonable para alguien que atiende por
+   WhatsApp. Un pedido publicado 20:55 sale igual; uno de las 21:05 espera a
+   la mañana. */
+const WA_HORA_DESDE = 9;
+const WA_HORA_HASTA = 21;
+
+/* Cuanto para atras mira el cron de la mañana buscando pedidos sin avisar.
+
+   13 h cubre desde las 20 del dia anterior hasta las 9 de hoy, o sea toda la
+   franja de silencio con margen. NO puede ser mucho mas grande: un pedido que
+   quedo sin destinatarios (rubro sin proveedores) tampoco escribe filas en
+   avisos_wa, asi que una ventana larga lo volveria a intentar todas las
+   mañanas para siempre. */
+const WA_PENDIENTE_HORAS = 13;
+
+/* La hora en Argentina, para el corte de arriba. Exportada solo para poder
+   probarla: es la clase de cuenta que se escribe mal una vez y despues manda
+   WhatsApp a las 4 de la mañana durante un mes sin que nadie lo note. */
+export function horaArgentina(fecha) {
+  return new Date((fecha ? fecha.getTime() : Date.now()) - 3 * 3600 * 1000).getUTCHours();
+}
+
+export function enHorarioComercial(fecha) {
+  const h = horaArgentina(fecha);
+  return h >= WA_HORA_DESDE && h < WA_HORA_HASTA;
+}
 
 const WA_API_VERSION = 'v21.0';
 
@@ -1019,6 +1116,14 @@ async function handlerWaPedido(req, res) {
   const { solicitud_id, rubro: rubroForzado } = req.body || {};
   if (!esUUID(solicitud_id)) return res.status(400).json({ error: 'missing fields' });
 
+  /* El cron de la mañana entra por aca con el mismo Bearer que usa el resto
+     del proyecto. Lo unico que le habilita es saltear la ventana de 15
+     minutos y el corte horario —los pedidos que viene a soltar son, por
+     definicion, viejos y de la madrugada—. No fuerza rubro ni libera fallos:
+     eso sigue siendo exclusivo de una sesion de admin de verdad. */
+  const secretoCron = process.env.CRON_SECRET || process.env.ADMIN_SECRET;
+  const porCron = !!secretoCron && req.headers.authorization === `Bearer ${secretoCron}`;
+
   // Igual que en ?action=cotizacion: lo que no corresponde mandar sale con
   // 200 y un motivo. No es un error del que llama y un 4xx solo le llenaria
   // la consola al comprador, que no tiene nada que ver con esto.
@@ -1063,9 +1168,21 @@ async function handlerWaPedido(req, res) {
       }
     }
 
-    if (!porAdmin) {
+    if (!porAdmin && !porCron) {
       const edadMin = (Date.now() - new Date(sol.created_at).getTime()) / 60000;
       if (edadMin > WA_VENTANA_MIN) return saltear('pedido_viejo');
+
+      /* De noche no se manda: el pedido queda esperando y lo suelta el cron
+         de las 9 (ver WA_HORA_DESDE y ?action=wa_pendientes).
+
+         ESTO NO RESERVA NADA EN avisos_wa, y de ahi depende todo el mecanismo:
+         el cron encuentra los pendientes justamente porque son los pedidos
+         recientes que no tienen ni una fila. Si algun dia alguien reserva
+         antes de este corte, la cola de la mañana queda vacia y los avisos
+         nocturnos se pierden en silencio. */
+      if (!enHorarioComercial()) {
+        return saltear('fuera_de_horario', { hora_ar: horaArgentina(), sale: `${WA_HORA_DESDE}:00` });
+      }
     }
 
     // Un pedido sin rubro util no le sirve a nadie: se saltea y lo reenvia
@@ -1129,7 +1246,12 @@ async function handlerWaPedido(req, res) {
       }
     }
 
-    const destinatarios = elegirDestinatarios(await provRes.json(), rubro, sol.provincia, enviados24);
+    // Historial completo, para el ranking por desempeño. Va aparte de
+    // enviados24 porque contesta otra pregunta: aquel es un cortacircuitos de
+    // ventana movil, este es "alguna vez cotizo algo".
+    const desempeno = await cargarDesempeno(headers);
+
+    const destinatarios = elegirDestinatarios(await provRes.json(), rubro, sol.provincia, enviados24, desempeno);
     if (!destinatarios.length) return saltear('sin_destinatarios', { rubro });
 
     const cupo = Math.max(0, WA_TOPE_DIARIO - enviadosHoy);
@@ -1168,17 +1290,212 @@ async function handlerWaPedido(req, res) {
 }
 
 
+/* =====================================================================
+   LA COLA DE LA MAÑANA  (?action=wa_pendientes)
+   =====================================================================
+
+   GET /api/notificar-mensaje?action=wa_pendientes
+   Authorization: Bearer <CRON_SECRET>
+
+   Suelta los avisos que el corte horario retuvo. Lo llama el cron diario de
+   api/recordatorio-planes.js, que corre 12:00 UTC = 9:00 en Argentina, o sea
+   exactamente WA_HORA_DESDE. No se agrego un cron nuevo a vercel.json a
+   proposito: el plan Hobby limita cuantos hay y la doc publica no dice el
+   tope, el mismo caso que el limite de 12 funciones (ver CLAUDE.md).
+
+   COMO SABE CUALES ESTAN PENDIENTES: son los pedidos abiertos y recientes que
+   NO tienen ni una fila en avisos_wa. No hay columna de estado ni cola en la
+   base, y es deliberado: avisos_wa ya es la fuente de verdad de a quien se le
+   escribio, asi que una columna nueva seria un segundo lugar donde anotar lo
+   mismo, con la posibilidad de que los dos se contradigan.
+
+   El precio de esa decision es que un pedido que no tuvo destinatarios
+   (rubro sin proveedores) tampoco escribe filas y se ve igual que uno
+   pendiente. Por eso la ventana es corta (WA_PENDIENTE_HORAS): se lo reintenta
+   una sola mañana y despues sale de la ventana solo. Reintentar un pedido sin
+   destinatarios no manda ningun mensaje, solo gasta una llamada.
+
+   NO MANDA NADA POR SU CUENTA: por cada pendiente llama a ?action=wa_pedido,
+   que es donde viven el tope diario, el anti-duplicado, el ranking y el
+   registro. Duplicar cualquiera de esas reglas aca seria tener dos lugares
+   donde se decide a quien se le escribe.
+   ===================================================================== */
+
+// Cuantos pedidos suelta como maximo por corrida. Con el volumen real (2,71
+// pedidos por dia) nunca se toca; esta para que un bug de fechas no derive en
+// una rafaga de decenas de pedidos viejos, y para no pasar el limite de 20 por
+// minuto del rate limit de wa-pedido.
+const WA_PENDIENTE_MAX = 10;
+
+async function handlerWaPendientes(req, res) {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !SUPABASE_BASE) {
+    console.error('[wa-pendientes] falta SUPABASE_SERVICE_ROLE_KEY o SUPABASE_URL');
+    return res.status(500).json({ error: 'server config error' });
+  }
+
+  /* Misma puerta que el resumen semanal: el cron con su Bearer, o una sesion
+     de admin para dispararlo a mano. Abierto no puede quedar: termina
+     mandando WhatsApp pagos. */
+  const secreto = process.env.CRON_SECRET || process.env.ADMIN_SECRET;
+  const esCron = !!secreto && req.headers.authorization === `Bearer ${secreto}`;
+  if (!esCron) {
+    const admin = await verificarAdmin(req, serviceKey);
+    if (!admin) return res.status(401).json({ error: 'no autorizado' });
+  }
+
+  const saltear = (motivo, extra) => res.status(200).json({ ok: true, skipped: motivo, ...extra });
+
+  /* Sin secreto no se puede seguir, aunque el que llame sea un admin con
+     sesion valida: la cola le pasa ese mismo Bearer a ?action=wa_pedido y es
+     lo unico que le permite saltear la ventana de 15 minutos. Sin el, los
+     pedidos de la noche saldrian todos como {skipped:'pedido_viejo'} y la
+     corrida diria "ok" sin haber mandado nada. */
+  if (!secreto) return saltear('sin_cron_secret');
+
+  const token = (process.env.WHATSAPP_TOKEN || '').trim();
+  const phoneId = (process.env.WHATSAPP_PHONE_ID || '').trim();
+  if (!token || !phoneId) return saltear('wa_apagado');
+
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  try {
+    const desde = new Date(Date.now() - WA_PENDIENTE_HORAS * 3600 * 1000).toISOString();
+
+    const solRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/solicitudes?estado=eq.abierta` +
+      `&created_at=gte.${encodeURIComponent(desde)}` +
+      `&select=id,rubro,created_at&order=created_at.asc&limit=100`,
+      { headers });
+    if (!solRes.ok) {
+      console.error('[wa-pendientes] no se pudo leer solicitudes:', solRes.status, await solRes.text());
+      return saltear('sin_lectura');
+    }
+
+    // Un pedido en rubro ciego no dispara nada ni de dia ni de noche: lo
+    // revisa una persona y lo reenvia con el rubro correcto. Se filtra aca
+    // para no gastar una llamada que termina en {skipped:'rubro_ciego'}.
+    const recientes = ((await solRes.json()) || []).filter(s => s && !rubroEsCiego(s.rubro));
+    if (!recientes.length) return saltear('sin_pedidos');
+
+    /* Cuales ya tienen aviso. Una sola consulta con in.(...) en vez de una por
+       pedido: son pocos, pero una consulta por pedido dentro de un cron es
+       como se llega a los timeouts de la funcion. */
+    const ids = recientes.map(s => s.id);
+    const yaRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_wa?select=solicitud_id` +
+      `&solicitud_id=in.(${ids.join(',')})`,
+      { headers });
+    if (!yaRes.ok) {
+      // Sin poder distinguir avisados de pendientes, mandar seria arriesgar
+      // un duplicado a todos. El indice unico lo atajaria igual, pero
+      // preferimos no depender de eso para algo que se puede reintentar
+      // mañana sin costo.
+      console.error('[wa-pendientes] no se pudo leer avisos_wa:', yaRes.status, await yaRes.text());
+      return saltear('sin_lectura');
+    }
+    const conAviso = new Set(((await yaRes.json()) || []).map(a => a.solicitud_id));
+
+    const pendientes = recientes.filter(s => !conAviso.has(s.id)).slice(0, WA_PENDIENTE_MAX);
+    if (!pendientes.length) return saltear('nada_pendiente', { revisados: recientes.length });
+
+    const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
+    const resultados = [];
+
+    // Secuencial y no en paralelo: son pocos, y una rafaga contra la propia
+    // funcion se come el rate limit de wa-pedido (20 por minuto).
+    for (const s of pendientes) {
+      try {
+        const r = await fetch(`${appUrl}/api/notificar-mensaje?action=wa_pedido`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secreto}` },
+          body: JSON.stringify({ solicitud_id: s.id })
+        });
+        const cuerpo = await r.json().catch(() => ({}));
+        resultados.push({ id: s.id, rubro: s.rubro, ...cuerpo });
+      } catch (e) {
+        // Un pedido que falla no puede cortar la cola: los que siguen no
+        // tienen la culpa y no hay otra corrida hasta mañana.
+        console.error(`[wa-pendientes] ${s.id} fallo:`, e.message);
+        resultados.push({ id: s.id, rubro: s.rubro, error: e.message });
+      }
+    }
+
+    const enviados = resultados.reduce((n, r) => n + (r.enviados || 0), 0);
+    console.log(`[wa-pendientes] ${pendientes.length} pedidos de la noche, ${enviados} avisos enviados`);
+    return res.status(200).json({ ok: true, pedidos: pendientes.length, enviados, resultados });
+
+  } catch (err) {
+    console.error('[wa-pendientes] error inesperado:', err.message);
+    return res.status(200).json({ ok: false, error: err.message });
+  }
+}
+
+
 /* A QUIEN SE LE MANDA.
    El rubro es filtro DURO; la zona NO. Motivo, contra los datos reales: 93
    de los 150 proveedores aprobados estan en CABA y 35 en Buenos Aires. Si la
    provincia filtrara, un comprador de Cordoba se quedaria sin nadie a quien
    avisarle, cuando en la practica el mayorista de Once le vende igual y le
    manda por encomienda. Asi que la provincia ORDENA, no excluye. */
-export function elegirDestinatarios(proveedores, rubro, provinciaPedido, enviados24) {
+
+/* CUANTOS AVISOS RECIBIO CADA UNO Y SI ALGUNA VEZ COTIZO.
+
+   Alimenta el ranking de elegirDestinatarios (ver WA_MUDO_FONDO /
+   WA_MUDO_CORTE). Devuelve un Map id -> { recibidos, cotizo }.
+
+   Va sobre TODA la historia y no sobre una ventana movil: la pregunta que
+   contesta es "este proveedor alguna vez dio señales de vida", que no tiene
+   sentido preguntarla sobre los ultimos 7 dias. Son dos tablas chicas —364
+   avisos y unas decenas de cotizaciones al 2026-09-08— y las dos consultas
+   estan paginadas, asi que crecer no la rompe (ver project_supabase_1000_filas:
+   PostgREST corta en 1000 filas sin avisar).
+
+   NUNCA LANZA. Si Supabase no contesta devuelve un Map vacio, y con el mapa
+   vacio elegirDestinatarios reparte exactamente como repartia antes de que
+   esto existiera. Un aviso que sale con el orden viejo es infinitamente mejor
+   que un aviso que no sale. */
+async function cargarDesempeno(headers) {
+  try {
+    const [avisos, cotiz] = await Promise.all([
+      contarPorProveedor(headers, 'avisos_wa', null, '&estado=eq.enviado'),
+      contarPorProveedor(headers, 'cotizaciones', null, '')
+    ]);
+    if (!avisos) return new Map();
+
+    const perf = new Map();
+    for (const [id, recibidos] of avisos) {
+      perf.set(id, { recibidos, cotizo: !!(cotiz && cotiz.get(id)) });
+    }
+    return perf;
+  } catch (e) {
+    console.warn('[wa-pedido] no se pudo medir el desempeño:', e.message);
+    return new Map();
+  }
+}
+
+export function elegirDestinatarios(proveedores, rubro, provinciaPedido, enviados24, desempeno) {
   const cuenta = enviados24 instanceof Map ? enviados24 : new Map();
+  const perf = desempeno instanceof Map ? desempeno : new Map();
+
+  /* "Mudo" = recibio varios avisos y no cotizo NUNCA nada. Ver WA_MUDO_FONDO
+     y WA_MUDO_CORTE arriba para por que hay dos umbrales.
+
+     Sin el mapa de desempeño (los tests viejos, o una lectura de Supabase que
+     fallo) devuelve 0 para todos y el reparto queda igual que antes. Es a
+     proposito: si no se pudo medir a nadie, no se castiga a nadie. */
+  const avisosSinCotizar = p => {
+    const d = perf.get(p && p.id);
+    return d && !d.cotizo ? (d.recibidos || 0) : 0;
+  };
+
   const candidatos = (proveedores || []).filter(p => {
     if (!p || p.notif_wa === false) return false;              // se dio de baja
     if (!normalizarWa(p.whatsapp)) return false;               // sin numero usable
+
+    // Leyo 12 avisos y no cotizo una sola vez: no es un destinatario, es un
+    // reporte de spam esperando. Ver WA_MUDO_CORTE.
+    if (avisosSinCotizar(p) >= WA_MUDO_CORTE) return false;
 
     /* rubros_seguidos manda si el proveedor lo configuro; si no, se usa
        proveedores.rubro. Hoy lo configuro 1 de 150, asi que en los hechos
@@ -1197,17 +1514,23 @@ export function elegirDestinatarios(proveedores, rubro, provinciaPedido, enviado
   });
 
   return candidatos.sort((a, b) => {
-    // 1) misma provincia que el comprador
+    /* 1) los mudos al fondo. Va ANTES que la provincia a proposito: que
+       alguien este en la misma ciudad que el comprador no sirve de nada si
+       hace cinco avisos que no contesta, y la provincia de todas formas nunca
+       excluyo a nadie. Solo pesa cuando hay mas candidatos que lugares. */
+    const ma = avisosSinCotizar(a) >= WA_MUDO_FONDO ? 1 : 0;
+    const mb = avisosSinCotizar(b) >= WA_MUDO_FONDO ? 1 : 0;
+    if (ma !== mb) return ma - mb;
+    // 2) misma provincia que el comprador
     const pa = provinciaPedido && a.provincia === provinciaPedido ? 0 : 1;
     const pb = provinciaPedido && b.provincia === provinciaPedido ? 0 : 1;
     if (pa !== pb) return pa - pb;
-    // 2) el que hace mas que no recibe uno (nunca recibio = primero de todos).
+    // 3) el que hace mas que no recibe uno (nunca recibio = primero de todos).
     //    Reparte el alcance en vez de golpear siempre a los mismos.
-    //    FASE FUTURA: aca iria el ranking por desempeño.
     const ta = a.last_wa_at ? new Date(a.last_wa_at).getTime() : 0;
     const tb = b.last_wa_at ? new Date(b.last_wa_at).getTime() : 0;
     if (ta !== tb) return ta - tb;
-    // 3) desempate estable, para que dos corridas den el mismo orden
+    // 4) desempate estable, para que dos corridas den el mismo orden
     return String(a.id).localeCompare(String(b.id));
   }).slice(0, WA_LIMITE_DESTINATARIOS);
 }
@@ -1545,7 +1868,7 @@ async function contarPorProveedor(headers, tabla, desdeISO, filtroExtra = '') {
 
     const r = await fetch(url, { headers: { ...headers, Range: `${desde}-${desde + PASO - 1}` } });
     if (!r.ok) {
-      console.error(`[wa-informe] no se pudo leer ${tabla}:`, r.status, await r.text());
+      console.error(`[wa] no se pudo leer ${tabla}:`, r.status, await r.text());
       return null;
     }
 
@@ -1559,7 +1882,7 @@ async function contarPorProveedor(headers, tabla, desdeISO, filtroExtra = '') {
     // Freno duro: 50 paginas son 50.000 filas. Si se llega aca hay un bug, y
     // es mejor un numero incompleto que una funcion que no termina nunca.
     if (desde >= 50000) {
-      console.warn(`[wa-informe] ${tabla}: corte de seguridad a las 50.000 filas`);
+      console.warn(`[wa] ${tabla}: corte de seguridad a las 50.000 filas`);
       return cuenta;
     }
   }

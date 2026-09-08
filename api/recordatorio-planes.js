@@ -47,10 +47,15 @@ export default async function handler(req, res) {
     // Los lunes, ademas, dispara el resumen semanal por WhatsApp.
     const informe = await dispararInformeSemanal(ahora);
 
+    // Y todos los dias, la cola de la mañana: los avisos de los pedidos que se
+    // publicaron de noche y quedaron esperando.
+    const pendientes = await dispararPendientes();
+
     return res.status(200).json({
       ok: true,
       total: expirando.length,
       informe,
+      pendientes,
       proveedores: expirando.map(p => ({
         id: p.id,
         nombre: p.nombre,
@@ -112,6 +117,40 @@ async function dispararInformeSemanal(ahora) {
     return { corrio: true, ...cuerpo };
   } catch (e) {
     console.error('[recordatorio-planes] no se pudo disparar el resumen:', e.message);
+    return { corrio: false, motivo: e.message };
+  }
+}
+
+
+/* =====================================================================
+   LA COLA DE LA MAÑANA DE LOS AVISOS DE PEDIDOS
+   =====================================================================
+
+   Este cron corre a las 12:00 UTC, que son las 9:00 en Argentina: la misma
+   hora en la que abre WA_HORA_DESDE. No es casualidad aprovechada, es la
+   razon por la que la cola se colgo de aca y no de un cron propio (el plan
+   Hobby limita cuantos hay; ver el bloque de dispararInformeSemanal).
+
+   Corre TODOS los dias, no solo los lunes: los pedidos de la madrugada
+   aparecen cualquier dia de la semana.
+
+   Se traga el error a proposito, igual que el resumen: el recordatorio de
+   planes es lo que este cron vino a hacer y no se puede caer por esto. */
+async function dispararPendientes() {
+  const secreto = process.env.CRON_SECRET || process.env.ADMIN_SECRET;
+  if (!secreto) return { corrio: false, motivo: 'sin_cron_secret' };
+
+  const appUrl = (process.env.APP_URL || 'https://emprendego.com.ar').replace(/\/$/, '');
+
+  try {
+    const r = await fetch(`${appUrl}/api/notificar-mensaje?action=wa_pendientes`, {
+      headers: { Authorization: `Bearer ${secreto}` }
+    });
+    const cuerpo = await r.json().catch(() => ({}));
+    console.log('[recordatorio-planes] cola de la mañana:', JSON.stringify(cuerpo));
+    return { corrio: true, ...cuerpo };
+  } catch (e) {
+    console.error('[recordatorio-planes] no se pudo disparar la cola:', e.message);
     return { corrio: false, motivo: e.message };
   }
 }

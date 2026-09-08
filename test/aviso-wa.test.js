@@ -57,7 +57,15 @@ async function main() {
   const api = await import('../api/notificar-mensaje.js');
   const rub = await import('../api/_rubros.js');
   const { elegirDestinatarios, normalizarWa, limpiarParam, textoPedido, numeroDePrueba, valoresDelEvento,
-          esFalloNuestro } = api;
+          esFalloNuestro, enHorarioComercial, horaArgentina } = api;
+
+  /* Mapa de desempeño para el ranking: { id: [avisos_recibidos, cotizo] }.
+     Es lo que en produccion arma cargarDesempeno() leyendo avisos_wa y
+     cotizaciones. */
+  const perf = o => new Map(Object.entries(o).map(([id, [recibidos, cotizo]]) => [id, { recibidos, cotizo }]));
+
+  // Una fecha a la hora argentina que se pida (Argentina es UTC-3 fijo).
+  const aHoraAR = (h, m) => new Date(Date.UTC(2026, 8, 8, h + 3, m || 0));
   const { rubroCoincide, rubroEsCiego } = rub;
 
   /* =================================================================== */
@@ -348,10 +356,114 @@ async function main() {
        lo sube, esta prueba se pone roja y lo obliga a mirar por que. Es la
        unica cosa que limita cuanta gente recibe un mensaje de una sola vez, y
        el numero de EmprendeGO ya fue restringido una vez por mandar en masa.
-       Hoy esta en 8 (arranque prudente); el techo pensado es 25. */
+
+       Arranco en 8 y se subio a 20 el 2026-09-08, con el embudo medido: 322
+       avisos aceptados y 293 entregados sin una sola restriccion del numero.
+       El techo sigue siendo 25, y esa distancia es a proposito: con 20,
+       Indumentaria (35 aprobados) todavia deja gente afuera y el ranking por
+       desempeño sigue teniendo algo que ordenar. */
     const muchos = [];
     for (let i = 0; i < 40; i++) muchos.push(prov('p' + String(i).padStart(2, '0')));
-    igual(elegirDestinatarios(muchos, 'Bazar', null).length, 8);
+    igual(elegirDestinatarios(muchos, 'Bazar', null).length, 20);
+  });
+
+  /* =================================================================== */
+  seccion('Ranking por desempeño: el que nunca cotiza no ocupa un lugar bueno');
+
+  test('el que recibio 5 y nunca cotizo va al fondo', () => {
+    const r = elegirDestinatarios(
+      [prov('mudo'), prov('nuevo')], 'Bazar', null, null,
+      perf({ mudo: [5, false] })
+    );
+    mismos(r, ['nuevo', 'mudo'], 'el que no contesta nunca va ultimo');
+  });
+
+  test('recibio muchos PERO cotizo alguna vez: no se lo penaliza', () => {
+    /* La regla busca al que nunca dio señales de vida, no al que anda flojo.
+       Este recibio mas avisos que nadie justamente porque es de un rubro
+       pedido, y encima cotizo. */
+    const r = elegirDestinatarios(
+      [prov('activo', { last_wa_at: hs(1) }), prov('nuevo')], 'Bazar', null, null,
+      perf({ activo: [30, true] })
+    );
+    mismos(r, ['nuevo', 'activo'], 'ordena por last_wa_at, no por castigo');
+  });
+
+  test('a los 12 avisos sin una sola cotizacion queda afuera', () => {
+    // El caso real de EMA IMPORTADORA y Libreria Integral MAYA: 13 avisos
+    // leidos, cero cotizaciones. Seguir escribiendoles es gastar un mensaje
+    // pago y arriesgar que reporten el numero.
+    const r = elegirDestinatarios(
+      [prov('quemado'), prov('nuevo')], 'Bazar', null, null,
+      perf({ quemado: [13, false] })
+    );
+    mismos(r, ['nuevo'], 'el de 13 avisos sin cotizar no entra');
+  });
+
+  test('11 sin cotizar todavia entra, 12 ya no', () => {
+    // El corte tiene que ser el corte: un test que solo mire 5 y 13 no
+    // detecta que alguien mueva el umbral de 12 a 20.
+    const casi = elegirDestinatarios([prov('a')], 'Bazar', null, null, perf({ a: [11, false] }));
+    igual(casi.length, 1, 'con 11 todavia se le manda');
+    const corte = elegirDestinatarios([prov('a')], 'Bazar', null, null, perf({ a: [12, false] }));
+    igual(corte.length, 0, 'con 12 ya no');
+  });
+
+  test('el mudo pierde contra la provincia, no al reves', () => {
+    /* El orden de los criterios importa: estar en la misma ciudad que el
+       comprador no compensa hacer cinco avisos que no contesta. */
+    const r = elegirDestinatarios([
+      prov('mudoCerca', { provincia: 'Córdoba' }),
+      prov('buenoLejos', { provincia: 'CABA' })
+    ], 'Bazar', 'Córdoba', null, perf({ mudoCerca: [6, false] }));
+    mismos(r, ['buenoLejos', 'mudoCerca']);
+  });
+
+  test('si en el rubro no hay nadie mas, al mudo se le manda igual', () => {
+    // WA_MUDO_FONDO ordena, no excluye: mejor avisarle al unico que hay que
+    // dejar el pedido sin un solo destinatario.
+    const r = elegirDestinatarios([prov('unico')], 'Bazar', null, null, perf({ unico: [7, false] }));
+    mismos(r, ['unico']);
+  });
+
+  test('sin mapa de desempeño reparte igual que antes', () => {
+    /* Si la lectura de Supabase falla, cargarDesempeno() devuelve un Map
+       vacio. Que eso deje el reparto exactamente como estaba es lo que hace
+       que un error de medicion no se coma los avisos. */
+    const lista = [prov('c'), prov('a'), prov('b')];
+    const sinMapa = elegirDestinatarios(lista, 'Bazar', null).map(p => p.id).join(',');
+    const vacio = elegirDestinatarios(lista, 'Bazar', null, null, new Map()).map(p => p.id).join(',');
+    igual(sinMapa, 'a,b,c');
+    igual(vacio, sinMapa, 'un mapa vacio no castiga a nadie');
+  });
+
+  /* =================================================================== */
+  seccion('Franja horaria: de noche el mayorista tiene el local cerrado');
+
+  test('la hora se lee en Argentina y no en el servidor, que va en UTC', () => {
+    igual(horaArgentina(aHoraAR(23, 38)), 23, 'las 23:38 AR son las 02:38 UTC del dia siguiente');
+    igual(horaArgentina(aHoraAR(4, 42)), 4);
+  });
+
+  test('los dos casos reales del embudo quedan afuera', () => {
+    // Avisos que salieron 23:38 y pedidos publicados 04:42: son los que
+    // motivaron el corte.
+    asegurar(!enHorarioComercial(aHoraAR(23, 38)), 'las 23:38 no');
+    asegurar(!enHorarioComercial(aHoraAR(4, 42)), 'las 04:42 no');
+  });
+
+  test('en pleno dia sale', () => {
+    asegurar(enHorarioComercial(aHoraAR(12, 0)));
+    asegurar(enHorarioComercial(aHoraAR(18, 30)));
+  });
+
+  test('los bordes: 9:00 entra, 21:00 ya no', () => {
+    /* Escrito contra los bordes a proposito: un >= mal puesto se ve como
+       "algunos avisos salen 8:59" y nadie lo mira nunca. */
+    asegurar(enHorarioComercial(aHoraAR(9, 0)), 'a las 9 en punto ya sale');
+    asegurar(!enHorarioComercial(aHoraAR(8, 59)), 'a las 8:59 todavia no');
+    asegurar(enHorarioComercial(aHoraAR(20, 55)), 'a las 20:55 todavia sale');
+    asegurar(!enHorarioComercial(aHoraAR(21, 0)), 'a las 21 en punto ya no');
   });
 
   test('dos corridas con los mismos datos dan el mismo orden', () => {
