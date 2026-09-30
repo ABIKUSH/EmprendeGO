@@ -28,6 +28,101 @@ const COLS = 'id,proveedor_id,nombre,precio,stock,categoria,categoria_principal,
 const PAGE = 1000;
 const MAX_FILAS = 50000;
 
+// ---------------------------------------------------------------------------
+// CONTRATO COMPRA → PUBLICACIÓN  (?ficha=<id>,<id>,...)
+//
+// Es la puerta por la que EmprendeGO Negocios lee los datos que hacen falta
+// para publicar un producto en un canal. Va SEPARADA del catálogo general y
+// eso no es un capricho: de 5.811 productos sólo 96 tienen `ml_atributos`.
+// Sumar esa columna al listado general engordaría la respuesta que reciben
+// TODAS las visitas por un dato que usa el 1,6% de las filas, y el catálogo
+// cacheado en CDN es lo que hace que la búsqueda tarde 0,25s en vez de 2,3s.
+//
+// ⚠️ Usa la MISMA clave anónima que el listado, a propósito: así RLS sigue
+// filtrando a visible=true y proveedores aprobados. Nunca service_role.
+//
+// ⚠️ Los nombres dicen de quién es cada cosa. `precio_proveedor` y
+// `stock_proveedor` se llaman así porque NO son el precio de venta ni el
+// stock del comerciante: el comprador recibe existencias cuando recibe su
+// compra, no cuando el proveedor las tiene.
+// ---------------------------------------------------------------------------
+const CONTRATO_VERSION = '1.0.0';
+
+const COLS_FICHA = 'id,proveedor_id,nombre,descripcion,precio,stock,categoria,' +
+  'categoria_principal,subcategoria,categoria_ml,ml_item_id,ml_atributos,imagenes,imagen_url,' +
+  'created_at,proveedores(id,nombre,rubro,provincia)';
+
+const MAX_FICHAS = 50;
+const RE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Lo que todavía no existe en EmprendeGO y sin lo cual no se puede publicar.
+// Se calcula acá, en un solo lugar, para que ningún consumidor tenga que
+// reimplementar la regla de "listo para publicar" y llegar a otra conclusión.
+export function faltantesParaPublicar(p) {
+  const faltan = [];
+  const atributos = Array.isArray(p?.ml_atributos) ? p.ml_atributos : [];
+  const fotos = Array.isArray(p?.imagenes) ? p.imagenes : [];
+
+  if (!atributos.length) faltan.push('atributos');
+  if (!p?.categoria_ml) faltan.push('categoria_ml');
+  if (!fotos.length) faltan.push('imagenes');
+
+  // Estos cuatro no dependen del producto: no existen en EmprendeGO para
+  // NINGUNO, y son los que hacen fallar la publicación en Mercado Libre.
+  faltan.push('medidas_paquete');       // alto, ancho, largo y peso reales
+  faltan.push('precio_venta');          // el de acá es el costo del proveedor
+  faltan.push('variantes');             // EmprendeGO no tiene variantes
+  faltan.push('autorizacion_imagenes'); // origen conocido, permiso no declarado
+  return faltan;
+}
+
+// El origen importa: hoy las fotos de los productos importados viven en el CDN
+// de Mercado Libre, colgando de la publicación del proveedor. Republicarlas es
+// una decisión que no toma el código.
+export function describirImagen(u) {
+  const url = typeof u === 'string' ? u : (u && u.url) || null;
+  if (!url) return null;
+  let origen = 'proveedor';
+  try {
+    const host = new URL(url).hostname;
+    if (/mlstatic\.com$/.test(host)) origen = 'mercadolibre';
+    else if (/supabase\.(co|in)$/.test(host)) origen = 'emprendego';
+  } catch { origen = 'desconocido'; }
+  return { url, origen, autorizacion: 'no_declarada' };
+}
+
+export function armarFicha(p) {
+  return {
+    id: p.id,
+    proveedor: p.proveedores
+      ? { id: p.proveedores.id, nombre: p.proveedores.nombre, rubro: p.proveedores.rubro, provincia: p.proveedores.provincia }
+      : { id: p.proveedor_id },
+    nombre: p.nombre,
+    descripcion: p.descripcion || null,
+    // Nombres explícitos: esto es del proveedor, no del comerciante.
+    precio_proveedor: { valor: p.precio == null ? null : Number(p.precio), moneda: 'ARS' },
+    stock_proveedor: p.stock == null ? null : Number(p.stock),
+    unidad: null,        // no existe en EmprendeGO todavía
+    presentacion: null,  // no existe en EmprendeGO todavía
+    categorias: {
+      emprendego: p.categoria_principal || p.categoria || null,
+      subcategoria: p.subcategoria || null,
+      // ⚠️ Es el NOMBRE de la categoría ("Sábanas"), no el código MLA que pide
+      // Mercado Libre. El código se resuelve desde el título al publicar.
+      mercadolibre_nombre: p.categoria_ml || null,
+      mercadolibre_id: null
+    },
+    mercadolibre: { item_id: p.ml_item_id || null, atributos: Array.isArray(p.ml_atributos) ? p.ml_atributos : [] },
+    imagenes: (Array.isArray(p.imagenes) && p.imagenes.length ? p.imagenes : [p.imagen_url])
+      .map(describirImagen).filter(Boolean),
+    creado_at: p.created_at || null,
+    // Todavía no existe `updated_at` en productos. Va null hasta la migración,
+    // en vez de mentir con created_at, que no es lo mismo.
+    actualizado_at: null,
+    faltantes_para_publicar: faltantesParaPublicar(p)
+  };
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
 
@@ -35,6 +130,56 @@ export default async function handler(req, res) {
   // pidiendo ?x=1, ?x=2, ?x=3... y hacer pegar cada request contra Supabase.
   // El rate limit le pone techo a ese abuso.
   if (!applyRateLimit(req, res, { bucket: 'catalogo', limit: 60, windowMs: 60000 })) return;
+
+  // Rama del contrato compra → publicación. Va antes del listado general.
+  const ficha = typeof req.query?.ficha === 'string' ? req.query.ficha : null;
+  if (ficha) {
+    const ids = [...new Set(ficha.split(',').map(s => s.trim()).filter(Boolean))];
+    if (!ids.length) return res.status(400).json({ error: 'Sin ids' });
+    if (ids.length > MAX_FICHAS) return res.status(400).json({ error: `Máximo ${MAX_FICHAS} productos por pedido` });
+    // Validar el formato antes de armar la consulta: un id con coma o paréntesis
+    // adentro se mete en el filtro `in.(...)` de PostgREST y cambia lo que pide.
+    const malos = ids.filter(id => !RE_UUID.test(id));
+    if (malos.length) return res.status(400).json({ error: 'Hay ids con formato inválido' });
+
+    try {
+      const url = `${SUPABASE_BASE}/rest/v1/productos` +
+        `?select=${encodeURIComponent(COLS_FICHA)}` +
+        `&id=in.(${ids.join(',')})` +
+        `&or=(visible.eq.true,visible.is.null)` +
+        `&limit=${MAX_FICHAS}`;
+
+      const r = await fetch(url, {
+        headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, Accept: 'application/json' }
+      });
+      if (!r.ok) {
+        console.error('[catalogo/ficha] Supabase respondió', r.status);
+        return res.status(502).json({ error: 'No se pudieron leer las fichas' });
+      }
+      const filas = await r.json();
+      const productos = (Array.isArray(filas) ? filas : []).map(armarFicha);
+
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).json({
+        contrato: CONTRATO_VERSION,
+        generado_at: new Date().toISOString(),
+        pedidos: ids.length,
+        devueltos: productos.length,
+        // Lo que el consumidor no puede deducir mirando los datos.
+        advertencias: [
+          'precio_proveedor es el costo del proveedor, no un precio de venta.',
+          'stock_proveedor es la existencia del proveedor. El comerciante recibe stock cuando recibe su compra.',
+          'categorias.mercadolibre_nombre es un nombre, no el código de categoría que pide Mercado Libre.',
+          'Las imágenes traen origen, y la autorización de uso no está declarada por nadie todavía.'
+        ],
+        productos
+      });
+    } catch (err) {
+      console.error('[catalogo/ficha] error:', err.message);
+      return res.status(500).json({ error: 'Error al armar las fichas' });
+    }
+  }
 
   try {
     const filas = [];
