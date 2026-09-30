@@ -1,8 +1,14 @@
-import { esUUID } from './_ratelimit.js';
+import { applyRateLimit, esUUID } from './_ratelimit.js';
 
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
 export default async function handler(req, res) {
+  // El unico endpoint publico que escribia en Supabase sin ningun tope.
+  // Darse de baja es algo que una persona hace una vez en la vida, asi que
+  // 20 por minuto por IP no le llega ni de cerca a nadie real; lo que corta
+  // es alguien recorriendo uuids en bucle.
+  if (!applyRateLimit(req, res, { bucket: 'unsub', limit: 20, windowMs: 60000 })) return;
+
   // Baja de un USUARIO de los anuncios del panel (?u=<uuid>&c=<campana>).
   // Rama nueva y aislada: el flujo historico de abajo (?id=<proveedor>)
   // queda exactamente como estaba.

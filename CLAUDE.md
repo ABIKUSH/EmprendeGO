@@ -218,6 +218,74 @@ Todos los lunes, a cada proveedor con movimiento: **cuántos compradores le pidi
 
 ⚠️ **`enviarInforme()` NO toca `proveedores.last_wa_at`.** Esa columna ordena el reparto del aviso de *pedidos*; si el resumen la pisara, todos quedarían con la misma fecha cada lunes y el reparto se volvería arbitrario.
 
+### Topes de consumo (2026-09-30)
+
+Auditoría contra picos de factura por tráfico de bots. La conclusión cambió el
+problema de lugar y conviene tenerla escrita, porque de ella salen los umbrales:
+
+⚠️ **EL SPEND CAP DE SUPABASE NO COBRA DE MÁS: RESTRINGE EL PROYECTO.** Está
+activo (verificado el 2026-09-30), así que una avalancha ya no puede producir
+una factura sorpresa — puede producir **EmprendeGO en modo solo lectura**. Y
+los dos proyectos, el marketplace y `emprendego-negocios`, **cuelgan de la
+misma organización y comparten la misma cuota**: lo que quema uno se lo saca al
+otro. El consumo dejó de ser un problema de plata y pasó a ser uno de que la
+app siga en pie. Vercel está en Hobby, que tampoco cobra excedentes.
+
+⚠️ **EL RIESGO REAL NO ERAN LOS ENDPOINTS, ERAN LAS IMÁGENES.** Los dos buckets
+(`productos` y `Avatares`) se sirven por URL pública y cualquiera los descarga
+sin límite. Eso no se puede cerrar sin romper el catálogo público, así que lo
+que se hizo fue abaratar cada descarga.
+
+| Tope | Dónde | Número |
+|---|---|---|
+| Caché de fotos | `js/app.js` → `CACHE_FOTOS` | 31536000 (un año) |
+| Reloj del chat | `js/app.js` → `iniciarChatPolling()` | 8s, ×2 por falla, corta a la 5ª |
+| Mis conversaciones / bandeja | `js/app.js` | `.limit(500)` |
+| Pedidos archivados | `js/app.js` → `verPedidosArchivados()` | `.limit(200)` |
+| Baja de correos | `api/unsub.js` | 20/min por IP |
+| Pruebas | `node test/costos-bots.test.js` | 20 comprobaciones, sin red ni base |
+
+⚠️ **EL AÑO DE CACHÉ ES SEGURO SÓLO PORQUE EL NOMBRE DE ARCHIVO ES
+IRREPETIBLE** (token aleatorio + `Date.now()`, ver los `path` de
+`subirFotoStorage()` y `subirAvatar()`). Una foto nunca se sobrescribe: cambiar
+la imagen de un producto sube un archivo con otro nombre. **Si alguien vuelve a
+nombres estables o a `upsert`, este número se vuelve peligroso** — el navegador
+seguiría mostrando la foto vieja un año — y hay que bajarlo. La prueba lo
+vigila.
+
+⚠️ **EL RELOJ DEL CHAT AHORA PREGUNTA BARATO.** Traía la conversación entera
+con todas las columnas cada 8 segundos, sólo para comparar si había algo nuevo.
+Ahora pide **una** fila (el id del último mensaje) y recién si ese id no lo
+conocemos hace la consulta completa. Se duerme con la pestaña oculta
+(`visibilitychange` despierta a `chatDespertar`) y **se rinde tras 5 fallas
+seguidas** duplicando la espera: el `catch (e) { }` anterior se comía el error y
+seguía pidiendo cada 8 segundos contra un Supabase caído o devolviendo 429, que
+es exactamente lo que empeora las dos cosas. Es `setTimeout` encadenado y no
+`setInterval` justamente porque la espera cambia.
+
+⚠️ **EL CATÁLOGO NO LLEVA TOPE Y ESO ES A PROPÓSITO.** Ver
+`project_buscador_client_side`: el buscador filtra en el cliente sobre todo el
+catálogo, así que un límite fijo le esconde productos al que busca. Las dos
+consultas de `productos` (`js/app.js`, catálogo público de un proveedor y panel
+propio) quedaron sin `.limit()` deliberadamente y hay una prueba que lo exige.
+
+⚠️ **`USAR_TRANSFORM_IMG` SIGUE EN `false`** (`js/app.js`). La función que
+reescribe la URL para pedirle a Supabase la imagen ya achicada está escrita y
+apagada. No se prendió porque **las transformaciones se facturan aparte por
+imagen de origen**: puede convenir o no según cuántas imágenes distintas haya, y
+prenderla sin medir sería cambiar un costo por otro.
+
+**Lo que NO se tocó, y por qué:** `webhook-mp.js` no lleva rate limit porque
+valida la firma HMAC con `timingSafeEqual` antes de hacer cualquier llamada
+externa; `keepalive.js` y `recordatorio-planes.js` exigen el Bearer del cron;
+`reactivar-pro.js` exige `x-admin-secret`. El único que escribía en Supabase sin
+ningún tope era `unsub.js`, y ahora no.
+
+**Del lado de EmprendeGO Negocios** el único gasto sin techo es el proveedor de
+los modelos (ZEUS y la generación visual), que cobra por llamada. Se le puso un
+freno de ráfaga por usuario en `lib/freno.mjs`. No es un cupo diario: frena un
+bucle, no a una persona que usa mucho el producto.
+
 ### PWA
 
 `manifest.json` + `sw.js` (service worker). The SW currently just clears caches on activate.

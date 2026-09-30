@@ -2850,9 +2850,10 @@ async function cargarMensajesUsuario() {
 
   try {
     const { data, error } = await sb.from('mensajes')
-      .select('*')
+      .select('id,proveedor_id,usuario_email,texto,de_tipo,de_nombre,leido,created_at')
       .eq('usuario_email', currentUser.email)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
 
     if (error) throw error;
 
@@ -2933,21 +2934,78 @@ function renderChat(conFundido) {
   el.scrollTop = el.scrollHeight;
 }
 let chatPollingInterval = null;
+let chatDespertar = null;
+
+// EL RELOJ DEL CHAT. Mientras la conversación está abierta pregunta si llegó
+// algo nuevo. Tres topes que antes no tenía, y el motivo de cada uno:
+//
+// 1) PREGUNTA BARATO. Antes cada vuelta se traía la conversación ENTERA con
+//    todas las columnas, sólo para comparar si había algo que no tuviéramos.
+//    Ahora pide UNA fila -el id del último mensaje- y recién si ese id no lo
+//    conocemos hace la consulta completa. Lo que se ve en pantalla es
+//    idéntico; lo que cambia es que una conversación larga ya no viaja entera
+//    450 veces por hora.
+//
+// 2) SE DUERME CON LA PESTAÑA OCULTA. No hay a quién avisarle de un mensaje en
+//    una pestaña que nadie mira. Una pestaña olvidada toda la noche eran ~5.000
+//    consultas. Al volver se consulta en el acto, así que no se pierde nada.
+//
+// 3) SE RINDE. `catch (e) { }` se comía el error y el reloj seguía pidiendo
+//    cada 8 segundos para siempre. Si Supabase está caído o devolviendo 429,
+//    insistir cada 8 segundos es exactamente lo que empeora las dos cosas.
+//    Ahora cada falla duplica la espera y a la quinta se apaga.
+//
+// ⚠️ Es un setTimeout encadenado y no un setInterval, justamente porque la
+// espera cambia. Por eso `detenerChatPolling` usa clearTimeout.
+const CHAT_ESPERA_MS = 8000;
+const CHAT_ESPERA_MAX_MS = 64000;
+const CHAT_FALLAS_MAX = 5;
 
 function iniciarChatPolling(provId) {
-  if (chatPollingInterval) clearInterval(chatPollingInterval);
-  chatPollingInterval = setInterval(async () => {
-    if (!provActual || !currentUser) return;
+  detenerChatPolling();
+  let fallas = 0;
+
+  const idDelUltimoQueTenemos = () => {
+    for (let i = chatMsgs.length - 1; i >= 0; i--) if (chatMsgs[i].dbId) return chatMsgs[i].dbId;
+    return null;
+  };
+
+  // La espera crece con las fallas seguidas y vuelve a 8s al primer acierto.
+  const programar = (ms) => {
+    const espera = typeof ms === 'number' ? ms : Math.min(CHAT_ESPERA_MS * Math.pow(2, fallas), CHAT_ESPERA_MAX_MS);
+    chatPollingInterval = setTimeout(vuelta, espera);
+  };
+
+  const vuelta = async () => {
+    chatPollingInterval = null;
+    if (!provActual || !currentUser) { programar(); return; }
+    // Pestaña oculta: no se consulta. `chatDespertar` la reanuda al volver.
+    if (typeof document !== 'undefined' && document.hidden) { programar(); return; }
+
     try {
-      const { data } = await sb.from('mensajes')
-        .select('*')
+      const { data, error } = await sb.from('mensajes')
+        .select('id')
+        .eq('proveedor_id', provId)
+        .eq('usuario_email', currentUser.email)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      if (error) throw error;
+      fallas = 0;
+
+      const ultimo = data && data.length ? data[0].id : null;
+      // Nada nuevo: no se trae la conversación. Éste es el caso normal, y es el
+      // que antes costaba una consulta completa cada 8 segundos.
+      if (!ultimo || ultimo === idDelUltimoQueTenemos()) { programar(); return; }
+
+      const completo = await sb.from('mensajes')
+        .select('id,texto,de_tipo,created_at')
         .eq('proveedor_id', provId)
         .eq('usuario_email', currentUser.email)
         .order('created_at', { ascending: true });
-      if (!data || !data.length) return;
-      const hayNuevos = data.some(m => !chatMsgs.some(cm => cm.dbId === m.id));
-      if (hayNuevos) {
-        chatMsgs = data.map(m => ({
+      if (completo.error) throw completo.error;
+      const filas = completo.data;
+      if (filas && filas.length) {
+        chatMsgs = filas.map(m => ({
           tipo: m.de_tipo === 'proveedor' ? 'recv' : 'sent',
           texto: m.texto,
           hora: timeAgo(new Date(m.created_at)),
@@ -2956,12 +3014,31 @@ function iniciarChatPolling(provId) {
         }));
         renderChat();
       }
-    } catch (e) { }
-  }, 8000);
+    } catch (e) {
+      fallas++;
+      // Se apaga en silencio: escribir sigue funcionando, y el reloj arranca de
+      // nuevo la próxima vez que se abre una conversación.
+      if (fallas >= CHAT_FALLAS_MAX) { console.warn('[chat] sin respuesta, se detiene el refresco'); return; }
+    }
+    programar();
+  };
+
+  // Adelanta la próxima vuelta sin perder el conteo de fallas.
+  chatDespertar = () => { if (chatPollingInterval) { clearTimeout(chatPollingInterval); programar(0); } };
+
+  programar();
+}
+
+// Al volver a la pestaña se consulta en el acto, en vez de esperar el turno.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && chatDespertar) chatDespertar();
+  });
 }
 
 function detenerChatPolling() {
-  if (chatPollingInterval) { clearInterval(chatPollingInterval); chatPollingInterval = null; }
+  if (chatPollingInterval) { clearTimeout(chatPollingInterval); chatPollingInterval = null; }
+  chatDespertar = null;
 }
 
 async function sendMsg() {
@@ -4219,6 +4296,19 @@ function imgThumb(url, width, quality) {
     + sep + 'width=' + width + '&quality=' + (quality || 70);
 }
 
+// CUANTO PUEDE CACHEARSE UNA FOTO, EN SEGUNDOS: un ano.
+//
+// Supabase, si no se le dice nada, manda `max-age=3600`. Con eso, pasada una
+// hora, CADA nodo del CDN vuelve a pedirle el archivo al origen, y ese viaje
+// es egress facturado. Es la misma factura que ya nos mordio una vez.
+//
+// ⚠️ ES SEGURO PORQUE EL NOMBRE DEL ARCHIVO ES IRREPETIBLE (token aleatorio +
+// timestamp, ver los `path` de aca abajo). Una foto nunca se sobrescribe:
+// cambiar la imagen de un producto sube un archivo con OTRO nombre. Si alguna
+// vez se pasa a nombres estables o a upsert, este numero se vuelve peligroso
+// -el navegador seguiria mostrando la foto vieja un ano- y hay que bajarlo.
+const CACHE_FOTOS = '31536000';
+
 async function subirFotoStorage(file, provId) {
   // Fotos de producto: máx 800px de ancho, calidad 0.7.
   file = await comprimirImagen(file, 800, 0.7);
@@ -4227,7 +4317,7 @@ async function subirFotoStorage(file, provId) {
   // El bucket 'productos' solo tiene política RLS de INSERT (no UPDATE); usar
   // upsert:true dispararía un 400 al exigir permiso de UPDATE inexistente.
   const path = `${provId}/${Math.random().toString(36).substring(2)}_${Date.now()}.${ext}`;
-  const { data, error } = await sb.storage.from('productos').upload(path, file);
+  const { data, error } = await sb.storage.from('productos').upload(path, file, { cacheControl: CACHE_FOTOS });
   if (error) throw error;
   const { data: urlData } = sb.storage.from('productos').getPublicUrl(path);
   return urlData.publicUrl;
@@ -5930,9 +6020,10 @@ async function cargarConversaciones() {
     // Traer todos los mensajes de este proveedor agrupados por remitente
     const { data, error } = await sb
       .from('mensajes')
-      .select('*')
+      .select('id,proveedor_id,usuario_email,texto,de_tipo,de_nombre,leido,created_at')
       .eq('proveedor_id', currentUser.proveedorId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(500);
 
     if (error) throw error;
 
@@ -6298,7 +6389,14 @@ async function guardarPedido() {
     const item0 = carrito[0];
     const comprador = getCompradorInfo() || { nombre: 'Anónimo', email: '', whatsapp: '' };
     const total = carrito.reduce((s, i) => s + (i.producto.precio * i.cantidad), 0);
+    // producto_id: el eslabón que faltaba para que un pedido apunte a un
+    // producto real del catálogo, no solo a un nombre suelto. `items` sigue
+    // siendo texto libre -ninguna pantalla existente lee esta clave, así que
+    // agregarla no rompe nada- pero es lo que hace falta para que, más
+    // adelante, algo (EmprendeGO Negocios u otra cosa) pueda enganchar un
+    // pedido con el producto exacto que se compró, en vez de solo un texto.
     const items = JSON.stringify(carrito.map(i => ({
+      producto_id: i.producto.id || null,
       nombre: i.producto.nombre,
       precio: i.producto.precio,
       cantidad: i.cantidad,
@@ -6550,7 +6648,8 @@ async function verPedidosArchivados() {
     .select('*')
     .eq('proveedor_id', String(currentUser.proveedorId))
     .eq('estado', 'archivado')
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(200);
   pedidosCache = data || [];
   if (!pedidosCache.length) {
     showToast('No tenés pedidos archivados');
@@ -6588,7 +6687,7 @@ async function subirAvatar(file, carpeta) {
   // Nombre único para evitar conflictos
   const path = carpeta + '/' + Math.random().toString(36).substring(2) + '_' + Date.now() + '.' + ext;
   try {
-    const { data, error } = await sb.storage.from('Avatares').upload(path, file);
+    const { data, error } = await sb.storage.from('Avatares').upload(path, file, { cacheControl: CACHE_FOTOS });
     if (error) {
       console.error('Storage error:', error);
       showToast('Error al subir: ' + (error.message || 'intenta de nuevo'));
