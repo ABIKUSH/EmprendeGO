@@ -1309,6 +1309,11 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <div style="background:var(--blue-light);border-radius:14px;padding:14px 16px;font-size:.82rem;color:var(--navy);line-height:1.6"><strong>🛡️ Por qué te lo pedimos:</strong> confirmamos que sos un negocio real para proteger a los compradores. Aprobación en 24-48hs hábiles.</div>
       </div>
       <button class="submit-btn" style="margin-top:24px" onclick="showRegSuccess()">Enviar solicitud ✓</button>
+      <!-- Aviso al pie del formulario, NO en un banner flotante: el art. 6 de la
+           Ley 25.326 pide informar en el momento en que se recaban los datos, y
+           el momento es este, con el CUIT y el WhatsApp ya cargados. Si se mueve
+           a otra pantalla deja de cumplir esa función. -->
+      <p style="margin-top:14px;text-align:center;font-size:.75rem;color:var(--gray);line-height:1.6">Al enviar la solicitud acepta los <span onclick="goTo('terminos')" style="color:var(--blue);font-weight:700;cursor:pointer;text-decoration:underline">Términos y Condiciones</span> y la <a href="/privacidad" style="color:var(--blue);font-weight:700;text-decoration:underline">Política de Privacidad</a>. Sus datos se usan para verificar su negocio y publicar su ficha; puede solicitar acceder a ellos, rectificarlos o suprimirlos cuando quiera.</p>
     </div>
     <div id="reg-success" style="display:none;padding-top:40px;text-align:center">
       <div style="font-size:4rem;margin-bottom:16px">🎉</div>
@@ -2351,7 +2356,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   </div>
   <div style="padding:24px 22px 48px;max-width:100%">
     <h2 style="font-family:'Inter',sans-serif;font-size:1.4rem;font-weight:900;color:#1A1A1A;margin-bottom:6px">Términos y Condiciones</h2>
-    <p style="font-size:.75rem;color:#999;margin-bottom:28px">Última actualización: julio 2026</p>
+    <p style="font-size:.75rem;color:#999;margin-bottom:28px">Última actualización: septiembre 2026</p>
 
     <div style="display:flex;flex-direction:column;gap:22px;font-size:.86rem;line-height:1.7;color:#333">
 
@@ -2384,41 +2389,49 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">4. Uso aceptable</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">5. Uso aceptable</div>
         <p>Queda prohibido usar EmprendeGO para publicar información falsa, spam, contenido ilegal o cualquier actividad que perjudique a otros usuarios. EmprendeGO se reserva el derecho de suspender cuentas sin previo aviso.</p>
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">5. Contenido publicado y propiedad intelectual</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">6. Contenido publicado y propiedad intelectual</div>
         <p>Al subir imágenes, textos, logos o cualquier contenido a EmprendeGO, usted declara que es su titular o que cuenta con los derechos y permisos necesarios para publicarlo. Es el único responsable por el contenido que carga.</p>
         <p style="margin-top:8px">No está permitido subir material protegido por derechos de autor, marcas registradas u otros derechos de terceros sin autorización. Si publica contenido infringiendo derechos ajenos, se compromete a mantener indemne a EmprendeGO frente a cualquier reclamo, daño o gasto que esto genere.</p>
         <p style="margin-top:8px"><strong>Denuncias de propiedad intelectual:</strong> si considera que un contenido publicado viola sus derechos, escríbanos a <strong>wa.me/5491126048301</strong> indicando el contenido y la titularidad. Revisamos cada denuncia y damos de baja el material que corresponda a la brevedad.</p>
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">6. Privacidad y datos personales</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">7. Privacidad y datos personales</div>
         <p>Para funcionar, EmprendeGO recolecta y trata los siguientes datos:</p>
         <ul style="margin:8px 0 0;padding-left:18px;line-height:1.7">
           <li><strong>Identificación:</strong> nombre y email (incluido el inicio de sesión con Google).</li>
           <li><strong>Datos de proveedor:</strong> rubro, provincia, WhatsApp e información de su negocio.</li>
           <li><strong>Actividad en la app:</strong> búsquedas, favoritos, visitas y consultas a proveedores.</li>
-          <li><strong>Datos de uso:</strong> estadísticas anónimas de navegación (Google Analytics) para mejorar la plataforma.</li>
+          <li><strong>Datos de navegación:</strong> páginas vistas, origen de la visita y tipo de dispositivo, recolectados con cookies y almacenamiento local.</li>
         </ul>
-        <p style="margin-top:8px">Usamos estos datos solo para operar y mejorar el servicio. <strong>No los vendemos.</strong> Nos apoyamos en proveedores de infraestructura (Supabase, Google, Vercel, Mercado Pago) que procesan datos únicamente para prestar el servicio. Puede solicitar acceder, corregir o eliminar su cuenta y sus datos escribiendo a <strong>wa.me/5491126048301</strong>.</p>
+        <p style="margin-top:8px"><strong>Cookies y medición.</strong> El sitio usa almacenamiento local para recordar sus favoritos, su historial y su sesión; <strong>Google Analytics</strong> para medir el uso de la plataforma; y el <strong>píxel de Meta</strong> para medir el resultado de la publicidad de EmprendeGO en Facebook e Instagram y mostrarle anuncios en esas plataformas. Esto implica que Meta recibe datos de su navegación por este sitio. Puede desactivar estas tecnologías desde la configuración de su navegador y desde sus preferencias de anuncios en Meta.</p>
+        <p style="margin-top:8px">Usamos estos datos solo para operar, mejorar y difundir el servicio. <strong>No los vendemos.</strong> Nos apoyamos en proveedores de infraestructura (Supabase, Google, Vercel, Mercado Pago y Meta) que procesan datos únicamente para prestar el servicio. Puede solicitar acceder, rectificar o suprimir su cuenta y sus datos escribiendo a <strong>wa.me/5491126048301</strong>.</p>
+        <p style="margin-top:8px">El detalle completo está en nuestra <a href="/privacidad" style="color:#006039;font-weight:700">Política de Privacidad</a>.</p>
+        <!-- Leyendas textuales exigidas por el art. 14 inc. 3 de la Ley 25.326
+             (Decreto 1558/2001) y por la AAIP como órgano de control. Se
+             transcriben tal cual: no son redacción propia y reescribirlas
+             "para que suenen mejor" les saca la función que cumplen. -->
+        <p style="margin-top:10px;border-left:3px solid #E0E0E0;padding-left:12px;font-size:.8rem;color:#666">El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto, conforme lo establecido en el artículo 14, inciso 3 de la Ley N° 25.326.</p>
+        <p style="margin-top:8px;border-left:3px solid #E0E0E0;padding-left:12px;font-size:.8rem;color:#666">La Agencia de Acceso a la Información Pública, en su carácter de Órgano de Control de la Ley N° 25.326, tiene la atribución de atender las denuncias y reclamos que interpongan quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.</p>
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">7. Uso de inteligencia artificial</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">8. Uso de inteligencia artificial</div>
         <p>EmprendeGO puede utilizar tecnologías de inteligencia artificial para tareas como organización de catálogos, búsqueda y mejoras del servicio. Estas herramientas son un apoyo y pueden contener errores; la información publicada por cada proveedor sigue siendo responsabilidad de dicho proveedor.</p>
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">8. Ley aplicable y jurisdicción</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">9. Ley aplicable y jurisdicción</div>
         <p>Estos términos se rigen por las leyes de la República Argentina, incluida la Ley de Defensa del Consumidor N° 24.240. Ante cualquier conflicto, las partes se someten a los tribunales ordinarios competentes de Argentina, sin perjuicio de los derechos que la normativa de consumo reconoce a los usuarios.</p>
       </div>
 
       <div>
-        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">9. Modificaciones</div>
+        <div style="font-family:'Inter',sans-serif;font-size:.92rem;font-weight:800;color:#1A1A1A;margin-bottom:6px">10. Modificaciones</div>
         <p>EmprendeGO puede actualizar estos términos en cualquier momento. Los cambios se notificarán dentro de la app. El uso continuado implica la aceptación de los nuevos términos.</p>
       </div>
 
