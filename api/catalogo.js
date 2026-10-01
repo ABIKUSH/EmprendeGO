@@ -23,7 +23,7 @@ const ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_Zt5ujgTHG5WKrh
 // Mismas columnas que pedía el frontend. Explícitas en vez de '*': el catálogo
 // viaja entero, así que cada columna de más se multiplica por todas las visitas.
 const COLS = 'id,proveedor_id,nombre,precio,stock,categoria,categoria_principal,' +
-  'descripcion,imagen_url,imagenes,proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)';
+  'descripcion,imagen_url,imagenes,proveedores(id,nombre,rubro,provincia,plan,plan_hasta)';
 
 const PAGE = 1000;
 const MAX_FILAS = 50000;
