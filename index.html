@@ -397,9 +397,26 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       </button>
       <!-- Publicar negocio button -->
       <button onclick="goTo('landing-prov')" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:rgba(255,255,255,.06);color:white;border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Publicar mi negocio · gratis</button>
+      <!-- ⚠️ ES UN RENGLON, Y ESO ES TODO LO QUE TIENE QUE SER. El que entra acá
+           viene a buscar un proveedor: frenarlo con una explicación de un segundo
+           producto que todavía no necesita es la forma segura de perderlo. Esto no
+           convence a nadie y no pretende hacerlo: planta la idea para el día que el
+           problema aparezca.
+           ⚠️ POR EL MISMO MOTIVO NO HAY CARTEL AL ENTRAR. Un interstitial baja la
+           conversión siempre, y en celular además lo penaliza Google.
+           Se descartó el otro lugar que parecía mejor -justo después de pedir el
+           WhatsApp de un proveedor-: ahí la persona se va de la aplicación a
+           WhatsApp, así que ese mensaje no lo lee nadie. -->
+      <a href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener"
+         onclick="trackEvent('click_negocios_home',{origen:'hero_inicio'})"
+         style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:rgba(255,255,255,.78);font-family:'DM Sans',sans-serif;font-size:.76rem;font-weight:600;text-decoration:none;line-height:1.35;text-align:center">
+        ¿Ya estás vendiendo? Gestioná todo tu negocio desde EmprendeGO Negocios.
+        <span aria-hidden="true" style="flex-shrink:0">&#8594;</span>
+      </a>
     </div>
 
     <!-- Social proof carrusel -->
+
     <div style="position:relative;z-index:1;margin:18px 18px 20px">
       <div id="testimonios-wrap" style="position:relative;min-height:70px">
         <div class="testim-slide" style="background:rgba(255,255,255,.08);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:11px">
