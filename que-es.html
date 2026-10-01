@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EmprendeGO — Vendé y gestioná tu emprendimiento</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://emprendego.com.ar/que-es">
+<meta name="description" content="Conseguí proveedores mayoristas argentinos verificados y llevá tu stock, tus ventas y tu caja en el mismo lugar.">
+<meta name="theme-color" content="#04281d">
+<!-- ⚠️ LA VISTA PREVIA IMPORTA MAS QUE LA PAGINA. Este link se manda por
+     WhatsApp: si no tiene og:title, og:description y og:image, llega como una
+     URL pelada y casi nadie la abre. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="EmprendeGO">
+<meta property="og:title" content="EmprendeGO — Vendé y gestioná tu emprendimiento">
+<meta property="og:description" content="Proveedores mayoristas verificados de Argentina, y un sistema para llevar tu stock, tus ventas y tu caja.">
+<meta property="og:image" content="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80">
+<meta property="og:url" content="https://emprendego.com.ar/que-es">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="EmprendeGO — Vendé y gestioná tu emprendimiento">
+<meta name="twitter:description" content="Proveedores mayoristas verificados, y un sistema para llevar el negocio.">
+<meta name="twitter:image" content="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&q=80">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Poppins:wght@400;500;600&family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* PORTADA DE EMPRENDEGO.
+   - Fondo y aire: el mismo sistema que la portada de EmprendeGO Negocios.
+   - Tipografia: Manrope + Poppins (la misma pareja que usa Binculo).
+   - El telefono: tamano y forma de iPhone con muesca, como el de Binculo.
+   - Lo que se ve ADENTRO del telefono es la pantalla real de la aplicacion,
+     con sus colores, sus textos y sus botones. No es una maqueta inventada:
+     si la aplicacion cambia, esto se actualiza. */
+:root{
+  --max:1120px;
+  --brand:#006039; --brand-mid:#047857; --menta:#5fd39d; --accent:#FF6B00;
+  /* Los de la aplicacion real */
+  --app-verde:#0a5c3c; --app-verde-2:#074a30; --app-verde-3:#053521;
+  --app-dorado:#f6b877; --app-chip:#b9d4c6; --app-oscuro:#065F46;
+  --ink:#141917; --muted:#6B7472; --faint:#98A19E;
+  --line:#E4E9E7; --line-soft:#EFF3F1; --surface:#FFFFFF; --canvas:#F1F7F3;
+  --sombra:0 30px 70px -30px rgba(2,18,12,.7);
+  --sombra-sm:0 18px 44px -22px rgba(2,18,12,.55);
+  --r:28px; --r-card:16px;
+  --display:"Manrope",system-ui,sans-serif;
+  --texto:"Manrope","Poppins",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
+    --app-texto:"Poppins","Manrope",system-ui,sans-serif;
+  /* Las de EmprendeGO Negocios, para la notebook */
+  --app2-display:"Fraunces",Georgia,serif;
+  --app2-texto:"Inter",system-ui,sans-serif;
+  --green-800:#005c37;
+}
+*{box-sizing:border-box}
+html{background:#04281d;scroll-behavior:smooth}
+body{
+  margin:0;color:#fff;font-family:var(--texto);font-size:15px;line-height:1.6;
+  overflow-x:hidden;
+  background:
+    radial-gradient(58% 40% at 88% 0%,rgba(104,206,158,.26) 0%,rgba(104,206,158,0) 60%),
+    radial-gradient(52% 38% at 2% 30%,rgba(0,140,82,.34) 0%,rgba(0,140,82,0) 64%),
+    radial-gradient(64% 34% at 78% 92%,rgba(0,120,70,.3) 0%,rgba(0,120,70,0) 62%),
+    linear-gradient(168deg,#04281d 0%,#05341f 34%,#04291e 68%,#062e22 100%);
+  background-attachment:fixed;
+}
+h1,h2,h3{font-family:var(--display);margin:0;font-weight:800;letter-spacing:-.03em;text-wrap:balance}
+p{margin:0}
+.envoltura{width:min(var(--max),100% - 32px);margin:0 auto}
+.rotulo{font-size:11.5px;font-weight:700;letter-spacing:.16em;color:rgba(255,255,255,.55);text-transform:uppercase}
+.tag{font-family:var(--display);font-weight:800;
+  background:linear-gradient(94deg,var(--menta) 6%,#b8f3d6 52%,#ffd9b5 100%);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+
+/* Barra */
+.nav{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:66px;padding-top:10px}
+.marca{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15.5px;font-family:var(--display)}
+.logo{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  font-family:var(--display);font-weight:800;font-size:12px}
+.nav-links{display:flex;gap:4px;margin-left:auto;margin-right:6px}
+.nav-links a{color:rgba(255,255,255,.72);text-decoration:none;font-size:14px;padding:8px 12px;border-radius:999px}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,.08)}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:0;border-radius:999px;
+  padding:11px 20px;font-family:var(--texto);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;
+  transition:background .16s,transform .16s}
+.cta--claro{background:#fff;color:#04281d;box-shadow:0 12px 28px -12px rgba(0,0,0,.55)}
+.cta--claro:hover{background:#eaf4ef}
+.cta--borde{background:transparent;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.26)}
+.cta--borde:hover{background:rgba(255,255,255,.08)}
+.cta--grande{padding:15px 30px;font-size:16px}
+.cta:active{transform:translateY(1px)}
+
+/* Encabezado */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:46px;align-items:center;padding:44px 0 70px}
+.hero-texto{display:grid;gap:24px}
+.hero h1{font-size:clamp(38px,5.4vw,60px);line-height:1.04}
+.hero .bajada{font-size:17px;color:rgba(255,255,255,.8);max-width:44ch}
+.hero-acc{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.pastilla{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:8px 15px;
+  background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+  font-size:12.5px;color:rgba(255,255,255,.82);width:fit-content}
+.punto{width:8px;height:8px;border-radius:50%;background:var(--menta);flex:none;box-shadow:0 0 0 4px rgba(95,211,157,.18)}
+
+/* ---- EL TELEFONO ---- */
+.tel-zona{position:relative;justify-self:center;padding-left:46px}
+.tel{position:relative;width:330px;height:678px;border-radius:52px;padding:11px;
+  background:linear-gradient(160deg,#1b2a24,#0a1512);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.18),0 44px 90px -34px rgba(2,18,12,.85)}
+.tel::after{content:"";position:absolute;left:50%;top:22px;transform:translateX(-50%);
+  width:104px;height:28px;border-radius:99px;background:#0a1512;z-index:3}
+.tel-pantalla{position:relative;height:100%;border-radius:42px;overflow:hidden;
+  background:#F4F8F6;color:var(--ink);font-family:var(--app-texto);font-size:13px}
+.app{position:absolute;inset:0;display:flex;flex-direction:column}
+
+/* Barra superior real de la app */
+.app-top{display:flex;align-items:center;gap:10px;padding:40px 16px 12px;background:#fff;flex:none}
+.app-top .ham{display:grid;gap:3.5px;flex:none}
+.app-top .ham i{display:block;width:17px;height:2px;border-radius:2px;background:#23312c}
+.app-top b{font-family:var(--display);font-size:15px;font-weight:800;color:var(--app-oscuro);letter-spacing:-.02em}
+.app-top .der{margin-left:auto;display:flex;align-items:center;gap:8px}
+.app-ingresar{border:1px solid #d8e5de;border-radius:999px;padding:5px 11px;font-size:10.5px;font-weight:600;color:#23312c}
+
+/* Pantalla 1: el inicio real */
+.app-hero{position:relative;padding:20px 18px 18px;border-radius:0 0 26px 26px;color:#fff;
+  background:radial-gradient(120% 78% at 84% 4%,rgba(224,123,46,.2),transparent 46%),
+    linear-gradient(168deg,var(--app-verde) 0%,var(--app-verde-2) 58%,var(--app-verde-3) 100%)}
+.app-prueba{display:flex;align-items:center;gap:9px;margin-bottom:18px}
+.app-caras{display:flex;flex:none}
+.app-caras i{width:24px;height:24px;border-radius:50%;border:2px solid var(--app-verde);display:block}
+.app-caras i:nth-child(1){background:linear-gradient(140deg,#cdd6ce,#8fa89a);margin-right:-8px}
+.app-caras i:nth-child(2){background:linear-gradient(140deg,#d8cbb8,#b09a7d);margin-right:-8px}
+.app-caras i:nth-child(3){background:linear-gradient(140deg,#b7c6d1,#8098a8)}
+.app-prueba span{font-size:10px;font-weight:600;color:rgba(255,255,255,.85);line-height:1.3}
+.app-titulo{font-family:var(--display);font-size:30px;font-weight:800;line-height:1.02;
+  letter-spacing:-.035em;margin-bottom:18px}
+.app-titulo em{font-style:normal;color:var(--app-dorado)}
+.app-cta{display:flex;align-items:center;gap:10px;width:100%;background:#fff;border-radius:13px;
+  padding:11px 12px;text-align:left;color:var(--ink);margin-bottom:9px}
+.app-cta>i{width:30px;height:30px;border-radius:9px;flex:none;background:#E9F4EE;
+  display:grid;place-items:center}
+.app-cta>i::before{content:"";width:13px;height:15px;border-radius:2px;
+  box-shadow:inset 0 0 0 1.6px var(--app-oscuro)}
+.app-cta b{display:block;font-size:12px;font-weight:700}
+.app-cta small{display:block;font-size:9.5px;color:var(--muted);margin-top:2px;line-height:1.3}
+.app-cta .chev{margin-left:auto;color:var(--muted);font-size:14px;flex:none}
+.app-publicar{display:block;width:100%;text-align:center;border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.06);border-radius:11px;padding:10px;color:#fff;
+  font-size:10.5px;font-weight:700}
+.app-testimonio{display:flex;align-items:center;gap:10px;margin:16px 16px 0;padding:11px 12px;
+  border-radius:13px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16)}
+.app-testimonio i{width:32px;height:32px;border-radius:10px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(140deg,#cdd6ce,#93a89a);color:#0a3a28;font-weight:800;font-size:10px;
+  font-family:var(--display)}
+.app-testimonio b{display:block;font-size:10.5px;color:#fff}
+.app-testimonio small{display:block;font-size:9.5px;color:rgba(255,255,255,.72);margin-top:2px}
+
+/* Pantalla 2: buscar */
+.app-buscar{padding:14px 16px 0;background:#F4F8F6;height:100%}
+.app-buscar h3{font-family:var(--display);font-size:17px;font-weight:800;letter-spacing:-.02em}
+.app-buscar>p{color:var(--muted);font-size:10.5px;margin-top:3px}
+.app-caja{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #DCE8E2;
+  border-radius:13px;padding:10px 12px;margin-top:11px;font-size:11.5px}
+.lupa{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1.5px #999}
+.tecleo{display:inline-block;overflow:hidden;white-space:nowrap;vertical-align:bottom;
+  border-right:1.5px solid var(--app-oscuro);width:0;
+  animation:teclear 15s steps(16,end) infinite,cursor .8s step-end infinite}
+@keyframes teclear{0%,50%{width:0}60%{width:11.2ch}92%{width:11.2ch}96%,100%{width:0}}
+@keyframes cursor{50%{border-color:transparent}}
+.app-chips{display:flex;gap:6px;margin-top:11px;overflow:hidden}
+.app-chip{border:1px solid #DCE8E2;border-radius:999px;padding:5px 10px;font-size:10px;
+  color:#4a5a54;background:#fff;white-space:nowrap;flex:none}
+.app-chip.on{background:var(--app-oscuro);border-color:var(--app-oscuro);color:#fff;font-weight:600}
+.app-grilla{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}
+.app-prod{background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.06);
+  opacity:0;transform:translateY(9px);animation:entrar 15s ease-out infinite}
+.app-prod:nth-child(2){animation-delay:.2s}
+.app-prod:nth-child(3){animation-delay:.4s}
+.app-prod:nth-child(4){animation-delay:.6s}
+.app-prod .foto{height:66px;background:linear-gradient(135deg,#e8f2ec,#f6faf8)}
+.app-prod .foto.b{background:linear-gradient(135deg,#efeae2,#faf7f3)}
+.app-prod .foto.c{background:linear-gradient(135deg,#e6edf3,#f5f8fb)}
+.app-prod .foto.d{background:linear-gradient(135deg,#eceae6,#f8f6f3)}
+.app-prod div{padding:8px 9px}
+.app-prod b{display:block;font-size:10.5px;font-weight:600}
+.app-prod small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.app-prod span{display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:8.5px;
+  font-weight:700;color:var(--app-oscuro)}
+.app-prod span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--app-oscuro);flex:none}
+@keyframes entrar{0%,52%{opacity:0;transform:translateY(9px)}62%,92%{opacity:1;transform:none}
+  97%,100%{opacity:0;transform:translateY(9px)}}
+
+/* Las dos pantallas se turnan */
+.capa{position:absolute;inset:0;display:flex;flex-direction:column;background:#F4F8F6}
+.capa--inicio{animation:capaInicio 15s ease-in-out infinite}
+.capa--buscar{animation:capaBuscar 15s ease-in-out infinite}
+@keyframes capaInicio{0%,42%{opacity:1;transform:none}48%,96%{opacity:0;transform:translateX(-22px)}
+  100%{opacity:1;transform:none}}
+@keyframes capaBuscar{0%,44%{opacity:0;transform:translateX(22px)}50%,94%{opacity:1;transform:none}
+  99%,100%{opacity:0;transform:translateX(22px)}}
+
+/* La tarjeta que flota al costado, como la de Binculo */
+.flotante{position:absolute;left:0;top:168px;width:212px;border-radius:16px;overflow:hidden;
+  background:#fff;color:var(--ink);box-shadow:0 26px 54px -22px rgba(2,18,12,.8);z-index:4;
+  animation:flotar 15s ease-out infinite}
+.flotante .foto{height:104px;background:linear-gradient(135deg,#e8f2ec,#cfe4d8)}
+.flotante>div{padding:11px 12px}
+.flotante b{display:block;font-size:12px;font-weight:700}
+.flotante small{display:block;font-size:10px;color:var(--muted);margin-top:3px}
+.flotante span{display:inline-flex;align-items:center;gap:5px;margin-top:8px;font-size:9.5px;
+  font-weight:700;color:var(--app-oscuro)}
+.flotante span::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--app-oscuro);flex:none}
+@keyframes flotar{0%,56%{opacity:0;transform:translate(-10px,14px) scale(.96)}
+  66%,92%{opacity:1;transform:none}98%,100%{opacity:0;transform:translate(-10px,14px) scale(.96)}}
+.globo{position:absolute;right:-18px;bottom:96px;z-index:4;display:flex;align-items:center;gap:9px;
+  border-radius:999px;padding:11px 16px;background:#fff;color:#0a3a28;font-size:12px;font-weight:700;
+  box-shadow:0 20px 40px -18px rgba(2,18,12,.8);animation:flotar 15s ease-out infinite;animation-delay:.5s}
+.globo i{width:9px;height:9px;border-radius:50%;background:#25D366;flex:none}
+
+/* Carrusel */
+.como{background:rgba(255,255,255,.055);border-radius:var(--r);padding:34px;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.1),var(--sombra-sm)}
+.como-cabeza{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:26px}
+.como-cabeza h2{font-size:clamp(25px,3.4vw,36px);line-height:1.1;max-width:16ch}
+.flechas{display:flex;align-items:center;gap:10px}
+.flecha{width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;flex:none;
+  background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);
+  color:#fff;font-size:17px;line-height:1;transition:background .16s}
+.flecha:hover{background:rgba(255,255,255,.2)}
+.puntos{display:flex;gap:6px;align-items:center}
+.puntos button{height:6px;width:6px;border:0;border-radius:99px;cursor:pointer;padding:0;
+  background:rgba(255,255,255,.3);transition:width .24s,background .24s}
+.puntos button[aria-current="true"]{width:26px;background:var(--menta)}
+.escenas{display:grid;grid-template-columns:minmax(0,.84fr) minmax(0,1.16fr);gap:34px;align-items:center}
+.escena-texto{display:grid;gap:13px;align-content:start}
+.escena-texto h3{font-size:clamp(20px,2.5vw,27px);line-height:1.18}
+.escena-texto p{color:rgba(255,255,255,.76);font-size:15.5px;max-width:40ch}
+.paso-n{font-family:var(--display);font-size:12.5px;font-weight:700;color:var(--menta);letter-spacing:.06em}
+.carta{perspective:1600px}
+.carta-cara{transition:transform .52s cubic-bezier(.3,.8,.3,1),opacity .3s}
+.carta.gira .carta-cara{transform:rotateY(88deg);opacity:.25}
+
+.pantalla{background:var(--surface);color:var(--ink);border-radius:var(--r-card);overflow:hidden;
+  box-shadow:var(--sombra);font-size:13px}
+.pantalla-barra{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--canvas);
+  border-bottom:1px solid var(--line)}
+.pantalla-barra i{width:9px;height:9px;border-radius:50%;background:#d8e2dd;flex:none}
+.pantalla-barra span{margin-left:6px;font-size:11px;color:var(--muted);font-weight:600}
+.pantalla-cuerpo{padding:16px;min-height:252px}
+.buscador{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:9px;
+  padding:11px 13px;color:var(--faint);font-size:13.5px;background:#fff}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:11.5px;color:var(--muted)}
+.chip.on{background:var(--app-oscuro);border-color:var(--app-oscuro);color:#fff;font-weight:650}
+.grilla{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:13px}
+.tarjeta{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}
+.foto{height:70px;background:linear-gradient(135deg,#e8f2ec,#f6faf8)}
+.foto.b{background:linear-gradient(135deg,#efeae2,#faf7f3)}
+.foto.c{background:linear-gradient(135deg,#e6edf3,#f5f8fb)}
+.tarjeta div{padding:9px 10px}
+.tarjeta b{display:block;font-size:12px;font-weight:650}
+.tarjeta small{display:block;color:var(--muted);font-size:10.5px;margin-top:3px}
+.verificado{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:10px;
+  font-weight:700;color:var(--brand-mid)}
+.verificado::before{content:"";width:11px;height:11px;border-radius:50%;background:var(--brand-mid);flex:none}
+.chat{display:grid;gap:9px}
+.burbuja{max-width:76%;border-radius:13px;padding:10px 12px;font-size:12.5px;line-height:1.45}
+.burbuja.mia{justify-self:end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+.burbuja.suya{background:var(--canvas);color:var(--ink);border-bottom-left-radius:4px}
+.burbuja small{display:block;margin-top:4px;font-size:10px;opacity:.72}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kpi{border:1px solid var(--line);border-radius:11px;padding:13px}
+.kpi span{display:block;font-size:10.5px;color:var(--muted)}
+.kpi strong{display:block;font-family:var(--display);font-size:19px;margin-top:6px;
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi em{font-style:normal;font-size:11px;font-weight:700;color:var(--brand-mid)}
+.lineas{display:grid;gap:7px;margin-top:11px}
+.linea{display:grid;grid-template-columns:minmax(0,1fr) 92px auto;gap:11px;align-items:center;
+  border-bottom:1px solid var(--line-soft);padding-bottom:7px;font-size:12px}
+.linea:last-child{border-bottom:0;padding-bottom:0}
+.barra{height:6px;border-radius:99px;background:var(--line-soft);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--brand-mid);border-radius:99px}
+.linea b{font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* EmprendeGO Negocios: que lo entienda mirando, no leyendo */
+.negocios{margin-top:22px;padding:36px;border-radius:var(--r);
+  background:linear-gradient(150deg,rgba(255,255,255,.1),rgba(255,255,255,.045));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),var(--sombra-sm)}
+.negocios-cabeza{display:grid;gap:12px;max-width:62ch;margin-bottom:26px}
+.negocios-cabeza h2{font-size:clamp(25px,3.4vw,36px);line-height:1.1}
+.negocios-cabeza p{color:rgba(255,255,255,.76);font-size:16px}
+/* ⚠️ ACA HABIA CUATRO COLUMNAS DE TEXTO Y NADIE LAS IBA A LEER. El problema no
+   era el diseño de las columnas: era pedirle a alguien que lea cuatro parrafos
+   para enterarse de algo que se puede MOSTRAR. Las dos cosas que de verdad
+   diferencian a Negocios -que los canales comparten un stock, y que hay una IA
+   que contesta con los numeros del negocio- ahora se ven, y el texto quedo como
+   pie de lo que ya se entendio mirando. */
+.pruebas{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.prueba{display:grid;gap:12px;align-content:start;padding:22px;border-radius:var(--r-card);
+  background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.prueba b{font-family:var(--display);font-size:17px;font-weight:800;letter-spacing:-.02em}
+.prueba p{color:rgba(255,255,255,.7);font-size:14px;line-height:1.55}
+
+/* Los tres canales entrando a un mismo stock */
+.canales{display:grid;gap:9px;background:var(--surface);border-radius:12px;padding:14px;
+  color:var(--ink);font-family:var(--app2-texto);box-shadow:var(--sombra-sm)}
+.canal-fila{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:10px;align-items:center;
+  font-size:12px}
+.canal-fila svg{flex:none}
+.canal-fila span{color:var(--muted);font-size:11px}
+.canal-fila b{font-family:var(--app2-texto);font-size:11px;font-weight:650;color:var(--brand-mid);
+  white-space:nowrap}
+.canales-junta{display:flex;align-items:center;gap:10px;margin-top:3px;padding-top:11px;
+  border-top:1px solid var(--line)}
+.canales-junta i{width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;
+  background:var(--brand-soft)}
+.canales-junta i::before{content:"";width:11px;height:11px;border-radius:3px;
+  box-shadow:inset 0 0 0 1.8px var(--brand)}
+.canales-junta strong{font-family:var(--app2-texto);font-size:12px;font-weight:700}
+.canales-junta small{display:block;color:var(--muted);font-size:10.5px;margin-top:2px;font-weight:400}
+
+/* ZEUS contestando, con una pregunta y una respuesta de verdad */
+.zeus{display:grid;gap:8px;background:var(--surface);border-radius:12px;padding:14px;
+  color:var(--ink);font-family:var(--app2-texto);box-shadow:var(--sombra-sm)}
+.zeus-pregunta{justify-self:end;max-width:86%;border-radius:12px;border-bottom-right-radius:4px;
+  padding:9px 11px;background:var(--brand);color:#fff;font-size:11.5px}
+.zeus-respuesta{max-width:94%;border-radius:12px;border-bottom-left-radius:4px;padding:10px 11px;
+  background:var(--canvas);font-size:11.5px;line-height:1.5}
+.zeus-respuesta b{font-family:var(--app2-texto);font-size:11.5px;font-weight:700}
+.zeus-sello{display:inline-flex;align-items:center;gap:5px;margin-bottom:6px;border-radius:5px;
+  padding:2px 6px;background:var(--brand-soft);color:var(--brand);font-size:8.5px;font-weight:700;
+  letter-spacing:.06em}
+.zeus-ir{display:inline-flex;align-items:center;gap:5px;margin-top:8px;color:var(--brand-mid);
+  font-size:10.5px;font-weight:700}
+
+/* Lo que queda, en una linea cada cosa */
+.tildes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;list-style:none;
+  margin:14px 0 0;padding:0}
+.tildes li{display:flex;align-items:flex-start;gap:9px;color:rgba(255,255,255,.78);font-size:13.5px;
+  line-height:1.45}
+/* El tilde va como SVG y no dibujado con degrades: un tilde hecho con fondos
+   cruzados se desarma en cuanto cambia el tamano de la letra. */
+.tildes svg{flex:none;width:17px;height:17px;margin-top:2px;color:var(--menta);
+  border-radius:50%;background:rgba(95,211,157,.16);padding:3px}
+
+@media(max-width:860px){
+  .pruebas{grid-template-columns:1fr}
+  .tildes{grid-template-columns:1fr;gap:9px}
+}
+.negocios-pie{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:22px}
+.negocios-pie small{color:rgba(255,255,255,.52);font-size:12.5px}
+
+/* ---- LA NOTEBOOK: EmprendeGO Negocios, tal cual es ----
+   ⚠️ ESTO NO ES UNA MAQUETA LIBRE. Los valores salen del CSS de la aplicacion
+   (app/globals.css de atom-emprendego) y estan copiados a proposito:
+     · la barra lateral oscura con el resplandor naranja arriba a la derecha,
+     · el acento naranja de 3px a la izquierda del item activo,
+     · Fraunces para los titulos e Inter para el texto,
+     · los paneles blancos de radio 9 con su sombra,
+     · las cabeceras de tabla en mayusculas, 9.5px, color --faint sobre --canvas.
+   El motivo es de negocio, no de prolijidad: si la portada muestra algo mas
+   lindo que el producto, el que entra se decepciona; si muestra algo mas feo,
+   no entra. La unica forma de que no pase ninguna de las dos es mostrar el
+   producto. Cuando la aplicacion cambie, esto se actualiza. */
+.note-zona{margin:30px 0 4px;display:grid;justify-items:center;gap:14px}
+.note{width:min(900px,100%)}
+.note-tapa{position:relative;border-radius:14px 14px 5px 5px;padding:11px 11px 13px;
+  background:linear-gradient(160deg,#1b2a24,#0a1512);
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.16),0 42px 80px -36px rgba(2,18,12,.9)}
+.note-cam{position:absolute;left:50%;top:4px;transform:translateX(-50%);width:5px;height:5px;
+  border-radius:50%;background:#3a4a43}
+.note-pantalla{position:relative;min-height:438px;border-radius:6px;overflow:hidden;
+  display:grid;grid-template-columns:198px minmax(0,1fr);
+  /* El fondo de la aplicacion: verde muy lavado, no blanco. */
+  background:var(--canvas);color:var(--ink);
+  font-family:var(--app2-texto);font-size:11.5px;line-height:1.5}
+.note-base{height:10px;margin:0 auto;width:104%;border-radius:0 0 11px 11px;
+  background:linear-gradient(180deg,#22312b,#0f1b17);
+  box-shadow:0 18px 30px -18px rgba(2,18,12,.9)}
+.note-base::after{content:"";display:block;width:84px;height:4px;margin:3px auto;
+  border-radius:0 0 6px 6px;background:rgba(255,255,255,.14)}
+.note-pie{color:rgba(255,255,255,.5);font-size:12.5px;text-align:center}
+/* ⚠️ DICE QUE ES UNA ILUSTRACION, Y VA ARRIBA, NO AL PIE. Las pantallas estan
+   dibujadas con los colores, la letra y la estructura reales del sistema, pero
+   los numeros y los productos son de ejemplo. Aclararlo cuesta una linea; que
+   alguien se sienta enganado cuesta el cliente. */
+.note-rotulo{display:inline-flex;align-items:center;gap:8px;border-radius:999px;
+  padding:6px 13px;background:rgba(255,255,255,.08);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
+  color:rgba(255,255,255,.72);font-size:11px;font-weight:600;letter-spacing:.02em}
+.note-rotulo i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.42);flex:none}
+.note-pie b{color:rgba(255,255,255,.8);font-weight:700}
+
+/* La barra lateral, con los mismos degrades que la aplicacion */
+.lat{display:flex;flex-direction:column;padding:15px 9px;color:#F3F9F5;
+  border-right:1px solid rgba(255,255,255,.06);
+  background-color:#004D2E;
+  background-image:
+    radial-gradient(300px 230px at -8% -10%,rgba(255,255,255,.09),transparent 60%),
+    radial-gradient(260px 230px at 108% 16%,rgba(255,107,0,.16),transparent 62%),
+    linear-gradient(165deg,#004D2E 0%,#04241B 55%,#021712 100%);
+  background-repeat:no-repeat}
+.lat-marca{display:flex;align-items:center;gap:10px;padding:2px 7px 22px}
+.lat-marca i{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;
+  background:rgba(255,255,255,.14);color:#fff;font-family:var(--app2-display);
+  font-weight:700;font-size:11px}
+.lat-marca b{display:block;color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.11em}
+.lat-marca small{display:block;font-size:9px;color:rgba(243,249,245,.5);margin-top:3px}
+.lat-nav{display:grid;gap:2px}
+.lat-item{display:flex;align-items:center;gap:10px;width:100%;border:0;cursor:pointer;
+  min-height:32px;border-radius:8px;padding:7px 11px;text-align:left;
+  font-family:var(--app2-texto);font-size:11.5px;font-weight:500;
+  background:transparent;color:rgba(243,249,245,.82);transition:background .12s,color .12s}
+.lat-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.lat-item svg{width:15px;height:15px;flex:none;color:rgba(243,249,245,.55);transition:color .12s}
+.lat-item:hover svg{color:#fff}
+/* El acento naranja de 3px a la izquierda: es la firma de la barra. */
+.lat-item[aria-current="true"]{background:rgba(255,255,255,.13);color:#fff;font-weight:650;
+  box-shadow:inset 3px 0 var(--accent)}
+.lat-item[aria-current="true"] svg{color:#fff}
+.lat-item.quieta{cursor:default}
+.lat-item.quieta:hover{background:transparent;color:rgba(243,249,245,.82)}
+.lat-item.quieta:hover svg{color:rgba(243,249,245,.55)}
+.lat-pie{margin-top:auto;display:grid;gap:2px}
+.lat-sep{margin-top:8px;padding-top:9px;border-top:1px solid rgba(255,255,255,.1)}
+.lat-user{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;gap:8px;
+  margin-top:10px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1)}
+.lat-user i{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;
+  background:rgba(255,255,255,.14);color:#fff;font-weight:800;font-size:10px}
+.lat-user strong{display:block;color:#fff;font-size:9.5px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;font-weight:600}
+.lat-user small{display:block;color:rgba(243,249,245,.5);font-size:8.5px;margin-top:2px}
+
+/* El contenido */
+.note-cuerpo{position:relative;padding:20px 24px 24px;overflow:hidden}
+.note-vista{display:grid;align-content:start;gap:14px;animation:vistaEntra .3s ease-out}
+.note-vista[hidden]{display:none}
+@keyframes vistaEntra{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+/* La cabecera de pantalla: rotulo verde, titulo en Fraunces, bajada y raya. */
+.app2-top{padding-bottom:14px;border-bottom:1px solid var(--line)}
+.app2-top .eyebrow{display:block;color:var(--brand);font-size:8.5px;font-weight:700;
+  letter-spacing:1.6px;text-transform:uppercase;margin-bottom:5px}
+.app2-top h4{margin:0;font-family:var(--app2-display);font-size:19px;font-weight:700;
+  letter-spacing:-.6px}
+.app2-top p{color:var(--muted);font-size:10.5px;margin-top:3px}
+
+.panel2{background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  box-shadow:0 1px 2px rgba(20,25,23,.05),0 6px 16px -12px rgba(20,25,23,.2);overflow:hidden}
+.panel2-head{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px 15px;border-bottom:1px solid var(--line)}
+.panel2-head h5{margin:0;font-family:var(--app2-display);font-size:12.5px;font-weight:700;
+  letter-spacing:-.2px}
+.panel2-head span{font-size:9px;color:var(--muted);background:var(--canvas);
+  padding:4px 8px;border-radius:6px}
+
+/* Accesos rapidos del tablero */
+.rapidas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rapidas>div{position:relative;display:grid;gap:3px;min-height:72px;padding:12px 13px;
+  border:1px solid var(--line);border-radius:9px;background:#fff;
+  box-shadow:0 1px 2px rgba(20,25,23,.05)}
+.rapidas em{position:absolute;right:11px;top:10px;font-style:normal;color:#9ba0a5;font-size:8.5px;
+  font-variant-numeric:tabular-nums}
+.rapidas strong{font-size:11px;margin-top:14px}
+.rapidas small{color:var(--muted);font-size:9px}
+
+/* El vidrio del tablero: una sola superficie por pantalla, como manda la casa */
+.vidrio{border-radius:12px;padding:15px 17px;
+  background-color:rgba(255,255,255,.58);
+  background-image:radial-gradient(125% 95% at 14% -12%,rgba(255,255,255,.62),rgba(255,255,255,0) 58%);
+  -webkit-backdrop-filter:blur(14px) saturate(1.3);backdrop-filter:blur(14px) saturate(1.3);
+  border:1px solid rgba(255,255,255,.7);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 10px 28px -18px rgba(20,25,23,.3)}
+.vidrio-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.vidrio-grid>div{display:grid;gap:4px}
+.vidrio span{font-size:9px;color:var(--muted)}
+.vidrio strong{font-family:var(--app2-display);font-size:19px;font-weight:700;letter-spacing:-.5px;
+  font-variant-numeric:tabular-nums}
+.vidrio em{font-style:normal;font-size:9px;font-weight:700;color:var(--brand-mid)}
+
+/* Tablas, con la cabecera tal como la pinta la aplicacion */
+.tabla2{width:100%;border-collapse:collapse;font-size:10.5px}
+.tabla2 th{text-align:left;padding:8px 13px;background:var(--canvas);color:var(--faint);
+  text-transform:uppercase;letter-spacing:.075em;font-size:8.5px;font-weight:700;
+  border-bottom:1px solid var(--line-soft);white-space:nowrap}
+.tabla2 td{padding:9px 13px;border-bottom:1px solid var(--line-soft);vertical-align:middle;
+  white-space:nowrap;animation:filaEntra .4s ease-out backwards}
+.tabla2 tr:nth-child(2) td{animation-delay:.05s}
+.tabla2 tr:nth-child(3) td{animation-delay:.11s}
+.tabla2 tr:last-child td{border-bottom:0}
+@keyframes filaEntra{from{opacity:0;transform:translateY(6px)}}
+.tabla2 td b{font-weight:650;font-variant-numeric:tabular-nums}
+.der{text-align:right}
+.plus{color:var(--brand-mid);font-weight:650}
+.minus{color:#B4472C;font-weight:650}
+/* El canal, con su marca. ⚠️ Son marcas DIBUJADAS a mano: antes de publicar
+   hay que reemplazarlas por el logo oficial de cada plataforma. */
+.canal{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:9.5px}
+.canal svg{flex:none}
+.pastilla2{display:inline-flex;border-radius:6px;padding:3px 7px;font-size:8.5px;font-weight:650;
+  white-space:nowrap}
+.pastilla2.ok{background:var(--brand-soft);color:var(--brand)}
+.pastilla2.alerta{background:#FDEEE8;color:#B4472C}
+.mini-barra{display:block;width:72px;height:5px;border-radius:99px;background:var(--line-soft);
+  overflow:hidden}
+.mini-barra i{display:block;height:100%;border-radius:99px;background:var(--brand-mid)}
+.mini-barra i.poco{background:var(--accent)}
+/* El mismo cartel verde que muestra la aplicacion cuando una compra impacta. */
+.note-aviso{display:flex;flex-wrap:wrap;gap:6px;background:var(--brand-soft);
+  border:1px solid #d9eae3;border-radius:8px;padding:10px 12px;font-size:10px;
+  color:var(--green-800,#005c37)}
+.note-aviso b{font-weight:700}
+
+.note-velo{display:none}
+.note-menu{display:none}
+/* Numeros */
+
+
+.numeros{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;padding:38px;margin:22px 0;
+  border-radius:var(--r);background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.numeros>div{display:grid;gap:6px}
+.numeros strong{font-family:var(--display);font-size:clamp(28px,4.2vw,40px);letter-spacing:-.035em;line-height:1}
+.numeros span{color:rgba(255,255,255,.68);font-size:14px}
+
+/* Proveedores */
+.proveedores{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:30px;align-items:center;padding:32px;
+  border-radius:var(--r);background:rgba(255,255,255,.055);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.proveedores h2{font-size:clamp(21px,2.6vw,27px);margin-bottom:9px}
+.proveedores p{color:rgba(255,255,255,.76);max-width:52ch}
+
+/* Cierre */
+.cierre{text-align:center;display:grid;gap:20px;justify-items:center;padding:76px 0 56px}
+.cierre h2{font-size:clamp(30px,5vw,50px);line-height:1.08;max-width:15ch}
+.cierre p{color:rgba(255,255,255,.72);max-width:46ch}
+.pie{border-top:1px solid rgba(255,255,255,.12);padding:22px 0 34px;display:flex;flex-wrap:wrap;gap:14px;
+  justify-content:space-between;color:rgba(255,255,255,.44);font-size:12.5px}
+.pie a{color:rgba(255,255,255,.62);text-decoration:none}
+.pie a:hover{color:#fff;text-decoration:underline;text-underline-offset:3px}
+a:focus-visible,button:focus-visible{outline:2px solid var(--menta);outline-offset:3px;border-radius:999px}
+
+@media(max-width:1040px){
+  .hero{grid-template-columns:1fr;gap:40px;padding:34px 0 50px;justify-items:center;text-align:left}
+  .tel-zona{padding-left:0}
+  .flotante{left:-14px}
+}
+@media(max-width:900px){
+  .escenas{grid-template-columns:1fr;gap:24px}
+  /* La barra lateral se achica pero NO se saca: es la que hace entender que
+     esto es un sistema y no una pantalla suelta. */
+  .note-pantalla{grid-template-columns:104px minmax(0,1fr)}
+  .lat-item{font-size:9px;padding:6px}
+  .lat-marca small{display:none}
+  .note-vista{padding:11px}
+  .note-kpis{gap:6px}
+  .note-kpi strong{font-size:13px}
+  .note-pantalla{grid-template-columns:138px minmax(0,1fr);min-height:0}
+  .lat{padding:11px 6px}
+  .lat-item{font-size:9.5px;padding:6px 8px;gap:7px}
+  .lat-marca small,.lat-user small,.lat-sep{display:none}
+  .note-cuerpo{padding:14px}
+  .app2-top h4{font-size:15px}
+  .rapidas{grid-template-columns:1fr 1fr}
+  .vidrio-grid{grid-template-columns:1fr}
+  .tabla2{font-size:9px}
+  .tabla2 th,.tabla2 td{padding:7px 8px}
+  /* ⚠️ EN PANTALLA CHICA SE SACAN COLUMNAS, Y SE ELIGE CUAL. En Ventas se va
+     la fecha, NO el canal: el canal con su logo es justamente lo que hay que
+     mostrar. En Stock se van costo y venta, que son dos numeros al lado de
+     otro numero. */
+  [data-vista="ventas"] th:first-child,[data-vista="ventas"] td:first-child,
+  [data-vista="caja"] th:first-child,[data-vista="caja"] td:first-child,
+  [data-vista="compras"] th:nth-child(3),[data-vista="compras"] td:nth-child(3),
+  [data-vista="compras"] th:nth-child(4),[data-vista="compras"] td:nth-child(4),
+  [data-vista="stock"] th:nth-child(3),[data-vista="stock"] td:nth-child(3),
+  [data-vista="stock"] th:nth-child(4),[data-vista="stock"] td:nth-child(4){display:none}
+  .canal{font-size:0;gap:0}
+  .numeros,.proveedores{grid-template-columns:1fr}
+  /* ⚠️ APILADAS SE VEIAN COMO CUATRO CAJAS FLOTANDO, cada una con su borde y su
+     sombra sobre un fondo que ya es verde: mucho recuadro para cuatro frases.
+     En el telefono van como una lista con separadores, que es lo que son. */
+  .como,.negocios{padding:24px}
+  .grilla{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+}
+@media(max-width:400px){
+  .tel{width:min(300px,100%);height:620px}
+  .flotante{display:none}
+  .globo{right:-6px}
+}
+/* ⚠️ EN EL TELEFONO NO VA LA NOTEBOOK: VA EL TELEFONO. Una pantalla de 880px
+   metida en una de 390 deja la barra lateral comiendose la mitad del ancho, el
+   nombre cortado y la tabla sin lugar. Pero sacarle el marco tampoco servia:
+   el marco es lo que hace entender que eso es una aplicacion.
+   La respuesta es mostrar EmprendeGO Negocios como se ve de verdad en un
+   celular: el boton de menu flotando arriba a la izquierda y la barra lateral
+   como cajon que entra desde el costado. Son las mismas reglas que tiene la
+   aplicacion en su @media(max-width:900px); no hay nada inventado aca. */
+@media(max-width:760px){
+  .note{width:min(330px,100%)}
+  .note-tapa{border-radius:46px;padding:10px}
+  .note-cam{display:none}
+  .note-tapa::after{content:"";position:absolute;left:50%;top:20px;
+    transform:translateX(-50%);width:98px;height:26px;border-radius:99px;
+    background:#0a1512;z-index:4}
+  .note-base{display:none}
+  .note-pantalla{display:block;min-height:600px;border-radius:38px}
+  /* El cajon: cerrado por defecto, igual que en la aplicacion. */
+  .lat{position:absolute;z-index:6;inset:0 auto 0 0;width:228px;
+    transform:translateX(-100%);transition:transform .2s ease;
+    padding-top:52px;border-right:0}
+  .lat.abierto{transform:none}
+  .lat-item.quieta{display:flex}
+  .note-velo{display:block;position:absolute;z-index:5;inset:0;border:0;
+    background:rgba(10,31,25,.45);opacity:0;pointer-events:none;transition:opacity .2s}
+  .lat.abierto~.note-velo{opacity:1;pointer-events:auto}
+  .note-menu{display:grid;place-items:center;position:absolute;z-index:7;top:46px;left:14px;
+    width:38px;height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;
+    color:var(--brand);box-shadow:0 1px 2px rgba(20,25,23,.08);cursor:pointer}
+  .note-menu span{display:block;width:16px;height:2px;border-radius:2px;background:currentColor;
+    box-shadow:0 -5px 0 currentColor,0 5px 0 currentColor}
+  .note-cuerpo{padding:96px 16px 26px}
+  .app2-top h4{font-size:19px}
+  .app2-top p{font-size:11px}
+  .rapidas{grid-template-columns:1fr;gap:7px}
+  .rapidas>div{min-height:0;padding:11px 12px}
+  .rapidas strong{margin-top:0}
+  .rapidas em{top:12px}
+  .vidrio-grid{grid-template-columns:1fr;gap:11px}
+  .tabla2{font-size:10px}
+  .tabla2 th,.tabla2 td{padding:8px 9px}
+  .note-rotulo{font-size:10.5px;padding:6px 11px}
+}
+@media(prefers-reduced-motion:reduce){
+
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .tecleo{width:11.2ch!important;border-right:0}
+  .capa--inicio{opacity:0}
+  .note-fila{opacity:1!important}
+  .note-grafico i{transform:scaleY(var(--h))!important}
+  .capa--buscar,.app-prod,.flotante,.globo{opacity:1!important;transform:none!important}
+}
+</style>
+</head>
+<body>
+
+<header class="envoltura">
+  <nav class="nav">
+    <div class="marca"><span class="logo">EG</span><span>EmprendeGO</span></div>
+    <div class="nav-links">
+      <a href="#como">Cómo funciona</a>
+      <a href="#negocios">Gestión</a>
+      <a href="#proveedores">Soy proveedor</a>
+    </div>
+    <div style="display:flex;gap:8px;flex:none">
+      <a class="cta cta--borde" href="/?ir=perfil">Ingresar</a>
+      <a class="cta cta--claro" href="/">Empezar gratis</a>
+    </div>
+  </nav>
+</header>
+
+<main class="envoltura">
+
+  <section class="hero">
+    <div class="hero-texto">
+      <p class="pastilla"><span class="punto"></span>Más de 150 mayoristas argentinos verificados</p>
+      <h1>Vendé y gestioná tu <span class="tag">#emprendimiento</span></h1>
+      <p class="bajada">Buscá mayoristas de verdad, hablales directo, y llevá tu stock,
+        tus ventas y tu caja en el mismo lugar.</p>
+      <div class="hero-acc">
+        <a class="cta cta--claro cta--grande" href="/">Empezar gratis</a>
+        <a class="cta cta--borde cta--grande" href="#como">Ver cómo funciona</a>
+      </div>
+    </div>
+
+    <div class="tel-zona" aria-hidden="true">
+      <div class="tel">
+        <div class="tel-pantalla">
+
+          <!-- Pantalla real: INICIO -->
+          <div class="capa capa--inicio">
+            <div class="app-top"><span class="ham"><i></i><i></i><i></i></span><b>EmprendeGo</b>
+              <span class="der"><span class="app-ingresar">Ingresar</span></span></div>
+            <div class="app-hero">
+              <div class="app-prueba"><span class="app-caras"><i></i><i></i><i></i></span>
+                <span>Proveedores verificados en toda Argentina</span></div>
+              <p class="app-titulo">Encontrá el<br><em>proveedor</em><br>que tu negocio<br>necesita.</p>
+              <div class="app-cta"><i></i><span><b>Pedí que te coticen</b>
+                <small>Varios mayoristas te pasan precio, mínimo y envío.</small></span>
+                <span class="chev">›</span></div>
+              <span class="app-publicar">Publicar mi negocio · gratis</span>
+              <div class="app-testimonio"><i>SR</i><span><b>Sofía R. · Indumentaria</b>
+                <small>"Conseguí tres proveedores en una semana."</small></span></div>
+            </div>
+          </div>
+
+          <!-- Pantalla real: BUSCAR -->
+          <div class="capa capa--buscar">
+            <div class="app-top"><span class="ham"><i></i><i></i><i></i></span><b>Buscar</b></div>
+            <div class="app-buscar">
+              <h3>Encontrá qué vender</h3>
+              <p>Buscá productos para empezar y proveedores reales.</p>
+              <div class="app-caja"><i class="lupa"></i><span class="tecleo">buzos oversize</span></div>
+              <div class="app-chips">
+                <span class="app-chip on">Todas</span><span class="app-chip">Indumentaria</span>
+                <span class="app-chip">Blanquería</span><span class="app-chip">Calzado</span>
+              </div>
+              <div class="app-grilla">
+                <div class="app-prod"><div class="foto"></div><div><b>Buzo oversize frisa</b><small>Textil Avellaneda · CABA</small><span>Verificado</span></div></div>
+                <div class="app-prod"><div class="foto b"></div><div><b>Campera puffer</b><small>Distribuidora Norte · BA</small><span>Verificado</span></div></div>
+                <div class="app-prod"><div class="foto c"></div><div><b>Jogger algodón</b><small>Mayorista Once · CABA</small><span>Verificado</span></div></div>
+                <div class="app-prod"><div class="foto d"></div><div><b>Remera algodón peinado</b><small>Textil Sur · CABA</small><span>Verificado</span></div></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="flotante">
+        <div class="foto"></div>
+        <div><b>Textil Avellaneda</b><small>Indumentaria · Desde 12 unidades</small>
+          <span>Proveedor verificado</span></div>
+      </div>
+      <div class="globo"><i></i>Le escribiste por WhatsApp</div>
+    </div>
+  </section>
+
+  <section class="como" id="como">
+    <div class="como-cabeza">
+      <h2>De la búsqueda a la venta, en <span class="tag">#tresPasos</span></h2>
+      <div class="flechas">
+        <div class="puntos" id="puntos"></div>
+        <button class="flecha" id="antes" aria-label="Paso anterior">‹</button>
+        <button class="flecha" id="despues" aria-label="Paso siguiente">›</button>
+      </div>
+    </div>
+
+    <div class="escenas">
+      <div class="escena-texto">
+        <p class="paso-n" id="paso-n">Paso 1 de 3</p>
+        <h3 id="paso-titulo">Encontrá a quién comprarle</h3>
+        <p id="paso-texto">Mayoristas argentinos verificados uno por uno, con su catálogo y su mínimo de compra. Buscás por producto o por rubro.</p>
+      </div>
+
+      <div class="carta" id="carta">
+        <div class="carta-cara">
+
+          <div class="pantalla" data-escena="0">
+            <div class="pantalla-barra"><i></i><i></i><i></i><span>emprendego.com.ar</span></div>
+            <div class="pantalla-cuerpo">
+              <div class="buscador">Buscar producto, proveedor o rubro…</div>
+              <div class="chips">
+                <span class="chip on">Todas</span><span class="chip">Indumentaria</span>
+                <span class="chip">Blanquería</span><span class="chip">Calzado</span>
+              </div>
+              <div class="grilla">
+                <div class="tarjeta"><div class="foto"></div><div><b>Buzo oversize</b><small>Desde 12 unidades</small><span class="verificado">Verificado</span></div></div>
+                <div class="tarjeta"><div class="foto b"></div><div><b>Campera puffer</b><small>Desde 6 unidades</small><span class="verificado">Verificado</span></div></div>
+                <div class="tarjeta"><div class="foto c"></div><div><b>Jogger algodón</b><small>Desde 12 unidades</small><span class="verificado">Verificado</span></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pantalla" data-escena="1" hidden>
+            <div class="pantalla-barra"><i></i><i></i><i></i><span>WhatsApp · Textil Avellaneda</span></div>
+            <div class="pantalla-cuerpo">
+              <div class="chat">
+                <div class="burbuja mia">Hola, los vi en EmprendeGO. ¿Me pasan lista de buzos oversize?<small>11:04</small></div>
+                <div class="burbuja suya">¡Hola! Sí, mínimo 12 unidades surtidas. Te paso el catálogo.<small>11:06</small></div>
+                <div class="burbuja mia">Perfecto, arranco con 24.<small>11:09</small></div>
+                <div class="burbuja suya">Listo, te preparo el pedido.<small>11:10</small></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pantalla" data-escena="2" hidden>
+            <div class="pantalla-barra"><i></i><i></i><i></i><span>EmprendeGO Negocios</span></div>
+            <div class="pantalla-cuerpo">
+              <div class="kpis">
+                <div class="kpi"><span>Vendido este mes</span><strong>$ 1.245.600</strong><em>+12%</em></div>
+                <div class="kpi"><span>En stock</span><strong>320</strong><em>18 por reponer</em></div>
+                <div class="kpi"><span>En caja</span><strong>$ 352.400</strong><em>al día</em></div>
+              </div>
+              <div class="lineas">
+                <div class="linea"><span>Buzo oversize</span><span class="barra"><i style="width:82%"></i></span><b>42% margen</b></div>
+                <div class="linea"><span>Campera puffer</span><span class="barra"><i style="width:61%"></i></span><b>31% margen</b></div>
+                <div class="linea"><span>Jogger algodón</span><span class="barra"><i style="width:38%"></i></span><b>19% margen</b></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="negocios" id="negocios">
+    <div class="negocios-cabeza">
+      <p class="rotulo">EmprendeGO Negocios</p>
+      <h2>Ya tenés el proveedor. Ahora llevá el negocio.</h2>
+      <p>La parte que nadie te enseña: cuánto te queda de verdad en cada producto.</p>
+    </div>
+    <div class="note-zona">
+      <p class="note-rotulo"><i></i>Ilustración · pantallas del sistema, datos de ejemplo</p>
+      <div class="note">
+        <div class="note-tapa">
+          <span class="note-cam"></span>
+          <div class="note-pantalla">
+
+            <nav class="lat" aria-label="Secciones de EmprendeGO Negocios">
+              <div class="lat-marca"><i>EG</i><span><b>EMPRENDEGO</b><small>Negocios</small></span></div>
+              <div class="lat-nav">
+                <button type="button" class="lat-item" data-vista="panel" aria-current="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>Dashboard</button>
+                <button type="button" class="lat-item quieta" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>Proveedores</button>
+                <button type="button" class="lat-item" data-vista="ventas" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 12 22l-9-9V3h10z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>Ventas</button>
+                <button type="button" class="lat-item" data-vista="caja" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M16 12h2"/><path d="M2 10h20"/></svg>Caja</button>
+                <button type="button" class="lat-item" data-vista="compras" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8a2 2 0 0 0 2-1.6L22 7H6"/></svg>Compras</button>
+                <button type="button" class="lat-item" data-vista="stock" aria-current="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>Productos y stock</button>
+                <button type="button" class="lat-item quieta" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>Clientes</button>
+              </div>
+              <div class="lat-pie">
+                <div class="lat-sep">
+                  <button type="button" class="lat-item quieta" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h6"/></svg>Mi plan</button>
+                  <button type="button" class="lat-item quieta" tabindex="-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.8c0 1.7-2.4 2-2.4 3.4"/><path d="M12 17h.01"/></svg>Ayuda</button>
+                </div>
+                <div class="lat-user"><i>LB</i><span><strong>luxuryblanco26@gmail…</strong><small>ADMIN</small></span></div>
+              </div>
+            </nav>
+
+            <button type="button" class="note-menu" id="note-menu" aria-label="Abrir el menú"><span></span></button>
+            <button type="button" class="note-velo" id="note-velo" aria-label="Cerrar el menú"></button>
+            <div class="note-cuerpo">
+
+              <section class="note-vista" data-vista="panel">
+                <div class="app2-top"><span class="eyebrow">Dashboard</span>
+                  <h4>Buen día, Luxury Blanco</h4>
+                  <p>Esto pasó en su negocio esta semana.</p></div>
+                <div class="rapidas">
+                  <div><em>18</em><strong>Registrar venta</strong><small>Local o canal</small></div>
+                  <div><em>4</em><strong>Cargar compra</strong><small>Factura del proveedor</small></div>
+                  <div><em>2</em><strong>Movimiento de caja</strong><small>Ingreso o egreso</small></div>
+                  <div><em>320</em><strong>Ver stock</strong><small>Qué hay que reponer</small></div>
+                </div>
+                <div class="vidrio">
+                  <div class="vidrio-grid">
+                    <div><span>Vendido este mes</span><strong>$ 1.245.600</strong><em>+12% contra septiembre</em></div>
+                    <div><span>Productos en stock</span><strong>320</strong><em>18 por reponer</em></div>
+                    <div><span>Saldo en caja</span><strong>$ 352.400</strong><em>al día</em></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="note-vista" data-vista="ventas" hidden>
+                <div class="app2-top"><span class="eyebrow">Ventas</span>
+                  <h4>Ventas</h4>
+                  <p>Del local, de Mercado Libre y de Tienda Nube, en una sola lista.</p></div>
+                <div class="panel2">
+                  <div class="panel2-head"><h5>Últimas ventas</h5><span>4 en total</span></div>
+                  <table class="tabla2">
+                    <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th class="der">Total</th></tr></thead>
+                    <tbody>
+                      <tr><td>1/10/2026</td><td>Buzo oversize frisa</td><td><span class="canal"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="4" fill="#0A6B45"/><path d="M4 6.8 8 4.2l4 2.6V12H4z" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>Local</span></td><td class="der"><b>$ 48.000</b></td></tr>
+                      <tr><td>1/10/2026</td><td>Campera puffer</td><td><span class="canal"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="4" fill="#FFE600"/><path d="M2.8 9.3c1.2-2.5 2.8-3.9 5.2-3.9s4 1.4 5.2 3.9c-1.4 1.4-3.2 2.1-5.2 2.1s-3.8-.7-5.2-2.1z" fill="#2D3277"/><circle cx="8" cy="8.2" r="1.15" fill="#FFE600"/></svg>Mercado Libre</span></td><td class="der"><b>$ 72.500</b></td></tr>
+                      <tr><td>30/9/2026</td><td>Jogger algodón</td><td><span class="canal"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect width="16" height="16" rx="4" fill="#2C6DF4"/><path d="M5.2 11.2h5.3a2.05 2.05 0 0 0 .1-4.1 2.95 2.95 0 0 0-5.5-.7 1.95 1.95 0 0 0 .1 4.8z" fill="#fff"/></svg>Tienda Nube</span></td><td class="der"><b>$ 31.200</b></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="note-vista" data-vista="caja" hidden>
+                <div class="app2-top"><span class="eyebrow">Caja</span>
+                  <h4>Caja</h4>
+                  <p>Lo que entró y lo que salió, día por día.</p></div>
+                <div class="panel2">
+                  <div class="panel2-head"><h5>Movimientos de hoy</h5><span>Saldo $ 352.400</span></div>
+                  <table class="tabla2">
+                    <thead><tr><th>Hora</th><th>Concepto</th><th>Medio</th><th class="der">Monto</th></tr></thead>
+                    <tbody>
+                      <tr><td>10:12</td><td>Venta en el local</td><td><span class="canal">Efectivo</span></td><td class="der"><b class="plus">+ $ 48.000</b></td></tr>
+                      <tr><td>11:40</td><td>Pago a Textil Avellaneda</td><td><span class="canal">Transferencia</span></td><td class="der"><b class="minus">− $ 62.000</b></td></tr>
+                      <tr><td>15:08</td><td>Cobro de Mercado Pago</td><td><span class="canal">Mercado Pago</span></td><td class="der"><b class="plus">+ $ 72.500</b></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="note-vista" data-vista="compras" hidden>
+                <div class="app2-top"><span class="eyebrow">Compras</span>
+                  <h4>Compras</h4>
+                  <p>La factura del proveedor se carga una vez y actualiza todo lo demás.</p></div>
+                <div class="panel2">
+                  <div class="panel2-head"><h5>Últimas compras</h5><span>2 este mes</span></div>
+                  <table class="tabla2">
+                    <thead><tr><th>Fecha</th><th>Proveedor</th><th>Comprobante</th><th>Ítems</th><th class="der">Total</th></tr></thead>
+                    <tbody>
+                      <tr><td>28/9/2026</td><td>Textil Avellaneda</td><td>Factura A-0041</td><td>24</td><td class="der"><b>$ 612.000</b></td></tr>
+                      <tr><td>21/9/2026</td><td>Distribuidora Norte</td><td>Factura B-1180</td><td>12</td><td class="der"><b>$ 288.400</b></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note-aviso"><b>Entró al stock.</b><span>El costo se actualizó y la cuenta de ese proveedor quedó al día.</span></div>
+              </section>
+
+              <section class="note-vista" data-vista="stock" hidden>
+                <div class="app2-top"><span class="eyebrow">Productos y stock</span>
+                  <h4>Productos y stock</h4>
+                  <p>Qué le queda, cuánto le costó y cuánto le deja.</p></div>
+                <div class="panel2">
+                  <div class="panel2-head"><h5>Su catálogo</h5><span>320 unidades</span></div>
+                  <table class="tabla2">
+                    <thead><tr><th>Producto</th><th>Stock</th><th>Costo</th><th>Venta</th><th class="der">Margen</th></tr></thead>
+                    <tbody>
+                      <tr><td>Buzo oversize frisa</td><td><span class="mini-barra"><i style="width:78%"></i></span></td><td>$ 14.500</td><td>$ 25.000</td><td class="der"><span class="pastilla2 ok">42% · 18 u.</span></td></tr>
+                      <tr><td>Campera puffer</td><td><span class="mini-barra"><i style="width:46%"></i></span></td><td>$ 24.000</td><td>$ 34.800</td><td class="der"><span class="pastilla2 ok">31% · 9 u.</span></td></tr>
+                      <tr><td>Jogger algodón</td><td><span class="mini-barra"><i class="poco" style="width:12%"></i></span></td><td>$ 9.800</td><td>$ 12.100</td><td class="der"><span class="pastilla2 alerta">Reponer · 2 u.</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+            </div>
+          </div>
+        </div>
+        <div class="note-base"></div>
+      </div>
+      <p class="note-pie" id="note-pie"><b>Tocá una sección</b> de la barra para recorrer el sistema.</p>
+    </div>
+
+<div class="pruebas">
+      <article class="prueba">
+        <div class="canales" aria-hidden="true">
+          <div class="canal-fila"><svg width="24" height="24" viewBox="0 0 16 16"><rect width="16" height="16" rx="4" fill="#FFE600"/><path d="M2.8 9.3c1.2-2.5 2.8-3.9 5.2-3.9s4 1.4 5.2 3.9c-1.4 1.4-3.2 2.1-5.2 2.1s-3.8-.7-5.2-2.1z" fill="#2D3277"/><circle cx="8" cy="8.2" r="1.15" fill="#FFE600"/></svg>
+            <span>Mercado Libre</span><b>2 ventas hoy</b></div>
+          <div class="canal-fila"><svg width="24" height="24" viewBox="0 0 16 16"><rect width="16" height="16" rx="4" fill="#2C6DF4"/><path d="M5.2 11.2h5.3a2.05 2.05 0 0 0 .1-4.1 2.95 2.95 0 0 0-5.5-.7 1.95 1.95 0 0 0 .1 4.8z" fill="#fff"/></svg>
+            <span>Tienda Nube</span><b>1 venta hoy</b></div>
+          <div class="canal-fila"><svg width="24" height="24" viewBox="0 0 16 16"><rect width="16" height="16" rx="4" fill="#0A6B45"/><path d="M4 6.8 8 4.2l4 2.6V12H4z" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+            <span>En el local</span><b>3 ventas hoy</b></div>
+          <div class="canales-junta"><i></i><span><strong>Buzo oversize: quedan 12</strong>
+            <small>Un solo número, para los tres canales</small></span></div>
+        </div>
+        <b>Vendés donde quieras. El stock es uno solo.</b>
+        <p>Las ventas de Mercado Libre y Tienda Nube entran solas, y el stock baja
+          igual que si hubieras vendido en el mostrador. No hay que descontar nada
+          a mano ni revisar dos sistemas.</p>
+      </article>
+
+      <article class="prueba">
+        <div class="zeus" aria-hidden="true">
+          <p class="zeus-pregunta">¿Qué productos tienen poco stock?</p>
+          <div class="zeus-respuesta">
+            <span class="zeus-sello">CONFIRMADO</span>
+            <b>Jogger algodón: quedan 2 unidades.</b> Vendiste 9 en los últimos 15 días,
+            así que se te termina esta semana. Textil Avellaneda te lo deja a $ 9.800.
+            <span class="zeus-ir">Ir a Productos y stock ›</span>
+          </div>
+        </div>
+        <b>ZEUS, la IA que conoce tu negocio</b>
+        <p>Preguntale como le hablarías a un socio y te contesta con <em>tus</em> números,
+          no con generalidades. Y cada respuesta te deja un botón a la pantalla donde
+          se resuelve.</p>
+      </article>
+    </div>
+
+    <ul class="tildes">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg>El costo y el margen se actualizan con cada compra</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg>Te marca qué reponer y quién te debe plata</li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg>Publicás en los canales desde el mismo catálogo</li>
+    </ul>
+
+<div class="negocios-pie">
+      <a class="cta cta--claro cta--grande" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener">Probar 15 días gratis</a>
+      <small>Sin tarjeta. Si no le sirve, no hace nada y se vence solo.</small>
+    </div>
+  </section>
+
+  <section class="numeros" aria-label="EmprendeGO en números">
+    <div><strong>+150</strong><span>mayoristas verificados a mano</span></div>
+    <div><strong>8.000</strong><span>búsquedas de productos por mes</span></div>
+    <div><strong>2.680</strong><span>contactos entregados en 30 días</span></div>
+  </section>
+
+  <section class="proveedores" id="proveedores">
+    <div>
+      <h2>¿Vende por mayor?</h2>
+      <p>Publique su catálogo gratis y reciba pedidos de todo el país. No cobramos
+        comisión: el comprador le escribe directo a usted.</p>
+    </div>
+    <a class="cta cta--borde cta--grande" href="/?ir=cargar">Quiero ser proveedor</a>
+  </section>
+
+  <section class="cierre">
+    <p class="rotulo">Empiece hoy</p>
+    <h2>Todo lo que necesitás, en <span class="tag">#EmprendeGO</span></h2>
+    <p>Buscar proveedores es gratis. La gestión viene con 15 días de prueba, sin tarjeta.</p>
+    <a class="cta cta--claro cta--grande" href="/">Empezar gratis</a>
+  </section>
+
+</main>
+
+<footer class="envoltura">
+  <div class="pie">
+    <span>EmprendeGO · Argentina</span>
+    <span><a href="/">Volver a EmprendeGO</a> · <a href="/privacidad">Privacidad</a></span>
+  </div>
+</footer>
+
+<script>
+// El carrusel de los tres pasos. La carta gira, se cambia el contenido mientras
+// esta de canto, y vuelve: el giro ES el cambio, no un adorno encima.
+(function(){
+  var PASOS=[
+    {titulo:"Encontrá a quién comprarle",
+     texto:"Mayoristas argentinos verificados uno por uno, con su catálogo y su mínimo de compra. Buscás por producto o por rubro."},
+    {titulo:"Hablales directo",
+     texto:"Sin intermediarios y sin comisión. El WhatsApp del proveedor, para arreglar precio y envío como siempre se hizo."},
+    {titulo:"Y después, llevá el negocio",
+     texto:"Cargá lo que compraste y EmprendeGO Negocios se encarga del stock, las ventas, la caja y el margen de cada producto."}
+  ];
+  var actual=0,girando=false;
+  var carta=document.getElementById("carta");
+  var pantallas=carta.querySelectorAll("[data-escena]");
+  var puntos=document.getElementById("puntos");
+  var reducido=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  PASOS.forEach(function(_,i){
+    var b=document.createElement("button");
+    b.type="button";b.setAttribute("aria-label","Paso "+(i+1));
+    b.addEventListener("click",function(){ir(i)});
+    puntos.appendChild(b);
+  });
+
+  function pintar(){
+    document.getElementById("paso-n").textContent="Paso "+(actual+1)+" de "+PASOS.length;
+    document.getElementById("paso-titulo").textContent=PASOS[actual].titulo;
+    document.getElementById("paso-texto").textContent=PASOS[actual].texto;
+    pantallas.forEach(function(p,i){p.hidden=i!==actual});
+    puntos.querySelectorAll("button").forEach(function(b,i){
+      b.setAttribute("aria-current",i===actual?"true":"false");
+    });
+  }
+
+  function ir(indice){
+    if(girando||indice===actual)return;
+    actual=(indice+PASOS.length)%PASOS.length;
+    if(reducido){pintar();return}
+    girando=true;carta.classList.add("gira");
+    setTimeout(function(){
+      pintar();carta.classList.remove("gira");
+      setTimeout(function(){girando=false},520);
+    },260);
+  }
+
+  document.getElementById("antes").addEventListener("click",function(){ir(actual-1)});
+  document.getElementById("despues").addEventListener("click",function(){ir(actual+1)});
+
+  // Avanza solo hasta que la persona toca algo: a partir de ahi manda ella.
+  var solo=setInterval(function(){ir(actual+1)},6000);
+  ["antes","despues"].forEach(function(id){
+    document.getElementById(id).addEventListener("click",function(){clearInterval(solo)});
+  });
+  puntos.addEventListener("click",function(){clearInterval(solo)});
+  if(reducido)clearInterval(solo);
+
+  pintar();
+})();
+
+// LA MINI GUIA DEL SISTEMA. La barra lateral de la notebook funciona de verdad.
+// Arranca sola -si no, nadie descubre que se puede tocar- y se DETIENE apenas
+// alguien elige una seccion: a partir de ahi manda la persona, no el reloj.
+(function(){
+  var barra=document.querySelector(".lat");
+  if(!barra)return;
+  var botones=[].slice.call(barra.querySelectorAll("[data-vista]"));
+  var vistas=[].slice.call(document.querySelectorAll(".note-vista"));
+  var pie=document.getElementById("note-pie");
+  var reducido=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var solo=null;
+
+  function mostrar(nombre){
+    botones.forEach(function(b){b.setAttribute("aria-current",b.dataset.vista===nombre?"true":"false")});
+    vistas.forEach(function(v){v.hidden=v.dataset.vista!==nombre});
+  }
+
+  // En el telefono la barra es un cajon, como en la aplicacion: se abre con el
+  // boton y se cierra al elegir una seccion o al tocar afuera.
+  var menu=document.getElementById("note-menu"),velo=document.getElementById("note-velo");
+  function cerrar(){barra.classList.remove("abierto")}
+  if(menu)menu.addEventListener("click",function(){barra.classList.toggle("abierto")});
+  if(velo)velo.addEventListener("click",cerrar);
+
+  botones.forEach(function(b){
+    b.addEventListener("click",function(){
+      if(solo){clearInterval(solo);solo=null}
+      if(pie)pie.textContent="Recorra las secciones a su ritmo.";
+      mostrar(b.dataset.vista);cerrar();
+    });
+  });
+
+  if(!reducido){
+    var orden=botones.map(function(b){return b.dataset.vista}),paso=0;
+    solo=setInterval(function(){paso=(paso+1)%orden.length;mostrar(orden[paso])},4200);
+  }
+})();
+</script>
+
+</body>
+</html>
