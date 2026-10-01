@@ -106,6 +106,10 @@ p{margin:0}
 .hero h1{font-size:clamp(38px,5.4vw,60px);line-height:1.04}
 .hero .bajada{font-size:17px;color:rgba(255,255,255,.8);max-width:44ch}
 .hero-acc{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.enlace-secundario{display:inline-flex;align-items:center;gap:7px;width:fit-content;
+  color:rgba(255,255,255,.76);text-decoration:none;font-size:15px;font-weight:600;
+  padding:4px 0;border-bottom:1px solid rgba(255,255,255,.26)}
+.enlace-secundario:hover{color:#fff;border-bottom-color:#fff}
 .pastilla{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:8px 15px;
   background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);
   font-size:12.5px;color:rgba(255,255,255,.82);width:fit-content}
@@ -710,15 +714,20 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--menta);outline-offs
 
   <section class="hero">
     <div class="hero-texto">
-      <p class="pastilla"><span class="punto"></span>Más de 150 mayoristas argentinos verificados</p>
+      <p class="pastilla"><span class="punto"></span>Cada proveedor, aprobado uno por uno</p>
       <h1>Vendé y gestioná tu <span class="tag">#emprendimiento</span></h1>
-      <p class="bajada">Buscá mayoristas de verdad, hablales directo, y llevá tu stock,
-        tus ventas y tu caja en el mismo lugar.</p>
+      <p class="bajada">Buscá mayoristas argentinos verificados, hablales directo, y llevá
+        tu stock, tus ventas y tu caja en el mismo lugar.</p>
+      <!-- ⚠️ LOS BOTONES DICEN LO QUE LA PERSONA QUIERE HACER, NO COMO SE LLAMA EL
+           PRODUCTO. "Ver EmprendeGO" y "Ver EmprendeGO Negocios" obligaban a saber
+           de antemano cual es cual: el que recien llega no lo sabe, y ahi es donde
+           se va. "Ver como funciona" baja a secundario porque es para el que duda,
+           no para el que ya sabe a que vino. -->
       <div class="hero-acc">
-        <a class="cta cta--claro cta--grande" href="/">Ver EmprendeGO</a>
-        <a class="cta cta--borde cta--grande" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener">Ver EmprendeGO Negocios</a>
-        <a class="cta cta--borde cta--grande" href="#como">Ver cómo funciona</a>
+        <a class="cta cta--claro cta--grande" href="/">Buscar proveedores</a>
+        <a class="cta cta--borde cta--grande" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener">Gestionar mi negocio</a>
       </div>
+      <a class="enlace-secundario" href="#como">Ver cómo funciona<span aria-hidden="true">›</span></a>
     </div>
 
     <div class="tel-zona" aria-hidden="true">
@@ -737,8 +746,11 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--menta);outline-offs
                 <small>Varios mayoristas te pasan precio, mínimo y envío.</small></span>
                 <span class="chev">›</span></div>
               <span class="app-publicar">Publicar mi negocio · gratis</span>
-              <div class="app-testimonio"><i>SR</i><span><b>Sofía R. · Indumentaria</b>
-                <small>"Conseguí tres proveedores en una semana."</small></span></div>
+              <!-- ⚠️ ACA HABIA UN TESTIMONIO INVENTADO ("Sofia R., Indumentaria") y estuvo
+                   publicado. Una resena falsa en una pagina comercial no es un
+                   recurso de diseno: es una mentira con la firma de una persona que
+                   no existe. Se saca y no vuelve hasta que haya una real, con nombre
+                   y permiso del comercio. -->
             </div>
           </div>
 
@@ -1027,20 +1039,20 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--menta);outline-offs
 
   <section class="proveedores" id="proveedores">
     <div>
-      <h2>¿Vende por mayor?</h2>
-      <p>Publique su catálogo gratis y reciba pedidos de todo el país. No cobramos
-        comisión: el comprador le escribe directo a usted.</p>
+      <h2>¿Vendés por mayor?</h2>
+      <p>Publicá tu catálogo gratis y recibí pedidos de todo el país. No cobramos
+        comisión: el comprador te escribe directo a vos.</p>
     </div>
     <a class="cta cta--borde cta--grande" href="/?ir=cargar">Quiero ser proveedor</a>
   </section>
 
   <section class="cierre">
-    <p class="rotulo">Empiece hoy</p>
+    <p class="rotulo">Empezá hoy</p>
     <h2>Todo lo que necesitás, en <span class="tag">#EmprendeGO</span></h2>
     <p>Buscar proveedores es gratis. La gestión viene con 15 días de prueba, sin tarjeta.</p>
     <div class="hero-acc" style="justify-content:center">
-      <a class="cta cta--claro cta--grande" href="/">Ver EmprendeGO</a>
-      <a class="cta cta--borde cta--grande" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener">Ver EmprendeGO Negocios</a>
+      <a class="cta cta--claro cta--grande" href="/">Buscar proveedores</a>
+      <a class="cta cta--borde cta--grande" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener">Gestionar mi negocio</a>
     </div>
   </section>
 
@@ -1156,7 +1168,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--menta);outline-offs
   botones.forEach(function(b){
     b.addEventListener("click",function(){
       if(solo){clearInterval(solo);solo=null}
-      if(pie)pie.textContent="Recorra las secciones a su ritmo.";
+      if(pie)pie.textContent="Recorré las secciones a tu ritmo.";
       mostrar(b.dataset.vista);cerrar();
     });
   });
