@@ -2,6 +2,14 @@ import { createHmac, timingSafeEqual } from 'crypto';
 
 const SUPABASE_BASE = (process.env.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
 
+// ⚠️ EL PRECIO VIVE EN UNA VARIABLE DE ENTORNO, NO EN EL CODIGO. Tiene que ser
+// el MISMO numero que usa api/crear-pago.js al armar la preferencia: si los dos
+// se separan, el webhook rechaza pagos legitimos o acepta pagos de menos. El
+// valor por defecto es el que ya estaba escrito a mano, para que nada cambie si
+// la variable no esta cargada.
+const PRO_PRECIO_ARS = Number(process.env.MP_PRO_PRICE_ARS) || 20000;
+const PRO_MONEDA = 'ARS';
+
 async function logWebhook(entry) {
   try {
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
@@ -56,9 +64,7 @@ function verificarFirmaMP(req) {
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('OK');
 
-  console.log('[webhook-mp] body recibido:', JSON.stringify(req.body));
   console.log('[webhook-mp] query params:', JSON.stringify(req.query));
-  console.log('[webhook-mp] headers x-signature:', req.headers['x-signature'] || '(none)');
 
   if (!verificarFirmaMP(req)) {
     console.warn('[webhook-mp] firma inválida — rechazado');
@@ -87,31 +93,62 @@ export default async function handler(req, res) {
 
         if (!proveedorId) {
           console.error('[webhook-mp] pago aprobado pero sin proveedorId — no se puede actualizar');
-          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: false, error_detail: 'missing_proveedor_id', raw_body: req.body });
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: false, error_detail: 'missing_proveedor_id' });
           return res.status(200).send('OK');
         }
 
         const apiKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
         if (!apiKey) {
           console.error('[webhook-mp] CRÍTICO: ninguna Supabase key configurada');
-          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: 'missing_supabase_key', raw_body: req.body });
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: 'missing_supabase_key' });
           return res.status(200).send('OK');
         }
 
-        const usingServiceRole = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-        console.log(`[webhook-mp] usando ${usingServiceRole ? 'SERVICE ROLE KEY ✅' : 'ANON KEY ⚠️'}`);
+        // ⚠️ FALLA CERRADA SI NO HAY SERVICE ROLE. Antes caia a la clave anonima,
+        // que no puede ejecutar la RPC: el pago se perdia en silencio y el
+        // proveedor pagaba sin recibir el plan. Mejor un error ruidoso en los
+        // registros que un cobro sin contraprestacion.
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          console.error('[webhook-mp] CRITICO: falta SUPABASE_SERVICE_ROLE_KEY — el pago NO se activo');
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: 'sin_service_role' });
+          return res.status(200).send('OK');
+        }
 
-        const rpcUrl = `${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro`;
-        console.log(`[webhook-mp] RPC URL: "${rpcUrl}"`);
+        // ⚠️ SE VALIDA EL IMPORTE Y LA MONEDA CONTRA LO QUE ESPERAMOS COBRAR.
+        // Hoy la preferencia la crea nuestro propio servidor con el precio fijo,
+        // asi que un importe distinto no deberia llegar nunca. Se chequea igual
+        // porque el dia que el precio se vuelva configurable, o que exista mas
+        // de un plan, este es el unico lugar donde se puede notar que el pago
+        // que activa un plan no es el pago de ese plan.
+        const importe = Number(payment.transaction_amount);
+        const moneda = String(payment.currency_id || '');
+        if (moneda !== PRO_MONEDA || !Number.isFinite(importe) || importe < PRO_PRECIO_ARS) {
+          console.error(`[webhook-mp] pago aprobado que NO corresponde al plan: ${importe} ${moneda} (esperado ${PRO_PRECIO_ARS} ${PRO_MONEDA})`);
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: 'importe_o_moneda_inesperados' });
+          return res.status(200).send('OK');
+        }
 
-        const rpcRes = await fetch(rpcUrl, {
+        // ⚠️ ACA ESTA EL ARREGLO DEL COBRO DUPLICADO. Mercado Pago manda VARIOS
+        // avisos por el mismo pago (payment.created, payment.updated, y
+        // reintentos), y antes cada uno extendia el plan 30 dias mas: un pago
+        // podia valer tres meses. Ahora la RPC inserta el payment_id en una
+        // tabla con clave unica y solo activa si la fila es nueva. El candado es
+        // el insert, no un select previo: dos avisos simultaneos pasarian los
+        // dos por un select. Ver sql/2026-10-01_pago_idempotente.sql.
+        const rpcRes = await fetch(`${SUPABASE_BASE}/rest/v1/rpc/activar_plan_pro_pago`, {
           method: 'POST',
           headers: {
             apikey: apiKey,
             Authorization: `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ p_id: proveedorId })
+          body: JSON.stringify({
+            p_payment_id: String(dataId),
+            p_proveedor_id: proveedorId,
+            p_importe: importe,
+            p_moneda: moneda,
+            p_estado: payment.status
+          })
         });
 
         const rpcData = await rpcRes.json();
@@ -119,14 +156,19 @@ export default async function handler(req, res) {
 
         if (!rpcOk) {
           console.error(`[webhook-mp] error RPC: ${rpcRes.status}`, JSON.stringify(rpcData));
-          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: JSON.stringify(rpcData), raw_body: req.body });
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: false, error_detail: JSON.stringify(rpcData) });
+        } else if (rpcData?.duplicado) {
+          // No es un error: es Mercado Pago avisando de nuevo. Se registra para
+          // poder distinguirlo de un pago que nunca llego.
+          console.log(`[webhook-mp] aviso repetido del pago ${dataId} — el plan NO se extendio de nuevo`);
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: true, error_detail: 'duplicado_ignorado' });
         } else {
-          console.log(`[webhook-mp] ✅ proveedor ${proveedorId} activado a Pro hasta ${rpcData?.plan_hasta}`);
-          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: true, error_detail: null, raw_body: req.body });
+          console.log(`[webhook-mp] proveedor ${proveedorId} activado a Pro hasta ${rpcData?.plan_hasta}`);
+          await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: proveedorId, rpc_ok: true, error_detail: null });
         }
       } else {
         console.log(`[webhook-mp] pago con status="${payment.status}" — no se actualiza`);
-        await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: null, error_detail: null, raw_body: req.body });
+        await logWebhook({ payment_id: dataId, payment_status: payment.status, proveedor_id: null, rpc_ok: null, error_detail: null });
       }
     } else {
       console.log(`[webhook-mp] notificación ignorada (type="${type}", dataId="${dataId}")`);
@@ -135,7 +177,7 @@ export default async function handler(req, res) {
     return res.status(200).send('OK');
   } catch (err) {
     console.error('[webhook-mp] error inesperado:', err.message, err.cause);
-    await logWebhook({ payment_id: null, payment_status: null, proveedor_id: null, rpc_ok: false, error_detail: err.message, raw_body: req.body });
+    await logWebhook({ payment_id: null, payment_status: null, proveedor_id: null, rpc_ok: false, error_detail: err.message });
     return res.status(200).send('OK');
   }
 }

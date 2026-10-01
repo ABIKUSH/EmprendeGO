@@ -828,7 +828,7 @@ emprendego.com.ar</textarea>
         <div class="settings-section">
           <h3>🔐 Seguridad</h3>
           <div class="setting-row"><div class="setting-info"><strong>Cambiar contraseña de admin</strong><span>Se recomienda cambiarla periódicamente</span></div><input id="input-nueva-pw" class="settings-input" type="password" placeholder="Nueva contraseña"></div>
-          <div class="setting-row"><div class="setting-info"><strong>Bloqueo por intentos fallidos</strong><span>Bloquear IP tras 5 intentos</span></div><div id="toggle-bloqueo-intentos" class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="setting-row"><div class="setting-info"><strong>Intentos de ingreso fallidos</strong><span>Los limita Supabase en su servicio de autenticación. El ingreso no pasa por nuestros servidores, así que no se administra desde acá.</span></div></div>
         </div>
         <button class="save-btn" onclick="guardarConfig()">Guardar todos los cambios</button>
       </div>
@@ -878,6 +878,16 @@ emprendego.com.ar</textarea>
 
 <script>
 let pendingAction = null;
+
+// ⚠️ UN ID QUE NO ES UN ID NO SE DIBUJA. Los identificadores se interpolan
+// adentro de atributos onclick; si alguna vez un id dejara de ser un uuid
+// -una fila corrupta, una vista que devuelve otra cosa- ese texto se
+// ejecutaria. Devolver cadena vacia rompe el boton, que es visible y
+// arreglable; ejecutar el texto no se ve.
+function idSeguro(v) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v||'').trim())
+    ? String(v).trim() : '';
+}
 
 function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -951,7 +961,6 @@ async function cargarConfig(){
   setToggle('toggle-aprobacion-manual', data.aprobacion_manual);
   setToggle('toggle-verificar-cuit', data.verificar_cuit);
   setToggle('toggle-foto-obligatoria', data.foto_obligatoria);
-  setToggle('toggle-bloqueo-intentos', data.bloqueo_intentos);
   document.getElementById('input-precio-pro').value = data.precio_plan_pro || '';
   document.getElementById('input-email-facturacion').value = data.email_facturacion || '';
 }
@@ -972,7 +981,6 @@ async function guardarConfig(){
     aprobacion_manual:     getToggle('toggle-aprobacion-manual'),
     verificar_cuit:        getToggle('toggle-verificar-cuit'),
     foto_obligatoria:      getToggle('toggle-foto-obligatoria'),
-    bloqueo_intentos:      getToggle('toggle-bloqueo-intentos'),
     precio_plan_pro:       document.getElementById('input-precio-pro').value,
     email_facturacion:     document.getElementById('input-email-facturacion').value,
     updated_at:            new Date().toISOString()
@@ -1175,7 +1183,7 @@ async function cargarProveedoresPendientes(){
         <td>${escHtml(p.provincia||'—')}</td>
         <td>${timeAgoAdmin(p.created_at)}</td>
         <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁 Ver</button>
+          <button class="tbl-btn view" onclick="verProveedor('${idSeguro(p.id)}')">👁 Ver</button>
           <button class="tbl-btn approve" data-id="${p.id}" data-nombre="${escHtml(p.nombre)}" onclick="aprobarProveedor(this.dataset.id,this.dataset.nombre,this)">✓ Aprobar</button>
           <button class="tbl-btn reject" data-id="${p.id}" data-nombre="${escHtml(p.nombre)}" onclick="rechazarProveedor(this.dataset.id,this.dataset.nombre,this)">✗ Rechazar</button>
         </div></td>
@@ -1267,7 +1275,7 @@ async function cargarTodosProveedores(){
         <td>—</td>
         <td><span class="status-badge approved">● Activo</span></td>
         <td><div class="action-group">
-          <button class="tbl-btn view" onclick="verProveedor('${p.id}')">👁</button>
+          <button class="tbl-btn view" onclick="verProveedor('${idSeguro(p.id)}')">👁</button>
           ${esProveedorConcierge(p)
             ? `<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-weight:700" data-wa="${escHtml(p.whatsapp||'')}" data-nombre="${nombreEsc}" data-rubro="${escHtml(p.rubro||'')}" onclick="presentarWA(this.dataset.wa,this.dataset.nombre,this.dataset.rubro)" title="Mandar mensaje de presentación (cuenta cargada por nosotros)">Presentar</button>`
             : ''}
@@ -1275,7 +1283,7 @@ async function cargarTodosProveedores(){
             ? `<button class="tbl-btn warn" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="quitarPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Quitar</button>`
             : `<button class="tbl-btn" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;font-size:.72rem;padding:4px 8px;border-radius:6px;cursor:pointer;font-weight:700" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="darPlanPro(this.dataset.id,this.dataset.nombre)">⭐ Dar Pro</button>`}
           <button class="tbl-btn warn" onclick="showToast('Advertencia enviada')">⚠️</button>
-          <button class="tbl-btn reject" onclick="suspenderProveedor('${p.id}')">🚫</button>
+          <button class="tbl-btn reject" onclick="suspenderProveedor('${idSeguro(p.id)}')">🚫</button>
           <button class="tbl-btn reject" style="background:#fee2e2" data-id="${p.id}" data-nombre="${nombreEsc}" onclick="eliminarProveedor(this.dataset.id,this.dataset.nombre)">🗑</button>
         </div></td>
       </tr>`;
@@ -1529,11 +1537,37 @@ async function verProveedor(id){
   }
   const planHastaDate = prov.plan_hasta ? new Date(prov.plan_hasta+'T03:00:00Z') : null;
   const planVence = planHastaDate ? planHastaDate.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}) : '';
-  proBar.innerHTML = `<span style="font-size:.8rem;font-weight:700;color:${prov.plan==='pro'?'#16a34a':'#64748b'}">
-    ${prov.plan==='pro' ? '⭐ Plan PRO' + (planVence ? ' · vence ' + planVence : '') : 'Plan Gratis'}
-  </span>` + (prov.plan==='pro'
-    ? `<button onclick="quitarPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">Quitar Pro</button>`
-    : `<button onclick="darPlanPro('${prov.id}','${(prov.nombre||'').replace(/'/g,"\\'")}');closeProvModal()" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer">⭐ Dar Plan Pro</button>`);
+  // ⚠️ EL NOMBRE DEL PROVEEDOR NO ENTRA MAS EN EL HTML. Antes viajaba adentro
+  // de un onclick, escapando solo las comillas simples. Un proveedor que se
+  // anotara con una comilla doble en el nombre rompia el atributo y ejecutaba
+  // lo que quisiera EN EL NAVEGADOR DEL ADMINISTRADOR, con su sesion. O sea:
+  // alguien se registraba como proveedor y se llevaba el panel.
+  //
+  // Escapar no alcanzaba y por eso no se arreglo escapando mejor: adentro de un
+  // onclick hay dos contextos anidados (atributo HTML y string de JavaScript) y
+  // escHtml() solo cubre el primero. La unica forma segura es que el dato NO
+  // pase por texto: el boton se arma como nodo y el nombre viaja por la clausura.
+  proBar.textContent = '';
+  const estado = document.createElement('span');
+  estado.style.cssText = 'font-size:.8rem;font-weight:700;color:' + (prov.plan==='pro' ? '#16a34a' : '#64748b');
+  estado.textContent = prov.plan==='pro'
+    ? '⭐ Plan PRO' + (planVence ? ' · vence ' + planVence : '')
+    : 'Plan Gratis';
+  proBar.appendChild(estado);
+
+  const esPro = prov.plan === 'pro';
+  const botonPlan = document.createElement('button');
+  botonPlan.textContent = esPro ? 'Quitar Pro' : '⭐ Dar Plan Pro';
+  botonPlan.style.cssText = esPro
+    ? 'background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer'
+    : 'background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;border-radius:6px;padding:5px 12px;font-size:.75rem;font-weight:700;cursor:pointer';
+  botonPlan.addEventListener('click', () => {
+    // id y nombre salen de la clausura, no de una cadena de texto.
+    if (esPro) quitarPlanPro(prov.id, prov.nombre || '');
+    else darPlanPro(prov.id, prov.nombre || '');
+    closeProvModal();
+  });
+  proBar.appendChild(botonPlan);
 
   const prodsEl = document.getElementById('prov-productos-list');
   prodsEl.innerHTML = prods?.length
@@ -1697,16 +1731,16 @@ async function cargarReportes(){
     const tipoClass = tipo==='estafa'?'estafa':tipo==='spam'?'spam':'otro';
     return `<div class="report-card${resuelto?' report-resuelto':''}">
       <div class="report-header">
-        <div><strong style="font-size:.95rem">${r.proveedor_nombre||r.proveedor_id||'Proveedor'}</strong><br>
-        <span style="font-size:.75rem;color:var(--gray)">Reportado por: ${r.usuario_email||'anónimo'}</span></div>
+        <div><strong style="font-size:.95rem">${escHtml(r.proveedor_nombre||r.proveedor_id||'Proveedor')}</strong><br>
+        <span style="font-size:.75rem;color:var(--gray)">Reportado por: ${escHtml(r.usuario_email||'anónimo')}</span></div>
         <span class="report-type ${tipoClass}">${tipoLabel}</span>
       </div>
-      <div class="report-body">"${r.descripcion||r.mensaje||'Sin descripción'}"</div>
+      <div class="report-body">"${escHtml(r.descripcion||r.mensaje||'Sin descripción')}"</div>
       <div class="report-meta">📅 ${timeAgoAdmin(r.created_at)}${resuelto?' · ✅ Resuelto':''}</div>
       ${!resuelto ? `<div class="report-actions">
-        ${r.proveedor_id?`<button class="tbl-btn view" onclick="verProveedor('${r.proveedor_id}')">👁 Ver proveedor</button>`:''}
-        ${r.proveedor_id?`<button class="tbl-btn reject" onclick="suspenderPorReporte('${r.proveedor_id}','${r.id}')">🚫 Suspender</button>`:''}
-        <button class="tbl-btn approve" onclick="resolverReporte('${r.id}')">✓ Resolver</button>
+        ${r.proveedor_id?`<button class="tbl-btn view" onclick="verProveedor('${idSeguro(r.proveedor_id)}')">👁 Ver proveedor</button>`:''}
+        ${r.proveedor_id?`<button class="tbl-btn reject" onclick="suspenderPorReporte('${idSeguro(r.proveedor_id)}','${idSeguro(r.id)}')">🚫 Suspender</button>`:''}
+        <button class="tbl-btn approve" onclick="resolverReporte('${idSeguro(r.id)}')">✓ Resolver</button>
       </div>` : ''}
     </div>`;
   }).join('');
@@ -3146,9 +3180,9 @@ function novFila(n, pendiente){
     : `<div style="width:56px;height:56px;border-radius:10px;flex-shrink:0;background:#ECFDF5;display:flex;align-items:center;justify-content:center;font-size:1.2rem">📰</div>`;
 
   const acciones = pendiente
-    ? `<button onclick="publicarNovedad('${n.id}')" style="padding:7px 14px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-size:.78rem;font-weight:700;cursor:pointer">✓ Publicar</button>
-       <button onclick="rechazarNovedad('${n.id}')" style="padding:7px 14px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#dc2626;font-size:.78rem;font-weight:700;cursor:pointer">Descartar</button>`
-    : `<button onclick="despublicarNovedad('${n.id}')" style="padding:7px 14px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#666;font-size:.78rem;font-weight:700;cursor:pointer">Quitar del feed</button>`;
+    ? `<button onclick="publicarNovedad('${idSeguro(n.id)}')" style="padding:7px 14px;border:none;border-radius:8px;background:#16a34a;color:#fff;font-size:.78rem;font-weight:700;cursor:pointer">✓ Publicar</button>
+       <button onclick="rechazarNovedad('${idSeguro(n.id)}')" style="padding:7px 14px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#dc2626;font-size:.78rem;font-weight:700;cursor:pointer">Descartar</button>`
+    : `<button onclick="despublicarNovedad('${idSeguro(n.id)}')" style="padding:7px 14px;border:1px solid #e5e5e5;border-radius:8px;background:#fff;color:#666;font-size:.78rem;font-weight:700;cursor:pointer">Quitar del feed</button>`;
 
   return `
   <div style="display:flex;gap:12px;align-items:flex-start;padding:13px;border:1px solid #eee;border-radius:12px;margin-bottom:10px">

@@ -1149,7 +1149,7 @@ async function cargarProveedores() {
       proveedoresDB = data.map(p => ({
         id: String(p.id), nombre: p.nombre, rubro: p.rubro || 'General',
         desc: p.descripcion || '', pro: p.plan === 'pro' && (!p.plan_hasta || new Date(p.plan_hasta + 'T03:00:00Z') > new Date()),
-        inicial: p.nombre.substring(0, 2).toUpperCase(), whatsapp: p.whatsapp || '',
+        inicial: p.nombre.substring(0, 2).toUpperCase(),
         provincia: p.provincia || '', pedido_minimo: p.pedido_minimo || 'Sin minimo',
         envios: p.envios || 'Consultar', instagram: p.instagram || '',
         logo_url: p.logo_url || '', plan_hasta: p.plan_hasta || null, visitas: p.visitas || 0
@@ -1660,8 +1660,9 @@ function renderProvCardMini(p, i) {
   const faved = esFav(pid);
   const heartFill = faved ? '#EF4444' : 'none';
   const heartStroke = faved ? '#EF4444' : '#CBD5E1';
-  const actionBtn = (p.whatsapp)
-    ? `<a href="https://wa.me/${(p.whatsapp || '').replace(/\D/g, '')}" onclick="event.stopPropagation();registrarContactoWA('${pid}')" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:9px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</a>`
+  // ⚠️ EL BOTON SE MUESTRA SIEMPRE. Ya no sabemos si el proveedor tiene telefono hasta pedirlo: antes la tarjeta lo sabia porque el numero venia en la respuesta publica, que es justo lo que se cerro. Si no tiene, la RPC contesta y sale un aviso.
+  const actionBtn = true
+    ? `<button data-wa="" data-pid="${pid}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="width:100%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border-radius:10px;padding:9px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;text-decoration:none;margin-top:8px;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>WhatsApp</button>`
     : `<button onclick="event.stopPropagation();abrirDetalle('${pid}')" style="width:100%;background:#EFF6F2;border:1.5px solid #DCE8E2;border-radius:10px;padding:9px;font-family:'Inter',sans-serif;font-size:.78rem;font-weight:700;color:#065F46;cursor:pointer;margin-top:8px">Ver perfil</button>`;
   return `<div data-id="${pid}" style="background:white;border-radius:14px;border:1px solid #DCE8E2;padding:14px;cursor:pointer">
     <div style="display:flex;align-items:center;gap:12px">
@@ -1954,8 +1955,8 @@ function renderProvCards(el, list) {
           <span style="font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:20px;background:#E6F7EE;color:#00A651">✓ Verificado</span>
         </div>
         <div class="prov-card-actions">
-          ${p.whatsapp
-        ? `<button data-wa="${escHtml(p.whatsapp || '')}" data-pid="${pid}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>WhatsApp</button>`
+          ${true
+        ? `<button data-wa="" data-pid="${pid}" data-nombre="${escHtml(p.nombre || '')}" data-rubro="${escHtml(p.rubro || '')}" style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#25D366,#128C7E);color:white;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1;box-shadow:0 2px 7px rgba(18,140,126,.32)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.892c0 2.096.549 4.142 1.595 5.945L0 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.582 0 11.942-5.359 11.945-11.893a11.821 11.821 0 00-3.418-8.452z"/></svg>WhatsApp</button>`
         : `<button style="display:flex;align-items:center;justify-content:center;gap:6px;background:#EEF2FF;color:#065F46;border:none;border-radius:9px;padding:7px 14px;font-size:.76rem;font-weight:700;cursor:pointer;flex:1"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Ver perfil</button>`}
           <button data-favid="${pid}" style="background:#f4f7ff;border:none;border-radius:9px;padding:7px 10px;cursor:pointer;font-size:.95rem;flex-shrink:0">${fav ? '❤️' : '♡'}</button>
           <button data-compid="${pid}" class="comparar-btn ${enComp ? 'added' : ''}" style="padding:7px 10px;font-size:.72rem;flex-shrink:0">${enComp ? '✓' : '⚖'}</button>
@@ -2138,6 +2139,34 @@ function normalizarWAArg(num) {
   return '549' + n;                                  // número local sin país
 }
 
+// ⚠️ EL TELEFONO YA NO VIAJA EN EL CATALOGO: SE PIDE DE A UNO Y CON SESION.
+// Antes `proveedores.whatsapp` venia en la respuesta publica, asi que con un
+// solo pedido HTTP y sin cuenta se bajaba la lista entera de proveedores con
+// sus telefonos. Ahora la columna no es legible para anonimos y este es el
+// unico camino. Ver sql/2026-10-01_whatsapp_con_sesion.sql.
+//
+// ⚠️ DEVUELVE UN NUMERO, NO SE CACHEA EN NINGUN LADO. Guardarlo en una
+// variable global o en el almacenamiento del navegador reconstruiria la lista
+// que acabamos de desarmar.
+async function pedirWhatsapp(provId) {
+  if (!currentUser) { showToast('Iniciá sesión para ver el WhatsApp'); goTo('perfil'); return null; }
+  try {
+    const { data, error } = await sb.rpc('whatsapp_de_proveedor', { p_proveedor_id: provId });
+    if (error) throw error;
+    if (!data || data.ok !== true) {
+      const motivo = data && data.motivo;
+      showToast(motivo === 'email_sin_confirmar' ? 'Confirmá tu email para ver el WhatsApp'
+        : motivo === 'demasiados_pedidos' ? 'Pediste muchos contactos seguidos. Esperá un rato.'
+        : 'WhatsApp no disponible');
+      return null;
+    }
+    return data.whatsapp;
+  } catch (e) {
+    showToast('No pudimos obtener el WhatsApp');
+    return null;
+  }
+}
+
 function abrirWA(num, msg) {
   haptic('success');
   const n = normalizarWAArg(num);
@@ -2208,7 +2237,7 @@ function registrarIntentoCatalogo(id) {
 function pedirMasCatalogo(id) {
   registrarIntentoCatalogo(id);
   const nombre = provActual?.nombre || 'el proveedor';
-  const tieneWA = !!provActual?.whatsapp;
+  const tieneWA = !!provActual;
   const existing = document.getElementById('modal-intento-catalogo');
   if (existing) existing.remove();
   const overlay = document.createElement('div');
@@ -2272,11 +2301,13 @@ let _perfilBorrador = { revende: '' };
 // proveedor se copian del dataset ANTES de abrir el modal: cuando la accion se
 // reintenta, el elemento del DOM puede haberse re-pintado y el dataset ya no
 // existe. Por eso recibe un objeto plano y no el nodo.
-function waDesdeTarjeta(d) {
-  if (!d || !d.wa) { showToast('WhatsApp no disponible'); return; }
+async function waDesdeTarjeta(d) {
+  if (!d || !d.pid) { showToast('WhatsApp no disponible'); return; }
   if (!asegurarPerfilComprador(() => waDesdeTarjeta(d))) return;
+  const numero = await pedirWhatsapp(d.pid);
+  if (!numero) return;
   registrarContactoWA(d.pid, { id: d.pid, nombre: d.nombre, rubro: d.rubro });
-  abrirWA(d.wa, mensajeWAProv({ nombre: d.nombre, rubro: d.rubro }));
+  abrirWA(numero, mensajeWAProv({ nombre: d.nombre, rubro: d.rubro }));
 }
 
 function getPerfilComprador() {
@@ -2516,7 +2547,7 @@ async function cargarProductosDetalle(proveedorId) {
           provId: String(p.proveedor_id), provNombre: provActual?.nombre || 'Proveedor',
           provRubro: (provActual?.rubro || '') + (provActual?.provincia ? ' · ' + provActual.provincia : ''),
           provColor: _monoColor(p.proveedor_id), imgUrl: p.imagen_url || '',
-          whatsapp: provActual?.whatsapp || '', esPro: provDetalleEsPro
+          whatsapp: '', esPro: provDetalleEsPro
         });
       }
     });
@@ -2662,7 +2693,7 @@ function abrirDetalle(id) {
   document.getElementById('det-instagram').textContent = p.instagram || '-';
   document.getElementById('det-pro-badge').style.display = p.pro ? 'inline-flex' : 'none';
   document.getElementById('det-fav-btn').textContent = esFav(p.id) ? '❤️' : '♡';
-  document.getElementById('det-wa-btn').style.display = (p.whatsapp) ? 'flex' : 'none';
+  document.getElementById('det-wa-btn').style.display = 'flex';
 
   // Reseñas para TODOS los proveedores, no solo Pro.
   //
@@ -2699,13 +2730,15 @@ function abrirDetalle(id) {
 }
 
 function volverDetalle() { goBack('buscar'); }
-function detWA() {
-  if (!(provActual && provActual.whatsapp)) { showToast('WhatsApp no disponible'); return; }
+async function detWA() {
+  if (!provActual) { showToast('WhatsApp no disponible'); return; }
   // Se pasa detWA como accion pendiente: provActual sigue apuntando al mismo
   // proveedor cuando el modal la vuelve a llamar (el modal no navega).
   if (!asegurarPerfilComprador(detWA)) return;
+  const numero = await pedirWhatsapp(provActual.id);
+  if (!numero) return;
   registrarContactoWA(provActual.id, provActual);
-  abrirWA(provActual.whatsapp, mensajeWAProv(provActual));
+  abrirWA(numero, mensajeWAProv(provActual));
 }
 function detChat() { if (provActual) abrirChatDirecto(provActual.id); }
 
@@ -5127,7 +5160,7 @@ function scoreProveedores(ans) {
   const techo = [50000, 200000, 500000, Infinity][ans[2].a];
   const prio = ans[3].a;       // 0 precio · 1 envío · 2 popularidad · 3 sin preferencia
 
-  const base = (proveedoresDB || []).filter(p => p.whatsapp || p.id);
+  const base = (proveedoresDB || []).filter(p => p.id);
   // matchesCat contempla rubros múltiples (coma) y nombres legacy: un proveedor
   // en 2 rubros aparece en ambos, igual que en el buscador.
   const cand = rubroSel ? base.filter(p => matchesCat(p.rubro, rubroSel)) : base.slice();
@@ -5188,7 +5221,7 @@ function renderRecomendaciones(ranked, rubroSel) {
     const ini = p.inicial || (p.nombre || '').substring(0, 2).toUpperCase();
     const bg = _monoColor(p.id);
     const porque = reasons.length ? 'Te lo recomiendo porque ' + reasons.slice(0, 3).join(', ') + '.' : 'Buen match para lo que buscás.';
-    const wa = normalizarWAArg(p.whatsapp);
+    const wa = true; // el numero se pide al hacer clic, ver pedirWhatsapp()
     const waBtn = wa
       // Era un <a href="wa.me/..."> con el texto ya armado en el HTML. Tuvo que
       // pasar a <button>: el mensaje ahora depende de la calificacion del
