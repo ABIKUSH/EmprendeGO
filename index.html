@@ -395,24 +395,34 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         </span>
         <span class="hero-cta-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
       </button>
+      <!-- ⚠️ ES LA MISMA PIEZA QUE "PEDI QUE TE COTICEN", NO UNA PARECIDA. Usa
+           `.hero-cta` tal cual, con sus tres respaldos de vidrio (el canto de luz,
+           el espesor de abajo y el brillo propio del ::before). Hacer una card
+           nueva "parecida" habria dado dos materiales distintos en la misma
+           pantalla, que es exactamente lo que la receta de vidrio prohibe.
+           `.hero-cta-row` ya existia en styles.css sin usarse: estaba escrito para
+           este caso, dos tarjetas iguales una debajo de la otra.
+           ⚠️ VA SEGUNDA Y NO PRIMERA. Pedir cotización es a lo que la gente viene;
+           esto es para el que ya está vendiendo. Si se invierte el orden, el
+           producto nuevo le tapa la puerta al que ya funciona.
+           ⚠️ NO HAY CARTEL AL ENTRAR, a propósito: un interstitial baja la
+           conversión siempre y en celular además lo penaliza Google. Y se descartó
+           el lugar que parecía mejor -después de pedir el WhatsApp de un proveedor,
+           con la compra ya decidida-, porque ahí la persona SE VA de la aplicación
+           a WhatsApp y ese mensaje no lo lee nadie. -->
+      <a class="hero-cta" href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener"
+         style="text-decoration:none"
+         onclick="trackEvent('click_negocios_home',{origen:'hero_inicio'})">
+        <span class="hero-cta-ico" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+        <span class="hero-cta-txt">
+          <span class="hero-cta-tit">¿Ya estás vendiendo?</span>
+          <span class="hero-cta-sub">Gestioná todo tu negocio desde EmprendeGO Negocios.</span>
+        </span>
+        <span class="hero-cta-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>
+      </a>
+
       <!-- Publicar negocio button -->
       <button onclick="goTo('landing-prov')" style="display:flex;align-items:center;justify-content:center;gap:7px;width:100%;background:rgba(255,255,255,.06);color:white;border:1px solid rgba(255,255,255,.28);border-radius:12px;padding:12px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer">Publicar mi negocio · gratis</button>
-      <!-- ⚠️ ES UN RENGLON, Y ESO ES TODO LO QUE TIENE QUE SER. El que entra acá
-           viene a buscar un proveedor: frenarlo con una explicación de un segundo
-           producto que todavía no necesita es la forma segura de perderlo. Esto no
-           convence a nadie y no pretende hacerlo: planta la idea para el día que el
-           problema aparezca.
-           ⚠️ POR EL MISMO MOTIVO NO HAY CARTEL AL ENTRAR. Un interstitial baja la
-           conversión siempre, y en celular además lo penaliza Google.
-           Se descartó el otro lugar que parecía mejor -justo después de pedir el
-           WhatsApp de un proveedor-: ahí la persona se va de la aplicación a
-           WhatsApp, así que ese mensaje no lo lee nadie. -->
-      <a href="https://negocios.emprendego.com.ar" target="_blank" rel="noopener"
-         onclick="trackEvent('click_negocios_home',{origen:'hero_inicio'})"
-         style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:12px;color:rgba(255,255,255,.78);font-family:'DM Sans',sans-serif;font-size:.76rem;font-weight:600;text-decoration:none;line-height:1.35;text-align:center">
-        ¿Ya estás vendiendo? Gestioná todo tu negocio desde EmprendeGO Negocios.
-        <span aria-hidden="true" style="flex-shrink:0">&#8594;</span>
-      </a>
     </div>
 
     <!-- Social proof carrusel -->
