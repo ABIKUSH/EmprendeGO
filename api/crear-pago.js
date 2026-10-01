@@ -1,5 +1,15 @@
 import { applyRateLimit, esUUID } from './_ratelimit.js';
 
+// ⚠️ UNA SOLA FUENTE PARA EL PRECIO, y tiene que ser la MISMA que la de
+// api/webhook-mp.js. El webhook valida que el importe del pago no sea menor
+// que este numero: si los dos se separan, o se rechazan pagos legitimos o se
+// aceptan pagos de menos. El valor por defecto es el que estaba escrito a
+// mano, para que nada cambie mientras la variable no exista.
+//
+// ⚠️ EL CAMPO 'Precio Plan Pro' DEL PANEL NO GOBIERNA ESTO. Se deja como
+// informativo: el precio del cobro se cambia en Vercel, no en el panel.
+const PRECIO_PRO_ARS = Number(process.env.MP_PRO_PRICE_ARS) || 20000;
+
 const ALLOWED_ORIGINS = [
   'https://emprendego.com.ar',
   'https://www.emprendego.com.ar',
@@ -61,7 +71,7 @@ export default async function handler(req, res) {
           description: 'WhatsApp directo, badge verificado, productos ilimitados, estadísticas',
           quantity: 1,
           currency_id: 'ARS',
-          unit_price: 20000.00
+          unit_price: PRECIO_PRO_ARS
         }],
         payer: { email },
         external_reference: String(provId),
