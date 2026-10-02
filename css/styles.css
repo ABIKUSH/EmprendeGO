@@ -3243,3 +3243,41 @@ select:focus { outline: none; }
   color:rgba(255,255,255,.88);
 }
 .hero-cta-chev{display:flex;flex-shrink:0;color:rgba(255,255,255,.75)}
+
+/* =====================================================================
+   LA SEGUNDA TARJETA: EL MISMO MATERIAL, UN ESCALON MAS ATRAS.
+   Pedir cotizacion es a lo que la gente viene; gestionar el negocio es
+   para despues. Dos tarjetas identicas compiten y la pantalla deja de
+   tener una accion principal.
+   ⚠️ SE TOCAN LOS TOKENS, NO LAS REGLAS. `.hero-cta` define el vidrio
+   con --hc-bg / --hc-borde / --hc-luz justamente para esto: redefinirlos
+   deja intactos los tres respaldos (el canto de luz, el espesor y el
+   brillo del ::before) y los dos @media de abajo -el del fallback sin
+   backdrop-filter y el de movimiento reducido- siguen funcionando sin
+   tocarlos. Si en vez de eso se pisaran las reglas, habria que repetir
+   esos dos media query a mano y se desincronizarian el dia que alguien
+   ajuste el vidrio principal.
+   El material NO cambia: menos carga, no otra receta.
+   ===================================================================== */
+.hero-cta--sec{
+  --hc-bg:rgba(255,255,255,.07);
+  --hc-solido:#0F5B40;            /* el fallback, apenas sobre el hero */
+  --hc-borde:rgba(255,255,255,.16);
+  --hc-luz:rgba(255,255,255,.2);
+  box-shadow:
+    inset 0 1px 0 var(--hc-luz),
+    inset 0 -1px 0 rgba(0,0,0,.1),
+    0 8px 20px -16px rgba(2,20,13,.7);   /* flota menos: esta mas apoyada */
+}
+/* El titulo baja de 800 a 700 y de .87 a .82rem. Es poco a proposito: la
+   jerarquia se nota, pero la tarjeta no se convierte en letra chica. */
+.hero-cta--sec .hero-cta-tit{font-size:.82rem;font-weight:700}
+.hero-cta--sec .hero-cta-ico{
+  background:rgba(255,255,255,.1);
+  border-color:rgba(255,255,255,.16);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+}
+@media (hover:hover) and (pointer:fine){
+  .hero-cta--sec:hover{background:rgba(255,255,255,.12)}
+}
+
