@@ -216,6 +216,19 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       <span>Planes</span>
     </div>
     <div class="drawer-divider"></div>
+    <!-- ⚠️ ACA Y NO ARRIBA, A PROPOSITO. /que-es existe para el que NO conoce
+         EmprendeGO: el que ya esta adentro de la aplicacion no necesita que le
+         expliquen que es. Por eso va al final, al lado de Soporte y Terminos,
+         que es donde se busca la informacion de la empresa. Su lugar de verdad
+         es AFUERA -la bio de Instagram, la respuesta de WhatsApp, el destino de
+         los avisos-, no acá.
+         Abre en pestaña nueva como Soporte: la aplicacion es una SPA con el
+         historial manipulado -ver el pushState del DOMContentLoaded- y sacar a
+         alguien de ella para traerlo con el boton atras es pedir problemas. -->
+    <div class="drawer-item" onclick="closeDrawer();trackEvent('click_que_es',{origen:'menu'});window.open('/que-es','_blank')">
+      <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      <span>Qué es EmprendeGO</span>
+    </div>
     <div class="drawer-item" onclick="closeDrawer();window.open('https://wa.me/5491126048301?text=Hola%2C+tengo+una+consulta+sobre+EmprendeGO','_blank')">
       <svg class="drawer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
       <span>Soporte</span>
