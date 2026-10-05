@@ -581,6 +581,17 @@ emprendego.com.ar</textarea>
       <div class="page" id="page-busquedas">
         <div class="page-title">Análisis de Búsquedas</div>
         <div class="page-sub">Qué está buscando tu audiencia</div>
+        <!-- ¿VUELVEN? — ver sql/2026-10-05_recurrencia_visitante.sql.
+             Va PRIMERO en la página a propósito: "qué buscan" ya se sabía; lo
+             que no se podía contestar es si la misma persona vuelve, y de eso
+             depende si el problema es de retención o de alcance. -->
+        <div class="table-card" id="recurrencia-card">
+          <div class="table-title" style="margin-bottom:6px">¿Vuelven?</div>
+          <p style="font-size:.8rem;color:var(--gray);margin:0 0 14px">Cuántas de las personas que buscan vuelven otro día. Y, lo que más importa, si vuelve igual el que no encontró nada.</p>
+          <div id="recurrencia-aviso"></div>
+          <div id="recurrencia-numeros"></div>
+          <div id="recurrencia-cruce"></div>
+        </div>
         <div class="chart-row">
           <div class="chart-card" style="grid-column:1/-1">
             <div class="chart-title">🔥 Términos más buscados</div>
@@ -1927,6 +1938,98 @@ async function cargarBusquedas(){
   } catch(e){ console.log('busquedas error',e); }
 }
 
+/* ============ ¿VUELVEN? (recurrencia del comprador) ============
+   Todo sale de UNA sola RPC: admin_recurrencia(). Es SECURITY DEFINER detrás
+   del mismo portón que el embudo de WhatsApp y devuelve solo agregados.
+   Ver sql/2026-10-05_recurrencia_visitante.sql.
+
+   ⚠️ NO SE CUENTA SOBRE LAS BUSQUEDAS VIEJAS Y NO SE PUEDE ARREGLAR. El id de
+   visitante empieza a viajar el día del deploy; las ~4.200 búsquedas
+   anteriores quedan sin él para siempre. Por eso lo primero que se pinta es
+   la COBERTURA: una tasa de regreso calculada sobre veinte visitantes no dice
+   nada, y sin el aviso se lee como si dijera algo. */
+async function cargarRecurrencia(){
+  const numeros = document.getElementById('recurrencia-numeros');
+  if(!numeros) return;
+  const aviso = document.getElementById('recurrencia-aviso');
+  const cruce = document.getElementById('recurrencia-cruce');
+  numeros.innerHTML = '<div style="color:var(--gray);font-size:.85rem;padding:10px 0">Cargando...</div>';
+  if(aviso) aviso.innerHTML = '';
+  if(cruce) cruce.innerHTML = '';
+  try{
+    const { data, error } = await sb.rpc('admin_recurrencia');
+    if(error) throw error;
+    const d = data || {};
+    const cob = d.cobertura || {};
+    const visitantes = Number(d.visitantes) || 0;
+    const volvieron = Number(d.volvieron) || 0;
+    const pct = (p,t)=> (Number(t)||0) ? Math.round((Number(p)||0)/Number(t)*100) : 0;
+
+    // 1) El aviso de cobertura. El umbral de 100 visitantes no es un número
+    // mágico: por debajo de eso un solo visitante mueve la tasa más de un
+    // punto, y la tasa se presenta con un punto de precisión.
+    if(aviso){
+      const desde = cob.midiendo_desde ? new Date(cob.midiendo_desde).toLocaleDateString('es-AR') : null;
+      if(!desde || visitantes === 0){
+        aviso.innerHTML = '<div style="border:1.5px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;font-size:.82rem;color:#92400e;margin-bottom:14px">'
+          + '<strong>Todavía no hay nada medido.</strong> El identificador de visitante viaja con cada búsqueda desde el deploy. '
+          + 'Si esto sigue vacío unas horas después de publicar, la migración de la base no se corrió.</div>';
+      } else if(visitantes < 100){
+        aviso.innerHTML = '<div style="border:1.5px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;font-size:.82rem;color:#92400e;margin-bottom:14px">'
+          + '<strong>Midiendo desde el ' + escHtml(desde) + ' — todavía es poco.</strong> '
+          + 'Hay ' + visitantes + ' visitantes medidos. Para que alguien pueda "volver" tiene que pasar al menos un día, '
+          + 'así que estos números recién dicen algo con unas dos semanas encima y más de 100 visitantes.</div>';
+      } else {
+        aviso.innerHTML = '<div style="font-size:.78rem;color:var(--gray);margin-bottom:14px">Midiendo desde el ' + escHtml(desde)
+          + '. Las búsquedas anteriores a esa fecha no tienen identificador y quedan afuera del cálculo ('
+          + (Number(cob.con_visitante)||0).toLocaleString('es-AR') + ' de ' + (Number(cob.busquedas_totales)||0).toLocaleString('es-AR') + ' búsquedas).</div>';
+      }
+    }
+
+    // 2) Los números.
+    const mediana = d.dias_hasta_volver_mediana;
+    const celda = (val,lab,ayuda)=> '<div style="flex:1 1 150px;min-width:150px">'
+      + '<div style="font-size:1.5rem;font-weight:800;line-height:1.1">' + val + '</div>'
+      + '<div style="font-size:.78rem;font-weight:700;color:#374151;margin-top:2px">' + lab + '</div>'
+      + '<div style="font-size:.72rem;color:var(--gray);margin-top:2px">' + ayuda + '</div></div>';
+    numeros.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:18px 20px">'
+      + celda(visitantes.toLocaleString('es-AR'), 'Visitantes medidos', 'Navegadores distintos que buscaron algo.')
+      + celda(volvieron.toLocaleString('es-AR') + ' <span style="font-size:.95rem;color:var(--gray)">(' + pct(volvieron,visitantes) + '%)</span>',
+              'Volvieron otro día', 'Buscaron en dos días distintos o más.')
+      + celda((Number(d.habituales)||0).toLocaleString('es-AR'), 'Habituales', 'Tres días distintos o más.')
+      + celda(mediana === null || mediana === undefined ? '—' : escHtml(String(mediana)) + ' d',
+              'Tardan en volver', 'Mediana entre la primera y la última búsqueda.')
+      + '</div>';
+
+    // 3) EL CRUCE. Es el motivo por el que se construyó todo esto: si el que
+    // no encontró nada vuelve igual, el hueco de catálogo cuesta una venta;
+    // si no vuelve, cuesta el cliente entero.
+    if(cruce){
+      const p = d.por_primera_busqueda || {};
+      const fila = (etiqueta, k, color) => {
+        const r = p[k] || {};
+        const n = Number(r.visitantes)||0, v = Number(r.volvieron)||0;
+        return '<tr><td style="font-weight:600;color:' + color + '">' + etiqueta + '</td>'
+          + '<td>' + n.toLocaleString('es-AR') + '</td>'
+          + '<td>' + v.toLocaleString('es-AR') + '</td>'
+          + '<td style="font-weight:700">' + (n ? pct(v,n) + '%' : '—') + '</td></tr>';
+      };
+      cruce.innerHTML = '<div style="margin-top:22px">'
+        + '<div style="font-size:.85rem;font-weight:800;margin-bottom:4px">Según cómo les fue en la primera búsqueda</div>'
+        + '<p style="font-size:.78rem;color:var(--gray);margin:0 0 10px">Si el de abajo vuelve mucho menos que el de arriba, cada búsqueda sin resultados no cuesta una venta: cuesta el cliente.</p>'
+        + '<table><thead><tr><th>Primera búsqueda</th><th>Visitantes</th><th>Volvieron</th><th>Tasa</th></tr></thead><tbody>'
+        + fila('Encontró resultados', 'con_resultados', '#166534')
+        + fila('No encontró nada', 'sin_resultados', '#b91c1c')
+        + '</tbody></table></div>';
+    }
+  }catch(e){
+    console.error('[recurrencia]', e);
+    numeros.innerHTML = '<div style="color:var(--red);font-size:.85rem;padding:10px 0">No se pudo leer la recurrencia.<br>'
+      + '<span style="color:var(--gray);font-size:.8rem">' + escHtml(e.message || e.details || 'Error desconocido')
+      + ' — si dice que la función no existe, falta correr sql/2026-10-05_recurrencia_visitante.sql.</span></div>';
+  }
+}
+
 // ===== RUBROS =====
 async function cargarRubros(){
   const tbody = document.getElementById('rubros-table');
@@ -2456,7 +2559,7 @@ function showPage(name, el){
   if(name==='reportes') cargarReportes();
   if(name==='cotizaciones'){ cargarCotizacionesAdmin(); cargarBorradosCotiz(); }
   if(name==='planes') cargarPlanes();
-  if(name==='busquedas') cargarBusquedas();
+  if(name==='busquedas'){ cargarBusquedas(); cargarRecurrencia(); }
   if(name==='novedades') cargarNovedadesAdmin();
   if(name==='rubros') cargarRubros();
   if(name==='avisos') cargarAvisos();

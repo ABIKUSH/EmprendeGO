@@ -37,6 +37,34 @@ function regFail(step, field, el, msg) {
 // Apenas el usuario toca un campo marcado, se le saca el rojo (no espera al reintento).
 document.addEventListener('input', e => { if (e.target.classList?.contains('field-error')) e.target.classList.remove('field-error'); });
 document.addEventListener('change', e => { if (e.target.classList?.contains('field-error')) e.target.classList.remove('field-error'); });
+// ===== ID DE VISITANTE (para saber si vuelve) =====
+// Un valor aleatorio, guardado en el navegador, que viaja con cada busqueda.
+// ⚠️ ES LO UNICO QUE PERMITE SABER SI LA GENTE VUELVE. Hasta el 2026-10-05
+// `busquedas.usuario_id` estaba en CERO filas: cada busqueda era un
+// desconocido y 4.189 busquedas al mes podian ser 4.189 personas o 400 que
+// vuelven diez veces. Son dos problemas distintos con soluciones opuestas.
+//
+// NO lleva usuario_id a proposito: eso solo se puede llenar cuando hay sesion,
+// o sea que mediria la recurrencia de los que inician sesion y no la del resto.
+// Adentro no hay ni email ni nombre ni nada de la persona: es un numero al
+// azar que solo sirve para contar "este ya habia venido".
+//
+// Si el navegador no deja escribir (modo privado, almacenamiento bloqueado)
+// devuelve null y la busqueda se registra igual, sin visitante. Perder la
+// medicion es aceptable; perder la busqueda no.
+const EG_VISITANTE_KEY = 'eg_visitante';
+function idVisitante() {
+  try {
+    let v = localStorage.getItem(EG_VISITANTE_KEY);
+    // El tope de la base son 64 caracteres (busquedas_visitante_corto). Un
+    // valor mas largo que eso haria fallar el insert ENTERO y la busqueda se
+    // perderia en silencio, asi que se descarta y se genera uno nuevo.
+    if (v && v.length > 0 && v.length <= 64) return v;
+    v = (crypto?.randomUUID?.() || (Date.now().toString(36) + Math.random().toString(36).slice(2))).replace(/-/g, '');
+    localStorage.setItem(EG_VISITANTE_KEY, v);
+    return v;
+  } catch (e) { return null; }
+}
 let _lastSearchTracked = '', _searchTrackTimer = null;
 function trackSearch(q, resultCount) {
   clearTimeout(_searchTrackTimer);
@@ -48,7 +76,12 @@ function trackSearch(q, resultCount) {
     // Guardar la búsqueda real + cantidad de resultados en la base.
     // Permite ver en el admin qué se busca y, sobre todo, qué se busca SIN resultados (demanda a reclutar).
     // .then() es obligatorio: en supabase-js v2 el insert es "lazy" y sin then/await NO dispara la petición.
-    try { sb.from('busquedas').insert({ termino: q, resultados: resultCount }).then(() => {}, () => {}); } catch (e) { }
+    // `visitante` es el id del navegador: permite contar si esta persona ya
+    // habia buscado otro dia (ver idVisitante y sql/2026-10-05_recurrencia_visitante.sql).
+    // ⚠️ LA MIGRACION VA ANTES QUE ESTE CODIGO. Si se despliega al reves,
+    // PostgREST rechaza la columna desconocida y se deja de registrar TODA
+    // busqueda, en silencio, porque el error se descarta abajo.
+    try { sb.from('busquedas').insert({ termino: q, resultados: resultCount, visitante: idVisitante() }).then(() => {}, () => {}); } catch (e) { }
   }, 1500);
 }
 
