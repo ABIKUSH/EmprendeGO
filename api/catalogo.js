@@ -123,7 +123,46 @@ export function armarFicha(p) {
   };
 }
 
+/* ---------------------------------------------------------------------
+   CORS — la puerta por la que entra EmprendeGO Negocios  (2026-10-06)
+
+   Negocios vive en otro dominio (negocios.emprendego.com.ar) y en otro
+   proyecto de Supabase. Sin estas cabeceras, el navegador le niega la
+   respuesta aunque el servidor la haya mandado entera.
+
+   ⚠️ LA LISTA DE ORIGENES ES CERRADA, NO ES UN '*'. Lo que se sirve acá ya
+   es publico (es el catalogo que ve cualquiera en la home), asi que un '*'
+   no filtraria ningun dato nuevo. Se usa lista igual por una razon mas
+   aburrida: con '*' cualquier sitio puede colgarse de este endpoint y
+   gastarnos el rate limit y el ancho de banda del CDN.
+
+   Localhost entra para poder desarrollar Negocios contra el catalogo real.
+   --------------------------------------------------------------------- */
+const ORIGENES = new Set([
+  'https://negocios.emprendego.com.ar',
+  'https://emprendego.com.ar',
+  'https://www.emprendego.com.ar',
+  'http://localhost:3000'
+]);
+
+function permitirOrigen(req, res) {
+  const origen = req.headers.origin;
+  if (origen && ORIGENES.has(origen)) {
+    res.setHeader('Access-Control-Allow-Origin', origen);
+    // Sin esto, el CDN puede servirle a un origen la respuesta cacheada que
+    // lleva la cabecera de otro, y el navegador la rechaza.
+    res.setHeader('Vary', 'Origin');
+  }
+}
+
 export default async function handler(req, res) {
+  permitirOrigen(req, res);
+  // El navegador pregunta primero con OPTIONS antes de hacer el GET real.
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    return res.status(204).end();
+  }
   if (req.method !== 'GET') return res.status(405).json({ error: 'Solo GET' });
 
   // El CDN cachea por URL completa, así que alguien podría reventar el caché

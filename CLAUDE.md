@@ -72,6 +72,17 @@ NOTIFY pgrst, 'reload schema';
 ```
 A 403 from PostgREST when the frontend reads a column → missing column-level GRANT.
 
+⚠️ **Y AL REVÉS: NUNCA OTORGAR UNA COLUMNA NUEVA A `anon` "POR LAS DUDAS".** El 2026-10-06 se encontró que `proveedores.ml_access_token`, `ml_refresh_token`, `ml_token_expires_at` y `tn_access_token` se leían con la clave publishable, sin sesión: 4 tokens de Mercado Libre, 4 de refresh y 7 de Tienda Nube, con los que se opera la cuenta del proveedor. **No fue un fallo de RLS** — las policies estaban bien, `prov_select_public` limita a `estado='aprobado'`. Fue un GRANT por columna que quedó abierto para `anon` cuando se endureció `authenticated` y no el otro rol.
+
+Reglas que salen de ahí:
+
+1. **Un token, un secreto o un dato de contacto no se otorga NUNCA a `anon`.** Esos campos los usan `api/ml.js` y `api/tiendanube.js` con la service-role, que no pasa por estos grants.
+2. **RLS no te salva de un GRANT de más.** RLS filtra FILAS; el grant decide COLUMNAS. Si una fila es visible (un proveedor aprobado lo es), toda columna otorgada viaja con ella.
+3. **Al endurecer un rol, endurecer los dos.** El diff útil es: `select` de las columnas que tiene `anon` y no tiene `authenticated`. Si aparece algo, casi siempre está mal.
+4. **`REVOKE` cierra la puerta pero no desarma lo que ya se llevaron.** Después de revocar una credencial hay que ROTARLA en la plataforma de origen (desconectar y reconectar la cuenta).
+
+**La prueba que lo vigila es `node test/permisos-publicos.test.js`.** Es la única del repo que usa red, a propósito: le pregunta a producción con la clave pública qué contesta, porque un permiso mal puesto no deja rastro en ningún archivo. Cubre los dos proyectos (marketplace y Negocios) y trae un control al revés — `productos` y `novedades` **tienen** que seguir abiertas — para que "revocar todo" no pase la prueba dejando la página sin catálogo. Correrla después de cualquier migración que toque grants, policies o columnas nuevas.
+
 ### External Services
 
 | Service | Purpose | Config |
