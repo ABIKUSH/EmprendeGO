@@ -147,6 +147,14 @@ tr:hover td{background:#fafbff}
 .contador-anuncio{display:inline-flex;align-items:center;gap:6px;background:#e6faf4;color:#00a274;font-size:.72rem;font-weight:700;padding:6px 12px;border-radius:20px;white-space:nowrap}
 .contador-anuncio.medio{background:#fff3e0;color:var(--orange)}
 .contador-anuncio.tope{background:#fee2e2;color:var(--red)}
+/* Envío de la tanda del día. Verde de marca y no el azul del panel: es el
+   único botón de acá que le escribe a 1.500 personas, y conviene que no se
+   confunda con los de administrar filas. */
+.btn-tanda{background:#006039;color:#fff;border:0;font-size:.74rem;font-weight:700;padding:7px 14px;border-radius:20px;cursor:pointer;white-space:nowrap}
+.btn-tanda:hover{background:#00794a}
+.btn-tanda:disabled{background:#cbd5e1;cursor:progress}
+.btn-tanda.detener{background:#fee2e2;color:var(--red)}
+.btn-tanda.detener:hover{background:#fecaca}
 .avatar-cell{display:flex;align-items:center;gap:8px}
 .cell-avatar{width:30px;height:30px;border-radius:8px;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:800;font-size:.75rem;color:var(--blue);flex-shrink:0}
 .cell-avatar-img{width:30px;height:30px;border-radius:8px;object-fit:cover;flex-shrink:0;background:#fff;border:1px solid #eef}
@@ -434,7 +442,12 @@ tr:hover td{background:#fafbff}
             <div class="table-actions">
               <!-- Contador de envíos del anuncio por mail. Oculto hasta que
                    cargarUsuarios() confirma que las tablas de email existen. -->
-              <span class="contador-anuncio" id="contador-anuncio" style="display:none" title="Anuncio de Cotizaciones enviado hoy"></span>
+              <span class="contador-anuncio" id="contador-anuncio" style="display:none" title="Anuncio por mail enviado hoy"></span>
+              <!-- Manda la tanda del día sola, de a un mail por vez, en vez de
+                   obligar a hacer 60 clics. No arranca nunca solo: lo dispara
+                   una persona y se puede frenar en cualquier momento. -->
+              <button class="btn-tanda" id="btn-tanda" style="display:none" onclick="enviarTanda()">Enviar a los que faltan</button>
+              <button class="btn-tanda detener" id="btn-tanda-detener" style="display:none" onclick="detenerTanda()">Detener</button>
               <input class="search-mini" placeholder="Buscar usuario..." oninput="filterTable(this,'user-table')">
               <select class="filter-select">
                 <option>Todos</option>
@@ -1323,14 +1336,25 @@ async function cargarTodosProveedores(){
    de usuarios sigue funcionando exactamente como antes.
    ===================================================================== */
 
-const ANUNCIO_CAMPANA = 'anuncio_cotizaciones';  // debe coincidir con api/notificar-mensaje.js
+const ANUNCIO_CAMPANA = 'anuncio_negocios';      // debe coincidir con api/notificar-mensaje.js
 const ANUNCIO_LIMITE_DIARIO = 60;                // idem
-const ANUNCIO_NOMBRE = 'Cotizaciones';
+const ANUNCIO_NOMBRE = 'EmprendeGO Negocios';
+
+// Espera entre mail y mail de una tanda. ⚠️ NO ES DECORACIÓN:
+//   - el backend corta las ráfagas en 70 por minuto por IP; a 1,5 s salen 40,
+//     con margen para que el panel no se frene a sí mismo;
+//   - Resend limita a 2 pedidos por segundo, y acá va uno cada uno y medio;
+//   - y deja ver el avance. Una tanda de 60 tarda cerca de un minuto y medio.
+// Bajarlo hace que el propio panel empiece a comerse errores de rate limit.
+const ANUNCIO_ESPERA_MS = 1500;
 
 let anuncioLogs = new Map();      // usuario_id -> fila de email_logs
 let anuncioBajas = new Set();     // emails (minúscula) dados de baja
 let anuncioDisponible = false;
 let anuncioEnviadosHoy = 0;
+let usuariosCache = [];           // la lista completa, para poder armar la tanda
+let tandaCorriendo = false;
+let tandaCancelada = false;
 
 // Argentina no aplica horario de verano: siempre UTC-3. El corte de "hoy"
 // tiene que ser la medianoche de acá; con la de UTC, los envíos hechos
@@ -1379,6 +1403,34 @@ function actualizarContadorAnuncio(){
   el.textContent = `Anuncio ${ANUNCIO_NOMBRE} · Enviados hoy: ${anuncioEnviadosHoy}/${ANUNCIO_LIMITE_DIARIO}`;
   el.classList.toggle('medio', anuncioEnviadosHoy >= ANUNCIO_LIMITE_DIARIO*0.8 && anuncioEnviadosHoy < ANUNCIO_LIMITE_DIARIO);
   el.classList.toggle('tope',  anuncioEnviadosHoy >= ANUNCIO_LIMITE_DIARIO);
+
+  // El botón de la tanda cuenta cuántos faltan de verdad, no cuántos usuarios
+  // hay: el que ya lo recibió o se dio de baja no entra.
+  const btn = document.getElementById('btn-tanda');
+  if(btn && !tandaCorriendo){
+    const faltan = pendientesDeAnuncio().length;
+    const hoy = Math.max(0, ANUNCIO_LIMITE_DIARIO - anuncioEnviadosHoy);
+    btn.style.display = faltan ? '' : 'none';
+    btn.disabled = false;
+    btn.textContent = hoy
+      ? `Enviar a ${Math.min(faltan, hoy)} (faltan ${faltan.toLocaleString('es-AR')})`
+      : `Tope del día alcanzado · faltan ${faltan.toLocaleString('es-AR')}`;
+    btn.disabled = hoy === 0;
+  }
+}
+
+// Los que todavía tienen que recibir esta campaña. El orden es el de la tabla
+// (más nuevos primero) a propósito: si una tanda se corta a la mitad, el que
+// se acaba de registrar ya recibió el anuncio.
+function pendientesDeAnuncio(){
+  if(!anuncioDisponible) return [];
+  return usuariosCache.filter(u => {
+    const email = String(u.email||'').trim().toLowerCase();
+    if(!email) return false;
+    if(anuncioLogs.has(u.id)) return false;
+    if(anuncioBajas.has(email)) return false;
+    return true;
+  });
 }
 
 // Cuatro estados posibles del botón, más el caso "sin email" (no se pinta).
@@ -1424,7 +1476,7 @@ async function enviarAnuncioUsuario(btn){
     const r = await fetch('/api/notificar-mensaje?action=anuncio', {
       method:'POST',
       headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}` },
-      body: JSON.stringify({ usuario_id: uid })
+      body: JSON.stringify({ usuario_id: uid, campana: ANUNCIO_CAMPANA })
     });
     const j = await r.json().catch(()=>({}));
 
@@ -1467,6 +1519,133 @@ async function enviarAnuncioUsuario(btn){
   }
 }
 
+/* =====================================================================
+   LA TANDA DEL DÍA
+
+   POR QUÉ EXISTE: el anuncio de Cotizaciones salió a 1.106 personas haciendo
+   clic de a uno, unas 60 veces por día, durante 22 días. Y quedaron 469 sin
+   recibirlo, porque a los 22 días uno se cansa. El envío manual no es una
+   garantía de nada: es solo trabajo.
+
+   ⚠️ LA GARANTÍA SIGUE ESTANDO EN EL BACKEND, NO ACÁ. Cada mail de la tanda
+   es exactamente el mismo pedido que hacía el botón de la fila: el servidor
+   revalida sesión de admin, baja, duplicado y tope diario, y reserva la fila
+   en email_logs ANTES de mandar. Si alguien tocara este JS, no lograría un
+   envío que el servidor no permita. Lo de acá solo ahorra los clics.
+
+   Tres frenos propios, igual:
+     1. no arranca solo nunca — lo dispara una persona, con confirmación que
+        dice el número exacto de mails que van a salir;
+     2. se puede detener en cualquier momento, y frena en el mail siguiente;
+     3. se corta sola a los 3 errores seguidos. Un error suelto puede ser un
+        mail rebotado; tres seguidos es Resend caído o la sesión vencida, y
+        seguir insistiendo solo quema cuota.
+   ===================================================================== */
+
+function detenerTanda(){
+  tandaCancelada = true;
+  const btn = document.getElementById('btn-tanda');
+  if(btn) btn.textContent = 'Deteniendo...';
+}
+
+function pintarEstadoTanda(corriendo){
+  tandaCorriendo = corriendo;
+  const btn = document.getElementById('btn-tanda');
+  const stop = document.getElementById('btn-tanda-detener');
+  if(stop) stop.style.display = corriendo ? '' : 'none';
+  if(btn) btn.disabled = corriendo;
+  if(!corriendo) actualizarContadorAnuncio();
+}
+
+async function enviarTanda(){
+  if(tandaCorriendo) return;
+
+  const pendientes = pendientesDeAnuncio();
+  const cupo = Math.max(0, ANUNCIO_LIMITE_DIARIO - anuncioEnviadosHoy);
+  const vanASalir = Math.min(pendientes.length, cupo);
+
+  if(!vanASalir){
+    showToast(cupo ? 'No queda nadie pendiente' : 'Ya se alcanzó el tope de hoy');
+    return;
+  }
+
+  // La confirmación dice el número real y el nombre de la campaña. Es el
+  // único momento en que una persona decide, así que no se abrevia.
+  if(!confirm(
+    `Se van a enviar ${vanASalir} mails del anuncio "${ANUNCIO_NOMBRE}".\n\n` +
+    `Pendientes en total: ${pendientes.length}\n` +
+    `Tope de hoy: ${ANUNCIO_LIMITE_DIARIO} (ya salieron ${anuncioEnviadosHoy})\n` +
+    `Va a tardar cerca de ${Math.ceil(vanASalir*ANUNCIO_ESPERA_MS/60000)} min. No cierre esta pestaña.\n\n` +
+    `¿Enviar?`
+  )) return;
+
+  tandaCancelada = false;
+  pintarEstadoTanda(true);
+
+  const btn = document.getElementById('btn-tanda');
+  let enviados = 0, fallados = 0, seguidos = 0;
+
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){
+    showToast('Tu sesión venció. Volvé a entrar al panel.');
+    pintarEstadoTanda(false);
+    return;
+  }
+
+  for(const u of pendientes.slice(0, cupo)){
+    if(tandaCancelada) break;
+    if(btn) btn.textContent = `Enviando ${enviados + fallados + 1} de ${vanASalir}...`;
+
+    try {
+      const r = await fetch('/api/notificar-mensaje?action=anuncio', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', Authorization:`Bearer ${session.access_token}` },
+        body: JSON.stringify({ usuario_id: u.id, campana: ANUNCIO_CAMPANA })
+      });
+      const j = await r.json().catch(()=>({}));
+
+      if(r.ok){
+        enviados++; seguidos = 0;
+        anuncioLogs.set(u.id, { usuario_id:u.id, estado:'enviado', enviado_at: j.enviado_at || new Date().toISOString() });
+        anuncioEnviadosHoy = Number.isFinite(j.enviados_hoy) ? j.enviados_hoy : anuncioEnviadosHoy + 1;
+      } else if(j.error === 'duplicado'){
+        // No es un fallo: otra pestaña o una tanda anterior ya lo mandó.
+        anuncioLogs.set(u.id, { usuario_id:u.id, estado:'enviado', enviado_at: j.enviado_at });
+        seguidos = 0;
+      } else if(j.error === 'baja'){
+        anuncioBajas.add(String(u.email||'').toLowerCase());
+        seguidos = 0;
+      } else if(j.error === 'limite_diario'){
+        showToast('Se alcanzó el tope diario. Seguí mañana.');
+        break;
+      } else {
+        fallados++; seguidos++;
+        console.error('[tanda] falló', u.email, j);
+      }
+    } catch(e){
+      fallados++; seguidos++;
+      console.error('[tanda] error de red', u.email, e);
+    }
+
+    if(seguidos >= 3){
+      showToast('Tres errores seguidos: se detuvo la tanda. Mirá la consola.');
+      break;
+    }
+    if(tandaCancelada) break;
+    await new Promise(r => setTimeout(r, ANUNCIO_ESPERA_MS));
+  }
+
+  pintarEstadoTanda(false);
+  // Se repinta la tabla entera una sola vez, al final: hacerlo en cada mail
+  // haría saltar el scroll sesenta veces.
+  cargarUsuarios();
+  showToast(
+    `Tanda terminada: ${enviados} enviados` +
+    (fallados ? `, ${fallados} con error` : '') +
+    (tandaCancelada ? ' (detenida a mano)' : '')
+  );
+}
+
 // ===== SUPABASE: USUARIOS =====
 async function cargarUsuarios(){
   const tbody = document.getElementById('user-table');
@@ -1484,6 +1663,9 @@ async function cargarUsuarios(){
     ]);
     if(error) throw error;
 
+    // La lista completa queda guardada: es de donde sale la tanda. Sin esto
+    // el envío masivo solo alcanzaría a las filas que están pintadas.
+    usuariosCache = data || [];
     cargarEstadoAnuncios(logsRes, bajasRes);
 
     const badgeU = document.getElementById('badge-usuarios');

@@ -353,11 +353,24 @@ async function handlerCotizacion(req, res) {
    Resend.
    ===================================================================== */
 
-// Identificador de la campana. Si el dia de mañana se manda otro anuncio
-// distinto, se cambia esta constante (y la de admin.html) y el historial
-// del anuncio viejo queda intacto: los botones vuelven a habilitarse
-// solo para la campana nueva.
-const CAMPANA = 'anuncio_cotizaciones';
+// Campanas disponibles. El historial de cada una es independiente porque el
+// indice unico de email_logs es (usuario_id, campana) donde estado='enviado':
+// agregar una campana nueva vuelve a habilitar el boton para todos, sin tocar
+// lo ya enviado de las anteriores.
+//
+// ⚠️ EL CONTENIDO NUNCA VIAJA EN EL REQUEST, Y ESO ES LO QUE HACE QUE ESTO NO
+// SEA UN RELAY ABIERTO. El panel manda un NOMBRE de campana, no un texto. Si
+// alguien consiguiera un token de admin, lo unico que podria hacer es mandar
+// uno de estos dos mails ya escritos, nunca el suyo.
+const CAMPANAS = {
+  anuncio_cotizaciones: { nombre: 'Cotizaciones',         plantilla: plantillaAnuncioCotizaciones },
+  anuncio_negocios:     { nombre: 'EmprendeGO Negocios',  plantilla: plantillaAnuncioNegocios }
+};
+
+// Si el panel no manda campana, es una version vieja cacheada en el navegador
+// de alguien: se le responde la campana que ese panel conocia, no la nueva.
+// Al reves, un panel viejo empezaria a mandar el anuncio equivocado.
+const CAMPANA_POR_DEFECTO = 'anuncio_cotizaciones';
 
 // Tope diario auto-impuesto. El plan free de Resend corta en 100/dia; se
 // deja margen a proposito. Se valida ACA ademas de en la UI: el contador
@@ -475,7 +488,14 @@ async function marcarLogError(serviceKey, id, motivo) {
 async function handlerAnuncio(req, res) {
   // Aun con sesion de admin, un tope de ráfaga: protege de un bucle
   // accidental en el panel (o de un token filtrado) contra la base entera.
-  if (!applyRateLimit(req, res, { bucket: 'anuncio', limit: 30, windowMs: 60000 })) return;
+  //
+  // Subido de 30 a 70 el 2026-10-06, cuando el panel dejo de mandar de a uno
+  // por clic y paso a mandar la tanda del dia sola (una cada 1,5 s ≈ 40 por
+  // minuto; con 30 se frenaba a si mismo). ⚠️ Esto NO afloja la proteccion
+  // real: la que impide una avalancha es LIMITE_DIARIO, que se cuenta contra
+  // la base y no contra la memoria de la instancia. Lo de aca solo evita que
+  // un bucle enloquecido gaste la cuota de Resend en diez segundos.
+  if (!applyRateLimit(req, res, { bucket: 'anuncio', limit: 70, windowMs: 60000 })) return;
 
   // Se exige el service-role: email_logs no tiene policy de INSERT, asi que
   // con la anon key el envio saldria pero el registro no, y se perderia el
@@ -491,6 +511,13 @@ async function handlerAnuncio(req, res) {
 
   const { usuario_id } = req.body || {};
   if (!esUUID(usuario_id)) return res.status(400).json({ error: 'usuario_invalido', detalle: 'ID de usuario inválido.' });
+
+  // La campana se elige de una lista cerrada. Cualquier otro valor se rechaza:
+  // nunca se arma un mail a partir de algo que mando el cliente.
+  const campana = String(req.body?.campana || CAMPANA_POR_DEFECTO);
+  if (!Object.prototype.hasOwnProperty.call(CAMPANAS, campana)) {
+    return res.status(400).json({ error: 'campana_invalida', detalle: 'Esa campaña no existe.' });
+  }
 
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) {
@@ -533,7 +560,7 @@ async function handlerAnuncio(req, res) {
     //    la garantia final; esto evita gastar un envio para despues chocar.
     const yaRes = await fetch(
       `${SUPABASE_BASE}/rest/v1/email_logs?usuario_id=eq.${encodeURIComponent(usuario_id)}` +
-      `&campana=eq.${encodeURIComponent(CAMPANA)}&estado=eq.enviado&select=enviado_at&limit=1`,
+      `&campana=eq.${encodeURIComponent(campana)}&estado=eq.enviado&select=enviado_at&limit=1`,
       { headers: authHeaders }
     );
     if (yaRes.ok) {
@@ -543,7 +570,7 @@ async function handlerAnuncio(req, res) {
 
     // 3) Tope diario.
     const cuentaRes = await fetch(
-      `${SUPABASE_BASE}/rest/v1/email_logs?campana=eq.${encodeURIComponent(CAMPANA)}` +
+      `${SUPABASE_BASE}/rest/v1/email_logs?campana=eq.${encodeURIComponent(campana)}` +
       `&estado=eq.enviado&enviado_at=gte.${encodeURIComponent(inicioDelDiaAR())}&select=id`,
       { headers: { ...authHeaders, Prefer: 'count=exact', Range: '0-0' } }
     );
@@ -556,7 +583,7 @@ async function handlerAnuncio(req, res) {
     //    pedido simultaneo para el mismo usuario choca contra el indice unico
     //    y se va por la rama de duplicado sin mandar un segundo mail.
     reserva = await reservarEnvio(serviceKey, {
-      usuario_id, email: destino, campana: CAMPANA, estado: 'enviado', admin_email: adminEmail
+      usuario_id, email: destino, campana, estado: 'enviado', admin_email: adminEmail
     });
     if (reserva.duplicado) {
       return res.status(409).json({ error: 'duplicado', detalle: 'Ya se le envió este anuncio.' });
@@ -568,8 +595,8 @@ async function handlerAnuncio(req, res) {
     }
 
     // --- Envío ---
-    const unsubUrl = `${APP_URL}/api/unsub?u=${encodeURIComponent(usuario_id)}&c=${encodeURIComponent(CAMPANA)}`;
-    const mail = plantillaAnuncioCotizaciones(usuario.nombre, unsubUrl);
+    const unsubUrl = `${APP_URL}/api/unsub?u=${encodeURIComponent(usuario_id)}&c=${encodeURIComponent(campana)}`;
+    const mail = CAMPANAS[campana].plantilla(usuario.nombre, unsubUrl);
 
     const payload = {
       from: 'EmprendeGO <notificaciones@emprendego.com.ar>',
@@ -615,7 +642,7 @@ async function handlerAnuncio(req, res) {
       }).catch(e => console.error('[anuncio] no se pudo guardar el resend_id:', e.message));
     }
 
-    console.log(`[anuncio] enviado a ${usuario_id} por ${adminEmail} (${enviadosHoy + 1}/${LIMITE_DIARIO})`);
+    console.log(`[anuncio:${campana}] enviado a ${usuario_id} por ${adminEmail} (${enviadosHoy + 1}/${LIMITE_DIARIO})`);
     return res.status(200).json({ ok: true, enviados_hoy: enviadosHoy + 1, limite: LIMITE_DIARIO, enviado_at: new Date().toISOString() });
 
   } catch (err) {
@@ -714,6 +741,113 @@ function plantillaAnuncioCotizaciones(nombreCrudo, unsubUrl) {
           </td></tr></table>
 
           <p style="margin:0;color:#5c6661;">Si lo prueba y algo no le cierra, responda este mail y lo vemos.</p>
+          <p style="margin:18px 0 0;font-weight:700;">Equipo EmprendeGO</p>
+
+        </td></tr>
+        <tr><td style="padding:18px 32px 26px;border-top:1px solid #eceeeb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;font-size:12px;line-height:1.55;color:#8a9490;">
+          Recibe este mail porque tiene una cuenta en EmprendeGO.<br>
+          <a href="${unsubUrl}" style="color:#8a9490;text-decoration:underline;">Si no quiere recibir más avisos como este, puede darse de baja acá.</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+
+  return { asunto, html, texto };
+}
+
+
+/* ---------------------------------------------------------------------
+   PLANTILLA — anuncio de EmprendeGO Negocios  (2026-10-06)
+
+   Mismas reglas que la de arriba: USTED, sin emojis, verde de marca, HTML y
+   texto plano, estilos en linea y fuente de sistema.
+
+   DOS DECISIONES DE FONDO SOBRE EL TEXTO
+
+   1) No promete que les va a ir mejor. Promete una sola cosa concreta y
+      verificable: dejar de llevar el negocio en un cuaderno o en una
+      planilla. El anuncio anterior funciono por eso mismo, y ademas es lo
+      unico que podemos sostener: Negocios recien arranca.
+
+   2) Dice el precio desde el principio -- o mejor dicho, dice que hay prueba
+      gratis y que despues se paga. Esconderlo hasta el final del embudo es
+      lo que hace que la gente se sienta enganada y se de de baja de TODO,
+      incluido el mail que si le servia.
+   --------------------------------------------------------------------- */
+function plantillaAnuncioNegocios(nombreCrudo, unsubUrl) {
+  const primero = String(nombreCrudo || '').trim().split(/\s+/)[0] || '';
+  const saludo = primero && primero.length <= 20 ? `Hola ${primero},` : 'Hola,';
+  const saludoHtml = escHtml(saludo);
+  const cta = 'https://negocios.emprendego.com.ar';
+
+  const asunto = 'Ahora puede llevar el stock y las ventas de su negocio desde EmprendeGO';
+
+  const texto = [
+    saludo,
+    '',
+    'Le escribo desde EmprendeGO porque abrimos algo nuevo: EmprendeGO Negocios.',
+    '',
+    'Hasta ahora EmprendeGO le servia para encontrar proveedores. Esto es para lo que viene despues: llevar el negocio sin planillas.',
+    '',
+    'Que hace:',
+    '- Stock: sabe cuanto le queda de cada producto, y se descuenta solo cuando vende.',
+    '- Ventas y compras: las carga una vez y le quedan registradas, con el margen de cada una.',
+    '- Cuentas corrientes: quien le debe, cuanto y desde cuando.',
+    '- Mercado Libre y Tienda Nube: si vende ahi, conecta las cuentas y el stock se actualiza solo en los dos lados. Deja de vender algo que ya no tiene.',
+    '',
+    'Son 15 dias de prueba, sin tarjeta. Si al final no le sirve, no hace nada y listo. Si le sirve, ahi hablamos de cuanto sale.',
+    '',
+    `Probarlo: ${cta}`,
+    '',
+    'Si lo abre y no entiende algo, responda este mail y lo vemos.',
+    '',
+    'Equipo EmprendeGO',
+    '',
+    '---',
+    'Recibe este mail porque tiene una cuenta en EmprendeGO.',
+    `Si no quiere recibir mas avisos como este, puede darse de baja aca: ${unsubUrl}`
+  ].join('\n');
+
+  const fila = (titulo, detalle) =>
+    `<tr><td style="padding:0 0 12px;">`
+    + `<span style="font-weight:700;color:#006039;">${titulo}.</span> ${detalle}`
+    + `</td></tr>`;
+
+  const html = `<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escHtml(asunto)}</title></head>
+<body style="margin:0;padding:0;background:#f4f5f3;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Stock, ventas, compras y cuentas corrientes en un solo lugar. 15 días de prueba, sin tarjeta.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f3;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;">
+        <tr><td style="background:#006039;padding:22px 32px;">
+          <span style="color:#ffffff;font-family:Georgia,'Times New Roman',serif;font-size:20px;font-weight:700;letter-spacing:-.01em;">EmprendeGO</span>
+        </td></tr>
+        <tr><td style="padding:32px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#2c3330;">
+
+          <p style="margin:0 0 18px;">${saludoHtml}</p>
+
+          <p style="margin:0 0 18px;">Le escribo desde EmprendeGO porque abrimos algo nuevo: <strong style="color:#006039;">EmprendeGO Negocios</strong>.</p>
+
+          <p style="margin:0 0 22px;">Hasta ahora EmprendeGO le servía para encontrar proveedores. Esto es para lo que viene después: <strong>llevar el negocio sin planillas</strong>.</p>
+
+          <p style="margin:0 0 12px;font-weight:700;color:#006039;">Qué hace</p>
+          <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin:0 0 24px;">
+            ${fila('Stock', 'Sabe cuánto le queda de cada producto, y se descuenta solo cuando vende.')}
+            ${fila('Ventas y compras', 'Las carga una vez y le quedan registradas, con el margen de cada una.')}
+            ${fila('Cuentas corrientes', 'Quién le debe, cuánto y desde cuándo.')}
+            ${fila('Mercado Libre y Tienda Nube', 'Si vende ahí, conecta las cuentas y el stock se actualiza solo en los dos lados. Deja de vender algo que ya no tiene.')}
+          </table>
+
+          <p style="margin:0 0 26px;">Son <strong>15 días de prueba, sin tarjeta</strong>. Si al final no le sirve, no hace nada y listo. Si le sirve, ahí hablamos de cuánto sale.</p>
+
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto 26px;"><tr><td align="center" style="background:#006039;border-radius:10px;">
+            <a href="${cta}" style="display:inline-block;padding:14px 30px;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,sans-serif;font-size:15px;font-weight:700;text-decoration:none;">Probar EmprendeGO Negocios</a>
+          </td></tr></table>
+
+          <p style="margin:0;color:#5c6661;">Si lo abre y no entiende algo, responda este mail y lo vemos.</p>
           <p style="margin:18px 0 0;font-weight:700;">Equipo EmprendeGO</p>
 
         </td></tr>
