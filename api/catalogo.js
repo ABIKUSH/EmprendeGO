@@ -170,6 +170,120 @@ export default async function handler(req, res) {
   // El rate limit le pone techo a ese abuso.
   if (!applyRateLimit(req, res, { bucket: 'catalogo', limit: 60, windowMs: 60000 })) return;
 
+  /* -------------------------------------------------------------------
+     ?proveedores=1 — la lista para elegir de quién importar  (2026-10-06)
+
+     EmprendeGO Negocios arranca con la pantalla de proveedores vacía, y el
+     primer día es donde se pierde a la gente: nadie carga sus proveedores y
+     sus productos a mano. Esto es lo que le permite elegirlos de una lista
+     en vez de escribirlos.
+
+     ⚠️ VA SEPARADO DEL LISTADO GENERAL A PROPOSITO. El catálogo completo
+     pesa cerca de 1 MB porque trae todos los productos; esto son unas
+     decenas de filas. Pedir 1 MB para pintar una lista de 163 nombres es
+     justo lo que hace que la pantalla tarde en un teléfono.
+
+     ⚠️ NO DEVUELVE WHATSAPP NI EMAIL, y no es un olvido. El rol anónimo no
+     los tiene otorgados (ver el incidente del 2026-10-06 en CLAUDE.md) y
+     tampoco hacen falta: el que importa un proveedor a su sistema necesita
+     saber quién es, no cómo contactarlo a espaldas del marketplace. Si
+     alguna vez hace falta el contacto, va por una puerta con sesión.
+     ------------------------------------------------------------------- */
+  if (req.query?.proveedores !== undefined) {
+    try {
+      // `estado` no se filtra acá: RLS ya limita el rol anónimo a los
+      // aprobados. Filtrar de nuevo sería duplicar la regla en dos lugares.
+      const url = `${SUPABASE_BASE}/rest/v1/proveedores` +
+        `?select=${encodeURIComponent('id,nombre,rubro,provincia,descripcion,logo_url,pedido_minimo,envios,instagram')}` +
+        `&order=nombre.asc&limit=1000`;
+
+      const r = await fetch(url, {
+        headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, Accept: 'application/json' }
+      });
+      if (!r.ok) {
+        console.error('[catalogo/proveedores] Supabase respondió', r.status);
+        return res.status(502).json({ error: 'No se pudo leer la lista de proveedores' });
+      }
+      const filas = await r.json();
+
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=300, stale-while-revalidate=900');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).json({
+        contrato: CONTRATO_VERSION,
+        generado_at: new Date().toISOString(),
+        proveedores: (Array.isArray(filas) ? filas : []).map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          rubro: p.rubro || null,
+          provincia: p.provincia || null,
+          descripcion: p.descripcion || null,
+          logo_url: p.logo_url || null,
+          pedido_minimo: p.pedido_minimo ?? null,
+          envios: p.envios ?? null,
+          instagram: p.instagram || null
+        }))
+      });
+    } catch (err) {
+      console.error('[catalogo/proveedores] error:', err.message);
+      return res.status(500).json({ error: 'Error al armar la lista de proveedores' });
+    }
+  }
+
+  /* -------------------------------------------------------------------
+     ?proveedor=<uuid> — el catálogo de UNO solo
+
+     Segundo paso de la importación: ya eligió de quién, ahora elige qué.
+     Usa la MISMA forma que `?ficha=`, con los mismos nombres explícitos
+     (`precio_proveedor`, `stock_proveedor`) y las mismas advertencias.
+
+     ⚠️ ESOS NOMBRES SON LA PIEZA MAS IMPORTANTE DE TODO EL CONTRATO. Del
+     otro lado, `precio_proveedor` es el COSTO del comerciante, nunca su
+     precio de venta. Si alguien lo toma como precio de venta, el margen de
+     cada producto queda en cero y el sistema miente sin romperse.
+     ------------------------------------------------------------------- */
+  const unProveedor = typeof req.query?.proveedor === 'string' ? req.query.proveedor.trim() : null;
+  if (unProveedor) {
+    if (!RE_UUID.test(unProveedor)) return res.status(400).json({ error: 'Id de proveedor inválido' });
+    try {
+      const url = `${SUPABASE_BASE}/rest/v1/productos` +
+        `?select=${encodeURIComponent(COLS_FICHA)}` +
+        `&proveedor_id=eq.${unProveedor}` +
+        `&or=(visible.eq.true,visible.is.null)` +
+        `&order=nombre.asc&limit=${PAGE}`;
+
+      const r = await fetch(url, {
+        headers: { apikey: ANON_KEY, Authorization: `Bearer ${ANON_KEY}`, Accept: 'application/json' }
+      });
+      if (!r.ok) {
+        console.error('[catalogo/proveedor] Supabase respondió', r.status);
+        return res.status(502).json({ error: 'No se pudo leer el catálogo del proveedor' });
+      }
+      const filas = await r.json();
+      const productos = (Array.isArray(filas) ? filas : []).map(armarFicha);
+
+      res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).json({
+        contrato: CONTRATO_VERSION,
+        generado_at: new Date().toISOString(),
+        proveedor_id: unProveedor,
+        devueltos: productos.length,
+        // Se repiten las mismas advertencias que en ?ficha= en vez de
+        // referenciarlas: el que lee esta respuesta puede no haber leído
+        // nunca la otra.
+        advertencias: [
+          'precio_proveedor es el costo del proveedor, no un precio de venta.',
+          'stock_proveedor es la existencia del proveedor, no la del comercio que importa.',
+          'Las imágenes traen origen, y la autorización de uso no está declarada por nadie todavía.'
+        ],
+        productos
+      });
+    } catch (err) {
+      console.error('[catalogo/proveedor] error:', err.message);
+      return res.status(500).json({ error: 'Error al armar el catálogo del proveedor' });
+    }
+  }
+
   // Rama del contrato compra → publicación. Va antes del listado general.
   const ficha = typeof req.query?.ficha === 'string' ? req.query.ficha : null;
   if (ficha) {
