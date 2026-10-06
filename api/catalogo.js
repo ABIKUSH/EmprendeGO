@@ -146,12 +146,26 @@ const ORIGENES = new Set([
 ]);
 
 function permitirOrigen(req, res) {
+  // ⚠️ `Vary: Origin` VA SIEMPRE, AUNQUE NO HAYA ORIGEN Y AUNQUE NO ESTE EN LA
+  // LISTA. Esto no es prolijidad: es el arreglo de una falla real.
+  //
+  // El 2026-10-06 el botón "Traer de EmprendeGO" mostraba "No se pudo conectar"
+  // en producción, con el endpoint respondiendo 200 y con la cabecera correcta
+  // si uno lo probaba de a uno. Lo que pasaba es esto:
+  //
+  //   1. alguien (un bot, un curl, el propio sitio) pedía la URL SIN Origin;
+  //   2. esa respuesta -que no llevaba ni Allow-Origin ni Vary- quedaba
+  //      guardada en el CDN;
+  //   3. el navegador de Negocios pedía la MISMA URL, el CDN le daba la copia
+  //      guardada, sin la cabecera de permiso, y el navegador la descartaba.
+  //
+  // Reproducido con dos curl seguidos: el segundo devolvía X-Vercel-Cache HIT
+  // y cero cabeceras de CORS. Con `Vary: Origin` siempre presente, el CDN
+  // guarda una copia por origen y deja de mezclarlas.
+  res.setHeader('Vary', 'Origin');
   const origen = req.headers.origin;
   if (origen && ORIGENES.has(origen)) {
     res.setHeader('Access-Control-Allow-Origin', origen);
-    // Sin esto, el CDN puede servirle a un origen la respuesta cacheada que
-    // lleva la cabecera de otro, y el navegador la rechaza.
-    res.setHeader('Vary', 'Origin');
   }
 }
 
