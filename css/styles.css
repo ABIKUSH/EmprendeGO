@@ -3306,8 +3306,25 @@ select:focus { outline: none; }
    mismo problema con otra forma. Con `wrap` el primer renglón se llena hasta el
    borde, que es lo que se pidió. En el teléfono `balance` se queda, porque ahí
    emparejar cuatro renglones cortos sí se ve mejor. */
-@media (min-width:1024px){
+/* ⚠ EL CORTE NO ES SOLO EL ANCHO: TAMBIEN PIDE MOUSE. Con min-width:1024px
+   solo, cualquier aparato tactil que reporte 1024px o mas -una tablet acostada,
+   un telefono con el zoom de pantalla al minimo, un plegable abierto- apagaba
+   los saltos y el titulo salia en una sola linea horizontal EN MOVIL, que es
+   exactamente lo contrario de lo que se pidio. hover:hover + pointer:fine lo
+   dejan donde tiene que estar: la computadora. Mismo criterio que ya usa el
+   mockup 3D del hero de la landing de proveedores, mas arriba en este archivo. */
+@media (min-width:1024px) and (hover:hover) and (pointer:fine){
   .hero-titulo br{display:none}
   .hero-titulo{font-size:clamp(2.6rem,3.9vw,4rem) !important;line-height:1.05 !important;
     text-wrap:wrap !important}
+}
+
+/* ⚠ TELEFONOS ANGOSTOS (hasta 344px: iPhone SE, Android chicos). A los 43,2px
+   que fija el clamp del estilo inline, el renglon "que tu negocio" no entra en
+   el ancho disponible (ancho - 44px de padding) y se partia en dos: quedaban
+   CINCO renglones con la palabra "negocio" sola. Esto baja el cuerpo lo justo
+   para que los cuatro renglones del diseno entren enteros. De 345px para
+   arriba no cambia nada, asi que el telefono promedio queda igual que siempre. */
+@media (max-width:344px){
+  .hero-titulo{font-size:11.4vw !important}
 }
