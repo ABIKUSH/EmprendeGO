@@ -403,7 +403,13 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
         <span style="color:rgba(255,255,255,.85);font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:600;line-height:1.3">Proveedores verificados en toda Argentina</span>
       </div>
       <!-- Título grande con palabra destacada -->
-      <h1 style="font-family:'Inter','DM Sans',sans-serif;font-size:clamp(2.7rem,9vw,3.5rem);font-weight:800;line-height:1.02;color:#fff;margin-bottom:22px;letter-spacing:-0.035em;text-wrap:balance">
+      <!-- ⚠️ LOS <br> SON PARA EL TELÉFONO, Y EN COMPUTADORA SE APAGAN POR CSS.
+           Forzaban cuatro renglones siempre: en una pantalla ancha el título
+           ocupaba menos de la mitad y quedaba medio hero de verde vacío al lado.
+           La regla que los apaga está en css/styles.css, buscá .hero-titulo.
+           El estilo inline NO se tocó a propósito: así el teléfono, que es de
+           donde viene casi todo el tráfico, queda exactamente igual que antes. -->
+      <h1 class="hero-titulo" style="font-family:'Inter','DM Sans',sans-serif;font-size:clamp(2.7rem,9vw,3.5rem);font-weight:800;line-height:1.02;color:#fff;margin-bottom:22px;letter-spacing:-0.035em;text-wrap:balance">
         Encontrá el<br><span style="color:#f6b877">proveedor</span><br>que tu negocio<br>necesita.
       </h1>
       <!-- Acción principal: pedir cotización.

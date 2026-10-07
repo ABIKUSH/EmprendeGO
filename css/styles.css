@@ -3281,3 +3281,33 @@ select:focus { outline: none; }
   .hero-cta--sec:hover{background:rgba(255,255,255,.12)}
 }
 
+
+/* ===== EL TÍTULO DEL HERO EN COMPUTADORA (2026-10-07) =====================
+   Lo marcó marketing: en pantalla ancha el título quedaba en una columna
+   angosta a la izquierda y sobraba medio hero de verde vacío a la derecha.
+
+   La causa son los <br> del marcado, que fuerzan cuatro renglones SIEMPRE. En
+   un teléfono están bien -son los que le dan el golpe al título-; en una
+   pantalla de 1400px dejan el texto ocupando menos de la mitad.
+
+   ⚠️ SE APAGAN SOLO DESDE 1024px, no desde 768px. Entre esos dos anchos la
+   barra lateral ya ocupa su lugar y el texto corrido entraría en tres renglones
+   desparejos, que es peor que los cuatro parejos de ahora.
+
+   ⚠️ EL `!important` ES NECESARIO Y NO ES PEREZA: el tamaño vive en un atributo
+   `style` del propio <h1>, y un estilo inline le gana a cualquier regla de
+   hoja. La alternativa -mudar todo el estilo inline a esta hoja- tocaría
+   también el teléfono, que es de donde viene casi todo el tráfico. Se cambia
+   acá lo mínimo y el móvil queda intacto.
+
+   ⚠️ `text-wrap` PASA DE `balance` A `wrap`, Y ES LA MITAD DEL ARREGLO. Con
+   `balance` el navegador empareja el largo de los renglones: apagar los <br>
+   sin tocar esto devolvía el texto a una columna angosta y centrada, o sea el
+   mismo problema con otra forma. Con `wrap` el primer renglón se llena hasta el
+   borde, que es lo que se pidió. En el teléfono `balance` se queda, porque ahí
+   emparejar cuatro renglones cortos sí se ve mejor. */
+@media (min-width:1024px){
+  .hero-titulo br{display:none}
+  .hero-titulo{font-size:clamp(2.6rem,3.9vw,4rem) !important;line-height:1.05 !important;
+    text-wrap:wrap !important}
+}
