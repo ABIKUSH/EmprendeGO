@@ -93,6 +93,80 @@ const enlaces = (app.match(/href="https:\/\/wa\.me\/\$\{[^}]*\}/g) || [])
 comprobar('no quedó ningún enlace directo armado con el número del proveedor',
   enlaces.length === 0);
 
+/* ---------------------------------------------------------------------
+   5) UNA FUNCIÓN QUE ESCRIBE NO PUEDE SER STABLE
+
+   ⚠️ ESTO NO ES UNA PRECAUCIÓN, ES UNA CICATRIZ. `whatsapp_de_proveedor()`
+   nació el 2026-10-01 declarada STABLE y con un INSERT adentro. PostgreSQL
+   no deja escribir desde una función no volátil: la corta con
+     ERROR: INSERT is not allowed in a non-volatile function
+   y la tira SIEMPRE, en la primera llamada de cualquier persona.
+
+   Resultado: del 1 al 8 de octubre NADIE pudo obtener un número de
+   WhatsApp. Siete días. ~245 contactos perdidos, que es exactamente la
+   mercadería que esta aplicación entrega. El evento `contact_whatsapp` de
+   GA4 venía con ~35 por día y se cortó seco; `contactos_revelados` quedó
+   con cero filas. Lo encontró el founder mirando la pantalla, no una
+   prueba.
+
+   POR QUÉ NINGUNA PRUEBA LO VIO, que es lo que esta sección arregla:
+     . Las de arriba leen js/app.js y api/catalogo.js. El error estaba en
+       el SQL, que hasta hoy no lo miraba nadie.
+     . `permisos-publicos.test.js` pregunta qué se puede leer SIN sesión.
+       Esta función exige sesión: contestaba `sin_sesion` -lo correcto- y
+       nunca llegaba al INSERT que rompe.
+     . El frente envuelve todo en un catch y muestra un cartel gris, así
+       que la falla no dejó rastro en ningún lado.
+
+   La comprobación es tosca a propósito: lee los .sql del repo y busca
+   funciones declaradas stable o immutable que escriban. No entiende SQL,
+   y no hace falta: el error que nos costó la semana se ve a simple vista.
+   --------------------------------------------------------------------- */
+console.log('\n5) Ninguna función del repo escribe siendo STABLE\n');
+
+const dirSql = path.join(RAIZ, 'sql');
+const archivosSql = fs.existsSync(dirSql) ? fs.readdirSync(dirSql).filter(n => n.endsWith('.sql')) : [];
+comprobar('hay migraciones que revisar', archivosSql.length > 0);
+
+// ⚠️ GANA LA ÚLTIMA DEFINICIÓN DE CADA FUNCIÓN, no cada archivo por separado.
+// Los .sql son el registro de lo que se aplicó, en orden, y `create or replace`
+// hace que la última pise a las anteriores: la migración de hoy declara volátil
+// la misma función que la del 1 de octubre declaró stable. Revisar archivo por
+// archivo dejaría esta prueba en rojo para siempre por un error ya corregido, y
+// una prueba que siempre falla es una prueba que nadie mira. Los nombres de
+// archivo empiezan con la fecha, así que ordenarlos alfabéticamente los ordena
+// cronológicamente.
+const ultimaDefinicion = new Map();
+for (const nombre of [...archivosSql].sort()) {
+  const sql = fs.readFileSync(path.join(dirSql, nombre), 'utf8');
+  // Cada cuerpo de función, entre `create ... function` y el `$$;` que lo cierra.
+  const cuerpos = sql.match(/create\s+(or\s+replace\s+)?function[\s\S]*?\$function\$;|create\s+(or\s+replace\s+)?function[\s\S]*?\$\$;/gi) || [];
+  for (const cuerpo of cuerpos) {
+    const quien = (cuerpo.match(/function\s+([\w.]+)\s*\(/i) || [, '?'])[1];
+    ultimaDefinicion.set(quien, { archivo: nombre, cuerpo });
+  }
+}
+
+const culpables = [];
+for (const [quien, { archivo, cuerpo }] of ultimaDefinicion) {
+  // La cabecera es lo que va hasta el `as $...$`; la volatilidad se declara ahí.
+  const cabecera = cuerpo.split(/\bas\s+\$/i)[0] || '';
+  const noVolatil = /\b(stable|immutable)\b/i.test(cabecera);
+  const escribe = /\b(insert\s+into|update\s+\w|delete\s+from)\b/i.test(cuerpo);
+  if (noVolatil && escribe) culpables.push(`${archivo} → ${quien}()`);
+}
+comprobar('ninguna función declarada stable/immutable hace insert, update o delete'
+  + (culpables.length ? ': ' + culpables.join(', ') : ''), culpables.length === 0);
+
+// Y la que nos mordió, nombrada, para que no vuelva por otro archivo.
+const migracionDelArreglo = path.join(dirSql, '2026-10-08_whatsapp_volatile.sql');
+comprobar('está la migración que la volvió volátil', fs.existsSync(migracionDelArreglo));
+if (fs.existsSync(migracionDelArreglo)) {
+  const arreglo = fs.readFileSync(migracionDelArreglo, 'utf8');
+  comprobar('y declara volatile, no stable', /\bvolatile\s+security\s+definer\b/i.test(arreglo));
+  comprobar('sin regalarle el permiso a anon', /revoke\s+all\s+on\s+function[\s\S]*?anon/i.test(arreglo));
+}
+
 console.log('\n' + '='.repeat(60));
 if (fallas) { console.log(`${fallas} FALLAS sobre ${ok + fallas} comprobaciones`); process.exit(1); }
 console.log(`${ok} comprobaciones, todas en verde`);
