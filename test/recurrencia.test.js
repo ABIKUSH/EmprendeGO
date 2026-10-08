@@ -154,6 +154,63 @@ comprobar('dice que no tiene datos de la persona',
 comprobar('las letras de la seccion 3 no se repiten',
   ['a','b','c','d','e'].every(l => (privacidad.match(new RegExp('<strong>' + l + '\\. ', 'g')) || []).length === 1));
 
+/* ---------------------------------------------------------------------
+   6) LA RECURRENCIA DEL QUE COMPRA  (2026-10-08)
+
+   Lo de arriba mide al que BUSCA. Esto mide al que ya pidió un teléfono,
+   que es una decisión mucho más cara: dejó el mail, confirmó la cuenta y
+   se fue a escribirle a un desconocido para comprarle mercadería.
+
+   ⚠️ ES EL NUMERO QUE DEFINE QUE SOMOS. Un directorio se usa una vez; un
+   marketplace se usa seguido. "Le pidió a más de un mayorista" es esa
+   línea, y es lo primero que pregunta cualquiera que mire el proyecto de
+   afuera. Si alguien saca ese corte, se pierde la única respuesta.
+
+   ⚠️ Y LA FUENTE ES FRAGIL POR HISTORIA: `contactos_revelados` la escribe
+   `whatsapp_de_proveedor()`, que estuvo siete días sin poder escribir por
+   estar declarada STABLE. Esta sección exige que el bloque siga saliendo
+   de esa tabla y que el panel avise cuando todavía hay poco medido, para
+   que una muestra de diez compradores no se lea como una conclusión.
+   --------------------------------------------------------------------- */
+console.log('\n6) La recurrencia del que compra\n');
+
+const sqlCompradores = fs.readFileSync(path.join(RAIZ, 'sql', '2026-10-08_recurrencia_compradores.sql'), 'utf8');
+
+comprobar('la función sale de contactos_revelados, no de busquedas',
+  /from public\.contactos_revelados/.test(sqlCompradores));
+comprobar('y sigue siendo la misma RPC, no una nueva',
+  /create or replace function public\.admin_recurrencia\(\)/.test(sqlCompradores));
+comprobar('es volatile, no stable: la cicatriz de whatsapp_de_proveedor',
+  /\bvolatile security definer\b/i.test(sqlCompradores));
+comprobar('sigue detrás del portón de admin',
+  /perform public\.admin_cotiz_guard\(\)/.test(sqlCompradores));
+comprobar('no se le regala el permiso a anon',
+  /revoke all on function public\.admin_recurrencia\(\) from public, anon/.test(sqlCompradores));
+
+// Solo agregados: ni un id de usuario, ni uno de proveedor, ni una fila suelta.
+// Es la misma regla que admin_wa_embudo y es la que deja usar esta tabla sin
+// exponer a quién le escribió cada persona.
+const bloque = (sqlCompradores.match(/'compradores', \(([\s\S]*?)\n      from por_comprador\n    \)/) || [, ''])[1];
+comprobar('el bloque devuelve sólo agregados',
+  bloque.length > 0 && !/jsonb_agg|array_agg|usuario_id'|proveedor_id'/.test(bloque));
+
+// Los cuatro cortes que importan. Sacar uno es perder la pregunta, no un adorno.
+for (const clave of ['mas_de_un_proveedor', 'volvieron_otro_dia', 'tres_o_mas_proveedores', 'proveedores_por_comprador_promedio']) {
+  comprobar(`mide ${clave}`, sqlCompradores.includes(`'${clave}'`));
+}
+
+// Y las claves viejas no se pueden haber perdido en el camino: el panel de
+// arriba las lee y este archivo las comprueba más arriba contra la otra
+// migración, pero la que corre hoy en la base es ESTA.
+for (const clave of ['cobertura', 'visitantes', 'volvieron', 'habituales', 'por_primera_busqueda']) {
+  comprobar(`conserva la clave vieja ${clave}`, sqlCompradores.includes(`'${clave}'`));
+}
+
+comprobar('el panel pinta el bloque del comprador',
+  /El que ya contactó a un mayorista/.test(admin) && /d\.compradores \|\| \{\}/.test(admin));
+comprobar('y avisa cuando la muestra todavía es chica',
+  /compradores < 30/.test(admin) && /Recién arranca/.test(admin));
+
 console.log('\n' + '='.repeat(60));
 if (fallas) { console.log(`${fallas} FALLAS sobre ${ok + fallas} comprobaciones`); process.exit(1); }
 console.log(`${ok} comprobaciones, todas en verde`);

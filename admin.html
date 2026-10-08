@@ -2203,6 +2203,52 @@ async function cargarRecurrencia(){
         + fila('Encontró resultados', 'con_resultados', '#166534')
         + fila('No encontró nada', 'sin_resultados', '#b91c1c')
         + '</tbody></table></div>';
+
+      /* 4) EL QUE COMPRA, QUE ES OTRA PREGUNTA.
+         Arriba se mide al que BUSCA. Acá al que ya pidió un teléfono, que es
+         una decisión mucho más cara: dejó el mail, confirmó la cuenta y se fue
+         a escribirle a un desconocido para comprarle mercadería.
+
+         ⚠️ ESTE ES EL NUMERO QUE DEFINE QUE SOMOS. Un directorio se usa una
+         vez: encontrás tu proveedor y no volvés. Un marketplace se usa seguido:
+         te surtís de varios, comparás, cambiás. "Le pidió a más de un
+         mayorista" es exactamente esa línea, y es lo primero que va a preguntar
+         cualquiera que mire este proyecto de afuera.
+
+         ⚠️ Y ARRANCA EN CERO EL 2026-10-08, con cero historia. La tabla existe
+         desde el 1 de octubre pero quedó vacía una semana: la función que la
+         escribe nació declarada STABLE y Postgres no deja escribir desde una
+         función no volátil, así que fallaba siempre (sql/2026-10-08_whatsapp_volatile.sql).
+         Los 4.591 contactos anteriores no se pueden recuperar: nunca se guardó
+         quién los hizo. */
+      const c = d.compradores || {};
+      const compradores = Number(c.compradores) || 0;
+      const desdeC = c.midiendo_desde ? new Date(c.midiendo_desde).toLocaleDateString('es-AR') : null;
+      const medianaC = c.dias_hasta_volver_mediana;
+      let bloque = '<div style="margin-top:26px;border-top:1px solid #e5e7eb;padding-top:18px">'
+        + '<div style="font-size:.85rem;font-weight:800;margin-bottom:4px">El que ya contactó a un mayorista</div>'
+        + '<p style="font-size:.78rem;color:var(--gray);margin:0 0 12px">Un directorio se usa una vez. Un marketplace se usa seguido. '
+        + 'La línea que los separa es cuánta gente le pide el contacto a <strong>más de un</strong> mayorista.</p>';
+      if(compradores < 30){
+        bloque += '<div style="border:1.5px solid #fde68a;background:#fffbeb;border-radius:10px;padding:12px 14px;font-size:.82rem;color:#92400e">'
+          + '<strong>Recién arranca' + (desdeC ? ' (desde el ' + escHtml(desdeC) + ')' : '') + '.</strong> '
+          + 'Hay ' + compradores + ' compradores medidos. Para que alguien pueda pedirle a un segundo mayorista tiene que volver, '
+          + 'así que esto recién dice algo con unas tres semanas encima y más de 30 compradores.</div>';
+      }
+      bloque += '<div style="display:flex;flex-wrap:wrap;gap:18px 20px;margin-top:' + (compradores < 30 ? '14px' : '0') + '">'
+        + celda(compradores.toLocaleString('es-AR'), 'Compradores', 'Pidieron al menos un WhatsApp.')
+        + celda((Number(c.mas_de_un_proveedor)||0).toLocaleString('es-AR')
+                + ' <span style="font-size:.95rem;color:var(--gray)">(' + pct(c.mas_de_un_proveedor,compradores) + '%)</span>',
+                'Le pidieron a más de uno', 'La línea entre directorio y marketplace.')
+        + celda((Number(c.volvieron_otro_dia)||0).toLocaleString('es-AR')
+                + ' <span style="font-size:.95rem;color:var(--gray)">(' + pct(c.volvieron_otro_dia,compradores) + '%)</span>',
+                'Volvieron otro día', 'Un día distinto es una decisión nueva.')
+        + celda((Number(c.tres_o_mas_proveedores)||0).toLocaleString('es-AR'), 'Tres o más mayoristas', 'El que se surte en serio.')
+        + celda(escHtml(String(c.proveedores_por_comprador_promedio ?? '—')), 'Mayoristas por comprador', 'Promedio.')
+        + celda(medianaC === null || medianaC === undefined ? '—' : escHtml(String(medianaC)) + ' d',
+                'Tardan en volver', 'Mediana entre el primer y el último pedido.')
+        + '</div></div>';
+      cruce.innerHTML += bloque;
     }
   }catch(e){
     console.error('[recurrencia]', e);
