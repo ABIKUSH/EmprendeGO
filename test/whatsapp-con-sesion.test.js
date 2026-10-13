@@ -60,9 +60,22 @@ comprobar('existe la única puerta', /async function pedirWhatsapp\(provId\)/.te
 comprobar('usa la RPC y no la tabla',
   /sb\.rpc\('whatsapp_de_proveedor', \{ p_proveedor_id: provId \}\)/.test(app));
 
-// Sin esto, "hay que estar logueado" no se cumple del lado del navegador.
-comprobar('sin sesión no la llama y manda a iniciar sesión',
-  /if \(!currentUser\) \{ showToast\('Iniciá sesión para ver el WhatsApp'\); goTo\('perfil'\); return null; \}/.test(app));
+// ⚠️ 2026-10-13: ESTA COMPROBACIÓN ESTÁ INVERTIDA A PROPÓSITO. Antes exigía
+// que el frente cortara de entrada sin sesión. Ahora exige lo contrario: el
+// frente NO puede decidir, porque contar del lado del navegador es contarle al
+// que no quiere ser contado -se borra el almacenamiento y listo-. El corte lo
+// hace la base, que da los dos primeros proveedores del día sin cuenta.
+//
+// El motivo del cambio es un número: el muro se comía cerca del 60% de los
+// contactos (39-49 por día sin muro contra 13-20 con muro, con el tráfico
+// apenas 12% más bajo). Se pudo medir recién cuando se arregló el bug de los
+// siete días, que lo tapaba.
+comprobar('el frente ya no corta por su cuenta: la RPC se llama siempre',
+  !/if \(!currentUser\) \{ showToast\('Iniciá sesión para ver el WhatsApp'\)/.test(app));
+comprobar('y cuando la base contesta sin_sesion, manda a registrarse',
+  /motivo === 'sin_sesion'/.test(app) && /goTo\('perfil'\)/.test(app));
+comprobar('el muro queda medido, para saber a cuánta gente le aparece',
+  /trackEvent\('muro_contacto', \{ origen: 'whatsapp' \}\)/.test(app));
 
 // Los tres motivos que devuelve la RPC tienen que decirle algo al usuario.
 comprobar('explica qué pasó cuando falta confirmar el email', /Confirmá tu email para ver el WhatsApp/.test(app));
@@ -166,6 +179,67 @@ if (fs.existsSync(migracionDelArreglo)) {
   comprobar('y declara volatile, no stable', /\bvolatile\s+security\s+definer\b/i.test(arreglo));
   comprobar('sin regalarle el permiso a anon', /revoke\s+all\s+on\s+function[\s\S]*?anon/i.test(arreglo));
 }
+
+/* ---------------------------------------------------------------------
+   6) LOS DOS PRIMEROS CONTACTOS SIN CUENTA  (2026-10-13)
+
+   El muro de sesión se corrió al TERCER proveedor. El que mira uno o dos
+   pasa libre; el que quiere la lista se choca con el muro. Un comprador
+   real contacta 1,97 mayoristas en promedio -medido sobre los primeros 29
+   compradores-, así que la mayoría nunca lo ve.
+
+   ⚠️ LA AFIRMACIÓN QUE SOSTIENE TODO ESTO ES LA DEL ENCABEZADO
+   `X-Forwarded-For`. Para contar sin cuenta hace falta identificar de dónde
+   viene el pedido, y ese encabezado es una LISTA que el cliente puede
+   empezar a escribir: queda "lo que inventó el cliente, ..., la IP real que
+   agregó el proxy". Si se toma el PRIMER elemento -que es lo que hace casi
+   todo el mundo- alcanza con mandar un valor distinto en cada pedido para
+   saltearse el límite y el muro no protege de nada. Se toma el ÚLTIMO.
+   --------------------------------------------------------------------- */
+console.log('\n6) Los dos primeros contactos sin cuenta\n');
+
+const sqlLibres = fs.readFileSync(path.join(RAIZ, 'sql', '2026-10-13_primeros_contactos_sin_sesion.sql'), 'utf8');
+
+comprobar('la IP sale del ÚLTIMO elemento del encabezado, no del primero',
+  /split_part\(v_xff, ',', array_length\(string_to_array\(v_xff, ','\), 1\)\)/.test(sqlLibres));
+comprobar('y nunca del primero, que lo escribe el que llama',
+  !/split_part\(v_xff, ',', 1\)/.test(sqlLibres));
+comprobar('sin IP no se regala nada: se pide sesión',
+  /if v_xff is null then[\s\S]{0,120}'sin_sesion'/.test(sqlLibres));
+
+// La IP no se guarda. La tabla sirve para contar, no para saber quién es nadie.
+comprobar('la IP se guarda hasheada y con sal, nunca en claro',
+  /md5\('eg_contacto_anonimo_v1\|' \|\| v_ip\)/.test(sqlLibres));
+comprobar('la tabla de anónimos no tiene una columna con la IP',
+  /create table if not exists public\.contactos_anonimos \([\s\S]*?\);/.test(sqlLibres) &&
+  !/ip\s+(inet|text)\s+not null/.test(sqlLibres));
+
+// ⚠️ Mezclar los anónimos en contactos_revelados rompería la medición de
+// recurrencia, que cuenta PERSONAS con cuenta y es el número que dice si esto
+// es un marketplace o un directorio.
+comprobar('el contacto anónimo NO entra en contactos_revelados',
+  /insert into public\.contactos_anonimos \(ip_hash\) values \(v_hash\);/.test(sqlLibres));
+const ramaAnonima = (sqlLibres.match(/-- ── Camino sin sesion[\s\S]*?\$function\$;/) || [''])[0];
+comprobar('y la rama sin sesión no escribe en la tabla de los registrados',
+  !/insert into public\.contactos_revelados/.test(ramaAnonima));
+
+comprobar('el tope de gratis está escrito y es chico',
+  /c_libres\s+constant int := 2;/.test(sqlLibres));
+
+// La puerta se abre para anon, y toda la defensa vive adentro de la función.
+// Lo que anon sigue sin tener es la columna del teléfono ni las dos tablas.
+comprobar('anon puede ejecutar la función',
+  /grant execute on function public\.whatsapp_de_proveedor\(uuid\) to anon, authenticated;/.test(sqlLibres));
+comprobar('pero la tabla de anónimos queda cerrada a todos',
+  /revoke all on public\.contactos_anonimos from anon, authenticated;/.test(sqlLibres));
+comprobar('y con RLS prendida, como avisos_wa',
+  /alter table public\.contactos_anonimos enable row level security;/.test(sqlLibres));
+
+// El camino con sesión no se tocó: los cuatro controles siguen ahí.
+comprobar('con sesión siguen el email confirmado y el freno de 60 por hora',
+  /email_sin_confirmar/.test(sqlLibres) && /v_pedidos >= 60/.test(sqlLibres));
+comprobar('y en los dos caminos sólo salen proveedores aprobados',
+  (sqlLibres.match(/p\.estado = 'aprobado'/g) || []).length === 2);
 
 console.log('\n' + '='.repeat(60));
 if (fallas) { console.log(`${fallas} FALLAS sobre ${ok + fallas} comprobaciones`); process.exit(1); }

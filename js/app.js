@@ -2181,13 +2181,38 @@ function normalizarWAArg(num) {
 // ⚠️ DEVUELVE UN NUMERO, NO SE CACHEA EN NINGUN LADO. Guardarlo en una
 // variable global o en el almacenamiento del navegador reconstruiria la lista
 // que acabamos de desarmar.
+// ⚠️ YA NO SE CORTA ACA CUANDO NO HAY SESION, Y ES EL CAMBIO DEL 2026-10-13.
+// Antes esta funcion devolvia null de entrada si no habia cuenta, asi que el
+// que entraba a mirar se chocaba con un pedido de registro ANTES de recibir
+// nada. El precio de eso se pudo medir recien cuando se arreglo el bug de los
+// siete dias: el muro se comia cerca del 60% de los contactos (39-49 por dia
+// sin muro contra 13-20 con muro, con el trafico apenas 12% mas bajo).
+//
+// Ahora la decision la toma el SERVIDOR, que es el unico que puede: los dos
+// primeros proveedores del dia salen sin cuenta y del tercero en adelante
+// contesta `sin_sesion`. Un comprador real contacta 1,97 mayoristas en
+// promedio, asi que la mayoria nunca ve el muro; el que esta juntando la lista
+// lo ve en el tercero. Ver sql/2026-10-13_primeros_contactos_sin_sesion.sql.
+//
+// ⚠️ EL CORTE NO SE PUEDE HACER ACA. Contar del lado del navegador seria
+// contarle al que no quiere ser contado: se borra el almacenamiento y listo.
+// Por eso el frente ya no decide nada y solo traduce el motivo que vuelve.
 async function pedirWhatsapp(provId) {
-  if (!currentUser) { showToast('Iniciá sesión para ver el WhatsApp'); goTo('perfil'); return null; }
   try {
     const { data, error } = await sb.rpc('whatsapp_de_proveedor', { p_proveedor_id: provId });
     if (error) throw error;
     if (!data || data.ok !== true) {
       const motivo = data && data.motivo;
+      // `sin_sesion` llega en dos casos y los dos se resuelven igual: no hay
+      // cuenta y ya se usaron los dos gratis, o no se pudo identificar de
+      // donde viene el pedido. En los dos, el camino es registrarse.
+      if (motivo === 'sin_sesion') {
+        showToast(currentUser ? 'Volvé a iniciar sesión para ver el WhatsApp'
+          : 'Creá tu cuenta gratis para seguir viendo contactos');
+        goTo('perfil');
+        trackEvent('muro_contacto', { origen: 'whatsapp' });
+        return null;
+      }
       showToast(motivo === 'email_sin_confirmar' ? 'Confirmá tu email para ver el WhatsApp'
         : motivo === 'demasiados_pedidos' ? 'Pediste muchos contactos seguidos. Esperá un rato.'
         : 'WhatsApp no disponible');
