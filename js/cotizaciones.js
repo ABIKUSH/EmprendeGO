@@ -3626,7 +3626,7 @@
         <div class="cz-barra cz-vidrio">
           <div id="cz-error" style="${errPend ? '' : 'display:none;'}background:#FEF2F2;border:1px solid #FECACA;color:#B91C1C;border-radius:10px;padding:10px 12px;font-size:.8rem;margin-bottom:12px">${errPend ? esc(errPend) : ''}</div>
           ${btnPrimario('Publicar pedido', 'cotizPublicar(this)')}
-          <button type="button" class="cz-link" onclick="cotizRecomendame()">¿No sabe bien qué pedir? Recomendame</button>
+          <button type="button" class="cz-link" onclick="cotizRecomendame()" style="display:none">¿No sabe bien qué pedir? Recomendame</button>
           <div class="cz-barra-nota">Los proveedores ven su nombre, no su teléfono. Usted elige a quién le escribe.</div>
           <div class="cz-barra-nota">Pedir precio no lo compromete a nada.</div>
         </div>
