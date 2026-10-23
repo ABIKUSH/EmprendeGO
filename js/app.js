@@ -1198,6 +1198,7 @@ async function cargarProveedores() {
   actualizarContadorServicios();
   renderMapaProvincias();
   renderMapaAllProvs();
+  try { pintarLogosChips(); } catch (e) { }
 }
 
 
@@ -5481,6 +5482,45 @@ function cargarMasHomeProductos() {
   renderHomeGrid();
 }
 
+// Logo del proveedor para la mini card. Sale de proveedoresDB (ya trae logo_url);
+// el Map se rearma solo cuando cambia ese arreglo.
+let _logoMap = null, _logoMapSrc = null;
+function _logoProv(provId) {
+  if (_logoMapSrc !== proveedoresDB) {
+    _logoMap = new Map(proveedoresDB.map(x => [String(x.id), x.logo_url || '']));
+    _logoMapSrc = proveedoresDB;
+  }
+  return _logoMap.get(String(provId)) || '';
+}
+function _logoChipImg(url) {
+  return `<img class="prov-chip-logo" loading="lazy" src="${escHtml(imgThumb(url, 96, 75))}" alt="" onerror="this.parentElement.classList.remove('has-logo');this.remove()">`;
+}
+// Proveedores y productos cargan en paralelo: si las tarjetas se pintaron antes
+// que llegara proveedoresDB, se le pone el logo a cada chip sin re-renderizar.
+function pintarLogosChips() {
+  document.querySelectorAll('.prov-chip-av[data-prov]:not(.has-logo)').forEach(av => {
+    const url = _logoProv(av.dataset.prov);
+    if (!url) return;
+    av.classList.add('has-logo');
+    av.insertAdjacentHTML('beforeend', _logoChipImg(url));
+  });
+}
+
+// Mini card del proveedor al pie de la tarjeta de producto. Lleva a su perfil
+// sin abrir el producto (stopPropagation): la tarjeta y el chip son dos destinos.
+function provChipHtml(p, compacto) {
+  const nombre = p.provNombre || 'Proveedor';
+  const ini = nombre.replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9 ]/g, '').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || 'PR';
+  const color = p.provColor || '#006039';
+  const cls = 'prov-chip' + (compacto ? ' prov-chip--sm' : '');
+  const logo = p.provId ? _logoProv(p.provId) : '';
+  const inner = `<span class="prov-chip-av${logo ? ' has-logo' : ''}"${p.provId ? ` data-prov="${escHtml(p.provId)}"` : ''} style="background:${escHtml(color)}">${escHtml(ini)}${logo ? _logoChipImg(logo) : ''}</span>
+      <span class="prov-chip-txt">${compacto ? '' : '<span class="prov-chip-lbl">Proveedor</span>'}<span class="prov-chip-name">${escHtml(nombre)}</span></span>
+      <svg class="prov-chip-go" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>`;
+  if (!p.provId) return `<div class="${cls}">${inner}</div>`;
+  return `<button type="button" class="${cls}" aria-label="Ver proveedor ${escHtml(nombre)}" onclick="event.stopPropagation();abrirDetalle('${escHtml(p.provId)}')">${inner}</button>`;
+}
+
 function renderHomeProdCard(p) {
   const color = catColors[p.cat] || '#065F46';
   return `<div class="prod-inicio-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
@@ -5491,8 +5531,8 @@ function renderHomeProdCard(p) {
     <div class="prod-inicio-body">
       <div class="prod-inicio-name">${escHtml(p.nombre)}</div>
       <div class="prod-inicio-price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-      <div class="prod-inicio-prov"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
     </div>
+    ${provChipHtml(p)}
   </div>`;
 }
 
@@ -5504,8 +5544,8 @@ function renderProdBuscarCard(p) {
     <div style="padding:8px 9px 10px">
       <div style="font-size:.72rem;font-weight:700;color:#111;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;min-height:2rem">${escHtml(p.nombre)}</div>
       <div style="font-size:.85rem;font-weight:900;color:#006039;margin-top:3px">$${Number(p.precio).toLocaleString('es-AR')}</div>
-      <div style="font-size:.65rem;color:#999;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.provNombre || '')}</div>
     </div>
+    ${provChipHtml(p, true)}
   </div>`;
 }
 
@@ -5664,8 +5704,8 @@ function _drawBuscarGrid(el) {
       <div class="body">
         <div class="title">${escHtml(p.nombre)}</div>
         <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
-        <div class="meta"><div class="prod-inicio-prov-dot"></div>${escHtml(p.provNombre)}</div>
       </div>
+      ${provChipHtml(p)}
     </div>`).join('') +
     (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
 }

@@ -1144,6 +1144,28 @@ body, body *{
 .prod-inicio-prov{font-size:.8rem;font-weight:600;color:#4B5563;display:flex;align-items:center;gap:5px}
 .prod-inicio-prov-dot{width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0}
 
+/* Mini card del proveedor al pie de la tarjeta de producto (provChipHtml en app.js).
+   La tarjeta pasa a columna para que el chip quede siempre abajo y alineado en la fila. */
+.prod-inicio-card,.prod-buscar-card{display:flex;flex-direction:column}
+.prod-inicio-card .prod-inicio-body,.prod-buscar-card .body{flex:1}
+.prov-chip{display:flex;align-items:center;gap:9px;width:calc(100% - 20px);margin:0 10px 10px;padding:7px 10px 7px 7px;background:#F2F8F5;border:1px solid #DCE8E2;border-radius:12px;font:inherit;color:#0B3D2A;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s,border-color .15s,box-shadow .15s}
+.prov-chip:hover{background:#E8F3EE;border-color:#B9D6C8;box-shadow:0 2px 8px rgba(0,96,57,.08)}
+.prov-chip:active{transform:scale(.98)}
+.prov-chip:focus-visible{outline:2px solid #006039;outline-offset:2px}
+div.prov-chip{cursor:default}
+.prov-chip-av{flex-shrink:0;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.66rem;font-weight:800;letter-spacing:.02em;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18)}
+.prov-chip-av{position:relative;overflow:hidden}
+.prov-chip-av.has-logo{background:#fff!important;color:transparent;box-shadow:inset 0 0 0 1px #DCE8E2}
+.prov-chip-logo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.prov-chip-txt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.prov-chip-lbl{font-size:.6rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6B8A7C}
+.prov-chip-name{font-size:.8rem;font-weight:700;color:#0B3D2A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prov-chip-go{flex-shrink:0;color:#006039;opacity:.7;transition:transform .15s,opacity .15s}
+.prov-chip:hover .prov-chip-go{transform:translateX(2px);opacity:1}
+.prov-chip--sm{gap:6px;width:calc(100% - 14px);margin:0 7px 7px;padding:5px 7px 5px 5px;border-radius:9px}
+.prov-chip--sm .prov-chip-av{width:20px;height:20px;border-radius:6px;font-size:.52rem}
+.prov-chip--sm .prov-chip-name{font-size:.66rem}
+
 /* TABS BUSCAR */
 .search-tabs{position:relative;display:flex;background:#EDF1F7;border-radius:13px;padding:4px;margin:10px 20px 0;isolation:isolate}
 .search-tab-glider{position:absolute;z-index:-1;top:4px;bottom:4px;left:4px;width:calc((100% - 8px) / var(--tab-n,2));border-radius:10px;background:#fff;box-shadow:0 2px 8px rgba(13,27,62,.10);transform:translateX(calc(var(--tab-i,0) * 100%));transition:transform .32s cubic-bezier(.22,1,.36,1)}
