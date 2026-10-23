@@ -5411,8 +5411,14 @@ async function cargarProductosReales() {
       // categoria_tn, ml_item_id, categoria_ml, created_at, visible) no las lee
       // el mapeo de abajo. created_at y visible siguen usándose para ordenar y
       // filtrar: PostgREST no exige que estén en el select para eso.
+      // ⚠️ SIN `whatsapp` EN EL PROVEEDOR, y tiene que ser la misma lista que
+      // COLS de api/catalogo.js. Desde el muro de contacto esa columna no está
+      // otorgada a anon: pedirla hacía fallar la consulta ENTERA ("permission
+      // denied for table proveedores") y este respaldo devolvía cero productos.
+      // Estuvo roto en silencio porque solo corre si /api/catalogo falla. El
+      // teléfono no hace falta acá: se pide al tocar contactar, detrás del muro.
       const COLS = 'id,proveedor_id,nombre,precio,stock,categoria,categoria_principal,descripcion,imagen_url,imagenes';
-      const { data: page, error } = await sb.from('productos').select(COLS + ', proveedores(id,nombre,rubro,provincia,plan,plan_hasta,whatsapp)').or('visible.eq.true,visible.is.null').order('created_at', { ascending: false }).range(desde, desde + PAGE - 1);
+      const { data: page, error } = await sb.from('productos').select(COLS + ', proveedores(id,nombre,rubro,provincia,plan,plan_hasta)').or('visible.eq.true,visible.is.null').order('created_at', { ascending: false }).range(desde, desde + PAGE - 1);
       if (error) break;
       if (page && page.length) data = data.concat(page);
       if (!page || page.length < PAGE) break;
