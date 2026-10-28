@@ -18,6 +18,11 @@ function toggleSidebar() {
 function trackEvent(name, params) {
   if (typeof gtag === 'function') gtag('event', name, params || {});
 }
+// Espejo para el Pixel de Meta: sin estos eventos la campaña no puede optimizar
+// por registros ni contactos y queda obligada a ser de Tráfico. Nunca rompe nada.
+function metaEvent(name, params) {
+  try { if (typeof fbq === 'function') fbq('track', name, params || {}); } catch (e) { }
+}
 // ===== Validación visible del registro =====
 // Marca el campo en rojo, hace scroll hasta él y registra en GA4 qué campo trabó.
 // Antes solo salía un toast fugaz: el usuario no veía por qué "no pasaba" y abandonaba.
@@ -2245,6 +2250,7 @@ function registrarContactoWA(id, prov) {
     provider_name: p.nombre || '',
     provider_rubro: p.rubro || ''
   });
+  metaEvent('Contact', { content_category: p.rubro || '' });
   registrarConsulta(id || p.id);
 }
 
@@ -3437,14 +3443,21 @@ async function checkSession(sessionOverride) {
         const { data: existingUser } = await sb.from('usuarios').select('id').eq('email', emailNorm).maybeSingle();
         await sb.from('usuarios').upsert({ email: emailNorm, nombre: name, foto_url: picture }, { onConflict: 'email' });
         if (!existingUser) notificarAdmin('usuario', { nombre: name, email: emailNorm });
+        // Cuenta nueva (Google o mail): es el registro que Meta tiene que ver. Antes
+        // CompleteRegistration salía solo en el alta de proveedor (6 al mes contra
+        // ~450 cuentas). La bandera evita contarlo dos veces si checkSession corre
+        // de nuevo por onAuthStateChange antes de que el upsert se vea.
+        if (!existingUser && !window._egRegistroTracked) {
+          window._egRegistroTracked = true;
+          metaEvent('CompleteRegistration', { content_name: 'cuenta' });
+        }
         // Aviso a Meta Pixel: mide el éxito de las campañas (costo por resultado).
         // Bandera para no contar de más: checkSession() corre en cada carga y en onAuthStateChange.
         try {
           if (typeof fbq === 'function' && !window._egLoginTracked) {
             window._egLoginTracked = true;
             fbq('trackCustom', 'Login'); // todo inicio de sesión
-            // CompleteRegistration NO va acá: ese evento queda reservado para el submit
-            // exitoso del formulario de registro (perfil nuevo), según pidió la publicista.
+            // CompleteRegistration NO va acá: sale arriba, solo si la cuenta es nueva.
           }
         } catch (e) {}
       } catch (e) { console.warn('[checkSession] upsert usuarios:', e); }
@@ -5064,7 +5077,7 @@ async function showRegSuccess() {
   trackEvent('sign_up', { method: 'proveedor_registro' });
   // Meta Pixel: registro de proveedor completado (perfil nuevo creado) → conversión de campaña.
   // Va acá, después del insert OK, para NO contar registros que fallaron o duplicados.
-  try { if (typeof fbq === 'function') fbq('track', 'CompleteRegistration'); } catch (e) {}
+  metaEvent('CompleteRegistration', { content_name: 'proveedor' });
 }
 
 function showToast(msg) {

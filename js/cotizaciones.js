@@ -3768,6 +3768,7 @@
       vibrar('success');
       toast(sinFoto ? 'Pedido publicado (la foto no se pudo adjuntar)' : 'Pedido publicado');
       try { if (typeof trackEvent === 'function') trackEvent('rfq_publicado', { rubro: fila.rubro || '', provincia: fila.provincia || '' }); } catch (e) { }
+      try { if (typeof metaEvent === 'function') metaEvent('Lead', { content_category: fila.rubro || '' }); } catch (e) { }
       avisarProveedores();
       return { ok: true };
     } catch (e) {
