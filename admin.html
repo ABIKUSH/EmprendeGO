@@ -582,6 +582,17 @@ emprendego.com.ar</textarea>
         <div class="table-card">
           <div class="table-header">
             <div class="table-title">📊 Proveedores aprobados <span id="count-informe" style="background:var(--blue-light);color:var(--blue);font-size:.72rem;font-weight:800;padding:3px 10px;border-radius:20px;margin-left:8px">0</span></div>
+            <div class="table-actions" style="flex-wrap:wrap">
+              <input class="search-mini" id="informe-buscar" placeholder="Buscar nombre o Instagram..." aria-label="Buscar proveedor" style="width:210px" oninput="renderInforme()">
+              <select class="filter-select" id="informe-orden" aria-label="Ordenar por" onchange="renderInforme()">
+                <option value="consultas">Consultas totales</option>
+                <option value="visitas">Visitas totales</option>
+                <option value="csem">Consultas desde la foto</option>
+                <option value="vsem">Visitas desde la foto</option>
+                <option value="ultimo">Último envío</option>
+              </select>
+              <button type="button" class="tbl-btn" id="informe-sentido" style="background:#eef2ff;color:#1847C8;font-weight:700" onclick="cambiarSentidoInforme()">Mayor a menor</button>
+            </div>
           </div>
           <table>
             <thead><tr><th>Negocio</th><th>👀 Visitas</th><th>💬 Consultas</th><th>📈 Esta semana</th><th>Último envío</th><th>Acción</th></tr></thead>
@@ -1232,7 +1243,7 @@ function calcPlanStatus(p) {
 function avatarHtml(nombre, logoUrl){
   const ini = escHtml((nombre||'').substring(0,2).toUpperCase());
   return logoUrl
-    ? `<img src="${escHtml(logoUrl)}" alt="" class="cell-avatar-img">`
+    ? `<img src="${escHtml(logoUrl)}" alt="" class="cell-avatar-img" loading="lazy">`
     : `<div class="cell-avatar">${ini}</div>`;
 }
 
@@ -3009,12 +3020,15 @@ function enviarDifusion(provJson){
 }
 
 // ===== INFORME SEMANAL (resumen de visitas/consultas, 1 clic, mismo mensaje para todos) =====
+let informeFilas = [];
+let informeSentido = 'desc';
+
 async function cargarInforme(){
   const tb = document.getElementById('informe-table');
   if (!tb) return;
   try {
     const [{ data: provs, error: provErr }, notifRes, snapRes] = await Promise.all([
-      traerTodasLasFilas(()=>sb.from('proveedores').select('id,nombre,whatsapp,visitas,consultas,estado').eq('estado','aprobado').order('id')),
+      traerTodasLasFilas(()=>sb.from('proveedores').select('id,nombre,whatsapp,visitas,consultas,estado,logo_url,instagram').eq('estado','aprobado').order('id')),
       traerTodasLasFilas(()=>sb.from('notificaciones_proveedores').select('proveedor_id,tipo,enviado_at').order('id')),
       // informe_snapshots suma ~54 filas por semana: es la proxima que iba a
       // pasar las 1000 y a romper el delta "+X esta semana" sin avisar.
@@ -3047,24 +3061,72 @@ async function cargarInforme(){
       ? `Última foto: ${ultimaFoto.toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'})} (hace ${Math.floor((new Date() - ultimaFoto) / MS_DIA)}d).`
       : 'Todavía no tomaste ninguna foto.';
 
-    const hoy = new Date();
-    const fmtCorta = d => d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-    // Orden por desempeño: refuerza el "competí por el primer lugar"
-    const lista = (provs || []).slice().sort((a, b) =>
-      ((b.consultas || 0) - (a.consultas || 0)) || ((b.visitas || 0) - (a.visitas || 0)));
-
-    const countEl = document.getElementById('count-informe');
-    if (countEl) countEl.textContent = lista.length;
-
-    tb.innerHTML = lista.length ? lista.map(p => {
+    // Las filas quedan en memoria: buscar u ordenar repinta sin volver a la base.
+    informeFilas = (provs || []).map(p => {
       const visitas = p.visitas || 0, consultas = p.consultas || 0;
       const base = baseline[p.id] || null;
-      const dv = base ? Math.max(0, visitas - base.visitas) : null;
-      const dc = base ? Math.max(0, consultas - base.consultas) : null;
+      return {
+        ...p, visitas, consultas, base,
+        dv: base ? Math.max(0, visitas - base.visitas) : null,
+        dc: base ? Math.max(0, consultas - base.consultas) : null,
+        ult: ultimo[p.id] || null
+      };
+    });
+    renderInforme();
+  } catch (e) {
+    console.log('informe error', e);
+    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando informe</td></tr>';
+  }
+}
+
+function cambiarSentidoInforme(){
+  informeSentido = informeSentido === 'desc' ? 'asc' : 'desc';
+  const btn = document.getElementById('informe-sentido');
+  if (btn) btn.textContent = informeSentido === 'desc' ? 'Mayor a menor' : 'Menor a mayor';
+  renderInforme();
+}
+
+function renderInforme(){
+  const tb = document.getElementById('informe-table');
+  if (!tb) return;
+  const normalizar = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = normalizar(document.getElementById('informe-buscar')?.value).trim().replace(/^@/, '');
+  const orden = document.getElementById('informe-orden')?.value || 'consultas';
+  const valor = {
+    consultas: p => p.consultas,
+    visitas: p => p.visitas,
+    csem: p => p.dc,
+    vsem: p => p.dv,
+    ultimo: p => p.ult ? p.ult.getTime() : null
+  }[orden];
+  const signo = informeSentido === 'desc' ? 1 : -1;
+  const lista = informeFilas
+    .filter(p => !q || normalizar(p.nombre).includes(q) || normalizar(p.instagram).includes(q))
+    .sort((a, b) => {
+      const va = valor(a), vb = valor(b);
+      // Sin dato (nunca enviado, sin foto) va siempre al final, en los dos sentidos.
+      if (va == null || vb == null) {
+        if (va != null) return -1;
+        if (vb != null) return 1;
+      } else if (va !== vb) {
+        return (vb - va) * signo;
+      }
+      return (b.consultas - a.consultas) || (b.visitas - a.visitas) || String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es');
+    });
+
+  const countEl = document.getElementById('count-informe');
+  if (countEl) countEl.textContent = lista.length;
+
+  const hoy = new Date();
+  const fmtCorta = d => d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+  const vacio = informeFilas.length ? 'Ningún proveedor coincide con la búsqueda' : 'No hay proveedores aprobados';
+  tb.innerHTML = lista.length ? lista.map(p => {
+      const { visitas, consultas, base, dv, dc, ult } = p;
+      const ig = String(p.instagram || '').trim().replace(/^@/, '');
+      const igCol = ig && !ig.includes('/') ? `<div style="font-size:.72rem;color:var(--gray)">@${escHtml(ig)}</div>` : '';
       const semanaCol = base
         ? `<span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dv}</span> <span style="font-size:.7rem;color:var(--gray)">vis</span> · <span style="font-size:.78rem;font-weight:700;color:#16a34a">+${dc}</span> <span style="font-size:.7rem;color:var(--gray)">cons</span><br><span style="font-size:.68rem;color:var(--gray)">${fmtCorta(base._d)} → ${fmtCorta(hoy)}</span>`
         : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
-      const ult = ultimo[p.id] || null;
       const ultCol = ult
         ? `<span style="font-size:.75rem;color:var(--gray)">hace ${Math.floor((hoy - ult) / MS_DIA)}d</span>`
         : '<span style="font-size:.75rem;color:var(--gray)">—</span>';
@@ -3075,18 +3137,14 @@ async function cargarInforme(){
         ? `<div style="display:flex;gap:6px;flex-wrap:wrap">${btnTarjeta}<button class="tbl-btn" style="background:#dcfce7;color:#16a34a;font-weight:700" onclick='enviarInforme(decodeURIComponent("${safe}"))'>Enviar</button></div>`
         : btnTarjeta;
       return `<tr>
-        <td><div class="avatar-cell"><div class="cell-avatar">${escHtml((p.nombre||'').substring(0,2).toUpperCase())}</div>${escHtml(p.nombre||'')}</div></td>
+        <td><div class="avatar-cell">${avatarHtml(p.nombre, p.logo_url)}<div>${escHtml(p.nombre||'')}${igCol}</div></div></td>
         <td style="font-size:.85rem;font-weight:700;color:var(--navy)">${visitas}</td>
         <td style="font-size:.85rem;font-weight:700;color:var(--navy)">${consultas}</td>
         <td>${semanaCol}</td>
         <td>${ultCol}</td>
         <td>${accion}</td>
       </tr>`;
-    }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">No hay proveedores aprobados</td></tr>';
-  } catch (e) {
-    console.log('informe error', e);
-    tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">Error cargando informe</td></tr>';
-  }
+    }).join('') : `<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:20px">${vacio}</td></tr>`;
 }
 
 function enviarInforme(provJson){
