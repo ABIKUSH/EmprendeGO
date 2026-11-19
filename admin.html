@@ -254,6 +254,84 @@ tr:hover td{background:#fafbff}
 .wa-vs-num{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;color:var(--navy);line-height:1}
 .wa-vs-pie{font-size:.78rem;color:var(--gray);margin-top:6px;line-height:1.5}
 .wa-explica{font-size:.8rem;color:var(--gray);line-height:1.6;margin:0 0 14px}
+
+/* PUBLICIDAD — mismo lenguaje del panel (azul, tarjetas blancas). El sello
+   "Publicidad" de la vista previa es el mismo que se ve en la app. */
+.pub-cabecera{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.pub-btn{display:inline-flex;align-items:center;gap:7px;background:var(--blue);color:#fff;border:0;border-radius:10px;padding:10px 16px;font-family:'DM Sans',sans-serif;font-size:.85rem;font-weight:700;cursor:pointer;min-height:40px;transition:background .15s,transform .1s}
+.pub-btn:hover{background:#0f5be6}
+.pub-btn:active{transform:scale(.98)}
+.pub-btn:disabled{background:#b8c5e0;cursor:progress}
+.pub-btn:focus-visible,.pub-x:focus-visible,.pub-subir:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.pub-ayuda{font-size:.78rem;color:var(--gray);margin-top:3px;line-height:1.5}
+.pub-vacio{text-align:center;color:var(--gray);padding:22px 10px;font-size:.85rem}
+
+/* Ocupación */
+.pub-oc{display:grid;grid-template-columns:190px 1fr;gap:6px 18px;align-items:center}
+@media(max-width:700px){.pub-oc{grid-template-columns:1fr}}
+.pub-oc-nombre strong{display:block;font-size:.88rem}
+.pub-oc-nombre span{font-size:.75rem;color:var(--gray)}
+.pub-oc-nombre .libre{color:#00a274;font-weight:700}
+.pub-oc-nombre .lleno{color:var(--orange);font-weight:700}
+.pub-oc-pista{position:relative;background:#f6f8fd;border-radius:10px;padding:6px 0;min-height:36px}
+.pub-oc-carril{position:relative;height:24px;margin:3px 0}
+.pub-oc-barra{position:absolute;top:0;bottom:0;border-radius:6px;background:var(--blue);color:#fff;font-size:.7rem;font-weight:700;padding:0 8px;display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:6px;cursor:pointer}
+.pub-oc-barra.prog{background:#9db8f5}
+.pub-oc-hoy{position:absolute;top:0;bottom:0;width:2px;background:var(--orange);border-radius:1px;z-index:2}
+.pub-oc-meses{position:relative;height:16px;margin-bottom:2px}
+.pub-oc-meses span{position:absolute;top:0;font-size:.66rem;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.05em;transform:translateX(2px)}
+.pub-oc-linea{position:absolute;top:0;bottom:0;width:1px;background:#e6ebf6}
+.pub-oc-fila{padding:12px 0;border-bottom:1px solid #f4f7ff}
+.pub-oc-fila:last-child{border-bottom:0}
+
+/* Lista */
+.pub-thumb{width:44px;height:44px;border-radius:8px;object-fit:cover;background:#eef1f7;display:block;border:1px solid #eef0f8}
+.pub-thumb.v{height:55px}
+.pub-chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;white-space:nowrap}
+.pub-chip.activo{background:#e6faf4;color:#00a274}
+.pub-chip.programado{background:var(--blue-light);color:var(--blue)}
+.pub-chip.vencido{background:#f1f5f9;color:#64748b}
+.pub-chip.cancelado,.pub-chip.rechazado,.pub-chip.reembolsado{background:#fee2e2;color:var(--red)}
+.pub-chip.otro{background:#fff3e0;color:var(--orange)}
+.pub-sub{font-size:.75rem;color:var(--gray);margin-top:2px}
+
+/* Espacios */
+.pub-esp input[type=number]{width:100%;max-width:120px;border:1.5px solid #e0e7ff;border-radius:8px;padding:7px 9px;font-family:'DM Sans',sans-serif;font-size:.85rem;color:var(--navy);outline:none}
+.pub-esp input[type=number]:focus{border-color:var(--blue)}
+.pub-esp td{vertical-align:middle}
+
+/* Formulario */
+.prov-modal-box.pub-form{max-width:860px;padding:26px}
+.pub-form-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px}
+.pub-x{border:0;background:var(--light);width:36px;height:36px;border-radius:10px;font-size:1.3rem;line-height:1;color:var(--navy);cursor:pointer;flex:none}
+.pub-form-grid{display:grid;grid-template-columns:1fr 280px;gap:22px}
+@media(max-width:760px){.pub-form-grid{grid-template-columns:1fr}}
+.pub-col{display:flex;flex-direction:column;gap:12px;min-width:0}
+.pub-dos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.pub-dos{grid-template-columns:1fr}}
+.pub-campo{display:flex;flex-direction:column;gap:5px;min-width:0}
+.pub-campo>span{font-size:.75rem;font-weight:700;color:var(--navy)}
+.pub-campo input,.pub-campo select,.pub-campo textarea{border:1.5px solid #e0e7ff;border-radius:10px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--navy);outline:none;background:#fff;width:100%;min-height:40px;resize:vertical}
+.pub-campo input:focus,.pub-campo select:focus,.pub-campo textarea:focus{border-color:var(--blue)}
+.pub-campo input[aria-invalid=true]{border-color:var(--red)}
+.pub-campo small{font-size:.74rem;color:var(--gray);line-height:1.45}
+.pub-campo small.mal{color:var(--red)}
+.pub-campo small.bien{color:#00a274}
+.pub-disponible{font-size:.8rem;line-height:1.5;border-radius:10px;padding:9px 12px;background:#f6f8fd;color:var(--gray);min-height:38px}
+.pub-disponible.si{background:#e6faf4;color:#00795a}
+.pub-disponible.no{background:#fff3e0;color:#b45309}
+.pub-disponible button{border:0;background:none;color:inherit;font:inherit;font-weight:800;text-decoration:underline;cursor:pointer;padding:0}
+.pub-previa{position:relative;width:100%;border-radius:16px;overflow:hidden;background:#eef1f7;aspect-ratio:1/1;border:1px dashed #cdd6ea}
+.pub-previa[data-ratio="0.8"]{aspect-ratio:4/5}
+.pub-previa.con{border-style:solid;border-color:#e3e8f3}
+.pub-previa img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pub-sello{position:absolute;top:12px;left:12px;z-index:2;height:22px;display:inline-flex;align-items:center;padding:0 9px;border-radius:11px;background:rgba(15,15,15,.82);color:#fff;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.pub-previa-vacia{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--gray)}
+.pub-subir{display:flex;align-items:center;justify-content:center;border:1.5px solid #e0e7ff;border-radius:10px;min-height:40px;font-size:.85rem;font-weight:700;color:var(--blue);cursor:pointer;margin-top:8px;background:#fff}
+.pub-subir:hover{background:var(--blue-light)}
+.pub-subir input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.pub-form-pie{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid #f0f4ff;flex-wrap:wrap}
+.pub-error{font-size:.82rem;color:var(--red);font-weight:600;flex:1;min-width:200px}
 </style>
 </head>
 <body>
@@ -295,6 +373,7 @@ tr:hover td{background:#fafbff}
     <button class="mobile-nav-btn" onclick="showPage('waembudo',this)">Embudo</button>
     <button class="mobile-nav-btn" onclick="showPage('informe',this)">📊 Informe</button>
     <button class="mobile-nav-btn" onclick="showPage('busquedas',this)">🔍 Búsquedas</button>
+    <button class="mobile-nav-btn" onclick="showPage('publicidad',this)">Publicidad</button>
     <button class="mobile-nav-btn" onclick="showPage('config',this)">⚙️ Config</button>
   </div>
 
@@ -320,6 +399,7 @@ tr:hover td{background:#fafbff}
         <div class="nav-link" onclick="showPage('novedades',this)"><span class="ni">📰</span>Novedades<span class="nav-badge" id="nav-badge-nov">0</span></div>
         <div class="nav-link" onclick="showPage('busquedas',this)"><span class="ni">🔍</span>Búsquedas</div>
         <div class="nav-link" onclick="showPage('rubros',this)"><span class="ni">📦</span>Rubros</div>
+        <div class="nav-link" onclick="showPage('publicidad',this)"><span class="ni" aria-hidden="true"><svg style="display:block;margin:0 auto" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 15l3-6 3 6"/><line x1="8" y1="13" x2="12" y2="13"/><path d="M16 9v6"/></svg></span>Publicidad<span class="nav-badge" id="nav-badge-pub" style="background:var(--green);display:none">0</span></div>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Moderación</div>
@@ -704,6 +784,66 @@ emprendego.com.ar</textarea>
         </div>
       </div>
 
+      <!-- PUBLICIDAD (fase 1: alta manual; ver js/publicidad.js y sql/2026-11-19_publicidad_fase1.sql) -->
+      <div class="page" id="page-publicidad">
+        <div class="pub-cabecera">
+          <div>
+            <div class="page-title">Publicidad</div>
+            <div class="page-sub" style="margin-bottom:0">Espacios patrocinados de la app. Por ahora se venden por WhatsApp, se cobran por fuera y se cargan acá.</div>
+          </div>
+          <button class="pub-btn" onclick="pubAbrirForm()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo anuncio
+          </button>
+        </div>
+
+        <div class="metrics-grid" style="margin-top:22px">
+          <div class="metric-card"><div class="metric-val" id="pub-m-activos">—</div><div class="metric-label">Al aire hoy</div></div>
+          <div class="metric-card"><div class="metric-val" id="pub-m-prog">—</div><div class="metric-label">Programados</div></div>
+          <div class="metric-card"><div class="metric-val" id="pub-m-vencen" style="color:var(--orange)">—</div><div class="metric-label">Vencen en 7 días</div></div>
+          <div class="metric-card"><div class="metric-val" id="pub-m-cobrado">—</div><div class="metric-label">Cobrado este mes</div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div>
+              <div class="table-title">Ocupación</div>
+              <div class="pub-ayuda">Los próximos seis meses de cada espacio. La línea naranja es hoy.</div>
+            </div>
+          </div>
+          <div id="pub-ocupacion"><div class="pub-vacio">Cargando…</div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div class="table-title">Anuncios</div>
+            <div class="table-actions">
+              <select class="filter-select" id="pub-f-estado" onchange="pubPintarLista()" aria-label="Filtrar por estado">
+                <option value="">Todos los estados</option>
+                <option value="activo">Al aire</option>
+                <option value="programado">Programados</option>
+                <option value="vencido">Vencidos</option>
+                <option value="cancelado">Cancelados</option>
+              </select>
+              <select class="filter-select" id="pub-f-espacio" onchange="pubPintarLista()" aria-label="Filtrar por espacio">
+                <option value="">Todos los espacios</option>
+              </select>
+            </div>
+          </div>
+          <div id="pub-lista"><div class="pub-vacio">Cargando…</div></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-header">
+            <div>
+              <div class="table-title">Espacios y precios</div>
+              <div class="pub-ayuda">Precio por mes, cantidad de anunciantes a la vez y descuento por contratar 3 o 6 meses.</div>
+            </div>
+          </div>
+          <div id="pub-espacios"><div class="pub-vacio">Cargando…</div></div>
+        </div>
+      </div>
+
       <!-- REPORTES -->
       <div class="page" id="page-reportes">
         <div class="page-title">Reportes & Denuncias</div>
@@ -909,8 +1049,102 @@ emprendego.com.ar</textarea>
   </div>
 </div>
 
+<!-- MODAL: ALTA / EDICIÓN DE ANUNCIO (Publicidad, fase 1) -->
+<div class="prov-modal-overlay" id="pubModal" onclick="if(event.target===this)pubCerrarForm()">
+  <div class="prov-modal-box pub-form" role="dialog" aria-modal="true" aria-labelledby="pub-form-titulo">
+    <div class="pub-form-head">
+      <div>
+        <div class="prov-modal-title" id="pub-form-titulo">Nuevo anuncio</div>
+        <div class="pub-ayuda">Se publica solo en las fechas que elijas. Antes y después no se ve.</div>
+      </div>
+      <button class="pub-x" onclick="pubCerrarForm()" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <div class="pub-form-grid">
+      <div class="pub-col">
+        <label class="pub-campo">
+          <span>Espacio</span>
+          <select id="pf-espacio" onchange="pubFormCambio('espacio')"></select>
+          <small id="pf-espacio-ayuda"></small>
+        </label>
+
+        <div class="pub-dos">
+          <label class="pub-campo"><span>Empresa</span><input id="pf-empresa" maxlength="80" autocomplete="off" placeholder="Ej.: Envíos Norte"></label>
+          <label class="pub-campo"><span>Persona de contacto</span><input id="pf-contacto" maxlength="80" autocomplete="off"></label>
+        </div>
+        <div class="pub-dos">
+          <label class="pub-campo"><span>WhatsApp del anunciante</span><input id="pf-whatsapp" maxlength="30" inputmode="tel" autocomplete="off"></label>
+          <label class="pub-campo"><span>Email</span><input id="pf-email" maxlength="120" type="email" autocomplete="off"></label>
+        </div>
+
+        <label class="pub-campo">
+          <span>A dónde lleva el anuncio</span>
+          <input id="pf-destino" maxlength="300" autocomplete="off" placeholder="https://… o un número de WhatsApp" oninput="pubFormCambio('destino')">
+          <small id="pf-destino-ayuda">Un link que empiece con https:// o un número de WhatsApp.</small>
+        </label>
+
+        <div class="pub-dos">
+          <label class="pub-campo">
+            <span>Duración</span>
+            <select id="pf-meses" onchange="pubFormCambio('meses')">
+              <option value="1">1 mes</option>
+              <option value="3">3 meses</option>
+              <option value="6">6 meses</option>
+            </select>
+          </label>
+          <label class="pub-campo">
+            <span>Empieza el</span>
+            <input id="pf-inicio" type="date" onchange="pubFormCambio('inicio')">
+          </label>
+        </div>
+        <div class="pub-disponible" id="pf-disponible" role="status"></div>
+
+        <div class="pub-dos">
+          <label class="pub-campo">
+            <span>Monto cobrado ($)</span>
+            <input id="pf-monto" type="number" min="0" step="100" inputmode="numeric" oninput="this.dataset.tocado='1'">
+            <small id="pf-monto-ayuda"></small>
+          </label>
+          <label class="pub-campo"><span>Referencia del pago</span><input id="pf-ref" maxlength="120" autocomplete="off" placeholder="Transferencia, MP, efectivo…"></label>
+        </div>
+
+        <label class="pub-campo"><span>Notas (solo las ves vos)</span><textarea id="pf-notas" rows="2" maxlength="500"></textarea></label>
+      </div>
+
+      <div class="pub-col">
+        <div class="pub-campo">
+          <span>Pieza</span>
+          <div class="pub-previa" id="pf-previa" data-ratio="1">
+            <span class="pub-sello">Publicidad</span>
+            <span class="pub-previa-vacia" id="pf-previa-vacia">Sin imagen todavía</span>
+          </div>
+          <label class="pub-subir">
+            <input type="file" id="pf-archivo" accept="image/jpeg,image/png,image/webp" onchange="pubElegirArchivo(this)">
+            <span id="pf-archivo-txt">Elegir imagen</span>
+          </label>
+          <small id="pf-pieza-ayuda"></small>
+        </div>
+        <label class="pub-campo">
+          <span>Descripción de la imagen</span>
+          <input id="pf-alt" maxlength="160" autocomplete="off" placeholder="Ej.: Envíos en el día a todo el país">
+          <small>La leen los lectores de pantalla. Una frase corta con lo que dice la pieza.</small>
+        </label>
+      </div>
+    </div>
+
+    <div class="pub-form-pie">
+      <div class="pub-error" id="pf-error" role="alert"></div>
+      <div class="modal-actions">
+        <button class="modal-btn cancel" onclick="pubCerrarForm()">Cancelar</button>
+        <button class="pub-btn" id="pf-guardar" onclick="pubGuardar()">Guardar y publicar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
+<script src="js/publicidad.js?v=20261119-fase1"></script>
 <script>
 let pendingAction = null;
 
@@ -1999,6 +2233,8 @@ async function suspenderProveedor(id){
 async function confirmAction(){
   closeModal();
   if(!pendingAction) return;
+  // Confirmaciones de otras secciones (Publicidad) traen su propia acción.
+  if(typeof pendingAction.run === 'function'){ const run = pendingAction.run; pendingAction = null; return run(); }
   const nuevoEstado = pendingAction.type==='approve' ? 'aprobado' : 'rechazado';
   try {
     await sb.from('proveedores').update({estado: nuevoEstado}).eq('id', pendingAction.id);
@@ -2804,6 +3040,7 @@ function showPage(name, el){
   if(name==='avisos') cargarAvisos();
   if(name==='waembudo') cargarWaEmbudo();
   if(name==='informe') cargarInforme();
+  if(name==='publicidad') pubCargarAdmin();
 }
 
 function filterTable(input, tableId){
@@ -2831,6 +3068,460 @@ function filtrarPorPlanStatus(val){
 function showToast(msg){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// =====================================================================
+// PUBLICIDAD (fase 1): alta manual, ocupación y precios.
+//
+// Las cuentas de fechas, cupo, destino y total viven en js/publicidad.js
+// (las mismas que usa la app y que prueba test/publicidad.test.js). Lo que
+// realmente impide pasarse del cupo es el disparador ad_controlar_cupo() de
+// la base: el chequeo de acá es para avisar antes, no para proteger.
+// =====================================================================
+let pubEspacios = [];
+let pubOrdenes = [];
+let pubEditando = null;     // fila de ad_orders que se está editando, o null
+let pubArchivo = null;      // { file, ancho, alto, url } de la pieza elegida
+
+const pubPesos = n => '$' + Math.round(Number(n||0)).toLocaleString('es-AR');
+const pubDias = (a, b) => Math.round((Date.parse(b+'T00:00:00Z') - Date.parse(a+'T00:00:00Z')) / 86400000);
+const pubEspacio = id => pubEspacios.find(e => e.id === id);
+const pubDelEspacio = id => pubOrdenes.filter(o => o.space_id === id);
+
+async function pubCargarAdmin(){
+  const [esp, ord] = await Promise.all([
+    sb.from('ad_spaces').select('*').order('orden'),
+    sb.from('ad_orders').select('*').order('inicia_el', { ascending:false }).limit(500)
+  ]);
+  const err = esp.error || ord.error;
+  if(err){
+    const falta = /does not exist|schema cache|PGRST205|42P01/i.test((err.message||'') + (err.code||''));
+    const msg = falta
+      ? 'Falta aplicar en Supabase la migración sql/2026-11-19_publicidad_fase1.sql.'
+      : 'No se pudo cargar la publicidad: ' + escHtml(err.message || 'error desconocido');
+    ['pub-ocupacion','pub-lista','pub-espacios'].forEach(id => document.getElementById(id).innerHTML = '<div class="pub-vacio">'+msg+'</div>');
+    return;
+  }
+  pubEspacios = esp.data || [];
+  pubOrdenes = ord.data || [];
+  const sel = document.getElementById('pub-f-espacio');
+  const actual = sel.value;
+  sel.innerHTML = '<option value="">Todos los espacios</option>' +
+    pubEspacios.map(e => `<option value="${escHtml(e.id)}">${escHtml(e.nombre)}</option>`).join('');
+  sel.value = actual;
+  pubPintarMetricas();
+  pubPintarOcupacion();
+  pubPintarLista();
+  pubPintarEspacios();
+}
+
+function pubPintarMetricas(){
+  const hoy = pubHoyAR();
+  const en7 = new Date(Date.parse(hoy+'T00:00:00Z') + 7*86400000).toISOString().slice(0,10);
+  const mes = hoy.slice(0,7);
+  const est = o => pubEstadoVisible(o, hoy);
+  const activos = pubOrdenes.filter(o => est(o) === 'activo');
+  document.getElementById('pub-m-activos').textContent = activos.length;
+  document.getElementById('pub-m-prog').textContent = pubOrdenes.filter(o => est(o) === 'programado').length;
+  document.getElementById('pub-m-vencen').textContent = activos.filter(o => o.termina_el <= en7).length;
+  // "Cobrado este mes": lo cargado este mes (hora argentina), sin cancelados ni devueltos.
+  const cobrado = pubOrdenes
+    .filter(o => !['cancelado','reembolsado','rechazado','borrador'].includes(o.estado))
+    .filter(o => pubHoyAR(new Date(o.creado_el)).slice(0,7) === mes)
+    .reduce((s,o) => s + Number(o.monto||0), 0);
+  document.getElementById('pub-m-cobrado').textContent = pubPesos(cobrado);
+  const badge = document.getElementById('nav-badge-pub');
+  if(badge){ badge.textContent = activos.length; badge.style.display = activos.length ? '' : 'none'; }
+}
+
+// Una fila por espacio, con un carril por lugar del cupo. Cada anuncio es una
+// barra entre su inicio y su fin, sobre los próximos seis meses.
+function pubPintarOcupacion(){
+  const caja = document.getElementById('pub-ocupacion');
+  if(!pubEspacios.length){ caja.innerHTML = '<div class="pub-vacio">No hay espacios cargados.</div>'; return; }
+  const hoy = pubHoyAR();
+  const desde = hoy.slice(0,7) + '-01';
+  const hasta = pubSumarMeses(desde, 6);
+  const total = pubDias(desde, hasta);
+  const pos = d => Math.max(0, Math.min(100, pubDias(desde, d) / total * 100));
+  const MESES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  let meses = '', lineas = '';
+  for(let i = 0; i < 6; i++){
+    const m = pubSumarMeses(desde, i);
+    const x = pos(m);
+    meses += `<span style="left:${x}%">${MESES[Number(m.slice(5,7))-1]}</span>`;
+    if(i) lineas += `<span class="pub-oc-linea" style="left:${x}%"></span>`;
+  }
+  const hoyX = pos(hoy);
+
+  caja.innerHTML = pubEspacios.map(e => {
+    const ords = pubDelEspacio(e.id)
+      .filter(o => OCUPAN.includes(o.estado) && o.inicia_el < hasta && o.termina_el > desde)
+      .sort((a,b) => a.inicia_el < b.inicia_el ? -1 : 1);
+    // Reparto en carriles: cada anuncio va al primer carril que ya se liberó.
+    const carriles = [];
+    ords.forEach(o => {
+      let c = carriles.find(c => c.fin <= o.inicia_el);
+      if(!c){ c = { fin:'', items:[] }; carriles.push(c); }
+      c.fin = o.termina_el; c.items.push(o);
+    });
+    while(carriles.length < Number(e.cupo)) carriles.push({ fin:'', items:[] });
+
+    const ahora = ords.filter(o => o.inicia_el <= hoy && o.termina_el > hoy).length;
+    let estado;
+    if(!e.activo) estado = '<span>Espacio apagado: no se muestra en la app.</span>';
+    else if(Number(e.cupo) > 1) estado = ahora >= e.cupo
+      ? `<span class="lleno">Completo</span> <span>· ${ahora} de ${e.cupo} lugares</span>`
+      : `<span class="libre">${e.cupo - ahora} lugar${e.cupo - ahora === 1 ? '' : 'es'} libre${e.cupo - ahora === 1 ? '' : 's'}</span> <span>· ${ahora} de ${e.cupo} al aire</span>`;
+    else {
+      const libre = pubPrimeraFechaLibre(pubDelEspacio(e.id), e.cupo, hoy, 1);
+      estado = libre === hoy ? '<span class="libre">Libre hoy</span>'
+        : `<span class="lleno">Ocupado</span> <span>· libre desde el ${pubFecha(libre)}</span>`;
+    }
+
+    const barras = carriles.map(c => `<div class="pub-oc-carril">${c.items.map(o => {
+      const l = pos(o.inicia_el), r = pos(o.termina_el);
+      const prog = o.inicia_el > hoy || o.estado !== 'aprobado';
+      return `<span class="pub-oc-barra${prog ? ' prog' : ''}" style="left:${l}%;width:${Math.max(r-l, .8)}%"
+        title="${escHtml(o.empresa)} · ${pubFecha(o.inicia_el)} al ${pubFecha(pubUltimoDia(o.termina_el))}"
+        onclick="pubAbrirForm('${escHtml(o.id)}')">${escHtml(o.empresa)}</span>`;
+    }).join('')}</div>`).join('');
+
+    return `<div class="pub-oc-fila"><div class="pub-oc">
+      <div class="pub-oc-nombre"><strong>${escHtml(e.nombre)}</strong>${estado}</div>
+      <div>
+        <div class="pub-oc-meses">${meses}</div>
+        <div class="pub-oc-pista">${lineas}<span class="pub-oc-hoy" style="left:${hoyX}%" title="Hoy"></span>${barras}</div>
+      </div>
+    </div></div>`;
+  }).join('');
+}
+
+function pubPintarLista(){
+  const caja = document.getElementById('pub-lista');
+  const hoy = pubHoyAR();
+  const fEst = document.getElementById('pub-f-estado').value;
+  const fEsp = document.getElementById('pub-f-espacio').value;
+  const BAJAS = ['cancelado','rechazado','reembolsado'];
+  const orden = { activo:0, programado:1, vencido:3 };
+  let lista = pubOrdenes.map(o => ({ o, v: pubEstadoVisible(o, hoy) }));
+  if(fEsp) lista = lista.filter(x => x.o.space_id === fEsp);
+  if(fEst === 'cancelado') lista = lista.filter(x => BAJAS.includes(x.v));
+  else if(fEst) lista = lista.filter(x => x.v === fEst);
+  lista.sort((a,b) => (orden[a.v] ?? 2) - (orden[b.v] ?? 2) ||
+    (a.v === 'vencido' ? (a.o.termina_el < b.o.termina_el ? 1 : -1) : (a.o.inicia_el < b.o.inicia_el ? -1 : 1)));
+
+  if(!lista.length){
+    caja.innerHTML = pubOrdenes.length
+      ? '<div class="pub-vacio">No hay anuncios con ese filtro.</div>'
+      : '<div class="pub-vacio">Todavía no cargaste ningún anuncio. Cuando vendas un espacio, cargalo con <b>Nuevo anuncio</b>.</div>';
+    return;
+  }
+  const NOMBRE = { activo:'Al aire', programado:'Programado', vencido:'Vencido', cancelado:'Cancelado',
+    rechazado:'Rechazado', reembolsado:'Reembolsado' };
+  caja.innerHTML = `<table><thead><tr>
+      <th>Pieza</th><th>Anunciante</th><th>Espacio</th><th>Fechas</th><th>Estado</th><th>Cobrado</th><th></th>
+    </tr></thead><tbody>${lista.map(({o, v}) => {
+      const e = pubEspacio(o.space_id);
+      const vertical = e && e.alto > e.ancho;
+      const chip = NOMBRE[v] ? v : 'otro';
+      const quedan = v === 'activo' ? pubDias(hoy, o.termina_el) : null;
+      return `<tr>
+        <td>${o.imagen_url ? `<img class="pub-thumb${vertical ? ' v' : ''}" src="${escHtml(o.imagen_url)}" alt="" loading="lazy">` : '<span class="pub-thumb"></span>'}</td>
+        <td><strong>${escHtml(o.empresa)}</strong>
+          <div class="pub-sub"><a href="${escHtml(o.destino_url)}" target="_blank" rel="noopener noreferrer" style="color:var(--blue)">${escHtml(pubDominio(o.destino_url) || o.destino_url)}</a>${o.contacto ? ' · ' + escHtml(o.contacto) : ''}</div></td>
+        <td>${escHtml(e ? e.nombre : o.space_id)}</td>
+        <td style="white-space:nowrap">${pubFecha(o.inicia_el)} al ${pubFecha(pubUltimoDia(o.termina_el))}
+          <div class="pub-sub">${o.duracion_meses} mes${o.duracion_meses === 1 ? '' : 'es'}${quedan !== null ? ` · quedan ${quedan} día${quedan === 1 ? '' : 's'}` : ''}</div></td>
+        <td><span class="pub-chip ${chip}">${NOMBRE[v] || escHtml(v)}</span></td>
+        <td style="white-space:nowrap">${pubPesos(o.monto)}<div class="pub-sub">${o.pago_manual ? 'Pago manual' : 'Mercado Pago'}${o.pago_ref ? ' · ' + escHtml(o.pago_ref) : ''}</div></td>
+        <td><div class="action-group">
+          <button class="tbl-btn view" onclick="pubAbrirForm('${escHtml(o.id)}')">Editar</button>
+          ${BAJAS.includes(o.estado) || v === 'vencido' ? '' : `<button class="tbl-btn reject" onclick="pubPedirCancelar('${escHtml(o.id)}')">Cancelar</button>`}
+        </div></td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+
+function pubPintarEspacios(){
+  const caja = document.getElementById('pub-espacios');
+  caja.innerHTML = `<table class="pub-esp"><thead><tr>
+      <th>Espacio</th><th>Anunciantes a la vez</th><th>Precio por mes</th><th>Desc. 3 meses</th><th>Desc. 6 meses</th><th>En la app</th><th></th>
+    </tr></thead><tbody>${pubEspacios.map(e => `<tr data-esp="${escHtml(e.id)}">
+      <td><strong>${escHtml(e.nombre)}</strong><div class="pub-sub">${escHtml(e.donde)} Pieza de ${e.ancho}×${e.alto} px.</div></td>
+      <td><input type="number" min="1" max="10" step="1" value="${Number(e.cupo)}" data-campo="cupo" aria-label="Anunciantes a la vez"></td>
+      <td><input type="number" min="0" step="1000" value="${Number(e.precio_mensual)}" data-campo="precio_mensual" aria-label="Precio por mes"></td>
+      <td><input type="number" min="0" max="90" step="1" value="${Number(e.descuento_3m)}" data-campo="descuento_3m" aria-label="Descuento por 3 meses, en porcentaje"></td>
+      <td><input type="number" min="0" max="90" step="1" value="${Number(e.descuento_6m)}" data-campo="descuento_6m" aria-label="Descuento por 6 meses, en porcentaje"></td>
+      <td><label style="display:flex;align-items:center;gap:6px;font-size:.82rem;cursor:pointer"><input type="checkbox" data-campo="activo" ${e.activo ? 'checked' : ''}> Visible</label></td>
+      <td><button class="tbl-btn view" onclick="pubGuardarEspacio('${escHtml(e.id)}', this)">Guardar</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+async function pubGuardarEspacio(id, btn){
+  const fila = document.querySelector(`#pub-espacios tr[data-esp="${CSS.escape(id)}"]`);
+  const v = c => fila.querySelector(`[data-campo="${c}"]`);
+  const cambios = {
+    cupo: Number(v('cupo').value),
+    precio_mensual: Number(v('precio_mensual').value),
+    descuento_3m: Number(v('descuento_3m').value),
+    descuento_6m: Number(v('descuento_6m').value),
+    activo: v('activo').checked
+  };
+  if(!Number.isInteger(cambios.cupo) || cambios.cupo < 1 || cambios.cupo > 10) return showToast('Anunciantes a la vez: entre 1 y 10');
+  if(!(cambios.precio_mensual >= 0)) return showToast('El precio no puede ser negativo');
+  if(!(cambios.descuento_3m >= 0 && cambios.descuento_3m <= 90 && cambios.descuento_6m >= 0 && cambios.descuento_6m <= 90)) return showToast('Los descuentos van de 0 a 90 %');
+  // Bajar el cupo por debajo de lo que ya está vendido dejaría anuncios
+  // pagos sin lugar. Se avisa en vez de dejarlo pasar.
+  const hoy = pubHoyAR();
+  const vendidos = pubDelEspacio(id).filter(o => OCUPAN.includes(o.estado) && o.termina_el > hoy);
+  const maxVendido = vendidos.reduce((m, o) => Math.max(m, pubMaxSolapamiento(vendidos, o.inicia_el, o.termina_el, o.id) + 1), 0);
+  if(cambios.cupo < maxVendido) return showToast(`Ya hay ${maxVendido} anuncios a la vez en ese espacio: no se puede bajar a ${cambios.cupo}`);
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  const { error } = await sb.from('ad_spaces').update(cambios).eq('id', id);
+  btn.disabled = false; btn.textContent = 'Guardar';
+  if(error) return showToast('No se pudo guardar: ' + (error.message || 'reintentá'));
+  showToast('Espacio actualizado');
+  pubCargarAdmin();
+}
+
+function pubPedirCancelar(id){
+  const o = pubOrdenes.find(x => x.id === id);
+  if(!o) return;
+  pendingAction = { run: () => pubCancelar(id) };
+  document.getElementById('modal-title').textContent = 'Cancelar anuncio';
+  document.getElementById('modal-body').textContent =
+    `El anuncio de "${o.empresa}" deja de verse en la app ahora mismo y libera su lugar. La plata, si hay que devolverla, se devuelve por fuera.`;
+  const b = document.getElementById('modal-confirm-btn');
+  b.className = 'modal-btn confirm-reject'; b.textContent = 'Cancelar anuncio';
+  document.getElementById('confirmModal').classList.add('open');
+}
+
+async function pubCancelar(id){
+  const { error } = await sb.from('ad_orders').update({ estado:'cancelado' }).eq('id', id);
+  if(error) return showToast('No se pudo cancelar: ' + (error.message || 'reintentá'));
+  showToast('Anuncio cancelado');
+  pubCargarAdmin();
+}
+
+// ── Formulario ──
+function pubAbrirForm(id){
+  if(!pubEspacios.length){ showToast('Primero tiene que cargar la sección'); return; }
+  pubEditando = id ? (pubOrdenes.find(o => o.id === id) || null) : null;
+  pubArchivo = null;
+  const o = pubEditando;
+  const $ = s => document.getElementById(s);
+  $('pub-form-titulo').textContent = o ? 'Editar anuncio' : 'Nuevo anuncio';
+  $('pf-guardar').textContent = o ? 'Guardar cambios' : 'Guardar y publicar';
+  $('pf-espacio').innerHTML = pubEspacios
+    .filter(e => e.activo || (o && o.space_id === e.id))
+    .map(e => `<option value="${escHtml(e.id)}">${escHtml(e.nombre)} · ${pubPesos(e.precio_mensual)}/mes</option>`).join('');
+  $('pf-espacio').value = o ? o.space_id : ($('pf-espacio').options[0] || {}).value;
+  $('pf-empresa').value = o ? o.empresa : '';
+  $('pf-contacto').value = o ? (o.contacto || '') : '';
+  $('pf-whatsapp').value = o ? (o.whatsapp || '') : '';
+  $('pf-email').value = o ? (o.email || '') : '';
+  $('pf-destino').value = o ? o.destino_url : '';
+  $('pf-meses').innerHTML = '<option value="1">1 mes</option><option value="3">3 meses</option><option value="6">6 meses</option>';
+  $('pf-meses').value = o ? String(o.duracion_meses) : '1';
+  if(o && !$('pf-meses').querySelector(`option[value="${o.duracion_meses}"]`)){
+    $('pf-meses').insertAdjacentHTML('beforeend', `<option value="${o.duracion_meses}">${o.duracion_meses} meses</option>`);
+    $('pf-meses').value = String(o.duracion_meses);
+  }
+  $('pf-monto').value = o ? Number(o.monto) : '';
+  $('pf-monto').dataset.tocado = o ? '1' : '';
+  $('pf-ref').value = o ? (o.pago_ref || '') : '';
+  $('pf-notas').value = o ? (o.notas || '') : '';
+  $('pf-alt').value = o ? (o.alt_text || '') : '';
+  $('pf-archivo').value = '';
+  $('pf-archivo-txt').textContent = o && o.imagen_url ? 'Cambiar imagen' : 'Elegir imagen';
+  $('pf-error').textContent = '';
+  $('pf-inicio').value = o ? o.inicia_el : '';
+  pubPintarPrevia(o ? o.imagen_url : null);
+  pubFormCambio('abrir');
+  $('pubModal').classList.add('open');
+  setTimeout(() => (o ? $('pf-destino') : $('pf-empresa')).focus(), 50);
+}
+
+function pubCerrarForm(){
+  document.getElementById('pubModal').classList.remove('open');
+  if(pubArchivo && pubArchivo.url) URL.revokeObjectURL(pubArchivo.url);
+  pubArchivo = null; pubEditando = null;
+}
+
+function pubPintarPrevia(url){
+  const previa = document.getElementById('pf-previa');
+  const vieja = previa.querySelector('img');
+  if(vieja) vieja.remove();
+  document.getElementById('pf-previa-vacia').hidden = !!url;
+  previa.classList.toggle('con', !!url);
+  if(url){
+    const img = document.createElement('img');
+    img.alt = ''; img.src = url;
+    previa.prepend(img);
+  }
+}
+
+// Todo lo que depende de otra cosa se recalcula acá: medida de la pieza,
+// fecha libre, fin, disponibilidad y total.
+function pubFormCambio(origen){
+  const $ = s => document.getElementById(s);
+  const e = pubEspacio($('pf-espacio').value);
+  if(!e) return;
+  const meses = Number($('pf-meses').value);
+  const hoy = pubHoyAR();
+  const ords = pubDelEspacio(e.id);
+  const ignorar = pubEditando ? pubEditando.id : null;
+
+  const ratio = e.alto / e.ancho;
+  $('pf-previa').dataset.ratio = ratio > 1.1 ? '0.8' : '1';
+  $('pf-espacio-ayuda').textContent = `${e.donde} Pieza de ${e.ancho}×${e.alto} px (${ratio > 1.1 ? 'vertical 4:5' : 'cuadrada'}).`;
+
+  // Al abrir o al cambiar de espacio/duración en un alta, se propone la
+  // primera fecha libre. Si la persona ya eligió una fecha, no se la pisa.
+  if(!pubEditando && (origen === 'abrir' || origen === 'espacio' || (origen === 'meses' && !$('pf-inicio').dataset.elegida))){
+    $('pf-inicio').value = pubPrimeraFechaLibre(ords, e.cupo, hoy, meses) || hoy;
+  }
+  if(origen === 'inicio') $('pf-inicio').dataset.elegida = '1';
+  if(origen === 'abrir') delete $('pf-inicio').dataset.elegida;
+
+  const inicio = $('pf-inicio').value;
+  const disp = $('pf-disponible');
+  if(inicio){
+    const fin = pubSumarMeses(inicio, meses);
+    const entra = pubEntra(ords, e.cupo, inicio, fin, ignorar);
+    const pasado = inicio < hoy && !pubEditando ? ' Ojo: empieza en una fecha que ya pasó.' : '';
+    if(entra){
+      disp.className = 'pub-disponible si';
+      disp.textContent = `Disponible. Se ve del ${pubFecha(inicio)} al ${pubFecha(pubUltimoDia(fin))} inclusive.` + pasado;
+    } else {
+      const libre = pubPrimeraFechaLibre(ords, e.cupo, inicio, meses, ignorar);
+      disp.className = 'pub-disponible no';
+      disp.innerHTML = `En esas fechas el espacio ya está completo.` +
+        (libre ? ` Primera fecha libre: <button type="button" onclick="document.getElementById('pf-inicio').value='${libre}';pubFormCambio('inicio')">${pubFecha(libre)}</button>` : '');
+    }
+  } else { disp.className = 'pub-disponible'; disp.textContent = 'Elija la fecha de inicio.'; }
+
+  const sugerido = pubTotal(e.precio_mensual, meses, e.descuento_3m, e.descuento_6m);
+  if(!$('pf-monto').dataset.tocado) $('pf-monto').value = sugerido;
+  $('pf-monto-ayuda').textContent = `Precio de lista: ${pubPesos(sugerido)}.`;
+
+  const d = pubNormalizarDestino($('pf-destino').value);
+  const ay = $('pf-destino-ayuda');
+  if(!$('pf-destino').value.trim()){ ay.className = ''; ay.textContent = 'Un link que empiece con https:// o un número de WhatsApp.'; $('pf-destino').removeAttribute('aria-invalid'); }
+  else if(d.error){ ay.className = 'mal'; ay.textContent = d.error; $('pf-destino').setAttribute('aria-invalid','true'); }
+  else { ay.className = 'bien'; ay.textContent = 'Abre: ' + d.url; $('pf-destino').removeAttribute('aria-invalid'); }
+
+  if(pubArchivo) pubValidarPieza();
+}
+
+async function pubElegirArchivo(input){
+  const file = input.files && input.files[0];
+  if(pubArchivo && pubArchivo.url) URL.revokeObjectURL(pubArchivo.url);
+  pubArchivo = null;
+  if(!file){ pubPintarPrevia(pubEditando ? pubEditando.imagen_url : null); return; }
+  const ay = document.getElementById('pf-pieza-ayuda');
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
+    ay.className = 'mal'; ay.textContent = 'Tiene que ser JPG, PNG o WebP.'; input.value = ''; return;
+  }
+  if(file.size > 2*1024*1024){
+    ay.className = 'mal'; ay.textContent = `Pesa ${(file.size/1048576).toFixed(1)} MB. El máximo es 2 MB.`; input.value = ''; return;
+  }
+  const url = URL.createObjectURL(file);
+  const dims = await new Promise(res => { const i = new Image(); i.onload = () => res({ w:i.naturalWidth, h:i.naturalHeight }); i.onerror = () => res(null); i.src = url; });
+  if(!dims){ URL.revokeObjectURL(url); ay.className = 'mal'; ay.textContent = 'No se pudo leer la imagen.'; input.value = ''; return; }
+  pubArchivo = { file, ancho:dims.w, alto:dims.h, url };
+  document.getElementById('pf-archivo-txt').textContent = file.name.length > 28 ? file.name.slice(0,25) + '…' : file.name;
+  pubPintarPrevia(url);
+  pubValidarPieza();
+}
+
+// Devuelve el error de la pieza o '' si sirve. Una proporción distinta de la
+// del espacio se recortaría en la app, así que no se acepta.
+function pubValidarPieza(){
+  const ay = document.getElementById('pf-pieza-ayuda');
+  const e = pubEspacio(document.getElementById('pf-espacio').value);
+  if(!pubArchivo || !e){ ay.className = ''; ay.textContent = ''; return ''; }
+  const { ancho, alto } = pubArchivo;
+  const pedida = e.alto / e.ancho, tiene = alto / ancho;
+  let error = '';
+  if(Math.abs(tiene - pedida) / pedida > 0.02) error = `Mide ${ancho}×${alto} px y este espacio pide ${e.ancho}×${e.alto} (${pedida > 1.1 ? 'vertical 4:5' : 'cuadrada'}). Se vería recortada.`;
+  else if(ancho < 600) error = `Mide ${ancho}×${alto} px: es muy chica y se vería borrosa. Pida una de ${e.ancho}×${e.alto}.`;
+  if(error){ ay.className = 'mal'; ay.textContent = error; return error; }
+  ay.className = ancho < e.ancho ? '' : 'bien';
+  ay.textContent = ancho < e.ancho
+    ? `Mide ${ancho}×${alto} px. Sirve, pero a ${e.ancho}×${e.alto} se vería más nítida.`
+    : `Mide ${ancho}×${alto} px. Perfecta.`;
+  return '';
+}
+
+async function pubGuardar(){
+  const $ = s => document.getElementById(s);
+  const err = $('pf-error');
+  const falla = m => { err.textContent = m; return false; };
+  err.textContent = '';
+  const e = pubEspacio($('pf-espacio').value);
+  const empresa = $('pf-empresa').value.trim();
+  const meses = Number($('pf-meses').value);
+  const inicio = $('pf-inicio').value;
+  const destino = pubNormalizarDestino($('pf-destino').value);
+  const monto = Number($('pf-monto').value || 0);
+  if(!e) return falla('Elija un espacio.');
+  if(!empresa) return falla('Falta el nombre de la empresa.');
+  if(destino.error) return falla(destino.error);
+  if(!inicio) return falla('Falta la fecha de inicio.');
+  if(!(monto >= 0)) return falla('El monto no puede ser negativo.');
+  if(!pubArchivo && !(pubEditando && pubEditando.imagen_url)) return falla('Falta la pieza (la imagen del anuncio).');
+  if(pubArchivo && pubValidarPieza()) return falla('Revise la imagen: ' + pubValidarPieza());
+  const fin = pubSumarMeses(inicio, meses);
+  if(!pubEntra(pubDelEspacio(e.id), e.cupo, inicio, fin, pubEditando ? pubEditando.id : null))
+    return falla('En esas fechas el espacio ya está completo. Elija otra fecha.');
+
+  const btn = $('pf-guardar');
+  const textoBtn = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando…';
+  let subida = null;
+  try {
+    let imagen_url = pubEditando ? pubEditando.imagen_url : null;
+    if(pubArchivo){
+      // Nombre irrepetible: la pieza se cachea un año (como las fotos de productos).
+      const ext = { 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp' }[pubArchivo.file.type];
+      subida = e.id + '/' + Math.random().toString(36).slice(2) + '_' + Date.now() + '.' + ext;
+      const { error: upErr } = await sb.storage.from('publicidad').upload(subida, pubArchivo.file, { cacheControl:'31536000', contentType:pubArchivo.file.type });
+      if(upErr){ subida = null; throw new Error('No se pudo subir la imagen: ' + (upErr.message || 'reintente')); }
+      imagen_url = sb.storage.from('publicidad').getPublicUrl(subida).data.publicUrl;
+    }
+    const fila = {
+      space_id: e.id, empresa,
+      contacto: $('pf-contacto').value.trim() || null,
+      whatsapp: $('pf-whatsapp').value.trim() || null,
+      email: $('pf-email').value.trim() || null,
+      duracion_meses: meses, monto,
+      pago_ref: $('pf-ref').value.trim() || null,
+      inicia_el: inicio, termina_el: fin,
+      imagen_url, destino_url: destino.url,
+      alt_text: $('pf-alt').value.trim() || null,
+      notas: $('pf-notas').value.trim() || null
+    };
+    const q = pubEditando
+      ? sb.from('ad_orders').update(fila).eq('id', pubEditando.id)
+      : sb.from('ad_orders').insert(Object.assign(fila, { estado:'aprobado', pago_manual:true }));
+    const { error } = await q;
+    if(error){
+      if(/ESPACIO_OCUPADO/.test(error.message || '')) throw new Error('Mientras completaba el formulario se ocupó ese lugar. Elija otra fecha.');
+      throw new Error('No se pudo guardar: ' + (error.message || 'reintente'));
+    }
+    const eraEdicion = !!pubEditando;
+    pubCerrarForm();
+    showToast(eraEdicion ? 'Cambios guardados' : 'Anuncio cargado');
+    pubCargarAdmin();
+  } catch(ex){
+    // Si la fila no se guardó, la imagen recién subida queda huérfana: se borra.
+    if(subida) sb.storage.from('publicidad').remove([subida]).catch(()=>{});
+    falla(ex.message || 'No se pudo guardar.');
+  } finally {
+    btn.disabled = false; btn.textContent = textoBtn;
+  }
 }
 
 // ===== AVISOS POR WHATSAPP (Fase 1: detección automática + envío con 1 clic) =====

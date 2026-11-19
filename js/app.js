@@ -5715,7 +5715,7 @@ function _drawBuscarGrid(el) {
   const slice = lista.slice(0, _buscarOffset + PAGE);
   const hasMore = lista.length > slice.length;
   el.style.display = 'grid';
-  el.innerHTML = slice.map(p => `
+  const celdas = slice.map(p => `
     <div class="prod-buscar-card" onclick="abrirDetalleProd('${escHtml(p.id)}')">
       <div class="prod-img-wrap">
         ${p.imgUrl ? `<img loading="lazy" class="img-cargando" onload="this.classList.remove('img-cargando')" src="${escHtml(imgThumb(p.imgUrl, 400, 70))}" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML='<div class=prod-img-ph></div>'">` : '<div class="prod-img-ph"></div>'}
@@ -5725,7 +5725,16 @@ function _drawBuscarGrid(el) {
         <div class="price">$${Number(p.precio).toLocaleString('es-AR')}</div>
       </div>
       ${provChipHtml(p)}
-    </div>`).join('') +
+    </div>`);
+  // Publicidad (js/publicidad.js): la tarjeta patrocinada va en la posicion 3
+  // de la grilla. Sin anuncio vigente, la funcion devuelve '' y la grilla
+  // queda igual que siempre. Con menos de 2 resultados no se muestra: un
+  // anuncio no puede ser la mitad de lo que se encontro.
+  if (slice.length >= 2 && typeof pubCeldaResultadosHtml === 'function') {
+    const pub = pubCeldaResultadosHtml();
+    if (pub) celdas.splice(2, 0, pub);
+  }
+  el.innerHTML = celdas.join('') +
     (hasMore ? `<div style="grid-column:1/-1;padding:4px 0 8px"><button onclick="buscarVerMas()" style="width:100%;background:#eff6f2;border:1.5px solid #DCE8E2;border-radius:14px;padding:14px;font-family:'Inter',sans-serif;font-size:.85rem;font-weight:800;color:#065F46;cursor:pointer">Ver ${lista.length - slice.length} productos más →</button></div>` : '');
 }
 
@@ -8474,6 +8483,17 @@ function renderNovedades() {
     tarjetas.splice(3, 0,
       '<section class="nv-publicar nv-publicar-medio nv-sube">' +
       '<div class="nv-nucleo" id="nv-publicar-nucleo-medio"></div></section>');
+  }
+
+  // Publicidad (js/publicidad.js): despues de la 4.ª novedad real (no
+  // pegada a la caja de publicar, que ocupa el lugar 4). Solo en "Todo": en
+  // un filtro, una tarjeta ajena se confundiria con lo que se filtro.
+  if (novFiltroActual === 'todo' && typeof pubTarjetaNovedadesHtml === 'function') {
+    const pub = pubTarjetaNovedadesHtml();
+    if (pub) {
+      const despuesDe = lista.length >= 4 ? 5 : tarjetas.length;
+      tarjetas.splice(despuesDe, 0, pub);
+    }
   }
 
   feed.innerHTML = tarjetas.join('');

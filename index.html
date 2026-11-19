@@ -518,6 +518,10 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
     </div>
   </div>
 
+  <!-- PUBLICIDAD: carrusel del inicio (js/publicidad.js). Vacío y oculto si
+       no hay anuncios vigentes: sin anuncio, la pantalla queda igual que antes. -->
+  <div id="pub-inicio" style="display:none"></div>
+
   <!-- CÓMO FUNCIONA (oculta temporalmente para probar el nuevo layout) -->
   <div class="reveal" style="padding:26px 20px 0;display:none">
     <div style="font-family:'Inter',sans-serif;font-size:1rem;font-weight:800;color:#1A1A1A;margin-bottom:4px">Cómo funciona</div>
@@ -2516,7 +2520,8 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
 <div class="screen" id="screen-cotizaciones"></div>
 
 <script src="js/buscador.js?v=20260810-rescate"></script>
-<script src="js/app.js?v=20261023-respaldo"></script>
+<script src="js/app.js?v=20261119-publicidad"></script>
+<script src="js/publicidad.js?v=20261119-fase1"></script>
 <script src="js/emprendedor.js?v=20260806-match"></script>
 <script src="js/cotizaciones.js?v=20261023-sinmercado"></script>
 <script>
