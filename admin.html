@@ -3083,6 +3083,13 @@ let pubOrdenes = [];
 let pubEditando = null;     // fila de ad_orders que se está editando, o null
 let pubArchivo = null;      // { file, ancho, alto, url } de la pieza elegida
 
+// ⚠️ LA CARPETA NO PUEDE LLAMARSE "publicidad" (ni "anuncios", "ads",
+// "banners"...). EasyList, la lista que usan casi todos los bloqueadores,
+// frena toda imagen cuya dirección tenga /publicidad/. Pasó el 2026-11-19 en
+// la primera prueba: la pieza no cargaba ni en este panel, y en la app el
+// anuncio se escondía solo. Los anuncios igual llevan el sello "Publicidad".
+const PUB_BUCKET = 'vitrina';
+
 const pubPesos = n => '$' + Math.round(Number(n||0)).toLocaleString('es-AR');
 const pubDias = (a, b) => Math.round((Date.parse(b+'T00:00:00Z') - Date.parse(a+'T00:00:00Z')) / 86400000);
 const pubEspacio = id => pubEspacios.find(e => e.id === id);
@@ -3487,9 +3494,9 @@ async function pubGuardar(){
       // Nombre irrepetible: la pieza se cachea un año (como las fotos de productos).
       const ext = { 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp' }[pubArchivo.file.type];
       subida = e.id + '/' + Math.random().toString(36).slice(2) + '_' + Date.now() + '.' + ext;
-      const { error: upErr } = await sb.storage.from('publicidad').upload(subida, pubArchivo.file, { cacheControl:'31536000', contentType:pubArchivo.file.type });
+      const { error: upErr } = await sb.storage.from(PUB_BUCKET).upload(subida, pubArchivo.file, { cacheControl:'31536000', contentType:pubArchivo.file.type });
       if(upErr){ subida = null; throw new Error('No se pudo subir la imagen: ' + (upErr.message || 'reintente')); }
-      imagen_url = sb.storage.from('publicidad').getPublicUrl(subida).data.publicUrl;
+      imagen_url = sb.storage.from(PUB_BUCKET).getPublicUrl(subida).data.publicUrl;
     }
     const fila = {
       space_id: e.id, empresa,
@@ -3517,7 +3524,7 @@ async function pubGuardar(){
     pubCargarAdmin();
   } catch(ex){
     // Si la fila no se guardó, la imagen recién subida queda huérfana: se borra.
-    if(subida) sb.storage.from('publicidad').remove([subida]).catch(()=>{});
+    if(subida) sb.storage.from(PUB_BUCKET).remove([subida]).catch(()=>{});
     falla(ex.message || 'No se pudo guardar.');
   } finally {
     btn.disabled = false; btn.textContent = textoBtn;

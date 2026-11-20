@@ -115,8 +115,9 @@ comprobar('ad_orders cerrada para anon', /revoke all on public\.ad_orders from a
 comprobar('el cupo lo controla un disparador con bloqueo', /for update/.test(sql) && /create trigger ad_orders_cupo/.test(sql));
 comprobar('solo destinos https en la base', sql.includes("destino_url ~* '^https://"));
 comprobar('un aprobado sin pieza no se puede guardar', sql.includes('ad_orders_aprobado_con_pieza'));
+comprobar('el bucket NO se llama publicidad (lo bloquean los bloqueadores)', sql.includes("values ('vitrina'") && !sql.includes("values ('publicidad'") && adm.includes("const PUB_BUCKET = 'vitrina'") && !adm.includes("storage.from('publicidad')"));
 comprobar('bucket con tope de 2 MB y solo JPG/PNG/WebP', sql.includes('2097152') && sql.includes("array['image/jpeg','image/png','image/webp']"));
-comprobar('subir piezas: solo admin', /publicidad_subir_admin[\s\S]*?is_admin\(\)/.test(sql));
+comprobar('subir piezas: solo admin', /vitrina_subir_admin[\s\S]*?is_admin\(\)/.test(sql));
 
 console.log(`\n${ok} ok, ${fallas} fallas\n`);
 process.exit(fallas ? 1 : 0);

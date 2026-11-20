@@ -231,21 +231,26 @@ grant execute on function public.anuncios_vigentes() to anon, authenticated;
 -- Bucket publico (la app las muestra por URL) con tope de 2 MB y solo
 -- JPG/PNG/WebP. Subir y borrar, solo un admin. Nombre de archivo siempre
 -- irrepetible: la app las cachea un ano (ver CACHE_FOTOS en js/app.js).
+--
+-- ⚠️ EL BUCKET NO PUEDE LLAMARSE "publicidad" (ni anuncios, ads, banners).
+-- EasyList, la lista de casi todos los bloqueadores, frena toda imagen con
+-- /publicidad/ en la direccion. Paso en la primera prueba (2026-11-19): la
+-- pieza no cargaba y el anuncio se escondia solo. Por eso se llama vitrina.
 -- ---------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('publicidad', 'publicidad', true, 2097152, array['image/jpeg','image/png','image/webp'])
+values ('vitrina', 'vitrina', true, 2097152, array['image/jpeg','image/png','image/webp'])
 on conflict (id) do update
   set public = true, file_size_limit = 2097152, allowed_mime_types = array['image/jpeg','image/png','image/webp'];
 
-drop policy if exists publicidad_subir_admin on storage.objects;
-create policy publicidad_subir_admin on storage.objects
+drop policy if exists vitrina_subir_admin on storage.objects;
+create policy vitrina_subir_admin on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'publicidad' and public.is_admin());
+  with check (bucket_id = 'vitrina' and public.is_admin());
 
-drop policy if exists publicidad_borrar_admin on storage.objects;
-create policy publicidad_borrar_admin on storage.objects
+drop policy if exists vitrina_borrar_admin on storage.objects;
+create policy vitrina_borrar_admin on storage.objects
   for delete to authenticated
-  using (bucket_id = 'publicidad' and public.is_admin());
+  using (bucket_id = 'vitrina' and public.is_admin());
 
 notify pgrst, 'reload schema';
 
