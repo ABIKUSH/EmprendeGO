@@ -230,11 +230,15 @@
 
   // El sello "Publicidad". Mismo en los tres espacios; va encima de la
   // pieza y no recibe toques (el toque es del anuncio entero).
+  // Estilo Instagram, pedido por Abraham el 2026-11-20: minuscula, sin
+  // espaciado, peso medio, vidrio oscuro translucido. El fondo sigue siendo
+  // lo bastante oscuro para leerse sobre una pieza blanca.
   function sello(margen) {
     return '<span style="position:absolute;top:' + margen + 'px;left:' + margen + 'px;z-index:2;' +
-      'height:22px;display:inline-flex;align-items:center;padding:0 9px;border-radius:11px;' +
-      'background:rgba(15,15,15,.82);color:#fff;font-size:11px;font-weight:700;line-height:1;' +
-      'letter-spacing:.06em;text-transform:uppercase;pointer-events:none">Publicidad</span>';
+      'height:24px;display:inline-flex;align-items:center;padding:0 10px;border-radius:12px;' +
+      'background:rgba(20,20,20,.62);-webkit-backdrop-filter:blur(10px) saturate(140%);backdrop-filter:blur(10px) saturate(140%);' +
+      'color:#fff;font-size:12px;font-weight:600;line-height:1;letter-spacing:0;' +
+      'box-shadow:0 1px 2px rgba(0,0,0,.18);pointer-events:none">Publicidad</span>';
   }
 
   // Si la pieza no carga, se esconde el anuncio entero (data-pub-caja).
