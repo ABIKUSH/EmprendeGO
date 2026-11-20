@@ -87,6 +87,23 @@ igual('dominio sin www', P.pubDominio('https://www.packly.com.ar/x'), 'packly.co
 igual('WhatsApp se lee como WhatsApp', P.pubDominio('https://wa.me/5491155551234'), 'WhatsApp');
 comprobar('la app no dibuja un destino inseguro', !P.pubDestinoSeguro('javascript:alert(1)') && P.pubDestinoSeguro('https://a.com'));
 
+console.log('\n6b) La pieza se ajusta sola a la medida\n');
+// Un logo cuadrado de 500 en la tarjeta vertical de 1080x1350:
+igual('entera: cuadrada en vertical queda a lo ancho, centrada', P.pubEncaje(500, 500, 1080, 1350, 'entera'), { x: 0, y: 135, w: 1080, h: 1080 });
+igual('llenar: cuadrada en vertical cubre el alto y recorta los costados', P.pubEncaje(500, 500, 1080, 1350, 'llenar'), { x: -135, y: 0, w: 1350, h: 1350 });
+igual('entera: apaisada en cuadrado queda a lo ancho', P.pubEncaje(1600, 900, 1080, 1080, 'entera'), { x: 0, y: 236, w: 1080, h: 608 });
+igual('proporcion justa: ocupa todo sin moverse', P.pubEncaje(2160, 2700, 1080, 1350, 'entera'), { x: 0, y: 0, w: 1080, h: 1350 });
+const borde = (rgb, n, distintos) => {
+  const a = new Uint8ClampedArray(n * 4);
+  for (let i = 0; i < n; i++) { const c = i < (distintos || 0) ? [0, 0, 0] : rgb; a.set([c[0], c[1], c[2], 255], i * 4); }
+  return a;
+};
+igual('borde violeta liso: se rellena con ese violeta', P.pubColorDeBorde(borde([178, 120, 200], 400)), '#b278c8');
+igual('un 3 % distinto (una firma) se tolera y no agrisa el relleno', P.pubColorDeBorde(borde([255, 255, 255], 400, 12)), '#ffffff');
+comprobar('una foto (borde variado) no tiene color: va el fondo desenfocado', P.pubColorDeBorde(borde([255, 255, 255], 400, 100)) === null);
+const transparente = new Uint8ClampedArray(400 * 4); // todo en 0: transparente
+igual('borde transparente cuenta como blanco', P.pubColorDeBorde(transparente), '#ffffff');
+
 console.log('\n7) Reglas que viven en el codigo\n');
 const pub = fs.readFileSync(path.join(RAIZ, 'js', 'publicidad.js'), 'utf8');
 const app = fs.readFileSync(path.join(RAIZ, 'js', 'app.js'), 'utf8');

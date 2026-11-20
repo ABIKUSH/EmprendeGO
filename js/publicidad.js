@@ -161,6 +161,50 @@
     return ((p[0] || '')[0] || '').concat((p[1] || '')[0] || '').toUpperCase() || 'AD';
   }
 
+  // ── Encaje automatico de la pieza ──
+  // Cualquier imagen se lleva a la medida exacta del espacio.
+  //   'entera': la imagen completa, sin cortar nada, centrada; lo que sobra
+  //             se rellena (ver pubColorDeBorde).
+  //   'llenar': cubre todo el espacio y recorta lo que sobresale, centrado.
+  // Devuelve el rectangulo donde dibujar la imagen dentro del lienzo.
+  function pubEncaje(srcW, srcH, dstW, dstH, modo) {
+    const escala = modo === 'llenar'
+      ? Math.max(dstW / srcW, dstH / srcH)
+      : Math.min(dstW / srcW, dstH / srcH);
+    const w = Math.round(srcW * escala), h = Math.round(srcH * escala);
+    return { x: Math.round((dstW - w) / 2), y: Math.round((dstH - h) / 2), w, h };
+  }
+
+  // Mira el borde de la imagen (pixeles RGBA de su contorno). Si es de un
+  // solo color, devuelve ese color para rellenar sin que se note la union
+  // (un logo sobre fondo liso). Si el borde es variado (una foto), devuelve
+  // null y se rellena con la misma imagen desenfocada. Un borde
+  // transparente cuenta como blanco.
+  function pubColorDeBorde(rgba, tolerancia) {
+    const tol = tolerancia == null ? 18 : tolerancia;
+    const n = Math.floor(rgba.length / 4);
+    if (!n) return null;
+    const px = i => {
+      const a = rgba[i * 4 + 3] / 255;
+      return [rgba[i * 4] * a + 255 * (1 - a), rgba[i * 4 + 1] * a + 255 * (1 - a), rgba[i * 4 + 2] * a + 255 * (1 - a)];
+    };
+    // Mediana por canal, no promedio: una firma oscura en el borde no tiene
+    // que agrisar el relleno (se notaria la union con el fondo).
+    const canales = [[], [], []];
+    for (let i = 0; i < n; i++) { const p = px(i); canales[0].push(p[0]); canales[1].push(p[1]); canales[2].push(p[2]); }
+    const mediana = v => { v.sort((x, y) => x - y); return v[Math.floor(v.length / 2)]; };
+    const r = mediana(canales[0]), g = mediana(canales[1]), b = mediana(canales[2]);
+    let lejos = 0;
+    for (let i = 0; i < n; i++) {
+      const p = px(i);
+      if (Math.abs(p[0] - r) > tol || Math.abs(p[1] - g) > tol || Math.abs(p[2] - b) > tol) lejos++;
+    }
+    // Hasta un 4 % de pixeles distintos se tolera (una firma, una marca de agua).
+    if (lejos / n > 0.04) return null;
+    const hex = v => Math.round(v).toString(16).padStart(2, '0');
+    return '#' + hex(r) + hex(g) + hex(b);
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -170,7 +214,7 @@
   const cuentas = {
     pubHoyAR, pubSumarMeses, pubFecha, pubUltimoDia, pubMaxSolapamiento, pubEntra,
     pubPrimeraFechaLibre, pubEstadoVisible, pubTotal, pubNormalizarDestino,
-    pubDominio, pubDestinoSeguro, pubIniciales, OCUPAN
+    pubDominio, pubDestinoSeguro, pubIniciales, pubEncaje, pubColorDeBorde, OCUPAN
   };
 
   if (typeof module !== 'undefined' && module.exports) {

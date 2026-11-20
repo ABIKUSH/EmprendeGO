@@ -329,6 +329,12 @@ tr:hover td{background:#fafbff}
 .pub-previa-vacia{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:var(--gray)}
 .pub-subir{display:flex;align-items:center;justify-content:center;border:1.5px solid #e0e7ff;border-radius:10px;min-height:40px;font-size:.85rem;font-weight:700;color:var(--blue);cursor:pointer;margin-top:8px;background:#fff}
 .pub-subir:hover{background:var(--blue-light)}
+.pub-previa-vacia[hidden]{display:none}
+.pub-encaje{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;padding:4px;background:var(--light);border-radius:10px}
+.pub-encaje[hidden]{display:none}
+.pub-encaje button{border:0;background:transparent;border-radius:7px;min-height:34px;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:700;color:var(--gray);cursor:pointer;transition:background .15s,color .15s}
+.pub-encaje button[aria-checked=true]{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(13,27,62,.12)}
+.pub-encaje button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 .pub-subir input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .pub-form-pie{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:20px;padding-top:16px;border-top:1px solid #f0f4ff;flex-wrap:wrap}
 .pub-error{font-size:.82rem;color:var(--red);font-weight:600;flex:1;min-width:200px}
@@ -1118,11 +1124,15 @@ emprendego.com.ar</textarea>
             <span class="pub-sello">Publicidad</span>
             <span class="pub-previa-vacia" id="pf-previa-vacia">Sin imagen todavía</span>
           </div>
+          <div class="pub-encaje" id="pf-encaje" role="radiogroup" aria-label="Cómo encajar la imagen" hidden>
+            <button type="button" role="radio" aria-checked="true" data-modo="entera" onclick="pubCambiarEncaje('entera')">Entera</button>
+            <button type="button" role="radio" aria-checked="false" data-modo="llenar" onclick="pubCambiarEncaje('llenar')">Llenar</button>
+          </div>
           <label class="pub-subir">
             <input type="file" id="pf-archivo" accept="image/jpeg,image/png,image/webp" onchange="pubElegirArchivo(this)">
             <span id="pf-archivo-txt">Elegir imagen</span>
           </label>
-          <small id="pf-pieza-ayuda"></small>
+          <small id="pf-pieza-ayuda">Cualquier foto sirve: se ajusta sola a la medida del espacio.</small>
         </div>
         <label class="pub-campo">
           <span>Descripción de la imagen</span>
@@ -3081,7 +3091,7 @@ function showToast(msg){
 let pubEspacios = [];
 let pubOrdenes = [];
 let pubEditando = null;     // fila de ad_orders que se está editando, o null
-let pubArchivo = null;      // { file, ancho, alto, url } de la pieza elegida
+let pubArchivo = null;      // { nombre, img, srcUrl, ancho, alto, modo, pieza:{blob,url,espacioId} }
 
 // ⚠️ LA CARPETA NO PUEDE LLAMARSE "publicidad" (ni "anuncios", "ads",
 // "banners"...). EasyList, la lista que usan casi todos los bloqueadores,
@@ -3315,7 +3325,7 @@ async function pubCancelar(id){
 function pubAbrirForm(id){
   if(!pubEspacios.length){ showToast('Primero tiene que cargar la sección'); return; }
   pubEditando = id ? (pubOrdenes.find(o => o.id === id) || null) : null;
-  pubArchivo = null;
+  pubSoltarArchivo();
   const o = pubEditando;
   const $ = s => document.getElementById(s);
   $('pub-form-titulo').textContent = o ? 'Editar anuncio' : 'Nuevo anuncio';
@@ -3343,6 +3353,11 @@ function pubAbrirForm(id){
   $('pf-archivo').value = '';
   $('pf-archivo-txt').textContent = o && o.imagen_url ? 'Cambiar imagen' : 'Elegir imagen';
   $('pf-error').textContent = '';
+  $('pf-encaje').hidden = true;
+  $('pf-pieza-ayuda').className = '';
+  $('pf-pieza-ayuda').textContent = o && o.imagen_url
+    ? 'Esta es la imagen que está publicada. Para cambiarla, elija otra: se ajusta sola.'
+    : PUB_HELP_INICIAL;
   $('pf-inicio').value = o ? o.inicia_el : '';
   pubPintarPrevia(o ? o.imagen_url : null);
   pubFormCambio('abrir');
@@ -3352,8 +3367,7 @@ function pubAbrirForm(id){
 
 function pubCerrarForm(){
   document.getElementById('pubModal').classList.remove('open');
-  if(pubArchivo && pubArchivo.url) URL.revokeObjectURL(pubArchivo.url);
-  pubArchivo = null; pubEditando = null;
+  pubSoltarArchivo(); pubEditando = null;
 }
 
 function pubPintarPrevia(url){
@@ -3419,47 +3433,118 @@ function pubFormCambio(origen){
   else if(d.error){ ay.className = 'mal'; ay.textContent = d.error; $('pf-destino').setAttribute('aria-invalid','true'); }
   else { ay.className = 'bien'; ay.textContent = 'Abre: ' + d.url; $('pf-destino').removeAttribute('aria-invalid'); }
 
-  if(pubArchivo) pubValidarPieza();
+  // Otro espacio pide otra medida: la pieza se vuelve a armar.
+  if(pubArchivo && (!pubArchivo.pieza || pubArchivo.pieza.espacioId !== e.id)) pubArmarPieza();
 }
+
+// ── La pieza se ajusta sola ──
+// Cualquier foto (JPG, PNG o WebP, hasta 20 MB) se lleva a la medida exacta
+// del espacio y se sube ya armada, como JPG liviano. Así el anunciante no
+// tiene que saber de medidas. Ver pubEncaje() y pubColorDeBorde() en
+// js/publicidad.js (las prueba test/publicidad.test.js).
+const PUB_MAX_ORIGINAL = 20 * 1024 * 1024;
+const PUB_HELP_INICIAL = 'Cualquier foto sirve: se ajusta sola a la medida del espacio.';
 
 async function pubElegirArchivo(input){
   const file = input.files && input.files[0];
-  if(pubArchivo && pubArchivo.url) URL.revokeObjectURL(pubArchivo.url);
-  pubArchivo = null;
-  if(!file){ pubPintarPrevia(pubEditando ? pubEditando.imagen_url : null); return; }
+  pubSoltarArchivo();
   const ay = document.getElementById('pf-pieza-ayuda');
+  if(!file){ pubPintarPrevia(pubEditando ? pubEditando.imagen_url : null); ay.className = ''; ay.textContent = PUB_HELP_INICIAL; return; }
   if(!['image/jpeg','image/png','image/webp'].includes(file.type)){
-    ay.className = 'mal'; ay.textContent = 'Tiene que ser JPG, PNG o WebP.'; input.value = ''; return;
+    ay.className = 'mal'; ay.textContent = 'Tiene que ser una imagen JPG, PNG o WebP.'; input.value = ''; return;
   }
-  if(file.size > 2*1024*1024){
-    ay.className = 'mal'; ay.textContent = `Pesa ${(file.size/1048576).toFixed(1)} MB. El máximo es 2 MB.`; input.value = ''; return;
+  if(file.size > PUB_MAX_ORIGINAL){
+    ay.className = 'mal'; ay.textContent = `Pesa ${(file.size/1048576).toFixed(1)} MB. El máximo es 20 MB.`; input.value = ''; return;
   }
-  const url = URL.createObjectURL(file);
-  const dims = await new Promise(res => { const i = new Image(); i.onload = () => res({ w:i.naturalWidth, h:i.naturalHeight }); i.onerror = () => res(null); i.src = url; });
-  if(!dims){ URL.revokeObjectURL(url); ay.className = 'mal'; ay.textContent = 'No se pudo leer la imagen.'; input.value = ''; return; }
-  pubArchivo = { file, ancho:dims.w, alto:dims.h, url };
+  const srcUrl = URL.createObjectURL(file);
+  const img = await new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = srcUrl; });
+  if(!img || !img.naturalWidth){ URL.revokeObjectURL(srcUrl); ay.className = 'mal'; ay.textContent = 'No se pudo leer la imagen.'; input.value = ''; return; }
+  pubArchivo = { nombre:file.name, img, srcUrl, ancho:img.naturalWidth, alto:img.naturalHeight, modo:'entera', pieza:null };
   document.getElementById('pf-archivo-txt').textContent = file.name.length > 28 ? file.name.slice(0,25) + '…' : file.name;
-  pubPintarPrevia(url);
-  pubValidarPieza();
+  await pubArmarPieza();
 }
 
-// Devuelve el error de la pieza o '' si sirve. Una proporción distinta de la
-// del espacio se recortaría en la app, así que no se acepta.
-function pubValidarPieza(){
-  const ay = document.getElementById('pf-pieza-ayuda');
+function pubSoltarArchivo(){
+  if(!pubArchivo) return;
+  URL.revokeObjectURL(pubArchivo.srcUrl);
+  if(pubArchivo.pieza) URL.revokeObjectURL(pubArchivo.pieza.url);
+  pubArchivo = null;
+}
+
+function pubCambiarEncaje(modo){
+  if(!pubArchivo || pubArchivo.modo === modo) return;
+  pubArchivo.modo = modo;
+  pubArmarPieza();
+}
+
+// Arma la pieza a la medida del espacio elegido y la muestra en la vista previa.
+async function pubArmarPieza(){
+  const a = pubArchivo;
   const e = pubEspacio(document.getElementById('pf-espacio').value);
-  if(!pubArchivo || !e){ ay.className = ''; ay.textContent = ''; return ''; }
-  const { ancho, alto } = pubArchivo;
-  const pedida = e.alto / e.ancho, tiene = alto / ancho;
-  let error = '';
-  if(Math.abs(tiene - pedida) / pedida > 0.02) error = `Mide ${ancho}×${alto} px y este espacio pide ${e.ancho}×${e.alto} (${pedida > 1.1 ? 'vertical 4:5' : 'cuadrada'}). Se vería recortada.`;
-  else if(ancho < 600) error = `Mide ${ancho}×${alto} px: es muy chica y se vería borrosa. Pida una de ${e.ancho}×${e.alto}.`;
-  if(error){ ay.className = 'mal'; ay.textContent = error; return error; }
-  ay.className = ancho < e.ancho ? '' : 'bien';
-  ay.textContent = ancho < e.ancho
-    ? `Mide ${ancho}×${alto} px. Sirve, pero a ${e.ancho}×${e.alto} se vería más nítida.`
-    : `Mide ${ancho}×${alto} px. Perfecta.`;
-  return '';
+  if(!a || !e) return null;
+  const W = Number(e.ancho), H = Number(e.alto);
+  const exacta = Math.abs((a.alto / a.ancho) - (H / W)) / (H / W) <= 0.02;
+  const modo = exacta ? 'llenar' : a.modo;
+
+  const lienzo = document.createElement('canvas');
+  lienzo.width = W; lienzo.height = H;
+  const ctx = lienzo.getContext('2d');
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+
+  let relleno = '';
+  if(modo === 'entera'){
+    // ¿El borde es de un solo color? Se mira a 200 px, que alcanza y es rápido.
+    const m = document.createElement('canvas');
+    const k = Math.min(1, 200 / Math.max(a.ancho, a.alto));
+    m.width = Math.max(2, Math.round(a.ancho * k)); m.height = Math.max(2, Math.round(a.alto * k));
+    const mc = m.getContext('2d', { willReadFrequently:true });
+    mc.drawImage(a.img, 0, 0, m.width, m.height);
+    const tiras = [mc.getImageData(0,0,m.width,2).data, mc.getImageData(0,m.height-2,m.width,2).data,
+                   mc.getImageData(0,0,2,m.height).data, mc.getImageData(m.width-2,0,2,m.height).data];
+    const borde = new Uint8ClampedArray(tiras.reduce((s,t) => s + t.length, 0));
+    let off = 0; tiras.forEach(t => { borde.set(t, off); off += t.length; });
+    const color = pubColorDeBorde(borde);
+    if(color){
+      ctx.fillStyle = color; ctx.fillRect(0, 0, W, H); relleno = 'color';
+    } else {
+      // Fondo: la misma imagen, cubriendo todo y muy desenfocada. Se logra
+      // dibujándola diminuta y estirándola (anda en cualquier navegador).
+      const chico = document.createElement('canvas');
+      const c = pubEncaje(a.ancho, a.alto, 24, Math.round(24 * H / W), 'llenar');
+      chico.width = 24; chico.height = Math.round(24 * H / W);
+      chico.getContext('2d').drawImage(a.img, c.x, c.y, c.w, c.h);
+      ctx.drawImage(chico, 0, 0, W, H);
+      ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(0, 0, W, H);
+      ctx.shadowColor = 'rgba(0,0,0,.22)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
+      relleno = 'foto';
+    }
+  }
+  const r = pubEncaje(a.ancho, a.alto, W, H, modo);
+  ctx.drawImage(a.img, r.x, r.y, r.w, r.h);
+  ctx.shadowColor = 'transparent';
+
+  let blob = await new Promise(res => lienzo.toBlob(res, 'image/jpeg', 0.9));
+  if(blob && blob.size > 1.9 * 1024 * 1024) blob = await new Promise(res => lienzo.toBlob(res, 'image/jpeg', 0.8));
+  if(!blob) return null;
+  if(pubArchivo !== a) return null;   // eligió otra imagen mientras se armaba
+  if(a.pieza) URL.revokeObjectURL(a.pieza.url);
+  a.pieza = { blob, url: URL.createObjectURL(blob), espacioId: e.id, modo };
+  pubPintarPrevia(a.pieza.url);
+
+  const sel = document.getElementById('pf-encaje');
+  sel.hidden = exacta;
+  sel.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', b.dataset.modo === a.modo ? 'true' : 'false'));
+
+  const ay = document.getElementById('pf-pieza-ayuda');
+  const escala = r.w / a.ancho;
+  const como = exacta ? 'Ya tenía la proporción justa.'
+    : modo === 'llenar' ? 'Se recortaron los bordes que sobraban.'
+    : relleno === 'color' ? 'Se completó con el color de su fondo.'
+    : 'Se completó con la misma imagen, desenfocada.';
+  const nitidez = escala > 2.2 ? ' Es una imagen chica: puede verse un poco borrosa. Si consigue una más grande, mejor.' : '';
+  ay.className = nitidez ? '' : 'bien';
+  ay.textContent = `Lista en ${W}×${H} px. ${como}${nitidez}`;
+  return a.pieza;
 }
 
 async function pubGuardar(){
@@ -3479,7 +3564,8 @@ async function pubGuardar(){
   if(!inicio) return falla('Falta la fecha de inicio.');
   if(!(monto >= 0)) return falla('El monto no puede ser negativo.');
   if(!pubArchivo && !(pubEditando && pubEditando.imagen_url)) return falla('Falta la pieza (la imagen del anuncio).');
-  if(pubArchivo && pubValidarPieza()) return falla('Revise la imagen: ' + pubValidarPieza());
+  if(pubArchivo && (!pubArchivo.pieza || pubArchivo.pieza.espacioId !== e.id)) await pubArmarPieza();
+  if(pubArchivo && !pubArchivo.pieza) return falla('No se pudo preparar la imagen. Pruebe con otra.');
   const fin = pubSumarMeses(inicio, meses);
   if(!pubEntra(pubDelEspacio(e.id), e.cupo, inicio, fin, pubEditando ? pubEditando.id : null))
     return falla('En esas fechas el espacio ya está completo. Elija otra fecha.');
@@ -3492,9 +3578,9 @@ async function pubGuardar(){
     let imagen_url = pubEditando ? pubEditando.imagen_url : null;
     if(pubArchivo){
       // Nombre irrepetible: la pieza se cachea un año (como las fotos de productos).
-      const ext = { 'image/jpeg':'jpg', 'image/png':'png', 'image/webp':'webp' }[pubArchivo.file.type];
-      subida = e.id + '/' + Math.random().toString(36).slice(2) + '_' + Date.now() + '.' + ext;
-      const { error: upErr } = await sb.storage.from(PUB_BUCKET).upload(subida, pubArchivo.file, { cacheControl:'31536000', contentType:pubArchivo.file.type });
+      // Se sube la pieza ya armada a la medida del espacio, siempre JPG.
+      subida = e.id + '/' + Math.random().toString(36).slice(2) + '_' + Date.now() + '.jpg';
+      const { error: upErr } = await sb.storage.from(PUB_BUCKET).upload(subida, pubArchivo.pieza.blob, { cacheControl:'31536000', contentType:'image/jpeg' });
       if(upErr){ subida = null; throw new Error('No se pudo subir la imagen: ' + (upErr.message || 'reintente')); }
       imagen_url = sb.storage.from(PUB_BUCKET).getPublicUrl(subida).data.publicUrl;
     }
