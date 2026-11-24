@@ -3350,3 +3350,62 @@ select:focus { outline: none; }
 @media (max-width:344px){
   .hero-titulo{font-size:11.4vw !important}
 }
+
+/* === AVISO DEL CATALOGO (2026-11-24, js/catalogo-aviso.js) =================
+   El mismo lenguaje que la bienvenida del catalogo de Negocios
+   (components/app/catalogo-pantalla.css, ".cb"): verde profundo, titulo en dos
+   tonos, pastilla con punto, boton blanco de pastilla y el celular con los
+   productos. Es la puerta a Negocios: tiene que sentirse la misma marca.
+   ⚠️ Las fuentes van con #ca-aviso + !important a proposito: el OVERRIDE
+   TIPOGRAFICO GLOBAL de arriba (body *{font-family:...!important}) pisaria a
+   Sora. Un id le gana en especificidad entre dos !important.
+   Capas: el aviso va por encima de todo (z 900); la guia de carga usa 400-401. */
+#ca-aviso{position:fixed;inset:0;z-index:900}
+#ca-aviso .ca-velo{position:absolute;inset:0;background:rgba(7,25,17,.55);opacity:0;transition:opacity .22s ease}
+#ca-aviso .ca-hoja{position:absolute;bottom:0;left:50%;width:100%;max-width:430px;max-height:92vh;overflow-y:auto;
+  transform:translate(-50%,0);border-radius:26px 26px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));color:#fff;
+  background:radial-gradient(58% 48% at 92% 4%,rgba(104,206,158,.26) 0%,rgba(104,206,158,0) 62%),linear-gradient(165deg,#0f4a33 0%,#0b3d27 55%,#072b1c 100%);
+  box-shadow:0 -18px 50px -20px rgba(0,0,0,.6);transition:transform .32s cubic-bezier(.16,1,.3,1)}
+#ca-aviso:not(.abierto) .ca-hoja{transform:translate(-50%,24px)}
+#ca-aviso.abierto .ca-velo{opacity:1}
+#ca-aviso, #ca-aviso *{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif !important}
+#ca-aviso h2, #ca-aviso .ca-precio b, #ca-aviso .ca-cta, #ca-aviso .ca-pastilla{font-family:"Sora","Inter",-apple-system,"Segoe UI",Arial,sans-serif !important}
+#ca-aviso button{cursor:pointer}
+#ca-aviso .ca-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.1)}
+#ca-aviso .ca-x:before,#ca-aviso .ca-x:after{content:"";position:absolute;left:11px;top:16px;width:12px;height:2px;border-radius:2px;background:rgba(255,255,255,.8);transform:rotate(45deg)}
+#ca-aviso .ca-x:after{transform:rotate(-45deg)}
+#ca-aviso .ca-pastilla{display:inline-flex;align-items:center;gap:9px;margin:0;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:600;color:rgba(255,255,255,.92);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14)}
+#ca-aviso .ca-punto{width:8px;height:8px;border-radius:50%;background:#5fd39d;flex:none;box-shadow:0 0 0 4px rgba(95,211,157,.2)}
+#ca-aviso .ca-fila{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:10px;align-items:start;margin-top:14px}
+#ca-aviso h2{margin:0;font-size:24px;line-height:1.12;font-weight:700;letter-spacing:-.02em;color:#fff;text-wrap:balance}
+#ca-aviso .ca-tenue{color:rgba(255,255,255,.5)}
+#ca-aviso .ca-escena{width:112px;height:214px}
+#ca-aviso .ca-celular{width:112px;height:214px;border-radius:20px;padding:5px;background:linear-gradient(160deg,#1c2a24,#0a1410);box-shadow:0 16px 30px -12px rgba(0,0,0,.7),inset 0 0 0 1px rgba(255,255,255,.08);transform:rotate(-3deg);position:relative}
+#ca-aviso .ca-isla{position:absolute;top:9px;left:50%;width:34px;height:8px;border-radius:9px;background:#0a1410;transform:translateX(-50%);z-index:1}
+#ca-aviso .ca-pantalla{height:100%;border-radius:16px;background:#f4f8f6;overflow:hidden;padding:20px 6px 6px;color:#14201b}
+#ca-aviso .ca-cab{display:flex;align-items:center;gap:5px;font-size:7.5px}
+#ca-aviso .ca-cab b{font-size:7.5px;font-weight:700}
+#ca-aviso .ca-av{width:14px;height:14px;border-radius:50%;background:#006039;color:#fff;display:grid;place-items:center;font-size:5.5px;font-weight:700}
+#ca-aviso .ca-url{margin:5px 0;padding:3px 6px;border-radius:9px;background:#fff;border:1px solid #e3ebe7;font-size:5.5px;color:#7a8a83}
+#ca-aviso .ca-grilla{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+#ca-aviso .ca-card{background:#fff;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(0,0,0,.06)}
+#ca-aviso .ca-foto{display:block;height:46px;background:#e6eeea}
+#ca-aviso .ca-foto img{width:100%;height:100%;object-fit:cover;display:block}
+#ca-aviso .ca-nom{font-size:5px;line-height:1.25;padding:3px 4px 0;height:16px;overflow:hidden;color:#33433c}
+#ca-aviso .ca-pre{font-size:5.5px;font-weight:700;padding:1px 4px 4px}
+#ca-aviso .ca-barra{display:block;height:4px;width:60%;margin:3px 4px 5px;border-radius:3px;background:#e6eeea}
+#ca-aviso .ca-claves{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:9px}
+#ca-aviso .ca-claves li{display:flex;align-items:center;gap:11px;font-size:13px;color:rgba(255,255,255,.88)}
+#ca-aviso .ca-tilde{display:inline-block;width:5px;height:10px;border:solid #5fd39d;border-width:0 2.2px 2.2px 0;transform:rotate(45deg) translate(-1px,-1px);flex:none}
+#ca-aviso .ca-precio{display:flex;align-items:baseline;gap:8px;margin-top:16px;flex-wrap:wrap}
+#ca-aviso .ca-precio b{font-size:26px;font-weight:700;color:#fff}
+#ca-aviso .ca-precio span{font-size:13px;color:rgba(255,255,255,.72)}
+#ca-aviso .ca-cta{display:flex;align-items:center;justify-content:center;width:100%;margin-top:12px;border:0;border-radius:999px;padding:15px 24px;background:#fff;color:#0b3d27;font-size:15.5px;font-weight:650;box-shadow:0 16px 30px -14px rgba(0,0,0,.6);transition:transform .16s ease,background .16s ease}
+#ca-aviso .ca-cta:active{transform:scale(.98)}
+#ca-aviso .ca-flecha{display:inline-block;width:8px;height:8px;border:solid currentColor;border-width:2px 2px 0 0;transform:rotate(45deg);margin-left:12px}
+#ca-aviso .ca-ahora{display:block;margin:10px auto 0;border:0;background:transparent;color:rgba(255,255,255,.62);font-size:13px;padding:6px 10px}
+#ca-aviso .ca-cta:focus-visible,#ca-aviso .ca-ahora:focus-visible,#ca-aviso .ca-x:focus-visible{outline:3px solid rgba(95,211,157,.55);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){
+  #ca-aviso .ca-hoja,#ca-aviso .ca-velo{transition:none}
+  #ca-aviso:not(.abierto) .ca-hoja{transform:translate(-50%,0)}
+}

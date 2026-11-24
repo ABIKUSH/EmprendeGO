@@ -2252,6 +2252,8 @@ function registrarContactoWA(id, prov) {
   });
   metaEvent('Contact', { content_category: p.rubro || '' });
   registrarConsulta(id || p.id);
+  // Aviso del catalogo (js/catalogo-aviso.js): una vez despues de contactar.
+  try { if (typeof window.catalogoAvisoTrasContacto === 'function') window.catalogoAvisoTrasContacto(); } catch (e) { }
 }
 
 // Registra una consulta (clic a "Contactar por WhatsApp") para el proveedor.
