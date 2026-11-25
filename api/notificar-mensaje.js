@@ -40,6 +40,10 @@ export default async function handler(req, res) {
   // WhatsApp y no por mail; comparte archivo por el cupo de funciones.
   if (req.query?.action === 'wa_pedido') return handlerWaPedido(req, res);
 
+  // Rama de "le escribieron por el chat" (?action=wa_chat): WhatsApp al
+  // PROVEEDOR cuando un comprador le manda un mensaje por el chat interno.
+  if (req.query?.action === 'wa_chat') return handlerWaChat(req, res);
+
   // Endpoint público que dispara emails: limitar para evitar spam masivo.
   if (!applyRateLimit(req, res, { bucket: 'notificar', limit: 10, windowMs: 60000 })) return;
 
@@ -2630,4 +2634,183 @@ async function responderA(headers, msg) {
   } catch (e) {
     console.error('[wa-webhook] respuesta automatica:', e.message);
   }
+}
+
+
+/* =====================================================================
+   AVISO DE MENSAJE NUEVO EN EL CHAT  (?action=wa_chat)   2026-11-25
+   =====================================================================
+
+   Lo llama js/chat.js despues de que el COMPRADOR guarda un mensaje. Le avisa
+   al proveedor por WhatsApp que tiene un mensaje esperando, con el link a su
+   bandeja. Es la pieza que hace falta para que el chat sirva: el proveedor no
+   entra solo a la app (quedo demostrado con Cotizaciones).
+
+   EL TEXTO QUE SE CARGO EN META (2026-11-25, categoria Utilidad, es_AR,
+   nombre aviso_mensaje_chat). Copia aca porque el cuerpo lo guarda Meta:
+
+     Hola {{1}}, un comprador le escribió por EmprendeGO:
+     "{{2}}"
+     Puede responderle desde acá: {{3}}
+     Si no quiere recibir estos avisos, puede desactivarlos desde su panel en EmprendeGO.
+
+   Sin "responder rapido suma puntos" a proposito: Meta lo lee como promocion
+   y lo pasa a Marketing (cinco veces mas caro y bloqueable con un toque).
+
+   ⚠️ SE PRENDE CON WHATSAPP_TEMPLATE_CHAT Y NO TIENE VALOR POR DEFECTO, por lo
+   mismo que el resumen semanal: el aviso de pedidos ya esta prendido, asi que
+   wa_apagado no frena esta rama, y mandar contra una plantilla que Meta no
+   aprobo quema envios. La variable se define el dia que Meta la apruebe.
+
+   QUIEN PUEDE DISPARARLO. Endpoint publico, asi que no se le cree nada al
+   cuerpo: se exige la sesion del comprador (Bearer de Supabase) y se busca en
+   la base un mensaje SUYO a ese proveedor de los ultimos 10 minutos. El texto
+   del aviso sale de esa fila, no de lo que mande el navegador. Sin mensaje
+   real no hay aviso: nadie puede usar esto para mandarle WhatsApp a un
+   proveedor cualquiera.
+
+   CUIDAR EL NUMERO (la restriccion real, no la plata):
+   - UN aviso por proveedor cada 30 min: el indice unico (proveedor_id,
+     ventana) agrupa todo lo que llegue en el mismo bloque.
+   - Ademas, si ya hubo uno en los ultimos 30 min (bloque anterior), no sale.
+   - Tope de CHAT_MAX_POR_DIA por proveedor en 24 h.
+   - Si el proveedor contesto en esa conversacion en los ultimos 10 min, esta
+     adentro del chat: no hace falta avisarle.
+   - Fuera de 9 a 21 (hora argentina) no sale. Ojo: no hay cola de la mañana
+     para estos todavia; el mensaje queda en la bandeja y el aviso del proximo
+     mensaje lo levanta.
+   - notif_wa === false lo apaga, igual que al resumen: el que dijo "no me
+     manden WhatsApp" no hizo distincion de categorias.
+   ===================================================================== */
+const CHAT_TEMPLATE = (process.env.WHATSAPP_TEMPLATE_CHAT || '').trim();
+const CHAT_VENTANA_MIN = 30;
+const CHAT_MAX_POR_DIA = 6;
+const CHAT_MENSAJE_RECIENTE_MIN = 10;
+// ?chat=nuevo va en el link a proposito: el proveedor que recibe el aviso
+// tiene que poder abrir el chat aunque todavia no este prendido para todos.
+const CHAT_LINK = 'https://emprendego.com.ar/?ir=mensajes&chat=nuevo';
+
+export function ventanaChat(fecha) {
+  return Math.floor((fecha ? fecha.getTime() : Date.now()) / (CHAT_VENTANA_MIN * 60 * 1000));
+}
+
+async function handlerWaChat(req, res) {
+  if (!applyRateLimit(req, res, { bucket: 'wa-chat', limit: 20, windowMs: 60000 })) return;
+  const saltear = (motivo) => res.status(200).json({ ok: true, skipped: motivo });
+
+  const { proveedor_id } = req.body || {};
+  if (!esUUID(proveedor_id)) return res.status(400).json({ error: 'missing fields' });
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey || !SUPABASE_BASE) return res.status(500).json({ error: 'server config error' });
+
+  const token = (process.env.WHATSAPP_TOKEN || '').trim();
+  const phoneId = (process.env.WHATSAPP_PHONE_ID || '').trim();
+  if (!token || !phoneId) return saltear('wa_apagado');
+  if (!CHAT_TEMPLATE) return saltear('sin_plantilla');
+
+  // 1) Quien escribe: la sesion del comprador, no el cuerpo.
+  const raw = req.headers.authorization || '';
+  const jwt = raw.startsWith('Bearer ') ? raw.slice(7).trim() : '';
+  if (!jwt) return res.status(401).json({ error: 'no autorizado' });
+  let email = '';
+  try {
+    const u = await fetch(`${SUPABASE_BASE}/auth/v1/user`, { headers: { apikey: serviceKey, Authorization: `Bearer ${jwt}` } });
+    if (!u.ok) return res.status(401).json({ error: 'no autorizado' });
+    email = String((await u.json())?.email || '').toLowerCase().trim();
+  } catch (e) { return res.status(401).json({ error: 'no autorizado' }); }
+  if (!email) return res.status(401).json({ error: 'no autorizado' });
+
+  const headers = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+
+  try {
+    // 2) Tiene que existir un mensaje SUYO, reciente, a ese proveedor.
+    const desde = new Date(Date.now() - CHAT_MENSAJE_RECIENTE_MIN * 60 * 1000).toISOString();
+    const mRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/mensajes?proveedor_id=eq.${encodeURIComponent(proveedor_id)}` +
+      `&usuario_email=eq.${encodeURIComponent(email)}&created_at=gte.${encodeURIComponent(desde)}` +
+      `&select=de_tipo,texto,created_at&order=created_at.desc&limit=20`, { headers });
+    if (!mRes.ok) return saltear('sin_mensaje');
+    const recientes = (await mRes.json()) || [];
+    const delComprador = recientes.find(m => m.de_tipo === 'usuario');
+    if (!delComprador) return saltear('sin_mensaje');
+    // El proveedor esta contestando en esa conversacion: ya esta adentro.
+    if (recientes.some(m => m.de_tipo === 'proveedor')) return saltear('activo');
+
+    if (!enHorarioComercial()) return saltear('fuera_de_horario');
+
+    // 3) El proveedor.
+    const pRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/proveedores?id=eq.${encodeURIComponent(proveedor_id)}&select=id,nombre,whatsapp,notif_wa,estado&limit=1`,
+      { headers });
+    if (!pRes.ok) return saltear('sin_proveedor');
+    const p = ((await pRes.json()) || [])[0];
+    if (!p) return saltear('sin_proveedor');
+    if (p.notif_wa === false) return saltear('baja');
+
+    const forzarA = numeroDePrueba(process.env.WHATSAPP_TEST_TO);
+    const destino = forzarA || normalizarWa(p.whatsapp);
+    if (!destino) return saltear('sin_numero');
+
+    // 4) Agrupar y topes (lo barato antes de reservar).
+    const hace30 = new Date(Date.now() - CHAT_VENTANA_MIN * 60 * 1000).toISOString();
+    const hace24 = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+    const aRes = await fetch(
+      `${SUPABASE_BASE}/rest/v1/avisos_chat_wa?proveedor_id=eq.${encodeURIComponent(proveedor_id)}` +
+      `&created_at=gte.${encodeURIComponent(hace24)}&estado=neq.fallo&select=created_at&order=created_at.desc&limit=50`, { headers });
+    if (!aRes.ok) {
+      console.warn('[wa-chat] falta correr sql/2026-11-25_aviso_chat_wa.sql');
+      return saltear('sin_bitacora');
+    }
+    const previos = (await aRes.json()) || [];
+    if (previos.some(a => a.created_at >= hace30)) return saltear('agrupado');
+    if (previos.length >= CHAT_MAX_POR_DIA) return saltear('tope_diario');
+
+    // 5) Reserva: el 409 del indice unico es el anti-duplicado real.
+    const r = await fetch(`${SUPABASE_BASE}/rest/v1/avisos_chat_wa`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ proveedor_id, usuario_email: email, ventana: ventanaChat(), telefono: destino, estado: 'reservado' })
+    });
+    if (r.status === 409) return saltear('agrupado');
+    if (!r.ok) { console.error('[wa-chat] no se pudo reservar:', r.status, await r.text()); return saltear('sin_bitacora'); }
+    const reservaId = (await r.json())?.[0]?.id || null;
+
+    // 6) El mensaje. SON TRES parametros y en el orden de la plantilla.
+    const params = [limpiarParam(p.nombre, 40), limpiarParam(delComprador.texto, 100), CHAT_LINK];
+    const waRes = await fetch(`https://graph.facebook.com/${WA_API_VERSION}/${phoneId}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp', to: destino, type: 'template',
+        template: {
+          name: CHAT_TEMPLATE, language: { code: WA_LANG },
+          components: [{ type: 'body', parameters: params.map(text => ({ type: 'text', text })) }]
+        }
+      })
+    });
+    const cuerpo = await waRes.json().catch(() => ({}));
+    if (!waRes.ok) {
+      const motivo = cuerpo?.error?.message || `http_${waRes.status}`;
+      console.error(`[wa-chat] Meta rechazo el aviso a ${proveedor_id}:`, JSON.stringify(cuerpo?.error || cuerpo));
+      await cerrarAvisoChat(headers, reservaId, { estado: 'fallo', error: String(motivo).slice(0, 500) });
+      return res.status(200).json({ ok: false, error: 'envio_fallido' });
+    }
+    await cerrarAvisoChat(headers, reservaId, { estado: 'enviado', wa_message_id: cuerpo?.messages?.[0]?.id || null });
+    return res.status(200).json({ ok: true, enviado: true, prueba: !!forzarA });
+  } catch (e) {
+    console.error('[wa-chat] error inesperado:', e.message);
+    return res.status(200).json({ ok: false, error: 'interno' });
+  }
+}
+
+async function cerrarAvisoChat(headers, id, campos) {
+  if (!id) return;
+  try {
+    await fetch(`${SUPABASE_BASE}/rest/v1/avisos_chat_wa?id=eq.${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(campos)
+    });
+  } catch (e) { console.error('[wa-chat] no se pudo cerrar el aviso:', e.message); }
 }

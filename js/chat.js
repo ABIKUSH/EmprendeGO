@@ -37,6 +37,8 @@
     if (/^nuevo/i.test(q || '')) localStorage.setItem(CLAVE, '1');
     else if (/^viejo/i.test(q || '')) localStorage.removeItem(CLAVE);
   } catch (e) { }
+  var irMensajes = false;
+  try { irMensajes = new URLSearchParams(location.search).get('ir') === 'mensajes'; } catch (e) { }
   var activo = CHAT_PARA_TODOS;
   try { activo = activo || localStorage.getItem(CLAVE) === '1'; } catch (e) { }
   if (!activo) return;
@@ -46,7 +48,7 @@
   try {
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'css/chat.css?v=20261125-chat4';
+    css.href = 'css/chat.css?v=20261125-chat5';
     document.head.appendChild(css);
   } catch (e) { }
 
@@ -373,7 +375,24 @@
           body: JSON.stringify({ proveedor_id: c.provId, de_nombre: u.name || '', texto: texto })
         }).catch(function () { });
       } catch (e) { }
+      avisarPorWhatsapp(c.provId);
     }
+  }
+
+  // El servidor decide si sale (agrupa, topes, horario, baja). Va con la
+  // sesion: sin ella el servidor no le cree a nadie. Nunca frena el chat.
+  async function avisarPorWhatsapp(provId) {
+    try {
+      var db = cliente(); if (!db || !db.auth) return;
+      var s = await db.auth.getSession();
+      var tok = s && s.data && s.data.session && s.data.session.access_token;
+      if (!tok) return;
+      fetch('/api/notificar-mensaje?action=wa_chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + tok },
+        body: JSON.stringify({ proveedor_id: provId })
+      }).catch(function () { });
+    } catch (e) { }
   }
 
   function reintentar(k) {
@@ -788,7 +807,10 @@
     if (clave === S.claveSesion) return;
     S.claveSesion = clave;
     cerrarConversacion();
-    if (clave) { conectar(); recontar(); }
+    if (clave) {
+      conectar(); recontar();
+      if (irMensajes) { irMensajes = false; setTimeout(function () { if (window.goTo) window.goTo('mensajes'); }, 300); }
+    }
     else { desconectar(); S.noLeidosComprador = 0; S.provEsperando = 0; pintarContadores(); }
   }
 
@@ -798,6 +820,10 @@
     pintarContadores();
     vigilarSesion();
     setInterval(vigilarSesion, 2000);
+    // Llego por el link del aviso y no tiene sesion: que inicie y despues va.
+    if (irMensajes) setTimeout(function () {
+      if (irMensajes && !usuario()) { toast('Inicie sesión para ver sus mensajes'); if (window.goTo) window.goTo('perfil'); }
+    }, 4000);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
   else iniciar();
