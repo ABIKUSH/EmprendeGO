@@ -36,7 +36,9 @@
 .cx-tick{width:16px;height:11px;vertical-align:-1px}
 
 /* --- Pantalla del chat --- */
-.cx-chat{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--cx-fondo-chat)}
+/* Fija como WhatsApp: no se corre con el scroll de la pagina. z-index 200 = arriba
+   de la topbar (100) y abajo del menu (400), los modales (500) y el toast (999). */
+.cx-chat{position:fixed;top:0;left:0;right:0;margin:0 auto;max-width:430px;height:100vh;height:100dvh;z-index:200;display:flex;flex-direction:column;background:var(--cx-fondo-chat)}
 .cx-head{background:#fff;padding:10px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--cx-borde);flex-shrink:0}
 .cx-atras{background:none;border:none;padding:6px;color:var(--cx-verde);cursor:pointer;display:flex}
 .cx-head .n{font-weight:800;font-size:.95rem;display:flex;gap:5px;align-items:center;color:var(--cx-tinta)}
@@ -71,10 +73,10 @@
 .cx-rapidas{display:flex;gap:7px;padding:6px 12px;overflow-x:auto;flex-shrink:0;scrollbar-width:none}
 .cx-rapidas::-webkit-scrollbar{display:none}
 .cx-rap{white-space:nowrap;font-size:.8rem;font-weight:600;color:var(--cx-verde);background:#fff;border:1px solid #cfe3d8;border-radius:999px;padding:7px 12px;cursor:pointer}
-.cx-barra{display:flex;gap:8px;align-items:flex-end;padding:8px 10px max(12px,env(safe-area-inset-bottom,0px));flex-shrink:0}
-.cx-inp{flex:1;background:#fff;border-radius:22px;padding:4px 6px 4px 14px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 1px rgba(0,0,0,.06)}
-.cx-inp textarea{flex:1;border:none;outline:none;resize:none;font-size:16px;line-height:1.35;padding:8px 0;max-height:120px;background:transparent;color:var(--cx-tinta)}
-.cx-env{width:44px;height:44px;border-radius:50%;background:var(--cx-verde);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;cursor:pointer;transition:transform .16s ease-out}
+.cx-barra{display:flex;gap:8px;align-items:flex-end;padding:8px 10px max(12px,env(safe-area-inset-bottom,0px));flex-shrink:0;background:var(--cx-fondo-chat)}
+.cx-inp{flex:1;min-height:48px;background:#fff;border:1px solid #dfe6e1;border-radius:24px;padding:0 8px 0 16px;display:flex;align-items:center;gap:8px;box-shadow:0 1px 2px rgba(0,0,0,.05);cursor:text}
+.cx-inp textarea{flex:1;display:block;width:100%;border:none;outline:none;resize:none;font-size:16px;line-height:22px;min-height:46px;padding:12px 0;max-height:130px;background:transparent;color:var(--cx-tinta);box-sizing:border-box}
+.cx-env{width:48px;height:48px;border-radius:50%;background:var(--cx-verde);border:none;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;cursor:pointer;transition:transform .16s ease-out}
 .cx-env:active{transform:scale(.94)}
 
 /* --- Aviso del panel del proveedor --- */

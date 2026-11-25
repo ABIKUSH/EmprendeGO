@@ -46,7 +46,7 @@
   try {
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'css/chat.css?v=20261125-chat1';
+    css.href = 'css/chat.css?v=20261125-chat3';
     document.head.appendChild(css);
   } catch (e) { }
 
@@ -118,6 +118,7 @@
     provEsperando: 0,
     provMasViejo: null,
     convsProveedor: [],
+    comoComprador: false,
     pestanaBandeja: 'sin',
     autoPestana: true,
     recontarT: null,
@@ -148,16 +149,31 @@
       if (S.conv && S.conv.rol === 'comprador' && window.abrirDetalle) { var id = S.conv.provId; window.abrirDetalle(id); }
     });
     var ta = $('chat-inp');
+    s.querySelector('.cx-inp').addEventListener('click', function () { ta.focus(); });
     ta.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey && !tactil) { e.preventDefault(); enviarDesdeCaja(); }
     });
     ta.addEventListener('input', function () { autoAlto(); pintarRapidas(); avisarTipeo(); });
   }
 
+  // iPhone: con el teclado abierto la pantalla visible se achica; la del chat
+  // se ajusta a ese alto para que la caja de escribir no quede tapada.
+  function ajustarAlTeclado() {
+    var el = document.querySelector('#screen-chat .cx-chat'), vv = window.visualViewport;
+    if (!el) return;
+    if (!vv || !S.conv) { el.style.height = ''; el.style.top = ''; return; }
+    el.style.height = vv.height + 'px';
+    el.style.top = vv.offsetTop + 'px';
+    var m = $('cx-msgs'); if (m && document.activeElement === $('chat-inp')) m.scrollTop = m.scrollHeight;
+  }
+  try { if (window.visualViewport) { window.visualViewport.addEventListener('resize', ajustarAlTeclado); window.visualViewport.addEventListener('scroll', ajustarAlTeclado); } } catch (e) { }
+
   function autoAlto() {
     var ta = $('chat-inp'); if (!ta) return;
     ta.style.height = 'auto';
-    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+    // Con la pantalla escondida scrollHeight da 0 y la caja quedaba aplastada.
+    if (ta.scrollHeight < 30) { ta.style.height = ''; return; }
+    ta.style.height = Math.min(Math.max(ta.scrollHeight, 46), 130) + 'px';
   }
 
   function pintarCabecera() {
@@ -252,6 +268,7 @@
     pintarCabecera(); pintarFicha(); pintarRapidas();
     $('cx-msgs').innerHTML = '<div class="cx-vacio">Cargando la conversación...</div>';
     if (window.goTo) window.goTo('chat');
+    autoAlto(); ajustarAlTeclado();
     await cargarConversacion(true);
     unirseTipeo();
     arrancarRespaldo();
@@ -502,7 +519,8 @@
     if (it) {
       it.style.display = '';
       var viejo = it.querySelector('[data-cx-num]'); if (viejo) viejo.remove();
-      if (u && S.noLeidosComprador > 0) { it.insertAdjacentHTML('beforeend', numHtml(S.noLeidosComprador)); it.querySelector('[data-cx-num]').style.marginLeft = 'auto'; }
+      var nMenu = u && u.proveedorId ? S.provEsperando : S.noLeidosComprador;
+      if (u && nMenu > 0) { it.insertAdjacentHTML('beforeend', numHtml(nMenu, !!u.proveedorId)); it.querySelector('[data-cx-num]').style.marginLeft = 'auto'; }
     }
     // Panel del proveedor: boton "Mensajes" y aviso de quien espera.
     var btn = botonMensajesPanel();
@@ -675,7 +693,9 @@
         (c.productoId && prods[c.productoId] ? '<div class="cx-prod">' + esc(prods[c.productoId]) + '</div>' : '') +
         '</div></div>';
     }).join('') + '</div>';
-    el.innerHTML = tabs + cuerpo;
+    var pie = '<div style="text-align:center;padding:18px 16px"><button type="button" class="cx-tab" id="cx-como-comprador">Ver mis conversaciones como comprador</button></div>';
+    el.innerHTML = tabs + cuerpo + pie;
+    $('cx-como-comprador').addEventListener('click', function () { S.comoComprador = true; if (window.goTo) window.goTo('mensajes'); });
     Array.prototype.forEach.call(el.querySelectorAll('.cx-tab'), function (t) {
       t.addEventListener('click', function () { S.pestanaBandeja = t.getAttribute('data-t'); cargarBandeja(); });
     });
@@ -732,7 +752,13 @@
   if (typeof goToOriginal === 'function') {
     window.goTo = function (s) {
       if (s !== 'chat' && S.conv) cerrarConversacion();
-      var r = goToOriginal.apply(this, arguments);
+      // Un proveedor recibe sus mensajes en la bandeja: "Mensajes" del menu lo
+      // lleva ahi (sus conversaciones como comprador quedan a un toque abajo).
+      var u0 = usuario();
+      if (s === 'mensajes' && u0 && u0.proveedorId && !S.comoComprador) s = 'cx-bandeja';
+      S.comoComprador = false;
+      var args = Array.prototype.slice.call(arguments); args[0] = s;
+      var r = goToOriginal.apply(this, args);
       try {
         if (s === 'detalle-producto') {
           var b = $('prod-det-chat-btn');
