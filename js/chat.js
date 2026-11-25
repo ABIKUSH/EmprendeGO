@@ -34,8 +34,8 @@
   // DOMContentLoaded de app.js la borra con pushState (ver CLAUDE.md).
   try {
     var q = new URLSearchParams(location.search).get('chat');
-    if (q === 'nuevo') localStorage.setItem(CLAVE, '1');
-    else if (q === 'viejo') localStorage.removeItem(CLAVE);
+    if (/^nuevo/i.test(q || '')) localStorage.setItem(CLAVE, '1');
+    else if (/^viejo/i.test(q || '')) localStorage.removeItem(CLAVE);
   } catch (e) { }
   var activo = CHAT_PARA_TODOS;
   try { activo = activo || localStorage.getItem(CLAVE) === '1'; } catch (e) { }
