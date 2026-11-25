@@ -11,9 +11,12 @@
 /* --- Lista de conversaciones (comprador y proveedor) --- */
 .cx-busca{margin:12px 16px 8px;background:#fff;border:1px solid var(--cx-borde);border-radius:12px;padding:10px 12px;display:flex;gap:8px;align-items:center;color:#8a8a8a;font-size:.9rem}
 .cx-busca input{border:none;outline:none;flex:1;font-size:.9rem;background:transparent;color:var(--cx-tinta)}
-.cx-tabs{display:flex;gap:8px;padding:12px 16px 10px}
-.cx-tab{font-size:.8rem;font-weight:700;padding:7px 13px;border-radius:999px;background:#fff;border:1px solid var(--cx-borde);color:#444;cursor:pointer}
-.cx-tab.on{background:var(--cx-verde);color:#fff;border-color:var(--cx-verde)}
+.cx-tabs{display:flex;gap:10px;padding:14px 16px 12px}
+/* Pastillas como las de WhatsApp: borde gris finito, letra grande y semi-negrita;
+   la elegida en verde clarito con letra verde. */
+.cx-tab{font-size:1rem;font-weight:600;line-height:1;padding:10px 18px;border-radius:999px;background:#fff;border:1.5px solid #dcdcdc;color:#5f6368;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s ease,border-color .15s ease}
+.cx-tab .cx-tab-n{margin-left:6px;font-weight:600}
+.cx-tab.on{background:#D9F7E1;color:#0B5A36;border-color:#A9DDB8}
 .cx-lista{background:#fff;border-top:1px solid var(--cx-borde)}
 .cx-conv{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid #f1f3f1;align-items:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cx-conv:active{background:#f6f8f6}

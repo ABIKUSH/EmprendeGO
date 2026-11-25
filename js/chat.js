@@ -46,7 +46,7 @@
   try {
     var css = document.createElement('link');
     css.rel = 'stylesheet';
-    css.href = 'css/chat.css?v=20261125-chat3';
+    css.href = 'css/chat.css?v=20261125-chat4';
     document.head.appendChild(css);
   } catch (e) { }
 
@@ -677,7 +677,7 @@
     if (S.autoPestana && S.pestanaBandeja === 'sin' && !sin.length && convs.length) S.pestanaBandeja = 'todas';
     S.autoPestana = false;
     var lista = S.pestanaBandeja === 'sin' ? sin : convs;
-    var tabs = '<div class="cx-tabs"><button type="button" class="cx-tab' + (S.pestanaBandeja === 'sin' ? ' on' : '') + '" data-t="sin">Sin responder · ' + sin.length + '</button>' +
+    var tabs = '<div class="cx-tabs"><button type="button" class="cx-tab' + (S.pestanaBandeja === 'sin' ? ' on' : '') + '" data-t="sin">Sin responder' + (sin.length ? '<span class="cx-tab-n">' + sin.length + '</span>' : '') + '</button>' +
       '<button type="button" class="cx-tab' + (S.pestanaBandeja === 'todas' ? ' on' : '') + '" data-t="todas">Todas</button></div>';
     var cuerpo;
     if (!convs.length) cuerpo = '<div class="cx-lista-vacia"><b>Todavía no tiene mensajes</b>Cuando un comprador le escriba desde EmprendeGO, lo va a ver acá.</div>';
@@ -693,7 +693,7 @@
         (c.productoId && prods[c.productoId] ? '<div class="cx-prod">' + esc(prods[c.productoId]) + '</div>' : '') +
         '</div></div>';
     }).join('') + '</div>';
-    var pie = '<div style="text-align:center;padding:18px 16px"><button type="button" class="cx-tab" id="cx-como-comprador">Ver mis conversaciones como comprador</button></div>';
+    var pie = '<div style="text-align:center;padding:18px 16px"><button type="button" class="cx-tab" id="cx-como-comprador" style="font-size:.82rem;padding:8px 14px;border-width:1px">Ver mis conversaciones como comprador</button></div>';
     el.innerHTML = tabs + cuerpo + pie;
     $('cx-como-comprador').addEventListener('click', function () { S.comoComprador = true; if (window.goTo) window.goTo('mensajes'); });
     Array.prototype.forEach.call(el.querySelectorAll('.cx-tab'), function (t) {
