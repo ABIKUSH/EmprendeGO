@@ -8284,7 +8284,7 @@ async function exportarContactosCSV(btnEl) {
   if (!egBtnCargando(btnEl, 'Generando CSV…')) return;
   try {
     const { data, error } = await sb.from('mensajes')
-      .select('de_nombre,de_email,created_at,texto')
+      .select('de_nombre,de_email:usuario_email,created_at,texto')
       .eq('proveedor_id', proveedorId)
       .eq('de_tipo', 'usuario')
       .order('created_at', { ascending: true });
